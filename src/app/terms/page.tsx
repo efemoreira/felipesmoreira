@@ -72,7 +72,7 @@ export default function TermsOfUse() {
           <section>
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">7. Descargo de Responsabilidade</h2>
             <p>
-              Este aplicativo é fornecido "como está" e "conforme disponível". 
+              Este aplicativo é fornecido &quot;como está&quot; e &quot;conforme disponível&quot;. 
               Não garantimos que o serviço será ininterrupto, seguro ou livre de erros. 
               O criador não é responsável por danos diretos ou indiretos resultantes do uso ou 
               incapacidade de usar o aplicativo.
