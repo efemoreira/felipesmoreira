@@ -19,6 +19,19 @@ jobs:
       - name: Build
         run: npm run build # The build command of your project
 
+      - name: Criar .htaccess para SPA
+        run: |
+          echo 'RewriteEngine On
+          RewriteBase /
+          # Se o arquivo ou diretório existe, serve normalmente
+          RewriteCond %{REQUEST_FILENAME} -f [OR]
+          RewriteCond %{REQUEST_FILENAME} -d
+          RewriteRule ^ - [L]
+          # Redireciona /rota para /rota.html
+          RewriteRule ^([^/]+)$ $1.html [L]
+          # Redireciona tudo que não existir para index.html (SPA fallback)
+          RewriteRule ^ index.html [QSA,L]' > out/.htaccess
+
       - name: Push
         uses: s0/git-publish-subdir-action@develop
         env:
