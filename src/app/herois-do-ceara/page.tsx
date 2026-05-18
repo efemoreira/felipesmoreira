@@ -635,7 +635,7 @@ export default function HeroisDoCeara() {
                     {selected.name}
                   </h2>
                   <p style={{fontSize:12,color:"var(--color-text-secondary)",margin:0,fontStyle:"italic"}}>
-                    "{selected.nickname}"
+                    &quot;{selected.nickname}&quot;
                   </p>
                 </div>
                 <button
