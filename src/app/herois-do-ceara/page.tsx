@@ -453,6 +453,22 @@ export default function HeroisDoCeara() {
 
   return (
     <div className="min-h-screen bg-black text-white">
+      <style>{`
+        @keyframes slideInRight {
+          from { transform: translateX(100%); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        .modal-overlay {
+          animation: fadeIn 0.3s ease-out;
+        }
+        .modal-drawer {
+          animation: slideInRight 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+      `}</style>
       <div className="max-w-5xl mx-auto px-6 py-8">
 
         <header className="mb-8">
@@ -567,41 +583,59 @@ export default function HeroisDoCeara() {
           })}
         </div>
 
-        {/* Ficha detalhada */}
+        {/* Modal Drawer */}
         {selected && (
-          <div style={{
-            background:"rgba(0,0,0,0.6)",
-            borderRadius:"var(--border-radius-lg)",
-            padding:"20px 0 28px",
-            marginTop:8,
-          }}>
-            <div style={{
-              background:"var(--color-background-primary)",
-              borderRadius:"var(--border-radius-lg)",
-              width:"100%", maxWidth:680,
-              margin:"0 auto",
-              padding:"22px 26px",
-              border:`1px solid ${pm(selected).accent}33`,
-            }}>
+          <>
+            {/* Overlay */}
+            <div
+              onClick={() => setSelected(null)}
+              style={{
+                position:"fixed",
+                top:0,
+                left:0,
+                right:0,
+                bottom:0,
+                background:"rgba(0,0,0,0.5)",
+                backdropFilter:"blur(2px)",
+                zIndex:998,
+                animation:"fadeIn 0.3s ease-out",
+              }}
+            />
 
+            {/* Drawer */}
+            <div
+              style={{
+                position:"fixed",
+                top:0,
+                right:0,
+                height:"100vh",
+                width:"min(100%, 500px)",
+                background:"var(--color-background-primary)",
+                borderLeft:`1px solid ${pm(selected).accent}44`,
+                overflowY:"auto",
+                zIndex:999,
+                padding:"24px",
+                animation:"slideInRight 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)",
+              }}
+            >
               {/* Cabeçalho da ficha */}
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20,position:"sticky",top:0,background:"var(--color-background-primary)",paddingBottom:12,borderBottom:"0.5px solid var(--color-border-tertiary)",zIndex:1000}}>
                 <div style={{flex:1,minWidth:0}}>
-                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:5,flexWrap:"wrap"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6,flexWrap:"wrap"}}>
                     <span style={{
                       fontSize:10,fontWeight:500,
                       background:pm(selected).tagBg, color:pm(selected).tagText,
-                      padding:"2px 8px",borderRadius:"var(--border-radius-md)",
+                      padding:"3px 10px",borderRadius:"var(--border-radius-md)",
                     }}>
                       {selected.period}
                     </span>
                     <span style={{fontSize:11,color:"var(--color-text-tertiary)"}}>{selected.category}</span>
                   </div>
-                  <h2 style={{fontSize:20,fontWeight:600,margin:"0 0 3px",color:"var(--color-text-primary)"}}>
+                  <h2 style={{fontSize:20,fontWeight:600,margin:"0 0 4px",color:"var(--color-text-primary)"}}>
                     {selected.name}
                   </h2>
-                  <p style={{fontSize:13,color:"var(--color-text-secondary)",margin:0,fontStyle:"italic"}}>
-                    {selected.nickname}
+                  <p style={{fontSize:12,color:"var(--color-text-secondary)",margin:0,fontStyle:"italic"}}>
+                    "{selected.nickname}"
                   </p>
                 </div>
                 <button
@@ -612,66 +646,82 @@ export default function HeroisDoCeara() {
                     background:"transparent",
                     border:"0.5px solid var(--color-border-tertiary)",
                     borderRadius:"var(--border-radius-md)",
-                    padding:"4px 8px",
+                    padding:"6px 10px",
                     cursor:"pointer",
                     color:"var(--color-text-secondary)",
+                    transition:"all 0.2s",
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.background = "var(--color-background-secondary)";
+                    e.currentTarget.style.color = "var(--color-text-primary)";
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.background = "transparent";
+                    e.currentTarget.style.color = "var(--color-text-secondary)";
                   }}
                 >
                   <i className="ti ti-x" style={{fontSize:18}} />
                 </button>
               </div>
 
-              {/* Nascimento / Falecimento */}
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:14}}>
-                {[
-                  {label:"Nascimento", value:`${selected.birth} · ${selected.birthPlace}`},
-                  {label:"Falecimento", value:`${selected.death} · ${selected.deathPlace}`},
-                ].map(item => (
-                  <div key={item.label} style={{
-                    background:"var(--color-background-secondary)",
-                    borderRadius:"var(--border-radius-md)",
-                    padding:"8px 12px",
-                  }}>
-                    <p style={{fontSize:10,color:"var(--color-text-tertiary)",margin:"0 0 2px",textTransform:"uppercase",letterSpacing:"0.04em"}}>
-                      {item.label}
-                    </p>
-                    <p style={{fontSize:12,color:"var(--color-text-primary)",margin:0,fontWeight:500}}>{item.value}</p>
-                  </div>
-                ))}
-              </div>
-
-              {/* Família */}
-              <div style={{borderTop:"0.5px solid var(--color-border-tertiary)",paddingTop:12,marginBottom:14}}>
-                <p style={{fontSize:10,fontWeight:500,color:"var(--color-text-tertiary)",
-                  margin:"0 0 8px",textTransform:"uppercase",letterSpacing:"0.05em"}}>Família</p>
-                {[
-                  {k:"Pais",    v:selected.family.parents},
-                  {k:"Cônjuge", v:selected.family.spouse},
-                  {k:"Filhos",  v:selected.family.children},
-                ].map(row => (
-                  <div key={row.k} style={{display:"flex",gap:8,fontSize:12,marginBottom:4}}>
-                    <span style={{color:"var(--color-text-tertiary)",minWidth:90,flexShrink:0}}>{row.k}:</span>
-                    <span style={{color:"var(--color-text-primary)"}}>{row.v}</span>
-                  </div>
-                ))}
-              </div>
-
-              {/* Seções */}
-              {SECTIONS.map(sec => (
-                <div key={sec.key} style={{borderTop:"0.5px solid var(--color-border-tertiary)",paddingTop:12,marginBottom:12}}>
-                  <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6}}>
-                    <i className={`ti ${sec.icon}`} style={{fontSize:15,color:pm(selected).accent}} aria-hidden="true" />
-                    <p style={{fontSize:10,fontWeight:500,color:"var(--color-text-secondary)",
-                      margin:0,textTransform:"uppercase",letterSpacing:"0.05em"}}>{sec.label}</p>
-                  </div>
-                  <p style={{fontSize:13,color:"var(--color-text-primary)",margin:0,lineHeight:1.7}}>
-                    {selected[sec.key]}
-                  </p>
+              {/* Conteúdo */}
+              <div style={{paddingTop:8}}>
+                {/* Nascimento / Falecimento */}
+                <div style={{display:"grid",gridTemplateColumns:"1fr",gap:10,marginBottom:18}}>
+                  {[
+                    {label:"Nascimento", value:`${selected.birth} · ${selected.birthPlace}`},
+                    {label:"Falecimento", value:`${selected.death} · ${selected.deathPlace}`},
+                  ].map(item => (
+                    <div key={item.label} style={{
+                      background:"var(--color-background-secondary)",
+                      borderRadius:"var(--border-radius-md)",
+                      padding:"12px 14px",
+                      borderLeft:`3px solid ${pm(selected).accent}`,
+                    }}>
+                      <p style={{fontSize:10,color:"var(--color-text-tertiary)",margin:"0 0 4px",textTransform:"uppercase",letterSpacing:"0.04em",fontWeight:500}}>
+                        {item.label}
+                      </p>
+                      <p style={{fontSize:12,color:"var(--color-text-primary)",margin:0,fontWeight:500}}>{item.value}</p>
+                    </div>
+                  ))}
                 </div>
-              ))}
 
+                {/* Família */}
+                <div style={{borderTop:"0.5px solid var(--color-border-tertiary)",paddingTop:16,marginBottom:16}}>
+                  <p style={{fontSize:11,fontWeight:600,color:"var(--color-text-primary)",
+                    margin:"0 0 12px",textTransform:"uppercase",letterSpacing:"0.05em"}}>Família</p>
+                  <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                    {[
+                      {k:"Pais",    v:selected.family.parents},
+                      {k:"Cônjuge", v:selected.family.spouse},
+                      {k:"Filhos",  v:selected.family.children},
+                    ].map(row => (
+                      <div key={row.k} style={{display:"flex",gap:10,fontSize:12}}>
+                        <span style={{color:"var(--color-text-tertiary)",minWidth:70,flexShrink:0,fontWeight:500}}>{row.k}:</span>
+                        <span style={{color:"var(--color-text-primary)",lineHeight:1.5}}>{row.v}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Seções */}
+                {SECTIONS.map((sec,idx) => (
+                  <div key={sec.key} style={{borderTop:"0.5px solid var(--color-border-tertiary)",paddingTop:16,marginBottom:idx === SECTIONS.length - 1 ? 0 : 16}}>
+                    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+                      <div style={{width:32,height:32,display:"flex",alignItems:"center",justifyContent:"center",background:`${pm(selected).accent}15`,borderRadius:"var(--border-radius-md)"}}>
+                        <i className={`ti ${sec.icon}`} style={{fontSize:14,color:pm(selected).accent}} aria-hidden="true" />
+                      </div>
+                      <p style={{fontSize:10,fontWeight:600,color:"var(--color-text-primary)",
+                        margin:0,textTransform:"uppercase",letterSpacing:"0.05em"}}>{sec.label}</p>
+                    </div>
+                    <p style={{fontSize:12,color:"var(--color-text-secondary)",margin:"0 0 0 40px",lineHeight:1.8}}>
+                      {selected[sec.key]}
+                    </p>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+          </>
         )}
 
       </div>
