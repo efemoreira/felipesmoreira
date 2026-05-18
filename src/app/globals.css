@@ -3,6 +3,15 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  --color-text-primary: #171717;
+  --color-text-secondary: #6b7280;
+  --color-text-tertiary: #9ca3af;
+  --color-background-primary: #ffffff;
+  --color-background-secondary: #f3f4f6;
+  --color-border-tertiary: #e5e7eb;
+  --border-radius-lg: 12px;
+  --border-radius-md: 6px;
 }
 
 @theme inline {
@@ -16,6 +25,13 @@
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
+
+    --color-text-primary: #ededed;
+    --color-text-secondary: #a0a0a0;
+    --color-text-tertiary: #6b7280;
+    --color-background-primary: #0a0a0a;
+    --color-background-secondary: #1a1a1a;
+    --color-border-tertiary: #2a2a2a;
   }
 }
 
