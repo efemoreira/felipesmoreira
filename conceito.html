@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MISSÃO · O Futuro é Glorioso — Camada de Fundo (16:9)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Special+Elite&family=Caveat:wght@500;700&family=Bitter:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+    :root{
+  --void:#0C0C0E;
+  --night:#14110C;
+  --ink:#181203;
+  --cream:#F6F5EF;
+  --paper:#F3ECDA;
+  --gold:#FFCB05;
+  --gold-2:#FFDE5A;
+  --gold-dim:#B8860B;
+  --day:60s;              /* um dia inteiro do sertão */
+}
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box
+}
+html,
+body{
+  height:100%
+}
+body{
+  font-family:'Bitter',serif;
+  color:var(--cream);
+  overflow:hidden;
+  background:#000
+}
+.stage{
+  position:relative;
+  width:100vw;
+  height:100vh;
+  overflow:hidden;
+  isolation:isolate;
+  background:#14110C
+}
+
+/* ===== CÉU: cross-fade de camadas (opacidade interpola sempre suave) ===== */
+.sky{
+  position:absolute;
+  inset:0;
+  z-index:0
+}
+.sky .fase-ceu{
+  position:absolute;
+  inset:0
+}
+.s-noite{      background:linear-gradient(180deg,#14110C 0%,#1B160E 50%,#241C10 100%) }
+.s-madrugada{  background:linear-gradient(180deg,#241B12 0%,#3A2A16 50%,#5A3E18 100%); opacity:0; animation:fMadrugada  var(--day) linear infinite }
+.s-amanhecer{  background:linear-gradient(180deg,#6E5A34 0%,#A9762A 50%,#E7A82E 100%); opacity:0; animation:fAmanhecer  var(--day) linear infinite }
+.s-dia{        background:linear-gradient(180deg,#E9E2CC 0%,#EBD9A6 50%,#E9C24E 100%); opacity:0; animation:fDia        var(--day) linear infinite }
+.s-tarde{      background:linear-gradient(180deg,#D9C089 0%,#C98A2E 50%,#B0641E 100%); opacity:0; animation:fTarde      var(--day) linear infinite }
+.s-por{        background:linear-gradient(180deg,#6E4A28 0%,#9A521C 50%,#C2681A 100%); opacity:0; animation:fPor        var(--day) linear infinite }
+.s-crepusculo{ background:linear-gradient(180deg,#2A2016 0%,#3E2A18 50%,#52321A 100%); opacity:0; animation:fCrepusculo var(--day) linear infinite }
+/* cada fase sobe 0→1 até seu centro e desce 1→0 até a próxima => dissolve contínuo */
+@keyframes fMadrugada{  0%{opacity:0} 2%{opacity:0} 16%{opacity:1} 30%{opacity:0} 100%{opacity:0} }
+@keyframes fAmanhecer{  0%{opacity:0} 16%{opacity:0} 30%{opacity:1} 50%{opacity:0} 100%{opacity:0} }
+@keyframes fDia{        0%{opacity:0} 30%{opacity:0} 50%{opacity:1} 64%{opacity:0} 100%{opacity:0} }
+@keyframes fTarde{      0%{opacity:0} 50%{opacity:0} 64%{opacity:1} 76%{opacity:0} 100%{opacity:0} }
+@keyframes fPor{        0%{opacity:0} 64%{opacity:0} 76%{opacity:1} 88%{opacity:0} 100%{opacity:0} }
+@keyframes fCrepusculo{ 0%{opacity:0} 76%{opacity:0} 88%{opacity:1} 100%{opacity:0} }
+/* véu quente discreto pra dar liga */
+.warm{
+  position:absolute;
+  inset:0;
+  z-index:0;
+  pointer-events:none;
+  mix-blend-mode:soft-light;
+  background:radial-gradient(120% 80% at 50% 96%,rgba(255,203,5,.45),transparent 62%);
+  animation:warmth var(--day) ease-in-out infinite
+}
+@keyframes warmth{
+  0%,100%{ opacity:.12 }
+  34%,78%{ opacity:.42 }
+  50%{ opacity:.28 }
+}
+
+.grain{
+  position:absolute;
+  inset:0;
+  z-index:8;
+  pointer-events:none;
+  opacity:.5;
+  mix-blend-mode:multiply;
+  background-image:radial-gradient(rgba(24,18,3,.10) 1px,transparent 1.6px),radial-gradient(rgba(24,18,3,.07) 1px,transparent 1.6px);
+  background-size:6px 6px,11px 11px;
+  background-position:0 0,3px 4px
+}
+.vign{
+  position:absolute;
+  inset:0;
+  z-index:8;
+  pointer-events:none;
+  background:radial-gradient(125% 120% at 50% 42%,transparent 54%,rgba(8,6,2,.45) 100%);
+  mix-blend-mode:multiply
+}
+
+/* ===== SOL (nasce no leste/direita, põe no oeste/esquerda) ===== */
+.sol{
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:148px;
+  height:148px;
+  margin:-74px 0 0 -74px;
+  z-index:1;
+  opacity:0;
+  animation:solArc var(--day) linear infinite
+}
+.sol-gira{ transform-box:fill-box; transform-origin:center; animation:solGira 44s linear infinite }
+@keyframes solGira{ to{ transform:rotate(360deg) } }
+@keyframes solArc{                 /* raio GRANDE (arco externo) */
+  0%,24%{   left:96%; top:104%; opacity:0 }
+  30%{      left:88%; top:56%;  opacity:1 }
+  42%{      left:64%; top:16%;  opacity:1 }
+  52%{      left:50%; top:7%;   opacity:1 }
+  64%{      left:36%; top:16%;  opacity:1 }
+  72%{      left:12%; top:56%;  opacity:1 }
+  78%,100%{ left:4%;  top:104%; opacity:0 }
+}
+
+/* ===== LUA — órbita própria (mais curta que o dia) ===== */
+.lua-day{                          /* controla o quanto a lua some com a luz do dia */
+  position:absolute;
+  inset:0;
+  z-index:1;
+  pointer-events:none;
+  animation:luaDia var(--day) ease-in-out infinite
+}
+@keyframes luaDia{                 /* opacidade base: cheia à noite, fraca de dia */
+  0%,18%{ opacity:1 }
+  34%{ opacity:.5 }
+  50%{ opacity:.26 }
+  64%{ opacity:.42 }
+  82%,100%{ opacity:1 }
+}
+.lua{
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:98px;
+  height:98px;
+  margin:-49px 0 0 -49px;
+  opacity:0;
+  animation:luaArc 46s linear infinite   /* período menor => dessincroniza do sol */
+}
+@keyframes luaArc{                 /* raio MENOR (arco interno) — nunca toca o sol */
+  0%{      left:80%; top:106%; opacity:0 }
+  9%{      left:72%; top:70%;  opacity:1 }
+  22%{     left:60%; top:44%;  opacity:1 }
+  30%{     left:50%; top:36%;  opacity:1 }
+  40%{     left:40%; top:44%;  opacity:1 }
+  53%{     left:28%; top:70%;  opacity:1 }
+  60%{     left:20%; top:106%; opacity:0 }
+  60.01%,100%{ left:80%; top:106%; opacity:0 }
+}
+.lua .fase{ animation:fases 150s linear infinite }
+@keyframes fases{
+  0%{   transform:translateX(0) }
+  25%{  transform:translateX(46px) }
+  50%{  transform:translateX(96px) }
+  75%{  transform:translateX(-46px) }
+  100%{ transform:translateX(0) }
+}
+
+/* ===== ESTRELAS + pintas de onça (só à noite) ===== */
+.estrelas{
+  position:absolute;
+  inset:0;
+  z-index:1;
+  pointer-events:none;
+  animation:noiteEstrela var(--day) linear infinite
+}
+@keyframes noiteEstrela{
+  0%,16%{ opacity:1 }
+  30%{ opacity:0 }
+  74%{ opacity:0 }
+  88%,100%{ opacity:1 }
+}
+.estrelas b{
+  position:absolute;
+  color:var(--cream);
+  line-height:1;
+  animation:pisca 3.6s ease-in-out infinite
+}
+@keyframes pisca{
+  0%,100%{ opacity:.15; transform:scale(.85) }
+  50%{ opacity:.95; transform:scale(1.1) }
+}
+.estrelas .pinta{
+  position:absolute;
+  color:var(--gold-2);
+  opacity:.5;
+  animation:pisca 5s ease-in-out infinite
+}
+
+/* ===== MONTANHAS: nascem e afundam no horizonte (atrás do chão) ===== */
+.montanhas{
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:12%;                 /* base desce atrás do chão => sem corte */
+  height:36%;
+  z-index:2;
+  pointer-events:none;
+  -webkit-mask:linear-gradient(90deg,#000 54%,transparent 84%);
+          mask:linear-gradient(90deg,#000 54%,transparent 84%)   /* some perto do mar */
+}
+.montanhas svg{ display:block; width:100%; height:100% }
+.m-back{ animation:sobeMonte 30s ease-in-out infinite }
+.m-front{ animation:sobeMonte 30s ease-in-out infinite; animation-delay:-11s }
+@keyframes sobeMonte{
+  0%,100%{ transform:translateY(102%); opacity:0 }
+  22%,58%{ transform:translateY(0);    opacity:.9 }
+  82%{     transform:translateY(102%); opacity:0 }
+}
+
+/* ===== MAR: elemento FIXO no canto direito (triângulo ondulado) ===== */
+.mar{
+  position:absolute;
+  right:0;
+  bottom:0;                   /* desce até o fundo: cobre o chão no canto direito */
+  width:34%;
+  height:40%;
+  z-index:6;                  /* enseada por cima do chão, no canto */
+  pointer-events:none;
+  -webkit-mask:linear-gradient(90deg,transparent 0%,#000 12%);
+          mask:linear-gradient(90deg,transparent 0%,#000 12%)
+}
+.mar svg{ display:block; width:100%; height:100% }
+/* toda a superfície (topo + linha d'água + ondas) deriva junto => base se move */
+.mar .onda{ animation:mareDrift 8s linear infinite }
+@keyframes mareDrift{ to{ transform:translateX(-80px) } }
+/* barco: grupo externo AFUNDA (translateY), grupo interno BALANÇA (rotate) */
+.mar .barco{ animation:afundaVela 13s ease-in-out infinite }
+.mar .b2{ animation-delay:-6.5s }
+.mar .vela-sway{ transform-box:fill-box; transform-origin:bottom center; animation:balancaVela 4.6s ease-in-out infinite }
+.mar .b2 .vela-sway{ animation-delay:-2s }
+@keyframes balancaVela{
+  0%,100%{ transform:rotate(-2.4deg) }
+  50%{ transform:rotate(2.6deg) }
+}
+@keyframes afundaVela{           /* nasce e afunda no horizonte (e some) */
+  0%,100%{ transform:translateY(56px); opacity:0 }
+  16%,60%{ transform:translateY(0);    opacity:1 }
+  80%{     transform:translateY(56px); opacity:0 }
+}
+
+/* ===== NUVENS ===== */
+.nuvens{
+  position:absolute;
+  left:0;
+  right:0;
+  top:0;
+  height:56%;
+  z-index:3;
+  pointer-events:none
+}
+.nuvem{
+  position:absolute;
+  animation:nuvemPassa linear infinite
+}
+@keyframes nuvemPassa{
+  0%{ transform:translateX(-32vw) }
+  100%{ transform:translateX(132vw) }
+}
+
+/* ===== JANDAIAS-VERDADEIRAS voando no céu ===== */
+.passaros{
+  position:absolute;
+  left:0;
+  right:0;
+  top:0;
+  height:56%;
+  z-index:3;
+  pointer-events:none
+}
+.passaro{
+  position:absolute;
+  top:0;
+  left:0;
+  animation-timing-function:linear;   /* velocidade constante, sem parar */
+  animation-iteration-count:infinite
+  /* animation-name/duration/delay definidos por JS (trajetória aleatória) */
+}
+.passaro.esq .flip{ transform:scaleX(-1) }
+.passaro .asas{
+  transform-box:fill-box;
+  transform-origin:50% 60%;
+  animation:bate .3s ease-in-out infinite alternate
+}
+@keyframes bate{
+  from{ transform:scaleY(1) }
+  to{ transform:scaleY(.32) }
+}
+
+/* ===== CHÃO da caatinga (foreground) ===== */
+.chao{
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:0;
+  height:26%;
+  z-index:4;
+  background:var(--cream);
+  border-top:4px solid var(--ink);
+  box-shadow:inset 0 7px 0 -3px var(--gold)
+}
+.chao::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  opacity:.5;
+  mix-blend-mode:multiply;
+  background:repeating-linear-gradient(88deg,rgba(24,18,3,.14) 0 2px,transparent 2px 13px),repeating-linear-gradient(-91deg,rgba(24,18,3,.10) 0 2px,transparent 2px 19px)
+}
+
+/* ===== CAATINGA: mandacarus e carnaúbas rolando (encolhem ao se afastar) ===== */
+.cactos,
+.carnaubas{
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:15%;
+  height:36%;
+  pointer-events:none
+}
+.cactos{ z-index:5 }
+.carnaubas{ z-index:4; bottom:12% }   /* mais ao fundo, palmeiras altas */
+.cacto,
+.carnauba{
+  position:absolute;
+  bottom:0;
+  transform-origin:bottom center;
+  animation:cactoRola linear infinite
+}
+/* plantados no chão, TAMANHO CONSTANTE — só some (opacidade 0) ao chegar no mar */
+@keyframes cactoRola{
+  0%{   transform:translateX(-16vw); opacity:0 }
+  5%{   transform:translateX(-8vw);  opacity:1 }
+  64%{  transform:translateX(56vw);  opacity:1 }
+  73%{  transform:translateX(64vw);  opacity:0 }
+  100%{ transform:translateX(90vw);  opacity:0 }
+}
+
+/* ===== MOITAS: tufos de mato/agave e arbustos redondos (chão de caatinga) ===== */
+.moitas{
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:5%;
+  height:18%;
+  z-index:5;
+  pointer-events:none
+}
+.moita{
+  position:absolute;
+  bottom:0;
+  transform-origin:bottom center;
+  animation:cactoRola linear infinite
+}
+
+/* ===== CORDEL escrito à mão (só as letras) e esmaecendo ===== */
+.versos{
+  position:absolute;
+  top:14%;
+  z-index:6;
+  width:42%;
+  font-family:'Caveat',cursive;
+  color:var(--ink);
+  text-shadow:1px 1px 0 rgba(255,203,5,.5);
+  pointer-events:none
+}
+.versos.esq{ left:6%;  transform:rotate(-3deg) }
+.versos.dir{ right:6%; transform:rotate(3deg) }
+.verso{
+  display:table;                 /* caixa cola no texto */
+  font-size:clamp(20px,2.8vw,40px);
+  line-height:1.3;
+  white-space:nowrap;
+  clip-path:inset(0 101% 0 0);   /* escondido; revela esquerda→direita */
+  opacity:0
+}
+.versos.dir .verso{ margin-left:auto }   /* cola na margem direita */
+.versos.run .verso{ animation:escreve 3s ease-out forwards }
+.versos.run .verso:nth-child(1){ animation-delay:.15s }
+.versos.run .verso:nth-child(2){ animation-delay:3.2s }
+.versos.run .verso:nth-child(3){ animation-delay:6.25s }
+.versos.run .verso:nth-child(4){ animation-delay:9.3s }
+@keyframes escreve{
+  0%{ clip-path:inset(0 101% 0 0); opacity:1 }
+  100%{ clip-path:inset(0 -2% 0 0); opacity:1 }
+}
+.versos.fade{ animation:esmaece 2.2s ease forwards }
+@keyframes esmaece{ to{ opacity:0 } }
+
+/* ===== MOLDURA + ornamentos ===== */
+.frame{
+  position:absolute;
+  inset:2.2vmin;
+  z-index:9;
+  pointer-events:none;
+  border:3px solid var(--ink);
+  box-shadow:inset 0 0 0 3px var(--cream),inset 0 0 0 6px var(--ink),0 0 0 3px var(--ink)
+}
+.orn{
+  position:absolute;
+  z-index:10;
+  color:var(--ink);
+  font-family:'Alfa Slab One';
+  font-size:22px;
+  line-height:1;
+  text-shadow:1px 1px 0 var(--gold)
+}
+.orn.tl{ top:1.0vmin; left:1.0vmin }
+.orn.tr{ top:1.0vmin; right:1.0vmin }
+.orn.bl{ bottom:1.0vmin; left:1.0vmin }
+.orn.br{ bottom:1.0vmin; right:1.0vmin }
+
+/* ===== SELO central: onça carimbada ===== */
+.cover{
+  position:absolute;
+  inset:0;
+  z-index:10;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  gap:14px;
+  padding:0 6vw
+}
+.cover>*{
+  opacity:0;
+  animation:carimbo .7s cubic-bezier(.2,1.25,.3,1) forwards
+}
+.cover>*:nth-child(1){ animation-delay:.15s }
+.cover>*:nth-child(2){ animation-delay:.34s }
+.cover>*:nth-child(3){ animation-delay:.5s }
+@keyframes carimbo{
+  0%{ opacity:0; transform:scale(1.28) rotate(-5deg) }
+  55%{ opacity:1; transform:scale(.96) rotate(2deg) }
+  100%{ opacity:1; transform:scale(1) rotate(-1.4deg) }
+}
+.selo{
+  position:relative;
+  width:190px;
+  height:190px;
+  display:grid;
+  place-items:center;
+  animation:balanco 7s ease-in-out infinite
+}
+@keyframes balanco{
+  0%,100%{ transform:translateY(0) rotate(-1.4deg) }
+  50%{ transform:translateY(-8px) rotate(1.4deg) }
+}
+.selo .anel{ position:absolute; inset:0 }
+.selo .anel.gira{ animation:gira 26s linear infinite }
+@keyframes gira{ to{ transform:rotate(360deg) } }
+.selo .disc{
+  position:absolute;
+  width:118px;
+  height:118px;
+  border-radius:50%;
+  overflow:hidden;
+  background:var(--cream);
+  box-shadow:0 0 0 4px var(--ink),0 0 0 7px var(--gold),0 0 0 10px var(--ink)
+}
+.selo .disc img{
+  position:absolute;
+  width:150%;
+  left:-25%;
+  top:-14%;
+  filter:grayscale(.1) contrast(1.05)
+}
+.ribbon{
+  position:relative;
+  background:var(--ink);
+  color:var(--cream);
+  font-family:'Alfa Slab One',serif;
+  font-size:clamp(22px,4.4vw,54px);
+  letter-spacing:3px;
+  line-height:1;
+  padding:10px 46px;
+  text-transform:uppercase;
+  clip-path:polygon(4% 0,96% 0,100% 50%,96% 100%,4% 100%,0 50%);
+  box-shadow:5px 5px 0 rgba(24,18,3,.35)
+}
+.ribbon b{ color:var(--gold) }
+.kick{
+  font-family:'Special Elite',monospace;
+  letter-spacing:5px;
+  font-size:13px;
+  color:var(--ink);
+  background:var(--gold);
+  padding:4px 14px;
+  text-transform:uppercase;
+  box-shadow:3px 3px 0 rgba(24,18,3,.35)
+}
+
+/* ===== FITA de cordel embaixo ===== */
+.tape{
+  position:absolute;
+  left:-6%;
+  right:-6%;
+  bottom:4.5%;
+  height:42px;
+  z-index:9;
+  transform:rotate(-2deg);
+  background:var(--gold);
+  border-top:3px solid var(--ink);
+  border-bottom:3px solid var(--ink);
+  overflow:hidden;
+  display:flex;
+  align-items:center;
+  box-shadow:0 4px 0 rgba(24,18,3,.3)
+}
+.tape .roll{
+  display:flex;
+  white-space:nowrap;
+  animation:roll 26s linear infinite
+}
+.tape .roll span{
+  font-family:'Alfa Slab One',serif;
+  font-size:14px;
+  letter-spacing:2px;
+  color:var(--ink);
+  padding:0 22px
+}
+.tape .roll span::after{
+  content:'\2726';
+  margin-left:22px;
+  font-size:10px
+}
+@keyframes roll{ to{ transform:translateX(-50%) } }
+    </style>
+  </head>
+  <body>
+    <div class="stage">
+
+      <!-- céu: camadas em cross-fade (transição sempre suave) -->
+      <div class="sky">
+        <div class="fase-ceu s-noite">
+        </div>
+        <div class="fase-ceu s-madrugada">
+        </div>
+        <div class="fase-ceu s-amanhecer">
+        </div>
+        <div class="fase-ceu s-dia">
+        </div>
+        <div class="fase-ceu s-tarde">
+        </div>
+        <div class="fase-ceu s-por">
+        </div>
+        <div class="fase-ceu s-crepusculo">
+        </div>
+      </div>
+      <div class="warm">
+      </div>
+
+      <!-- estrelas + pintas de onça -->
+      <div class="estrelas" id="estrelas">
+      </div>
+
+      <!-- SOL espiral de xilogravura (gira devagar) -->
+      <svg class="sol" viewBox="-6 -6 160 160">
+        <g class="sol-gira">
+          <!-- raios pontudos alternando longo/curto (12) -->
+          <g fill="var(--gold)" stroke="var(--ink)" stroke-width="2.4" stroke-linejoin="round">
+            <polygon points="70,46 78,46 74,4"   transform="rotate(0 74 74)"/>
+            <polygon points="71,47 77,47 74,20"  transform="rotate(30 74 74)"/>
+            <polygon points="70,46 78,46 74,4"   transform="rotate(60 74 74)"/>
+            <polygon points="71,47 77,47 74,20"  transform="rotate(90 74 74)"/>
+            <polygon points="70,46 78,46 74,4"   transform="rotate(120 74 74)"/>
+            <polygon points="71,47 77,47 74,20"  transform="rotate(150 74 74)"/>
+            <polygon points="70,46 78,46 74,4"   transform="rotate(180 74 74)"/>
+            <polygon points="71,47 77,47 74,20"  transform="rotate(210 74 74)"/>
+            <polygon points="70,46 78,46 74,4"   transform="rotate(240 74 74)"/>
+            <polygon points="71,47 77,47 74,20"  transform="rotate(270 74 74)"/>
+            <polygon points="70,46 78,46 74,4"   transform="rotate(300 74 74)"/>
+            <polygon points="71,47 77,47 74,20"  transform="rotate(330 74 74)"/>
+          </g>
+          <!-- disco -->
+          <circle cx="74" cy="74" r="30" fill="var(--gold)" stroke="var(--ink)" stroke-width="4"/>
+          <!-- espiral talhada (semicírculos de raio crescente, centrada, fina) -->
+          <path d="M74,74 A2,2 0 0 1 78,74 A4,4 0 0 1 70,74 A6,6 0 0 1 82,74 A8,8 0 0 1 66,74
+                   A10,10 0 0 1 86,74 A12,12 0 0 1 62,74 A14,14 0 0 1 90,74 A16,16 0 0 1 58,74
+                   A18,18 0 0 1 94,74 A20,20 0 0 1 54,74 A22,22 0 0 1 98,74 A24,24 0 0 1 50,74"
+                fill="none" stroke="var(--ink)" stroke-width="1.8" stroke-linecap="round"/>
+        </g>
+      </svg>
+
+      <!-- LUA com fases -->
+      <div class="lua-day">
+        <svg class="lua" viewBox="-4 -4 106 106">
+          <defs>
+            <clipPath id="luaClip">
+              <circle cx="49" cy="49" r="40"/>
+            </clipPath>
+          </defs>
+          <!-- halo desenhado à mão (anel pontilhado + fios radiais) -->
+          <circle cx="49" cy="49" r="47" fill="none" stroke="var(--cream)" stroke-width="1.8"
+                  opacity="0.5" stroke-dasharray="1.2 5.5" stroke-linecap="round"/>
+          <g stroke="var(--cream)" stroke-width="1.6" opacity="0.4" stroke-linecap="round">
+            <line x1="49" y1="-2" x2="49" y2="3"/>
+            <line x1="49" y1="95" x2="49" y2="100"/>
+            <line x1="-2" y1="49" x2="3" y2="49"/>
+            <line x1="95" y1="49" x2="100" y2="49"/>
+            <line x1="14" y1="14" x2="18" y2="18"/>
+            <line x1="80" y1="80" x2="84" y2="84"/>
+            <line x1="84" y1="14" x2="80" y2="18"/>
+            <line x1="18" y1="80" x2="14" y2="84"/>
+          </g>
+          <circle cx="49" cy="49" r="40" fill="var(--cream)" stroke="var(--ink)" stroke-width="4"/>
+          <g clip-path="url(#luaClip)">
+            <circle cx="38" cy="36" r="7.5" fill="none" stroke="var(--ink)" stroke-width="2.4"/>
+            <circle cx="62" cy="55" r="5.5" fill="none" stroke="var(--ink)" stroke-width="2.4"/>
+            <circle cx="43" cy="64" r="4" fill="none" stroke="var(--ink)" stroke-width="2.4"/>
+            <circle class="fase" cx="2" cy="49" r="48" fill="var(--night)" opacity="0.94"/>
+          </g>
+        </svg>
+      </div>
+
+      <!-- MONTANHAS (nascem e afundam no horizonte) -->
+      <div class="montanhas">
+        <svg class="m-back" viewBox="0 0 1200 240" preserveAspectRatio="none">
+          <path d="M0,240 L0,96 L150,14 L320,132 L470,44 L640,150 L780,120 L940,178 L1090,216 L1200,236 L1200,240 Z"
+                fill="var(--cream)" stroke="var(--ink)" stroke-width="4" stroke-linejoin="round"/>
+          <path d="M470,44 L428,116 M470,44 L522,120 M150,14 L112,120 M150,14 L192,124"
+                stroke="var(--ink)" stroke-width="2.4" fill="none"/>
+        </svg>
+      </div>
+      <div class="montanhas">
+        <svg class="m-front" viewBox="0 0 1200 240" preserveAspectRatio="none">
+          <path d="M0,240 L0,168 L220,96 L420,180 L620,120 L800,182 L980,216 L1200,236 L1200,240 Z"
+                fill="var(--gold-dim)" stroke="var(--ink)" stroke-width="4" stroke-linejoin="round" opacity="0.9"/>
+        </svg>
+      </div>
+
+      <!-- CHÃO -->
+      <div class="chao">
+      </div>
+
+      <!-- MAR: praia triangular (base pra cima ▽) — superfície inteira em movimento -->
+      <svg class="mar" viewBox="0 0 360 300" preserveAspectRatio="none">
+        <defs>
+          <!-- silhueta do triângulo (litoral fixo); topo alto p/ não cortar as cristas -->
+          <clipPath id="aguaMar">
+            <path d="M-40,94 L410,88 L338,300 Z"/>
+          </clipPath>
+          <!-- região das velas: recorta p/ afundarem no mar -->
+          <clipPath id="ceuMar">
+            <path d="M-40,126 L420,126 L420,-40 L-40,-40 Z"/>
+          </clipPath>
+        </defs>
+
+        <!-- SUPERFÍCIE do mar (deriva junto: topo ondulado + linha d'água + ondas) -->
+        <g clip-path="url(#aguaMar)">
+          <g class="onda">
+            <!-- corpo do mar com topo ondulado (período 80 = igual ao drift) -->
+            <path d="M-280,106 Q-240,98 -200,106 Q-160,114 -120,106 Q-80,98 -40,106 Q0,114 40,106
+                     Q80,98 120,106 Q160,114 200,106 Q240,98 280,106 Q320,114 360,106 Q400,98 440,106
+                     Q480,114 520,106 Q560,98 600,106 Q640,114 680,106 L680,320 L-280,320 Z"
+                  fill="var(--cream)"/>
+            <!-- linha d'água (a base, ondulando junto) -->
+            <path d="M-280,106 Q-240,98 -200,106 Q-160,114 -120,106 Q-80,98 -40,106 Q0,114 40,106
+                     Q80,98 120,106 Q160,114 200,106 Q240,98 280,106 Q320,114 360,106 Q400,98 440,106
+                     Q480,114 520,106 Q560,98 600,106 Q640,114 680,106"
+                  fill="none" stroke="var(--ink)" stroke-width="3.6"/>
+            <!-- ondas internas -->
+            <path d="M-280,150 Q-240,142 -200,150 Q-160,158 -120,150 Q-80,142 -40,150 Q0,158 40,150 Q80,142 120,150 Q160,158 200,150 Q240,142 280,150 Q320,158 360,150 Q400,142 440,150 Q480,158 520,150 Q560,142 600,150 Q640,158 680,150"
+                  fill="none" stroke="var(--ink)" stroke-width="3.2" opacity="0.55"/>
+            <path d="M-280,192 Q-240,184 -200,192 Q-160,200 -120,192 Q-80,184 -40,192 Q0,200 40,192 Q80,184 120,192 Q160,200 200,192 Q240,184 280,192 Q320,200 360,192 Q400,184 440,192 Q480,200 520,192 Q560,184 600,192 Q640,200 680,192"
+                  fill="none" stroke="var(--gold-dim)" stroke-width="3" opacity="0.65"/>
+            <path d="M-280,234 Q-240,226 -200,234 Q-160,242 -120,234 Q-80,226 -40,234 Q0,242 40,234 Q80,226 120,234 Q160,242 200,234 Q240,226 280,234 Q320,242 360,234 Q400,226 440,234 Q480,242 520,234 Q560,226 600,234 Q640,242 680,234"
+                  fill="none" stroke="var(--ink)" stroke-width="2.6" opacity="0.45"/>
+          </g>
+        </g>
+
+        <!-- JANGADAS (maiores) — sobem/afundam e somem ao descer -->
+        <g clip-path="url(#ceuMar)">
+          <g class="barco b1">
+            <g class="vela-sway">
+              <line x1="300" y1="112" x2="300" y2="20" stroke="var(--ink)" stroke-width="3.8"/>
+              <polygon points="300,20 300,110 366,110" fill="var(--cream)" stroke="var(--ink)" stroke-width="4.8" stroke-linejoin="round"/>
+            </g>
+            <path d="M272,110 L332,110 L322,126 Q300,133 282,126 Z" fill="var(--ink)"/>
+          </g>
+          <g class="barco b2">
+            <g class="vela-sway">
+              <line x1="200" y1="116" x2="200" y2="48" stroke="var(--ink)" stroke-width="3.2"/>
+              <polygon points="200,48 200,114 250,114" fill="var(--gold)" stroke="var(--ink)" stroke-width="4" stroke-linejoin="round"/>
+            </g>
+            <path d="M180,114 L224,114 L216,128 Q200,134 188,128 Z" fill="var(--ink)"/>
+          </g>
+        </g>
+      </svg>
+
+      <!-- NUVENS -->
+      <div class="nuvens" id="nuvens">
+      </div>
+
+      <!-- JANDAIAS voando -->
+      <div class="passaros" id="passaros">
+      </div>
+
+      <!-- CARNAÚBAS (ao fundo) -->
+      <div class="carnaubas" id="carnaubas">
+      </div>
+
+      <!-- MANDACARUS -->
+      <div class="cactos" id="cactos">
+      </div>
+
+      <!-- MOITAS: tufos e arbustos da caatinga -->
+      <div class="moitas" id="moitas">
+      </div>
+
+      <!-- CORDEL escrito à mão — EDITE OS VERSOS AQUI (esquerda) -->
+      <div class="versos esq" id="versos-esq">
+        <div class="verso">No sertão do meu Ceará</div>
+        <div class="verso">a missão vem cavalgar,</div>
+        <div class="verso">do mandacaru ao mar,</div>
+        <div class="verso">o futuro é de brilhar.</div>
+      </div>
+      <!-- CORDEL escrito à mão — EDITE OS VERSOS AQUI (direita) -->
+      <div class="versos dir" id="versos-dir">
+        <div class="verso">Sob a lua e o luar,</div>
+        <div class="verso">a onça vem espreitar,</div>
+        <div class="verso">na xilo a contar</div>
+        <div class="verso">história pra não findar.</div>
+      </div>
+
+      <!-- textura, moldura e selo -->
+      <div class="grain">
+      </div>
+      <div class="vign">
+      </div>
+      <div class="frame">
+      </div>
+      <span class="orn tl">✦</span>
+      <span class="orn tr">✦</span>
+      <span class="orn bl">✦</span>
+      <span class="orn br">✦</span>
+
+      <div class="cover" style="opacity:.94">
+        <div class="selo">
+          <svg class="anel gira" viewBox="-4 -4 198 198">
+            <circle cx="95" cy="95" r="92" fill="none" stroke="var(--ink)" stroke-width="4" stroke-dasharray="3 11"/>
+            <circle cx="95" cy="95" r="82" fill="none" stroke="var(--gold)" stroke-width="2"/>
+          </svg>
+          <svg class="anel" viewBox="-4 -4 198 198">
+            <g stroke="var(--ink)" stroke-width="3">
+              <line x1="95" y1="2" x2="95" y2="16"/>
+              <line x1="95" y1="174" x2="95" y2="188"/>
+              <line x1="2" y1="95" x2="16" y2="95"/>
+              <line x1="174" y1="95" x2="188" y2="95"/>
+            </g>
+          </svg>
+          <div class="disc">
+            <img src="../file.svg" alt="Onça Missão">
+          </div>
+        </div>
+        <div class="ribbon">MIS<b>SÃO</b>
+        </div>
+        <div class="kick">Cordel do Ceará · Ao Vivo</div>
+      </div>
+
+      <div class="tape">
+        <!-- 4 conjuntos idênticos; translateX(-50%) desloca 2 conjuntos = loop exato -->
+        <div class="roll">
+          <span>MISSÃO · O Futuro é Glorioso</span>
+          <span>O FUTURO É GLORIOSO</span>
+          <span>DA CAATINGA AO MAR</span>
+          <span>MISSÃO · O Futuro é Glorioso</span>
+          <span>O FUTURO É GLORIOSO</span>
+          <span>DA CAATINGA AO MAR</span>
+          <span>MISSÃO · O Futuro é Glorioso</span>
+          <span>O FUTURO É GLORIOSO</span>
+          <span>DA CAATINGA AO MAR</span>
+          <span>MISSÃO · O Futuro é Glorioso</span>
+          <span>O FUTURO É GLORIOSO</span>
+          <span>DA CAATINGA AO MAR</span>
+        </div>
+      </div>
+
+    </div>
+    <script>
+      // ----- estrelas (céu denso e variado, estilo xilogravura) + pintas de onça -----
+      (function(){
+        const sf = document.getElementById('estrelas');
+        const glifos = ['✦','✶','✷','✸','✳','✺','✧','⋆','∗','·','+'];
+        for(let i=0;i<58;i++){
+          const b = document.createElement('b');
+          b.textContent = glifos[Math.floor(Math.random()*glifos.length)];
+          b.style.left = (Math.random()*100).toFixed(1)+'%';
+          b.style.top = (Math.random()*62).toFixed(1)+'%';
+          b.style.fontSize = (7+Math.random()*18).toFixed(0)+'px';
+          if(Math.random()<.24) b.style.color = 'var(--gold-2)';
+          b.style.animationDelay = (Math.random()*3.6).toFixed(1)+'s';
+          b.style.animationDuration = (2.8+Math.random()*2.4).toFixed(1)+'s';
+          sf.appendChild(b);
+        }
+        for(let i=0;i<7;i++){
+          const p = document.createElement('span');
+          p.className = 'pinta';
+          p.textContent = '❋';
+          p.style.left = (Math.random()*100).toFixed(1)+'%';
+          p.style.top = (Math.random()*52).toFixed(1)+'%';
+          p.style.fontSize = (10+Math.random()*10).toFixed(0)+'px';
+          p.style.animationDelay = (Math.random()*5).toFixed(1)+'s';
+          sf.appendChild(p);
+        }
+      })();
+
+      // ----- nuvens -----
+      (function(){
+        const nv = document.getElementById('nuvens');
+        const NUV = '<svg viewBox="-4 -4 248 108" width="100%">'
+          + '<path d="M20,80 C4,80 4,54 24,52 C24,32 58,28 66,46 C78,30 112,34 114,54 C140,48 150,74 130,80 Z"'
+          + ' fill="var(--cream)" stroke="var(--ink)" stroke-width="4" stroke-linejoin="round"/>'
+          + '<path d="M40,60 H108 M40,70 H96" stroke="var(--ink)" stroke-width="2" opacity=".45"/>'
+          + '</svg>';
+        for(let i=0;i<4;i++){
+          const c = document.createElement('div');
+          c.className = 'nuvem';
+          c.innerHTML = NUV;
+          c.style.top = (4+Math.random()*34).toFixed(1)+'%';
+          c.style.width = (150+Math.random()*150).toFixed(0)+'px';
+          c.style.opacity = (0.7+Math.random()*0.3).toFixed(2);
+          c.style.animationDuration = (36+Math.random()*30).toFixed(0)+'s';
+          c.style.animationDelay = (-Math.random()*40).toFixed(0)+'s';
+          nv.appendChild(c);
+        }
+      })();
+
+      // ----- mandacarus (cactos) -----
+      (function(){
+        const cx = document.getElementById('cactos');
+        const CAC = '<svg viewBox="-4 -4 128 208" width="100%">'
+          + '<path d="M60,204 L60,40" stroke="var(--ink)" stroke-width="20" fill="none" stroke-linecap="round"/>'
+          + '<path d="M60,120 L30,120 L30,72" stroke="var(--ink)" stroke-width="16" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
+          + '<path d="M60,104 L92,104 L92,56" stroke="var(--ink)" stroke-width="16" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
+          + '<g stroke="var(--cream)" stroke-width="2.4" opacity=".55">'
+          + '<line x1="60" y1="52" x2="60" y2="196"/>'
+          + '<line x1="30" y1="84" x2="30" y2="116"/>'
+          + '<line x1="92" y1="68" x2="92" y2="100"/></g>'
+          + '<g stroke="var(--ink)" stroke-width="2">'
+          + '<line x1="50" y1="70" x2="44" y2="66"/><line x1="70" y1="90" x2="76" y2="86"/>'
+          + '<line x1="50" y1="150" x2="44" y2="146"/><line x1="70" y1="170" x2="76" y2="166"/></g>'
+          + '<circle cx="60" cy="36" r="7" fill="var(--gold)" stroke="var(--ink)" stroke-width="2.4"/>'
+          + '<circle cx="30" cy="68" r="5" fill="var(--gold)" stroke="var(--ink)" stroke-width="2"/>'
+          + '</svg>';
+        for(let i=0;i<3;i++){
+          const c = document.createElement('div');
+          c.className = 'cacto';
+          c.innerHTML = CAC;
+          c.style.width = (60+Math.random()*46).toFixed(0)+'px';
+          c.style.animationDuration = (20+Math.random()*14).toFixed(0)+'s';
+          c.style.animationDelay = (-Math.random()*30).toFixed(0)+'s';
+          c.style.opacity = (0.85+Math.random()*0.15).toFixed(2);
+          cx.appendChild(c);
+        }
+      })();
+
+      // ----- moitas: tufos de agave espetados (chão de caatinga) -----
+      (function(){
+        const mo = document.getElementById('moitas');
+        // tufo espetado (agave/mato) de xilogravura — mais lâminas
+        const TUFO = '<svg viewBox="-4 -4 92 70" width="100%">'
+          + '<g fill="var(--ink)">'
+          + '<polygon points="42,62 38,6 48,62"/>'
+          + '<polygon points="42,62 22,14 34,62"/>'
+          + '<polygon points="42,62 62,14 50,62"/>'
+          + '<polygon points="42,62 6,32 26,62"/>'
+          + '<polygon points="42,62 78,32 58,62"/>'
+          + '<polygon points="42,62 0,50 20,62"/>'
+          + '<polygon points="42,62 84,50 64,62"/>'
+          + '</g>'
+          + '<g stroke="var(--cream)" stroke-width="1.4" opacity=".5">'
+          + '<line x1="42" y1="58" x2="41" y2="14"/><line x1="30" y1="56" x2="24" y2="24"/>'
+          + '<line x1="54" y1="56" x2="60" y2="24"/></g>'
+          + '</svg>';
+        for(let i=0;i<7;i++){
+          const m = document.createElement('div');
+          m.className = 'moita';
+          m.innerHTML = TUFO;
+          m.style.width = (32+Math.random()*46).toFixed(0)+'px';
+          m.style.bottom = (Math.random()*64).toFixed(0)+'px';   // profundidades variadas no chão
+          m.style.animationDuration = (17+Math.random()*17).toFixed(0)+'s';
+          m.style.animationDelay = (-Math.random()*34).toFixed(0)+'s';
+          m.style.opacity = (0.8+Math.random()*0.2).toFixed(2);
+          mo.appendChild(m);
+        }
+      })();
+
+      // ----- carnaúbas (palmeiras do Ceará) rolando ao fundo -----
+      (function(){
+        const cn = document.getElementById('carnaubas');
+        const CAR = '<svg viewBox="-20 -20 200 320" width="100%">'
+          // tronco alto com anéis
+          + '<path d="M80,300 L80,110" stroke="var(--ink)" stroke-width="12" fill="none" stroke-linecap="round"/>'
+          + '<g stroke="var(--cream)" stroke-width="2" opacity=".5">'
+          + '<line x1="74" y1="150" x2="86" y2="150"/><line x1="74" y1="180" x2="86" y2="180"/>'
+          + '<line x1="74" y1="210" x2="86" y2="210"/><line x1="74" y1="240" x2="86" y2="240"/>'
+          + '<line x1="74" y1="270" x2="86" y2="270"/></g>'
+          // coroa de folhas em leque
+          + '<g stroke="var(--ink)" stroke-width="7" fill="none" stroke-linecap="round">'
+          + '<path d="M80,112 C40,96 14,96 -10,110"/>'
+          + '<path d="M80,112 C44,80 18,64 0,44"/>'
+          + '<path d="M80,112 C64,72 54,44 52,14"/>'
+          + '<path d="M80,112 C96,72 106,44 108,14"/>'
+          + '<path d="M80,112 C116,80 142,64 160,44"/>'
+          + '<path d="M80,112 C120,96 146,96 170,110"/>'
+          + '<path d="M80,112 C58,90 40,84 22,84"/>'
+          + '<path d="M80,112 C102,90 120,84 138,84"/></g>'
+          // barbas das folhas
+          + '<g stroke="var(--ink)" stroke-width="2" opacity=".7">'
+          + '<path d="M52,60 l-8,4 M60,40 l-9,2 M80,40 l0,-6 M100,40 l9,2 M108,60 l8,4"/></g>'
+          // coquinhos dourados
+          + '<circle cx="80" cy="116" r="6" fill="var(--gold)" stroke="var(--ink)" stroke-width="2"/>'
+          + '</svg>';
+        for(let i=0;i<2;i++){
+          const c = document.createElement('div');
+          c.className = 'carnauba';
+          c.innerHTML = CAR;
+          c.style.width = (120+Math.random()*72).toFixed(0)+'px';
+          c.style.animationDuration = (26+Math.random()*16).toFixed(0)+'s';
+          c.style.animationDelay = (-Math.random()*38).toFixed(0)+'s';
+          c.style.opacity = (0.8+Math.random()*0.2).toFixed(2);
+          cn.appendChild(c);
+        }
+      })();
+
+      // ----- jandaias-verdadeiras voando no céu -----
+      (function(){
+        const pj = document.getElementById('passaros');
+        const AVE = '<svg viewBox="-4 -4 92 60" width="100%">'
+          // asas (batem) — grupo escalado no eixo Y
+          + '<g class="asas">'
+          + '<path d="M44,28 C34,6 20,6 8,14" fill="none" stroke="var(--ink)" stroke-width="5" stroke-linecap="round"/>'
+          + '<path d="M46,30 C36,52 22,52 10,44" fill="none" stroke="var(--ink)" stroke-width="5" stroke-linecap="round"/>'
+          + '</g>'
+          // corpo + cauda pontuda
+          + '<ellipse cx="50" cy="30" rx="15" ry="7.5" fill="var(--ink)"/>'
+          + '<polygon points="38,30 8,25 8,35" fill="var(--ink)"/>'
+          // cabeça e bico
+          + '<circle cx="66" cy="26" r="7" fill="var(--ink)"/>'
+          + '<path d="M60,20 Q66,14 72,20" fill="none" stroke="var(--gold)" stroke-width="3" stroke-linecap="round"/>'
+          + '<polygon points="72,25 80,27 72,29" fill="var(--gold)"/>'
+          + '<circle cx="68" cy="25" r="1.6" fill="var(--cream)"/>'
+          + '</svg>';
+        // no máximo 2 aves; cada uma com trajetória ALEATÓRIA (não em reta)
+        const sty = document.createElement('style');
+        let css = '';
+        function trajetoria(nome, leftbound){
+          const stops = [0,15,32,50,68,85,100];
+          let k = '@keyframes '+nome+'{';
+          stops.forEach(s=>{
+            const p = s/100;
+            const x = leftbound ? (124 - p*146) : (-20 + p*146);   // atravessa a tela
+            const y = (3 + Math.random()*42).toFixed(1);           // altura aleatória
+            k += s+'%{transform:translate('+x.toFixed(1)+'vw,'+y+'vh)}';
+          });
+          return k + '}';
+        }
+        const aves = [
+          { esq:false, w:60, dur:22, delay:0,   nome:'voo0' },
+          { esq:true,  w:46, dur:28, delay:-14, nome:'voo1' }
+        ];
+        aves.forEach(a=>{
+          css += trajetoria(a.nome, a.esq);
+          const b = document.createElement('div');
+          b.className = 'passaro' + (a.esq?' esq':'');
+          b.innerHTML = '<div class="flip"><div class="bob">'+AVE+'</div></div>';
+          b.querySelector('svg').style.width = a.w+'px';
+          b.style.opacity = '0.9';
+          b.style.animationName = a.nome;
+          b.style.animationDuration = a.dur+'s';
+          b.style.animationDelay = a.delay+'s';
+          const asas = b.querySelector('.asas');
+          if(asas) asas.style.animationDuration = (0.26+Math.random()*0.12).toFixed(2)+'s';
+          pj.appendChild(b);
+        });
+        sty.textContent = css;
+        document.head.appendChild(sty);
+      })();
+
+      // ----- ciclo do cordel: lados alternados escrevem e esmaecem -----
+      (function(){
+        const blocos = [document.getElementById('versos-esq'), document.getElementById('versos-dir')];
+        const gap = 3050, fadeHold = 2600;
+        function roda(v){
+          v.classList.remove('fade');
+          v.style.opacity = '1';
+          v.classList.add('run');
+          const n = v.children.length;
+          const total = 200 + n*gap;
+          return new Promise(res=>{
+            setTimeout(()=>{
+              v.classList.add('fade');
+              setTimeout(()=>{
+                v.classList.remove('run');
+                Array.from(v.children).forEach(el=>{ el.style.animation='none'; void el.offsetWidth; el.style.animation=''; });
+                res();
+              }, fadeHold);
+            }, total);
+          });
+        }
+        async function ciclo(){
+          let i = 0;
+          while(true){
+            await roda(blocos[i % blocos.length]);
+            i++;
+          }
+        }
+        ciclo();
+      })();
+    </script>
+    <script>
+      // quando usado como fundo (iframe #bg): esconde o selo/fita central p/ dar lugar ao recado
+      if(location.hash.indexOf('bg') > -1){
+        var cov = document.querySelector('.cover'); if(cov) cov.style.display = 'none';
+        var tp = document.querySelector('.tape'); if(tp) tp.style.display = 'none';
+        var vs = document.querySelectorAll('.versos'); vs.forEach(function(v){ v.style.display='none'; });
+      }
+    </script>
+  </body>
+</html>
