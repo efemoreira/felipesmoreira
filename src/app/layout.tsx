@@ -43,16 +43,24 @@ const bitter = Bitter({
 export const metadata: Metadata = {
   metadataBase: new URL("https://felipesmoreira.com"),
   title: {
-    default: "Felipe Moreira — Missão · O Futuro é Glorioso | Ceará",
+    default: "Felipe Moreira — Missão Ceará (MBL CE) | O Futuro é Glorioso",
     template: "%s | Felipe Moreira",
   },
   description:
-    "Felipe Moreira: de militante de internet no MBL a militante de rua. Depois de ver jovens presos pelo medo do crime organizado, abracei a missão de mudar isso. Conheça a história.",
+    "Felipe Moreira: Militante do MBL Ceará, afiliado à Missão Ceará. Conheça a história.",
   applicationName: "Felipe Moreira",
   keywords: [
     "Felipe Moreira",
     "Ceará",
-    "missão",
+    "Missão",
+    "Missão CE",
+    "Missão Ceará",
+    "MBL",
+    "MBL CE",
+    "MBL Ceará",
+    "Pré-candidato deputado federal",
+    "vice-governador do Ceará",
+    "deputado federal Ceará",
     "sertão",
     "heróis do Ceará",
     "cordel",
@@ -68,18 +76,18 @@ export const metadata: Metadata = {
     locale: "pt_BR",
     url: "https://felipesmoreira.com",
     siteName: "Felipe Moreira",
-    title: "Felipe Moreira — Missão · O Futuro é Glorioso",
+    title: "Felipe Moreira — Missão Ceará (MBL CE)",
     description:
-      "De militante de internet no MBL a militante de rua. A missão de devolver aos jovens a liberdade que o crime organizado roubou.",
+      "Militante do MBL Ceará, filiado à Missão Ceará.",
     // imagem OG (1200×630) gerada automaticamente por app/opengraph-image.tsx
   },
   twitter: {
     card: "summary_large_image",
     site: "@moreiramissao",
     creator: "@moreiramissao",
-    title: "Felipe Moreira — Missão · O Futuro é Glorioso",
+    title: "Felipe Moreira — Missão Ceará (MBL CE)",
     description:
-      "De militante de internet a militante de rua. A missão de devolver aos jovens a liberdade roubada pelo crime organizado.",
+      "Militante do MBL Ceará, filiado à Missão Ceará.",
   },
   robots: {
     index: true,
@@ -116,6 +124,7 @@ export default function RootLayout({
     "@context": "https://schema.org",
     "@type": "Person",
     name: "Felipe Moreira",
+    alternateName: ["Missão", "Missão Ceará", "Missão CE", "MBL Ceará", "MBL CE"],
     url: "https://felipesmoreira.com",
     image: {
       "@type": "ImageObject",
@@ -131,12 +140,22 @@ export default function RootLayout({
       "https://twitch.tv/moreiramissao",
       "https://kick.com/moreiramissao",
     ],
-    jobTitle: "Ativista Político",
+    jobTitle:
+      "Ativista Político · Avaliando pré-candidatura a Deputado Federal ou Vice-Governador do Ceará",
     description:
-      "De militante de internet no MBL a militante de rua. Ex-líder de jovens que abraçou a missão de devolver aos jovens a liberdade tomada pelo crime organizado.",
+      "De militante de internet no MBL Ceará a militante de rua. Ex-líder de jovens que abraçou a Missão Ceará para devolver aos jovens a liberdade tomada pelo crime organizado.",
     email: "contato@felipesmoreira.com",
     telephone: "+55 85 99722-3863",
     areaServed: "BR",
+    homeLocation: {
+      "@type": "AdministrativeArea",
+      name: "Ceará",
+    },
+    affiliation: {
+      "@type": "Organization",
+      name: "Movimento Brasil Livre",
+      alternateName: "MBL",
+    },
     contactPoint: {
       "@type": "ContactPoint",
       telephone: "+55 85 99722-3863",

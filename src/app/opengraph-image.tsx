@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-export const alt = "Felipe Moreira — Missão · O Futuro é Glorioso";
+export const alt = "Felipe Moreira — Missão Ceará · O Futuro é Glorioso";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 export const dynamic = "force-static";
@@ -43,7 +43,7 @@ export default function OpengraphImage() {
             fontWeight: 700,
           }}
         >
-          Missão · O Futuro é Glorioso
+          Missão Ceará · O Futuro é Glorioso
         </div>
         <div
           style={{

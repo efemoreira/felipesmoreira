@@ -21,8 +21,8 @@ const FONT_BITTER = "var(--font-bitter), serif";
 
 const profile = {
   name: "Felipe Moreira",
-  kicker: "Missão · O Futuro é Glorioso",
-  bio: "De militante de internet a militante de rua. Larguei o conforto de só reclamar pela tela pra abraçar a missão de devolver aos nossos jovens a liberdade que o crime organizado roubou.",
+  kicker: "Missão Ceará · O Futuro é Glorioso",
+  bio: "De militante de internet no MBL Ceará a militante de rua. Larguei o conforto de só reclamar pela tela pra abraçar a Missão Ceará de devolver aos nossos jovens a liberdade que o crime organizado roubou.",
   photo: "/image/me.png",
 };
 
@@ -260,8 +260,9 @@ const Home: React.FC = () => {
             }}
           >
             <p style={{ margin: 0 }}>
-              Sou <strong>Felipe Moreira</strong>. Durante muito tempo fui militante de internet
-              pelo <strong>MBL</strong>, ajudando no que acreditava que podia ajudar.
+              Sou <strong>Felipe Moreira</strong>. Durante muito tempo sou militante de internet
+              pelo <strong>MBL Ceará</strong> (Movimento Brasil Livre), ajudando no que acreditava
+              que podia ajudar.
             </p>
             <p style={{ margin: 0 }}>
               Foi servindo como <strong>líder de jovens na igreja</strong> que enxerguei de perto
@@ -271,24 +272,8 @@ const Home: React.FC = () => {
             </p>
             <p style={{ margin: 0 }}>
               Ali entendi que não bastava reclamar, nem agir só pela internet — era preciso fazer
-              algo mais. Por isso hoje estou junto da <strong>missão</strong>: para devolver a esses
-              jovens a liberdade de ir e vir e um futuro que valha a pena.
-            </p>
-            <p style={{ margin: 0, opacity: 0.9 }}>
-              Conheça também o cordel dos{" "}
-              <Link href="/herois-do-ceara" style={{ color: C.gold, textDecoration: "underline" }}>
-                Heróis do Ceará
-              </Link>{" "}
-              e acompanhe o trabalho em{" "}
-              <a
-                href="https://instagram.com/moreiramissao"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ color: C.gold, textDecoration: "underline" }}
-              >
-                @moreiramissao
-              </a>
-              .
+              algo mais. Por isso hoje estou junto da <strong>Missão Ceará</strong>: para devolver
+              a esses jovens a liberdade de ir e vir e um futuro que valha a pena.
             </p>
           </div>
         </section>
