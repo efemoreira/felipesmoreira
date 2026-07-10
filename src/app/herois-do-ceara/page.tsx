@@ -1,6 +1,7 @@
 "use client";
 import { useState, useMemo } from "react";
 import Link from "next/link";
+import { Icon } from "../icons";
 
 interface HeroFamily {
   parents: string;
@@ -473,7 +474,7 @@ export default function HeroisDoCeara() {
 
         <header className="mb-8">
           <Link href="/" className="text-sm text-gray-400 hover:text-white mb-4 inline-flex items-center gap-1">
-            <i className="ti ti-arrow-left" style={{fontSize:14}} />
+            <Icon name="arrowLeft" size={14} />
             Voltar
           </Link>
           <h1 style={{fontSize:26,fontWeight:600,margin:"0 0 4px",color:"var(--color-text-primary)"}}>
@@ -660,7 +661,7 @@ export default function HeroisDoCeara() {
                     e.currentTarget.style.color = "var(--color-text-secondary)";
                   }}
                 >
-                  <i className="ti ti-x" style={{fontSize:18}} />
+                  <Icon name="close" size={18} />
                 </button>
               </div>
 

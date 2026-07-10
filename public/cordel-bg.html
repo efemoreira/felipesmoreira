@@ -34,6 +34,10 @@ body{
   overflow:hidden;
   background:#000
 }
+/* respeita quem pede menos movimento: congela todas as animações */
+@media (prefers-reduced-motion: reduce){
+  *{ animation-play-state:paused !important; animation-duration:0s !important }
+}
 .stage{
   position:relative;
   width:100vw;
@@ -779,7 +783,7 @@ body{
       // ----- estrelas (céu denso e variado, estilo xilogravura) + pintas de onça -----
       (function(){
         const sf = document.getElementById('estrelas');
-        const glifos = ['✦','✶','✷','✸','✳','✺','✧','⋆','∗','·','+'];
+        const glifos = ['✦','✶','✷','✸','✳︎','✺','✧','⋆','∗','·','+'];
         for(let i=0;i<58;i++){
           const b = document.createElement('b');
           b.textContent = glifos[Math.floor(Math.random()*glifos.length)];

@@ -1,10 +1,12 @@
 import type { NextConfig } from "next";
 
+// NOTE: `output: "export"` gera site estático — o Next NÃO aplica headers()/redirects().
+// Os headers de segurança e cache são configurados no .htaccess (Apache), gerado no
+// workflow .github/workflows/publish.yml.
 const nextConfig: NextConfig = {
-  /* config options here */
   output: "export",
-  images: { 
-    unoptimized: true 
+  images: {
+    unoptimized: true,
   },
 };
 
