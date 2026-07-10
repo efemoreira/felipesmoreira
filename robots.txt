@@ -1,0 +1,7 @@
+User-Agent: *
+Allow: /
+Disallow: /_next/
+Disallow: /api/
+
+Host: https://felipesmoreira.com
+Sitemap: https://felipesmoreira.com/sitemap.xml
