@@ -1,7 +1,7 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { Icon } from "../icons";
+import { Icon, IconName } from "../icons";
 
 interface HeroFamily {
   parents: string;
@@ -403,33 +403,76 @@ const heroes: Hero[] = [
   },
 ];
 
-const PERIOD_META: Record<string, { accent: string; tagBg: string; tagText: string }> = {
-  "Colonial":        { accent:"#EF9F27", tagBg:"#FAC775", tagText:"#633806" },
-  "Imperial":        { accent:"#7F77DD", tagBg:"#CECBF6", tagText:"#3C3489" },
-  "República Velha": { accent:"#1D9E75", tagBg:"#9FE1CB", tagText:"#085041" },
-  "Século XX":       { accent:"#378ADD", tagBg:"#B5D4F4", tagText:"#0C447C" },
+/* ===== Paleta do cordel (mesma da home) ===== */
+const C = {
+  ink: "#181203",
+  cream: "#F6F5EF",
+  paper: "#F3ECDA",
+  gold: "#FFCB05",
+  goldDim: "#B8860B",
 };
 
-const CAT_ICON: Record<string, string> = {
-  "Militar":                "ti-sword",
-  "Literário":              "ti-book-2",
-  "Político/Revolucionário":"ti-flag-2",
-  "Religioso/Social":       "ti-church",
-  "Abolicionista":          "ti-heart-handshake",
-  "Musical":                "ti-music",
-  "Teatro/Cultural":        "ti-masks-theater",
-  "Científico/Histórico":   "ti-microscope",
-  "Indígena":               "ti-tree",
+const FONT_ALFA = "var(--font-alfa), serif";
+const FONT_ELITE = "var(--font-elite), monospace";
+const FONT_BITTER = "var(--font-bitter), serif";
+
+/* textura de folheto: hachuras leves de xilogravura sobre o papel */
+const HATCH =
+  "repeating-linear-gradient(88deg, rgba(24,18,3,.045) 0 2px, transparent 2px 15px)," +
+  "repeating-linear-gradient(-91deg, rgba(24,18,3,.03) 0 2px, transparent 2px 21px)";
+
+/* Épocas em tons terrosos de xilogravura (combinam com tinta/papel/dourado) */
+const PERIOD_META: Record<string, { accent: string }> = {
+  "Colonial":        { accent: "#8C5A17" },
+  "Imperial":        { accent: "#7A2E1D" },
+  "República Velha": { accent: "#3E5F3A" },
+  "Século XX":       { accent: "#22526B" },
 };
 
-const SECTIONS = [
-  { icon:"ti-users",           label:"Contemporâneos",                        key:"contemporaries"   as const },
-  { icon:"ti-world",           label:"Contexto histórico — o que acontecia",  key:"historicalContext" as const },
-  { icon:"ti-bolt",            label:"Ações e contribuições",                 key:"actions"           as const },
-  { icon:"ti-heart-handshake", label:"Pessoas que os ajudaram",               key:"helpers"           as const },
-  { icon:"ti-leaf",            label:"Consequências e frutos",                key:"consequences"      as const },
-  { icon:"ti-star",            label:"Por que ficou marcado",                 key:"legacy"            as const },
+const CAT_ICON: Record<string, IconName> = {
+  "Militar":                "sword",
+  "Literário":              "book",
+  "Político/Revolucionário":"flag",
+  "Religioso/Social":       "church",
+  "Abolicionista":          "heartHandshake",
+  "Musical":                "music",
+  "Teatro/Cultural":        "ticket",
+  "Científico/Histórico":   "microscope",
+  "Indígena":               "tree",
+};
+
+const SECTIONS: { icon: IconName; label: string; key: keyof Hero & ("contemporaries" | "historicalContext" | "actions" | "helpers" | "consequences" | "legacy") }[] = [
+  { icon: "users",          label: "Contemporâneos",                       key: "contemporaries" },
+  { icon: "world",          label: "Contexto histórico — o que acontecia", key: "historicalContext" },
+  { icon: "bolt",           label: "Ações e contribuições",                key: "actions" },
+  { icon: "heartHandshake", label: "Pessoas que os ajudaram",              key: "helpers" },
+  { icon: "leaf",           label: "Consequências e frutos",               key: "consequences" },
+  { icon: "star",           label: "Por que ficou marcado",                key: "legacy" },
 ];
+
+/* chip de época: carimbo com a cor do período */
+const periodChip = (accent: string): React.CSSProperties => ({
+  fontFamily: FONT_ELITE,
+  fontSize: 10,
+  letterSpacing: 1.5,
+  textTransform: "uppercase",
+  background: accent,
+  color: C.cream,
+  border: `2px solid ${C.ink}`,
+  padding: "2px 8px",
+  whiteSpace: "nowrap",
+});
+
+const fieldStyle: React.CSSProperties = {
+  background: C.cream,
+  border: `3px solid ${C.ink}`,
+  boxShadow: "3px 3px 0 rgba(24,18,3,.28)",
+  padding: "9px 12px",
+  fontSize: 14,
+  fontFamily: FONT_BITTER,
+  color: C.ink,
+  borderRadius: 0,
+};
 
 export default function HeroisDoCeara() {
   const [selected, setSelected] = useState<Hero | null>(null);
@@ -439,6 +482,21 @@ export default function HeroisDoCeara() {
 
   const periods    = ["todos","Colonial","Imperial","República Velha","Século XX"];
   const categories = ["todas","Militar","Literário","Político/Revolucionário","Religioso/Social","Abolicionista","Musical","Teatro/Cultural","Científico/Histórico","Indígena"];
+
+  /* ficha aberta: Esc fecha e o fundo não rola */
+  useEffect(() => {
+    if (!selected) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setSelected(null);
+    };
+    window.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [selected]);
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
@@ -453,82 +511,138 @@ export default function HeroisDoCeara() {
   const pm = (h: Hero) => PERIOD_META[h.period] || PERIOD_META["Colonial"];
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div
+      style={{
+        minHeight: "100dvh",
+        background: `${HATCH}, ${C.paper}`,
+        color: C.ink,
+        fontFamily: FONT_BITTER,
+      }}
+    >
       <style>{`
-        @keyframes slideInRight {
-          from { transform: translateX(100%); opacity: 0; }
-          to { transform: translateX(0); opacity: 1; }
-        }
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        .modal-overlay {
-          animation: fadeIn 0.3s ease-out;
-        }
-        .modal-drawer {
-          animation: slideInRight 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        @keyframes hFadeIn { from { opacity: 0 } to { opacity: 1 } }
+        @keyframes hSlideIn { from { transform: translateX(100%) } to { transform: translateX(0) } }
+        .h-overlay { animation: hFadeIn .25s ease-out }
+        .h-drawer { animation: hSlideIn .35s cubic-bezier(.22, 1.1, .35, 1) }
+        .h-card { transition: transform .12s ease, box-shadow .12s ease; cursor: pointer }
+        .h-card:hover { transform: translate(-2px,-2px); box-shadow: 6px 6px 0 rgba(24,18,3,.3) !important }
+        .h-card:active { transform: translate(1px,1px); box-shadow: 2px 2px 0 rgba(24,18,3,.3) !important }
+        .h-btn { transition: transform .12s ease, box-shadow .12s ease }
+        .h-btn:hover { transform: translate(-1px,-1px); box-shadow: 4px 4px 0 rgba(24,18,3,.3) !important }
+        .h-card:focus-visible, .h-btn:focus-visible { outline: 3px solid ${C.goldDim}; outline-offset: 3px }
+        .h-field:focus { outline: 3px solid ${C.gold}; outline-offset: 0 }
+        @media (prefers-reduced-motion: reduce) {
+          .h-overlay, .h-drawer { animation: none }
+          .h-card, .h-btn { transition: none }
         }
       `}</style>
-      <div className="max-w-5xl mx-auto px-6 py-8">
 
-        <header className="mb-8">
-          <Link href="/" className="text-sm text-gray-400 hover:text-white mb-4 inline-flex items-center gap-1">
-            <Icon name="arrowLeft" size={14} />
+      <div style={{ maxWidth: 1000, margin: "0 auto", padding: "40px 20px 56px" }}>
+
+        {/* ===== Cabeçalho do folheto ===== */}
+        <header style={{ marginBottom: 26 }}>
+          <Link
+            href="/"
+            className="h-btn"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              fontFamily: FONT_ELITE,
+              fontSize: 12,
+              letterSpacing: 2,
+              textTransform: "uppercase",
+              textDecoration: "none",
+              color: C.ink,
+              background: C.cream,
+              border: `3px solid ${C.ink}`,
+              boxShadow: "3px 3px 0 rgba(24,18,3,.28)",
+              padding: "6px 14px",
+              marginBottom: 22,
+            }}
+          >
+            <Icon name="arrowLeft" size={15} />
             Voltar
           </Link>
-          <h1 style={{fontSize:26,fontWeight:600,margin:"0 0 4px",color:"var(--color-text-primary)"}}>
-            Heróis Cearenses
+
+          <p
+            style={{
+              display: "inline-block",
+              fontFamily: FONT_ELITE,
+              letterSpacing: 4,
+              fontSize: 12,
+              textTransform: "uppercase",
+              color: C.ink,
+              background: C.gold,
+              padding: "4px 14px",
+              boxShadow: "3px 3px 0 rgba(24,18,3,.3)",
+              margin: "0 0 12px",
+            }}
+          >
+            Cordel · Missão Ceará
+          </p>
+
+          <h1
+            style={{
+              fontFamily: FONT_ALFA,
+              fontSize: "clamp(30px, 6vw, 44px)",
+              letterSpacing: 1,
+              lineHeight: 1.08,
+              color: C.ink,
+              textShadow: `3px 3px 0 ${C.gold}`,
+              margin: "0 0 10px",
+            }}
+          >
+            Heróis do Ceará
           </h1>
-          <p style={{fontSize:14,color:"var(--color-text-secondary)",margin:0}}>
-            {filtered.length} de {heroes.length} fichas · clique em qualquer card para abrir a ficha completa
+
+          <p style={{ fontSize: 15, lineHeight: 1.55, maxWidth: 620, margin: "0 0 14px" }}>
+            Cordel dos que fizeram nossa história: {heroes.length} fichas de quem lutou,
+            escreveu, cantou e abriu caminho — da fundação do Ceará à cultura que o mundo conhece.
+          </p>
+
+          <p
+            aria-live="polite"
+            style={{
+              fontFamily: FONT_ELITE,
+              fontSize: 12,
+              letterSpacing: 1.5,
+              opacity: 0.8,
+              margin: 0,
+            }}
+          >
+            ✦ {filtered.length} de {heroes.length} fichas · toque num card pra abrir a ficha completa ✦
           </p>
         </header>
 
-        {/* Filtros */}
-        <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:"1.5rem"}}>
+        {/* ===== Filtros ===== */}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 24 }}>
           <input
             type="text"
+            className="h-field"
             placeholder="Buscar herói ou apelido…"
+            aria-label="Buscar herói ou apelido"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            style={{
-              flex:"2 1 200px", minWidth:160,
-              background:"var(--color-background-secondary)",
-              border:"0.5px solid var(--color-border-tertiary)",
-              borderRadius:"var(--border-radius-md)",
-              padding:"8px 12px", fontSize:13,
-              color:"var(--color-text-primary)",
-              outline:"none",
-            }}
+            style={{ ...fieldStyle, flex: "2 1 220px", minWidth: 180 }}
           />
           <select
+            className="h-field"
+            aria-label="Filtrar por período"
             value={period}
             onChange={e => setPeriod(e.target.value)}
-            style={{
-              flex:"1 1 160px",
-              background:"var(--color-background-secondary)",
-              border:"0.5px solid var(--color-border-tertiary)",
-              borderRadius:"var(--border-radius-md)",
-              padding:"8px 12px", fontSize:13,
-              color:"var(--color-text-primary)",
-            }}
+            style={{ ...fieldStyle, flex: "1 1 170px", cursor: "pointer" }}
           >
             {periods.map(p => (
               <option key={p} value={p}>{p === "todos" ? "Todos os períodos" : p}</option>
             ))}
           </select>
           <select
+            className="h-field"
+            aria-label="Filtrar por categoria"
             value={category}
             onChange={e => setCategory(e.target.value)}
-            style={{
-              flex:"1 1 200px",
-              background:"var(--color-background-secondary)",
-              border:"0.5px solid var(--color-border-tertiary)",
-              borderRadius:"var(--border-radius-md)",
-              padding:"8px 12px", fontSize:13,
-              color:"var(--color-text-primary)",
-            }}
+            style={{ ...fieldStyle, flex: "1 1 210px", cursor: "pointer" }}
           >
             {categories.map(c => (
               <option key={c} value={c}>{c === "todas" ? "Todas as categorias" : c}</option>
@@ -537,190 +651,312 @@ export default function HeroisDoCeara() {
         </div>
 
         {filtered.length === 0 && (
-          <p style={{color:"var(--color-text-secondary)",fontSize:14,padding:"3rem 0",textAlign:"center"}}>
-            Nenhum herói encontrado com esses filtros.
+          <p
+            style={{
+              fontFamily: FONT_ELITE,
+              fontSize: 14,
+              letterSpacing: 1,
+              textAlign: "center",
+              padding: "3rem 0",
+              margin: 0,
+            }}
+          >
+            Nenhum herói encontrado com esses filtros — afrouxe a busca, que o sertão é grande.
           </p>
         )}
 
-        {/* Grid de cards */}
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:10,marginBottom:selected ? 16 : 0}}>
+        {/* ===== Grade de fichas ===== */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(215px, 1fr))",
+            gap: 14,
+          }}
+        >
           {filtered.map(h => {
             const m = pm(h);
             const active = selected?.id === h.id;
             return (
-              <div
+              <button
                 key={h.id}
+                type="button"
+                className="h-card"
                 onClick={() => setSelected(active ? null : h)}
+                aria-label={`Abrir ficha de ${h.name}`}
                 style={{
-                  background:"var(--color-background-primary)",
-                  border: active ? `2px solid ${m.accent}` : "0.5px solid var(--color-border-tertiary)",
-                  borderLeft:`4px solid ${m.accent}`,
-                  borderRadius:"var(--border-radius-lg)",
-                  padding:"12px 14px",
-                  cursor:"pointer",
-                  transition:"border-color 0.15s",
+                  textAlign: "left",
+                  fontFamily: "inherit",
+                  background: C.cream,
+                  border: `3px solid ${C.ink}`,
+                  boxShadow: active
+                    ? `5px 5px 0 ${m.accent}`
+                    : "4px 4px 0 rgba(24,18,3,.28)",
+                  padding: "12px 14px",
+                  color: C.ink,
                 }}
               >
-                <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6}}>
-                  <i className={`ti ${CAT_ICON[h.category] || "ti-star"}`}
-                    style={{fontSize:16,color:m.accent}} aria-hidden="true" />
-                  <span style={{
-                    fontSize:10,fontWeight:500,
-                    background:m.tagBg, color:m.tagText,
-                    padding:"2px 7px",borderRadius:"var(--border-radius-md)",
-                  }}>
-                    {h.period}
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                  <span
+                    aria-hidden="true"
+                    style={{
+                      width: 30,
+                      height: 30,
+                      flex: "0 0 auto",
+                      display: "grid",
+                      placeItems: "center",
+                      background: C.gold,
+                      border: `2px solid ${C.ink}`,
+                      color: C.ink,
+                    }}
+                  >
+                    <Icon name={CAT_ICON[h.category] || "star"} size={17} />
                   </span>
+                  <span style={periodChip(m.accent)}>{h.period}</span>
                 </div>
-                <p style={{fontSize:13,fontWeight:500,margin:"0 0 2px",color:"var(--color-text-primary)",lineHeight:1.35}}>
+                <p
+                  style={{
+                    fontFamily: FONT_ALFA,
+                    fontSize: 15,
+                    letterSpacing: 0.3,
+                    lineHeight: 1.3,
+                    margin: "0 0 4px",
+                  }}
+                >
                   {h.name}
                 </p>
-                <p style={{fontSize:11,color:"var(--color-text-secondary)",margin:"0 0 3px"}}>
+                <p
+                  style={{
+                    fontFamily: FONT_ELITE,
+                    fontSize: 11,
+                    letterSpacing: 0.5,
+                    opacity: 0.75,
+                    margin: "0 0 3px",
+                  }}
+                >
                   {h.birth} — {h.death}
                 </p>
-                <p style={{fontSize:11,color:"var(--color-text-tertiary)",margin:0}}>{h.category}</p>
-              </div>
+                <p style={{ fontSize: 12, opacity: 0.7, margin: 0 }}>{h.category}</p>
+              </button>
             );
           })}
         </div>
 
-        {/* Modal Drawer */}
+        {/* ===== Ficha completa (gaveta lateral) ===== */}
         {selected && (
           <>
-            {/* Overlay */}
             <div
+              className="h-overlay"
               onClick={() => setSelected(null)}
+              aria-hidden="true"
               style={{
-                position:"fixed",
-                top:0,
-                left:0,
-                right:0,
-                bottom:0,
-                background:"rgba(0,0,0,0.5)",
-                backdropFilter:"blur(2px)",
-                zIndex:998,
-                animation:"fadeIn 0.3s ease-out",
+                position: "fixed",
+                inset: 0,
+                background: "rgba(12,10,4,.55)",
+                backdropFilter: "blur(2px)",
+                zIndex: 998,
               }}
             />
 
-            {/* Drawer */}
             <div
+              className="h-drawer"
+              role="dialog"
+              aria-modal="true"
+              aria-label={`Ficha de ${selected.name}`}
               style={{
-                position:"fixed",
-                top:0,
-                right:0,
-                height:"100vh",
-                width:"min(100%, 500px)",
-                background:"var(--color-background-primary)",
-                borderLeft:`1px solid ${pm(selected).accent}44`,
-                overflowY:"auto",
-                zIndex:999,
-                padding:"24px",
-                animation:"slideInRight 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)",
+                position: "fixed",
+                top: 0,
+                right: 0,
+                height: "100dvh",
+                width: "min(100%, 520px)",
+                background: `${HATCH}, ${C.paper}`,
+                borderLeft: `4px solid ${C.ink}`,
+                boxShadow: "-6px 0 0 rgba(24,18,3,.3)",
+                overflowY: "auto",
+                zIndex: 999,
+                padding: "0 22px 26px",
               }}
             >
               {/* Cabeçalho da ficha */}
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20,position:"sticky",top:0,background:"var(--color-background-primary)",paddingBottom:12,borderBottom:"0.5px solid var(--color-border-tertiary)",zIndex:1000}}>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6,flexWrap:"wrap"}}>
-                    <span style={{
-                      fontSize:10,fontWeight:500,
-                      background:pm(selected).tagBg, color:pm(selected).tagText,
-                      padding:"3px 10px",borderRadius:"var(--border-radius-md)",
-                    }}>
-                      {selected.period}
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "flex-start",
+                  gap: 12,
+                  position: "sticky",
+                  top: 0,
+                  background: C.paper,
+                  padding: "20px 0 14px",
+                  borderBottom: `3px solid ${C.ink}`,
+                  marginBottom: 18,
+                  zIndex: 1,
+                }}
+              >
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
+                    <span style={periodChip(pm(selected).accent)}>{selected.period}</span>
+                    <span
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 5,
+                        fontSize: 12,
+                        opacity: 0.75,
+                      }}
+                    >
+                      <Icon name={CAT_ICON[selected.category] || "star"} size={14} />
+                      {selected.category}
                     </span>
-                    <span style={{fontSize:11,color:"var(--color-text-tertiary)"}}>{selected.category}</span>
                   </div>
-                  <h2 style={{fontSize:20,fontWeight:600,margin:"0 0 4px",color:"var(--color-text-primary)"}}>
+                  <h2
+                    style={{
+                      fontFamily: FONT_ALFA,
+                      fontSize: 22,
+                      letterSpacing: 0.4,
+                      lineHeight: 1.15,
+                      textShadow: `2px 2px 0 ${C.gold}`,
+                      margin: "0 0 6px",
+                    }}
+                  >
                     {selected.name}
                   </h2>
-                  <p style={{fontSize:12,color:"var(--color-text-secondary)",margin:0,fontStyle:"italic"}}>
-                    &quot;{selected.nickname}&quot;
+                  <p
+                    style={{
+                      fontFamily: FONT_ELITE,
+                      fontSize: 12,
+                      letterSpacing: 0.5,
+                      opacity: 0.85,
+                      margin: 0,
+                    }}
+                  >
+                    &ldquo;{selected.nickname}&rdquo;
                   </p>
                 </div>
                 <button
+                  type="button"
+                  className="h-btn"
                   onClick={() => setSelected(null)}
                   aria-label="Fechar ficha"
                   style={{
-                    flexShrink:0, marginLeft:12,
-                    background:"transparent",
-                    border:"0.5px solid var(--color-border-tertiary)",
-                    borderRadius:"var(--border-radius-md)",
-                    padding:"6px 10px",
-                    cursor:"pointer",
-                    color:"var(--color-text-secondary)",
-                    transition:"all 0.2s",
-                  }}
-                  onMouseEnter={e => {
-                    e.currentTarget.style.background = "var(--color-background-secondary)";
-                    e.currentTarget.style.color = "var(--color-text-primary)";
-                  }}
-                  onMouseLeave={e => {
-                    e.currentTarget.style.background = "transparent";
-                    e.currentTarget.style.color = "var(--color-text-secondary)";
+                    flexShrink: 0,
+                    width: 38,
+                    height: 38,
+                    display: "grid",
+                    placeItems: "center",
+                    background: C.gold,
+                    border: `3px solid ${C.ink}`,
+                    boxShadow: "3px 3px 0 rgba(24,18,3,.28)",
+                    color: C.ink,
+                    cursor: "pointer",
+                    padding: 0,
                   }}
                 >
                   <Icon name="close" size={18} />
                 </button>
               </div>
 
-              {/* Conteúdo */}
-              <div style={{paddingTop:8}}>
-                {/* Nascimento / Falecimento */}
-                <div style={{display:"grid",gridTemplateColumns:"1fr",gap:10,marginBottom:18}}>
-                  {[
-                    {label:"Nascimento", value:`${selected.birth} · ${selected.birthPlace}`},
-                    {label:"Falecimento", value:`${selected.death} · ${selected.deathPlace}`},
-                  ].map(item => (
-                    <div key={item.label} style={{
-                      background:"var(--color-background-secondary)",
-                      borderRadius:"var(--border-radius-md)",
-                      padding:"12px 14px",
-                      borderLeft:`3px solid ${pm(selected).accent}`,
-                    }}>
-                      <p style={{fontSize:10,color:"var(--color-text-tertiary)",margin:"0 0 4px",textTransform:"uppercase",letterSpacing:"0.04em",fontWeight:500}}>
-                        {item.label}
-                      </p>
-                      <p style={{fontSize:12,color:"var(--color-text-primary)",margin:0,fontWeight:500}}>{item.value}</p>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Família */}
-                <div style={{borderTop:"0.5px solid var(--color-border-tertiary)",paddingTop:16,marginBottom:16}}>
-                  <p style={{fontSize:11,fontWeight:600,color:"var(--color-text-primary)",
-                    margin:"0 0 12px",textTransform:"uppercase",letterSpacing:"0.05em"}}>Família</p>
-                  <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                    {[
-                      {k:"Pais",    v:selected.family.parents},
-                      {k:"Cônjuge", v:selected.family.spouse},
-                      {k:"Filhos",  v:selected.family.children},
-                    ].map(row => (
-                      <div key={row.k} style={{display:"flex",gap:10,fontSize:12}}>
-                        <span style={{color:"var(--color-text-tertiary)",minWidth:70,flexShrink:0,fontWeight:500}}>{row.k}:</span>
-                        <span style={{color:"var(--color-text-primary)",lineHeight:1.5}}>{row.v}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Seções */}
-                {SECTIONS.map((sec,idx) => (
-                  <div key={sec.key} style={{borderTop:"0.5px solid var(--color-border-tertiary)",paddingTop:16,marginBottom:idx === SECTIONS.length - 1 ? 0 : 16}}>
-                    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-                      <div style={{width:32,height:32,display:"flex",alignItems:"center",justifyContent:"center",background:`${pm(selected).accent}15`,borderRadius:"var(--border-radius-md)"}}>
-                        <i className={`ti ${sec.icon}`} style={{fontSize:14,color:pm(selected).accent}} aria-hidden="true" />
-                      </div>
-                      <p style={{fontSize:10,fontWeight:600,color:"var(--color-text-primary)",
-                        margin:0,textTransform:"uppercase",letterSpacing:"0.05em"}}>{sec.label}</p>
-                    </div>
-                    <p style={{fontSize:12,color:"var(--color-text-secondary)",margin:"0 0 0 40px",lineHeight:1.8}}>
-                      {selected[sec.key]}
+              {/* Nascimento / Falecimento */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 10, marginBottom: 18 }}>
+                {[
+                  { label: "Nascimento",  value: `${selected.birth} · ${selected.birthPlace}` },
+                  { label: "Falecimento", value: `${selected.death} · ${selected.deathPlace}` },
+                ].map(item => (
+                  <div
+                    key={item.label}
+                    style={{
+                      background: C.cream,
+                      border: `2px solid ${C.ink}`,
+                      borderLeft: `6px solid ${pm(selected).accent}`,
+                      padding: "10px 14px",
+                    }}
+                  >
+                    <p
+                      style={{
+                        fontFamily: FONT_ELITE,
+                        fontSize: 10,
+                        letterSpacing: 2,
+                        textTransform: "uppercase",
+                        opacity: 0.7,
+                        margin: "0 0 4px",
+                      }}
+                    >
+                      {item.label}
                     </p>
+                    <p style={{ fontSize: 13, fontWeight: 600, margin: 0 }}>{item.value}</p>
                   </div>
                 ))}
               </div>
+
+              {/* Família */}
+              <div style={{ borderTop: "2px dashed rgba(24,18,3,.35)", paddingTop: 16, marginBottom: 16 }}>
+                <p
+                  style={{
+                    fontFamily: FONT_ELITE,
+                    fontSize: 11,
+                    letterSpacing: 2,
+                    textTransform: "uppercase",
+                    margin: "0 0 12px",
+                  }}
+                >
+                  ✦ Família
+                </p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {[
+                    { k: "Pais",    v: selected.family.parents },
+                    { k: "Cônjuge", v: selected.family.spouse },
+                    { k: "Filhos",  v: selected.family.children },
+                  ].map(row => (
+                    <div key={row.k} style={{ display: "flex", gap: 10, fontSize: 13 }}>
+                      <span style={{ minWidth: 70, flexShrink: 0, fontWeight: 700 }}>{row.k}:</span>
+                      <span style={{ lineHeight: 1.55 }}>{row.v}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Seções da ficha */}
+              {SECTIONS.map((sec, idx) => (
+                <div
+                  key={sec.key}
+                  style={{
+                    borderTop: "2px dashed rgba(24,18,3,.35)",
+                    paddingTop: 16,
+                    marginBottom: idx === SECTIONS.length - 1 ? 0 : 16,
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                    <span
+                      aria-hidden="true"
+                      style={{
+                        width: 30,
+                        height: 30,
+                        flex: "0 0 auto",
+                        display: "grid",
+                        placeItems: "center",
+                        background: C.gold,
+                        border: `2px solid ${C.ink}`,
+                        color: C.ink,
+                      }}
+                    >
+                      <Icon name={sec.icon} size={16} />
+                    </span>
+                    <p
+                      style={{
+                        fontFamily: FONT_ELITE,
+                        fontSize: 11,
+                        letterSpacing: 1.5,
+                        textTransform: "uppercase",
+                        margin: 0,
+                      }}
+                    >
+                      {sec.label}
+                    </p>
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, margin: "0 0 0 40px" }}>
+                    {selected[sec.key]}
+                  </p>
+                </div>
+              ))}
             </div>
           </>
         )}

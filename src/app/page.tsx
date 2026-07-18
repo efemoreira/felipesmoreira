@@ -292,6 +292,7 @@ const Home: React.FC = () => {
                 rel="noopener noreferrer me"
                 aria-label={`${s.platform} — ${s.handle}`}
                 title={`Siga Felipe Moreira no ${s.platform} (${s.handle})`}
+                className="cordel-social"
                 style={socialIcon}
               >
                 <Icon name={s.icon} size={22} />
@@ -314,12 +315,23 @@ const Home: React.FC = () => {
         </footer>
       </main>
 
-      {/* hover/press dos cartões + respeito a reduced-motion */}
+      {/* hover/press dos cartões, foco de teclado, entrada suave + respeito a reduced-motion */}
       <style>{`
         .cordel-card:hover { transform: translate(-2px,-2px); box-shadow: 7px 7px 0 rgba(24,18,3,.4) !important; }
         .cordel-card:active { transform: translate(2px,2px); box-shadow: 2px 2px 0 rgba(24,18,3,.35) !important; }
+        .cordel-social { transition: transform .12s ease, box-shadow .12s ease; }
+        .cordel-social:hover { transform: translate(-2px,-2px); box-shadow: 5px 5px 0 rgba(24,18,3,.4); }
+        .cordel-social:active { transform: translate(1px,1px); box-shadow: 2px 2px 0 rgba(24,18,3,.35); }
+        .cordel-card:focus-visible, .cordel-social:focus-visible { outline: 3px solid #FFCB05; outline-offset: 3px; }
+        @keyframes cordelIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+        main > * { animation: cordelIn .5s ease-out backwards; }
+        main > *:nth-child(1) { animation-delay: .05s; }
+        main > *:nth-child(2) { animation-delay: .18s; }
+        main > *:nth-child(3) { animation-delay: .3s; }
+        main > *:nth-child(4) { animation-delay: .42s; }
         @media (prefers-reduced-motion: reduce) {
-          .cordel-card { transition: none !important; }
+          .cordel-card, .cordel-social { transition: none !important; }
+          main > * { animation: none !important; }
         }
       `}</style>
     </div>
