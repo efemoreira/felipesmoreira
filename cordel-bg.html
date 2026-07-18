@@ -4,9 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MISSÃO · O Futuro é Glorioso — Camada de Fundo (16:9)</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Special+Elite&family=Caveat:wght@500;700&family=Bitter:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <script>
+      // fontes só no modo standalone: como fundo (#bg) todo texto que as usa fica oculto
+      if (location.hash.indexOf('bg') === -1) {
+        [
+          ['preconnect', 'https://fonts.googleapis.com', false],
+          ['preconnect', 'https://fonts.gstatic.com', true],
+          ['stylesheet', 'https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Special+Elite&family=Caveat:wght@500;700&family=Bitter:ital,wght@0,400;0,600;0,700;1,400&display=swap', false]
+        ].forEach(function (l) {
+          var el = document.createElement('link');
+          el.rel = l[0];
+          el.href = l[1];
+          if (l[2]) el.crossOrigin = 'anonymous';
+          document.head.appendChild(el);
+        });
+      }
+    </script>
     <style>
     :root{
   --void:#0C0C0E;
