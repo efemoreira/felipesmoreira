@@ -24,6 +24,8 @@ jobs:
           cat > out/.htaccess <<'HTACCESS'
           RewriteEngine On
           RewriteBase /
+          # Página 404 customizada
+          ErrorDocument 404 /404.html
           # Se o arquivo ou diretório existe, serve normalmente
           RewriteCond %{REQUEST_FILENAME} -f [OR]
           RewriteCond %{REQUEST_FILENAME} -d
