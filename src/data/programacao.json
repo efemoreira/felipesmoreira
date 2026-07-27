@@ -1,0 +1,93 @@
+{
+  "titulo": "Agenda da Semana",
+  "periodo": "27/07 a 02/08",
+  "chamada": "A semana inteira de conteúdo da Missão Ceará — horário de Brasília.",
+  "disponivelEm": [
+    { "nome": "YouTube", "icone": "youtube", "url": "https://youtube.com/@moreiramissao" },
+    { "nome": "Instagram", "icone": "instagram", "url": "https://instagram.com/moreiramissao" },
+    { "nome": "Twitch", "icone": "twitch", "url": "https://twitch.tv/moreiramissao" },
+    { "nome": "Kick", "icone": "kick", "url": "https://kick.com/moreiramissao" },
+    { "nome": "TikTok", "icone": "tiktok", "url": "https://tiktok.com/@moreiramissao" }
+  ],
+  "programacao": [
+    {
+      "id": "segunda-live",
+      "titulo": "Missão na Rua",
+      "subtitulo": "Bastidores da militância no bairro",
+      "dia": "Segunda",
+      "data": "27/07",
+      "hora": "19H",
+      "aoVivo": true,
+      "cor": "ouro",
+      "plataforma": "youtube",
+      "imagem": "",
+      "link": "https://youtube.com/@moreiramissao"
+    },
+    {
+      "id": "terca-debate",
+      "titulo": "O Crime Organizado no Ceará",
+      "subtitulo": "O que a facção tirou dos nossos jovens?",
+      "dia": "Terça",
+      "data": "28/07",
+      "hora": "20H",
+      "aoVivo": true,
+      "cor": "milho",
+      "plataforma": "twitch",
+      "imagem": "",
+      "link": "https://twitch.tv/moreiramissao"
+    },
+    {
+      "id": "quarta-convidado",
+      "titulo": "Papo com a Liderança",
+      "subtitulo": "Convidado da semana no estúdio",
+      "dia": "Quarta",
+      "data": "29/07",
+      "hora": "19H",
+      "aoVivo": true,
+      "cor": "ouro",
+      "plataforma": "youtube",
+      "imagem": "",
+      "link": "https://youtube.com/@moreiramissao"
+    },
+    {
+      "id": "quinta-herois",
+      "titulo": "Heróis do Ceará",
+      "subtitulo": "Cordel dos que fizeram nossa história",
+      "dia": "Quinta",
+      "data": "30/07",
+      "hora": "19H",
+      "aoVivo": true,
+      "cor": "ouro",
+      "plataforma": "instagram",
+      "imagem": "",
+      "link": "/herois-do-ceara",
+      "interno": true
+    },
+    {
+      "id": "sexta-plano",
+      "titulo": "Reunião da Militância",
+      "subtitulo": "Alinhamento do plano até outubro",
+      "dia": "Sexta",
+      "data": "31/07",
+      "hora": "18H",
+      "aoVivo": true,
+      "cor": "azul",
+      "plataforma": "kick",
+      "imagem": "",
+      "link": "https://kick.com/moreiramissao"
+    },
+    {
+      "id": "sabado-corte",
+      "titulo": "Cortes da Semana",
+      "subtitulo": "Os melhores momentos, direto no seu feed",
+      "dia": "Sábado",
+      "data": "01/08",
+      "hora": "PÓS-LIVE",
+      "aoVivo": false,
+      "cor": "escuro",
+      "plataforma": "tiktok",
+      "imagem": "",
+      "link": "https://tiktok.com/@moreiramissao"
+    }
+  ]
+}

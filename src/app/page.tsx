@@ -38,6 +38,16 @@ type LinkCard = {
 
 const links: LinkCard[] = [
   {
+    icon: "calendar",
+    title: "Programação da Semana",
+    subtitle: "Onde e quando me assistir",
+    description:
+      "Agenda da semana: lives, conversas e conteúdos com dia, horário e plataforma",
+    href: "/programacao",
+    internal: true,
+    accent: true,
+  },
+  {
     icon: "mountain",
     title: "Heróis do Ceará",
     subtitle: "Cordel dos que fizeram nossa história",
