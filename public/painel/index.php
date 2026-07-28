@@ -17,12 +17,16 @@ const ARQ_AGENDA    = PASTA_DADOS . '/agenda.json';
 const ARQ_CONFIG    = PASTA_DADOS . '/config.php';
 const ARQ_TENTATIVAS = PASTA_DADOS . '/tentativas.json';
 const PASTA_BACKUP  = PASTA_DADOS . '/backups';
+const PASTA_IMAGENS = PASTA_DADOS . '/imagens';
+const URL_IMAGENS   = '/dados/imagens';                   // como a página enxerga a pasta
 const ARQ_SEMENTE   = __DIR__ . '/../dados-semente.json'; // cópia do build, só p/ preencher na 1ª vez
 
 const MAX_TENTATIVAS = 5;
 const BLOQUEIO_SEG   = 900;   // 15 min
 const SESSAO_SEG     = 7200;  // 2 h
 const MAX_BACKUPS    = 12;
+const MAX_UPLOAD     = 8388608; // 8 MB — foto de celular passa folgado
+const LARGURA_MAX    = 1000;    // a miniatura aparece com ~240px; 1000 cobre telas retina
 
 const CORES = ['ouro' => 'Ouro', 'milho' => 'Milho', 'azul' => 'Azul', 'escuro' => 'Escuro', 'papel' => 'Papel'];
 const PLATAFORMAS = [
@@ -77,6 +81,14 @@ function preparar_pastas(): void
     }
     if (!is_dir(PASTA_BACKUP)) {
         @mkdir(PASTA_BACKUP, 0755, true);
+    }
+    if (!is_dir(PASTA_IMAGENS)) {
+        @mkdir(PASTA_IMAGENS, 0755, true);
+    }
+    // nada de PHP rodando dentro da pasta de imagens, mesmo se algo escapar da validação
+    $trava = PASTA_IMAGENS . '/.htaccess';
+    if (!file_exists($trava)) {
+        @file_put_contents($trava, "Options -Indexes\nAddType text/plain .php .php5 .phtml .phar .cgi .pl\n<IfModule mod_php.c>\n  php_flag engine off\n</IfModule>\n");
     }
     // backups e config não podem ser baixados pela web; agenda.json sim (a página lê)
     $regra = PASTA_BACKUP . '/.htaccess';
@@ -222,6 +234,134 @@ function limpar_link($v): string
     return 'https://' . ltrim($s, '/'); // digitou "youtube.com/..." sem o https
 }
 
+/* ---- imagens enviadas pelo painel ---- */
+
+/** Apaga um arquivo só se ele for mesmo da nossa pasta de imagens. */
+function apagar_imagem(string $caminhoPublico): void
+{
+    if (strpos($caminhoPublico, URL_IMAGENS . '/') !== 0) {
+        return; // link externo ou caminho do repositório: não é nosso para apagar
+    }
+    $arquivo = PASTA_IMAGENS . '/' . basename($caminhoPublico);
+    if (is_file($arquivo)) {
+        @unlink($arquivo);
+    }
+}
+
+/** Com name="imagem[N]", o PHP entrega $_FILES['imagem']['name'][N]; aqui vira um array normal. */
+function arquivo_enviado($indice): ?array
+{
+    $f = $_FILES['imagem'] ?? null;
+    if (!is_array($f) || !isset($f['error'][$indice]) || is_array($f['error'][$indice])) {
+        return null;
+    }
+    return [
+        'tmp_name' => (string) ($f['tmp_name'][$indice] ?? ''),
+        'error'    => (int) $f['error'][$indice],
+        'size'     => (int) ($f['size'][$indice] ?? 0),
+    ];
+}
+
+/**
+ * Valida, corrige a rotação (foto de celular) e grava redimensionada.
+ * Devolve ['ok' => bool, 'caminho' => string, 'erro' => string].
+ */
+function guardar_upload(array $arquivo): array
+{
+    $erro = (int) ($arquivo['error'] ?? UPLOAD_ERR_NO_FILE);
+    if ($erro === UPLOAD_ERR_NO_FILE) {
+        return ['ok' => false, 'caminho' => '', 'erro' => ''];
+    }
+    if ($erro === UPLOAD_ERR_INI_SIZE || $erro === UPLOAD_ERR_FORM_SIZE) {
+        return ['ok' => false, 'caminho' => '', 'erro' => 'imagem maior que o limite do servidor'];
+    }
+    if ($erro !== UPLOAD_ERR_OK || !is_uploaded_file($arquivo['tmp_name'] ?? '')) {
+        return ['ok' => false, 'caminho' => '', 'erro' => 'falha no envio da imagem'];
+    }
+    if (((int) ($arquivo['size'] ?? 0)) > MAX_UPLOAD) {
+        return ['ok' => false, 'caminho' => '', 'erro' => 'imagem acima de 8 MB'];
+    }
+
+    // o que manda é o conteúdo do arquivo, não a extensão nem o content-type do navegador
+    $info = @getimagesize($arquivo['tmp_name']);
+    $tipos = [IMAGETYPE_JPEG, IMAGETYPE_PNG, IMAGETYPE_WEBP, IMAGETYPE_GIF];
+    if (!$info || !in_array($info[2], $tipos, true)) {
+        return ['ok' => false, 'caminho' => '', 'erro' => 'formato não aceito (use JPG, PNG ou WEBP)'];
+    }
+
+    preparar_pastas();
+    $nome = date('Ymd-His') . '-' . bin2hex(random_bytes(3)) . '.jpg';
+    $destino = PASTA_IMAGENS . '/' . $nome;
+
+    if (!function_exists('imagecreatetruecolor')) {
+        // sem GD: guarda como veio (já validada), mas com a extensão certa
+        $ext = [IMAGETYPE_PNG => '.png', IMAGETYPE_WEBP => '.webp', IMAGETYPE_GIF => '.gif'][$info[2]] ?? '.jpg';
+        $nome = substr($nome, 0, -4) . $ext;
+        $destino = PASTA_IMAGENS . '/' . $nome;
+        return @move_uploaded_file($arquivo['tmp_name'], $destino)
+            ? ['ok' => true, 'caminho' => URL_IMAGENS . '/' . $nome, 'erro' => '']
+            : ['ok' => false, 'caminho' => '', 'erro' => 'não consegui gravar a imagem'];
+    }
+
+    $origem = criar_imagem($arquivo['tmp_name'], $info[2]);
+    if (!$origem) {
+        return ['ok' => false, 'caminho' => '', 'erro' => 'não consegui ler a imagem'];
+    }
+    $origem = corrigir_rotacao($origem, $arquivo['tmp_name'], $info[2]);
+
+    $lo = imagesx($origem);
+    $al = imagesy($origem);
+    $escala = $lo > LARGURA_MAX ? LARGURA_MAX / $lo : 1.0;
+    $nl = max(1, (int) round($lo * $escala));
+    $na = max(1, (int) round($al * $escala));
+
+    $saida = imagecreatetruecolor($nl, $na);
+    // fundo escuro no lugar da transparência (o cartão é escuro)
+    imagefill($saida, 0, 0, imagecolorallocate($saida, 0x14, 0x11, 0x0C));
+    imagecopyresampled($saida, $origem, 0, 0, 0, 0, $nl, $na, $lo, $al);
+
+    $gravou = imagejpeg($saida, $destino, 82);
+    imagedestroy($saida);
+    imagedestroy($origem);
+
+    if (!$gravou) {
+        return ['ok' => false, 'caminho' => '', 'erro' => 'não consegui gravar a imagem'];
+    }
+    @chmod($destino, 0644);
+    return ['ok' => true, 'caminho' => URL_IMAGENS . '/' . $nome, 'erro' => ''];
+}
+
+function criar_imagem(string $arquivo, int $tipo)
+{
+    switch ($tipo) {
+        case IMAGETYPE_JPEG: return @imagecreatefromjpeg($arquivo);
+        case IMAGETYPE_PNG:  return @imagecreatefrompng($arquivo);
+        case IMAGETYPE_GIF:  return @imagecreatefromgif($arquivo);
+        case IMAGETYPE_WEBP: return function_exists('imagecreatefromwebp') ? @imagecreatefromwebp($arquivo) : false;
+    }
+    return false;
+}
+
+/** Foto tirada de lado no celular chega deitada; o EXIF diz como endireitar. */
+function corrigir_rotacao($imagem, string $arquivo, int $tipo)
+{
+    if ($tipo !== IMAGETYPE_JPEG || !function_exists('exif_read_data')) {
+        return $imagem;
+    }
+    $exif = @exif_read_data($arquivo);
+    $orientacao = (int) ($exif['Orientation'] ?? 0);
+    $graus = [3 => 180, 6 => -90, 8 => 90][$orientacao] ?? 0;
+    if ($graus === 0) {
+        return $imagem;
+    }
+    $girada = @imagerotate($imagem, $graus, 0);
+    if ($girada) {
+        imagedestroy($imagem);
+        return $girada;
+    }
+    return $imagem;
+}
+
 function slug(string $s, int $i): string
 {
     $t = iconv('UTF-8', 'ASCII//TRANSLIT', $s) ?: $s;
@@ -230,10 +370,11 @@ function slug(string $s, int $i): string
     return $t !== '' ? $t : 'item-' . $i;
 }
 
-function montar_agenda_do_post(array $post): array
+function montar_agenda_do_post(array $post, array &$recados): array
 {
     $itens = [];
     $linhas = is_array($post['item'] ?? null) ? $post['item'] : [];
+    $chaves = array_keys($linhas); // os índices do formulário, para casar com $_FILES
 
     foreach (array_values($linhas) as $i => $linha) {
         if (!is_array($linha)) {
@@ -247,6 +388,24 @@ function montar_agenda_do_post(array $post): array
         $plataforma = (string) ($linha['plataforma'] ?? '');
         $link = limpar_link($linha['link'] ?? '');
 
+        /* imagem: upload novo > pedido de remoção > o que já estava lá */
+        $imagem = limpar_texto($linha['imagem'] ?? '', 300);
+        $enviado = arquivo_enviado($chaves[$i]);
+
+        if ($enviado !== null) {
+            $r = guardar_upload($enviado);
+            if ($r['ok']) {
+                apagar_imagem($imagem); // a que estava no lugar não serve mais
+                $imagem = $r['caminho'];
+            } elseif ($r['erro'] !== '') {
+                $recados[] = 'Item “' . $titulo . '”: ' . $r['erro'] . '.';
+            }
+        }
+        if (!empty($linha['remover_imagem'])) {
+            apagar_imagem($imagem);
+            $imagem = '';
+        }
+
         $itens[] = [
             'id'         => limpar_texto($linha['id'] ?? '', 60) ?: slug($titulo, $i),
             'titulo'     => $titulo,
@@ -258,7 +417,7 @@ function montar_agenda_do_post(array $post): array
             // isset() não funciona sobre constante — array_key_exists resolve
             'cor'        => array_key_exists($cor, CORES) ? $cor : 'ouro',
             'plataforma' => array_key_exists($plataforma, PLATAFORMAS) ? $plataforma : '',
-            'imagem'     => limpar_texto($linha['imagem'] ?? '', 300),
+            'imagem'     => $imagem,
             'link'       => $link,
             'interno'    => $link !== '' && $link[0] === '/', // link do próprio site
         ];
@@ -296,7 +455,35 @@ function publicar(array $agenda): bool
         }
     }
     $json = json_encode($agenda, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-    return $json !== false && gravar_atomico(ARQ_AGENDA, $json);
+    if ($json === false || !gravar_atomico(ARQ_AGENDA, $json)) {
+        return false;
+    }
+    varrer_imagens_orfas($agenda);
+    return true;
+}
+
+/**
+ * Apaga imagens que nenhum item usa mais — sobra de item removido, por exemplo.
+ * Só mexe em arquivo com mais de 7 dias, para não atropelar um upload recente
+ * nem uma imagem que ainda apareça em algum backup próximo.
+ */
+function varrer_imagens_orfas(array $agenda): void
+{
+    if (!is_dir(PASTA_IMAGENS)) {
+        return;
+    }
+    $usadas = [];
+    foreach (($agenda['programacao'] ?? []) as $item) {
+        if (!empty($item['imagem'])) {
+            $usadas[basename((string) $item['imagem'])] = true;
+        }
+    }
+    $limite = time() - 7 * 86400;
+    foreach ((glob(PASTA_IMAGENS . '/*.{jpg,jpeg,png,webp,gif}', GLOB_BRACE) ?: []) as $arquivo) {
+        if (!isset($usadas[basename($arquivo)]) && @filemtime($arquivo) < $limite) {
+            @unlink($arquivo);
+        }
+    }
 }
 
 /* ===================== fluxo ===================== */
@@ -342,13 +529,20 @@ if ($acao === 'definir_senha' && $config === null) {
         $_SESSION = [];
         session_destroy();
     } else {
-        $nova = montar_agenda_do_post($_POST);
+        $recados = [];
+        $nova = montar_agenda_do_post($_POST, $recados);
         if (publicar($nova)) {
             $sucesso = count($nova['programacao']) . ' item(ns) publicado(s). A página já está mostrando a nova agenda.';
+            if ($recados) {
+                $aviso = implode(' ', $recados) . ' O resto foi salvo normalmente.';
+            }
         } else {
             $aviso = 'Não consegui gravar dados/agenda.json. Confira as permissões da pasta no hPanel.';
         }
     }
+} elseif ($acao === '' && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && !$_POST) {
+    // POST vazio com corpo grande = passou do post_max_size do PHP (upload pesado demais)
+    $aviso = 'O envio passou do limite do servidor. Reduza a imagem (ou envie uma de cada vez) e tente de novo.';
 }
 
 $logado = autenticado();
@@ -408,6 +602,23 @@ $canaisAtivos = array_column($agenda['disponivelEm'] ?? CANAIS_PADRAO, 'icone');
   .canais { display:flex; flex-wrap:wrap; gap:14px; }
   a { color:var(--ouro); }
   .dica { font-size:12px; color:#9d968a; margin:6px 0 0; }
+  .imagem { display:flex; gap:12px; align-items:flex-start; }
+  .imagem-acoes { flex:1; min-width:0; }
+  .imagem-acoes input[type=file] { width:100%; font-size:13px; color:#c9c2b2; margin:0 0 8px; }
+  .imagem-acoes input[type=file]::file-selector-button {
+    font:inherit; font-size:12px; text-transform:uppercase; letter-spacing:1px; cursor:pointer;
+    background:var(--ouro); color:var(--ink); border:0; padding:8px 12px; margin-right:10px;
+  }
+  .miniatura {
+    flex:0 0 auto; width:132px; aspect-ratio:16/9; overflow:hidden;
+    border:2px solid rgba(255,203,5,.35); background:#0e0c08;
+  }
+  .miniatura img { width:100%; height:100%; object-fit:cover; display:block; }
+  .miniatura.vazia {
+    display:grid; place-items:center; text-align:center; line-height:1.2;
+    font-size:10px; letter-spacing:1.5px; text-transform:uppercase; color:#6f695d;
+    background:repeating-linear-gradient(135deg,rgba(255,203,5,.10) 0 6px,transparent 6px 12px),#0e0c08;
+  }
 </style>
 </head>
 <body>
@@ -464,8 +675,9 @@ $canaisAtivos = array_column($agenda['disponivelEm'] ?? CANAIS_PADRAO, 'icone');
     <?php if ($aviso): ?><p class="msg msg-erro"><?= h($aviso) ?></p><?php endif; ?>
     <?php if ($sucesso): ?><p class="msg msg-ok"><?= h($sucesso) ?></p><?php endif; ?>
 
-    <form method="post" id="form">
+    <form method="post" id="form" enctype="multipart/form-data">
       <input type="hidden" name="acao" value="salvar">
+      <input type="hidden" name="MAX_FILE_SIZE" value="<?= MAX_UPLOAD ?>">
       <input type="hidden" name="csrf" value="<?= h(token()) ?>">
 
       <fieldset>
@@ -565,17 +777,36 @@ $canaisAtivos = array_column($agenda['disponivelEm'] ?? CANAIS_PADRAO, 'icone');
                 <input type="text" name="item[<?= $n ?>][link]" value="<?= h($it['link'] ?? '') ?>" maxlength="300" placeholder="https://youtube.com/@moreiramissao">
               </div>
             </div>
-            <div class="linha g2">
+            <div class="campo">
+              <label class="check">
+                <input type="checkbox" name="item[<?= $n ?>][aoVivo]" value="1" <?= !empty($it['aoVivo']) ? 'checked' : '' ?>>
+                Ao vivo
+              </label>
+            </div>
+            <div>
               <div class="campo">
                 <label>Imagem (opcional)</label>
-                <input type="text" name="item[<?= $n ?>][imagem]" value="<?= h($it['imagem'] ?? '') ?>" maxlength="300" placeholder="/image/agenda/foto.jpg">
-                <p class="dica">Sem imagem, entra o fundo hachurado com a sigla do dia.</p>
-              </div>
-              <div class="campo" style="align-self:end">
-                <label class="check">
-                  <input type="checkbox" name="item[<?= $n ?>][aoVivo]" value="1" <?= !empty($it['aoVivo']) ? 'checked' : '' ?>>
-                  Ao vivo
-                </label>
+                <div class="imagem">
+                  <?php $temImagem = !empty($it['imagem']); ?>
+                  <div class="miniatura<?= $temImagem ? '' : ' vazia' ?>">
+                    <?php if ($temImagem): ?>
+                      <img src="<?= h($it['imagem']) ?>" alt="">
+                    <?php else: ?>
+                      <span>sem<br>imagem</span>
+                    <?php endif; ?>
+                  </div>
+                  <div class="imagem-acoes">
+                    <input type="file" name="imagem[<?= $n ?>]" accept="image/jpeg,image/png,image/webp,image/gif">
+                    <input type="hidden" name="item[<?= $n ?>][imagem]" value="<?= h($it['imagem'] ?? '') ?>">
+                    <?php if ($temImagem): ?>
+                      <label class="check">
+                        <input type="checkbox" name="item[<?= $n ?>][remover_imagem]" value="1">
+                        Remover a imagem atual
+                      </label>
+                    <?php endif; ?>
+                    <p class="dica">JPG, PNG ou WEBP até 8 MB. Ela é reduzida e cortada em 16:9 no cartão; sem imagem, entra o fundo hachurado com a sigla do dia.</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -599,15 +830,30 @@ $canaisAtivos = array_column($agenda['disponivelEm'] ?? CANAIS_PADRAO, 'icone');
   (function () {
     const caixa = document.getElementById('itens');
 
-    // Renumera name="item[N][campo]" e o rótulo depois de qualquer mexida
+    // Renumera item[N][campo] e imagem[N] — o índice precisa casar com o $_FILES lá no PHP
     function renumerar() {
       caixa.querySelectorAll('.item').forEach((item, i) => {
         item.querySelector('.item-num').textContent = 'Item ' + (i + 1);
-        item.querySelectorAll('[name^="item["]').forEach((campo) => {
-          campo.name = campo.name.replace(/^item\[\d+\]/, 'item[' + i + ']');
+        item.querySelectorAll('[name]').forEach((campo) => {
+          campo.name = campo.name.replace(/^(item|imagem)\[\d+\]/, (_, base) => base + '[' + i + ']');
         });
       });
     }
+
+    // Mostra na hora a foto escolhida, antes mesmo de publicar
+    caixa.addEventListener('change', (e) => {
+      const campo = e.target;
+      if (campo.type !== 'file' || !campo.files || !campo.files[0]) return;
+      const mini = campo.closest('.imagem').querySelector('.miniatura');
+      const url = URL.createObjectURL(campo.files[0]);
+      mini.classList.remove('vazia');
+      mini.innerHTML = '';
+      const img = document.createElement('img');
+      img.alt = '';
+      img.src = url;
+      img.onload = () => URL.revokeObjectURL(url);
+      mini.appendChild(img);
+    });
 
     caixa.addEventListener('click', (e) => {
       const alvo = e.target.closest('button');
@@ -632,9 +878,18 @@ $canaisAtivos = array_column($agenda['disponivelEm'] ?? CANAIS_PADRAO, 'icone');
     document.getElementById('add').addEventListener('click', () => {
       const modelo = caixa.querySelector('.item');
       const novo = modelo.cloneNode(true);
-      novo.querySelectorAll('input[type=text], input[type=hidden]').forEach((c) => (c.value = ''));
+      novo.querySelectorAll('input[type=text], input[type=hidden], input[type=file]').forEach((c) => (c.value = ''));
       novo.querySelectorAll('input[type=checkbox]').forEach((c) => (c.checked = false));
       novo.querySelectorAll('select').forEach((s) => (s.selectedIndex = 0));
+      // o item novo começa sem imagem, mesmo que o modelo tivesse uma
+      const mini = novo.querySelector('.miniatura');
+      if (mini) {
+        mini.classList.add('vazia');
+        mini.innerHTML = '<span>sem<br>imagem</span>';
+      }
+      novo.querySelectorAll('.check').forEach((rot) => {
+        if (rot.querySelector('[name*="remover_imagem"]')) rot.remove();
+      });
       caixa.appendChild(novo);
       renumerar();
       novo.scrollIntoView({ behavior: 'smooth', block: 'center' });
