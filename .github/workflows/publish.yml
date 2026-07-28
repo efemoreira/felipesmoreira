@@ -19,6 +19,9 @@ jobs:
       - name: Build
         run: npm run build # The build command of your project
 
+      - name: Semente do painel (preenche /painel no primeiro acesso)
+        run: cp src/data/programacao.json out/dados-semente.json
+
       - name: Criar .htaccess (SPA + SEO headers)
         run: |
           cat > out/.htaccess <<'HTACCESS'
