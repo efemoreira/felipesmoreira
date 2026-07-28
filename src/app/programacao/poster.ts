@@ -18,8 +18,8 @@ const W = 1080; // largura fixa; a altura vem do formato escolhido
 const PAD = 64; // margem interna do conteúdo
 const MOLDURA = 22; // recuo da moldura dourada
 
-const LINHA_GAP = 24;
-const LINHA_MIN = 128; // agenda cheia comprime até aqui
+const GAPS = [24, 18]; // aperta o respiro entre cartões antes de esticar o poster
+const LINHA_MIN = 108; // cabe título + linha fina com margem
 const LINHA_MAX = 214; // agenda curta cresce até aqui
 
 const ASSINATURA = "felipesmoreira.com/programacao";
@@ -65,6 +65,8 @@ function medir(ctx: CanvasRenderingContext2D, txt: string, font: string, espaco 
   ctx.restore();
   return w;
 }
+
+const cortado = (linhas: string[]) => linhas[linhas.length - 1]?.endsWith("…") ?? false;
 
 /** Quebra o texto em até `maxLinhas`, cortando com reticências no excedente. */
 function quebrar(
@@ -281,8 +283,14 @@ export async function gerarPoster(agenda: Agenda, formato: Formato = "9:16"): Pr
      Se a agenda for longa demais, o poster cresce (continua vertical). */
   const n = itens.length;
   const espacoLivre = H_MIN - alturaCabecalho - alturaRodape;
-  const bruta = n ? (espacoLivre - (n - 1) * LINHA_GAP) / n : 0;
-  const LINHA_H = n ? Math.round(Math.min(LINHA_MAX, Math.max(LINHA_MIN, bruta))) : 0;
+  let LINHA_GAP = GAPS[0];
+  let LINHA_H = 0;
+  for (const gap of GAPS) {
+    const bruta = n ? (espacoLivre - (n - 1) * gap) / n : 0;
+    LINHA_GAP = gap;
+    LINHA_H = n ? Math.round(Math.min(LINHA_MAX, Math.max(LINHA_MIN, bruta))) : 0;
+    if (bruta >= LINHA_MIN) break;
+  }
   const alturaLista = n ? n * (LINHA_H + LINHA_GAP) - LINHA_GAP : 120;
   const H = Math.round(Math.max(H_MIN, alturaCabecalho + alturaLista + alturaRodape));
   // sobra vertical vira respiro extra antes da lista (mantém o bloco centrado)
@@ -433,11 +441,10 @@ function desenharCartao(
   const g = h >= 180 ? 1.12 : 1;
 
   /* miniatura — sempre 16:9, sem roubar espaço da coluna de texto */
-  const THUMB_H = Math.round(Math.min(h - 34, 133));
+  const THUMB_H = Math.round(Math.min(h - 34, 118));
   const THUMB_W = Math.round((THUMB_H * 16) / 9);
   const tX = x + 16;
   const tY = y + (h - THUMB_H) / 2;
-  const etiquetaTxt = item.etiqueta ?? (item.aoVivo ? "AO VIVO" : null);
   ctx.fillStyle = C.night;
   ctx.fillRect(tX, tY, THUMB_W, THUMB_H);
 
@@ -458,10 +465,8 @@ function desenharCartao(
       ctx.stroke();
     }
     ctx.restore();
-    // com etiqueta, a sigla se acomoda no espaço abaixo dela
-    const topoLivre = etiquetaTxt ? 38 : 0;
-    const corpoSigla = Math.round(Math.min(44 * g, (THUMB_H - topoLivre) * 0.62));
-    escrever(ctx, sigla(item.dia), tX + THUMB_W / 2, tY + topoLivre + (THUMB_H - topoLivre - corpoSigla * 1.2) / 2, {
+    const corpoSigla = Math.round(Math.min(44 * g, THUMB_H * 0.62));
+    escrever(ctx, sigla(item.dia), tX + THUMB_W / 2, tY + (THUMB_H - corpoSigla * 1.2) / 2, {
       font: `${corpoSigla}px ${ALFA}`,
       cor: C.gold,
       align: "center",
@@ -472,24 +477,7 @@ function desenharCartao(
   ctx.lineWidth = 3;
   ctx.strokeRect(tX, tY, THUMB_W, THUMB_H);
 
-  /* etiqueta AO VIVO */
-  const etiqueta = etiquetaTxt;
-  if (etiqueta) {
-    const fonteEt = `18px ${ELITE}`;
-    const larg = medir(ctx, etiqueta.toUpperCase(), fonteEt, 3) + (item.aoVivo ? 60 : 28);
-    const eX = tX + 8;
-    const eY = tY + 8;
-    bloco(ctx, eX, eY, larg, 30, C.ink, { sombra: 0, borda: C.gold, espessura: 2 });
-    let txtX = eX + 14;
-    if (item.aoVivo) {
-      ctx.fillStyle = "#FF3B30";
-      ctx.beginPath();
-      ctx.arc(eX + 17, eY + 15, 6, 0, Math.PI * 2);
-      ctx.fill();
-      txtX = eX + 32;
-    }
-    escrever(ctx, etiqueta.toUpperCase(), txtX, eY + 7, { font: fonteEt, cor: C.gold, espaco: 3 });
-  }
+  /* a etiqueta "AO VIVO" fica só na página — no PNG ela roubava a miniatura */
 
   /* bloco da direita: data · hora + dia da semana */
   const seloL = Math.round(58 * g);
@@ -536,15 +524,46 @@ function desenharCartao(
   /* título + subtítulo */
   const txtX = tX + THUMB_W + 22;
   const txtW = metaEsq - 36 - txtX;
-  const fonteTitulo = `${Math.round(32 * g)}px ${ALFA}`;
-  const alturaLinha = Math.round(40 * g);
-  // cartão alto comporta 3 linhas de título sem apertar o subtítulo
-  const maxLinhas = h >= 180 ? 3 : 2;
-  const linhas = quebrar(ctx, item.titulo.toUpperCase(), txtW, fonteTitulo, maxLinhas, 1);
-  const fonteSub = `22px ${BITTER}`; // fixo: mantém o subtítulo inteiro nos dois formatos
-  const sub = item.subtitulo ? quebrar(ctx, item.subtitulo, txtW, fonteSub, 1) : [];
+  const alturaSub = 32;
+  const tituloTxt = item.titulo.toUpperCase();
 
-  const alturaTexto = linhas.length * alturaLinha + (sub.length ? 32 : 0);
+  /* O bloco nunca encosta na borda do cartão: reserva uma margem vertical mínima
+     e, se não couber, abre mão do subtítulo antes de espremer o título. */
+  const margemV = h >= 180 ? 26 : 18;
+  const disponivel = h - margemV * 2;
+  const maxLinhas = Math.max(1, Math.min(2, Math.floor(disponivel / Math.round(40 * g))));
+
+  /* O corpo cede alguns pontos para o texto caber inteiro — melhor que reticências. */
+  let corpoTitulo = Math.round(32 * g);
+  let linhas = quebrar(ctx, tituloTxt, txtW, `${corpoTitulo}px ${ALFA}`, maxLinhas, 1);
+  while (corpoTitulo > 25 && cortado(linhas)) {
+    corpoTitulo -= 1;
+    linhas = quebrar(ctx, tituloTxt, txtW, `${corpoTitulo}px ${ALFA}`, maxLinhas, 1);
+  }
+  const fonteTitulo = `${corpoTitulo}px ${ALFA}`;
+  const alturaLinha = Math.round(corpoTitulo * 1.25);
+
+  const cabe = (nLinhas: number, comSub: boolean) =>
+    nLinhas * alturaLinha + (comSub ? alturaSub : 0) <= disponivel;
+
+  let corpoSub = 22;
+  let sub = item.subtitulo ? quebrar(ctx, item.subtitulo, txtW, `${corpoSub}px ${BITTER}`, 1) : [];
+  while (item.subtitulo && corpoSub > 17 && cortado(sub)) {
+    corpoSub -= 1;
+    sub = quebrar(ctx, item.subtitulo, txtW, `${corpoSub}px ${BITTER}`, 1);
+  }
+  const fonteSub = `${corpoSub}px ${BITTER}`;
+
+  if (!cabe(linhas.length, sub.length > 0)) {
+    if (cabe(linhas.length, false)) {
+      sub = []; // título inteiro vale mais que a linha fina
+    } else {
+      linhas = quebrar(ctx, tituloTxt, txtW, fonteTitulo, 1, 1);
+      if (!cabe(1, sub.length > 0)) sub = [];
+    }
+  }
+
+  const alturaTexto = linhas.length * alturaLinha + (sub.length ? alturaSub : 0);
   let ty = y + (h - alturaTexto) / 2 - 2;
   for (const linha of linhas) {
     escrever(ctx, linha, txtX, ty, { font: fonteTitulo, cor: tema.fg, espaco: 1 });
