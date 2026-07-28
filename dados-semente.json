@@ -1,0 +1,93 @@
+{
+  "titulo": "Agenda da Semana",
+  "periodo": "29/07 a 01/08",
+  "chamada": "A semana inteira de conteúdo da Missão Ceará",
+  "disponivelEm": [
+    { "nome": "YouTube", "icone": "youtube", "url": "https://youtube.com/@moreiramissao" },
+    { "nome": "Instagram", "icone": "instagram", "url": "https://instagram.com/moreiramissao" },
+    { "nome": "Twitch", "icone": "twitch", "url": "https://twitch.tv/moreiramissao" },
+    { "nome": "Kick", "icone": "kick", "url": "https://kick.com/moreiramissao" },
+    { "nome": "TikTok", "icone": "tiktok", "url": "https://tiktok.com/@moreiramissao" }
+  ],
+  "programacao": [
+    {
+      "id": "sabatina-o-povo-cbn",
+      "titulo": "Sabatina O Povo CBN",
+      "subtitulo": "Sabatina com o Delegado Huggo",
+      "dia": "Quarta",
+      "data": "29/07",
+      "hora": "10H",
+      "aoVivo": true,
+      "cor": "ouro",
+      "plataforma": "youtube",
+      "imagem": "",
+      "link": "https://www.youtube.com/@opovo"
+    },
+    {
+      "id": "coletiva-de-imprensa",
+      "titulo": "Coletiva de Imprensa",
+      "subtitulo": "Lançamento dos candidatos da Missão Ceará",
+      "dia": "Quarta",
+      "data": "29/07",
+      "hora": "15H",
+      "aoVivo": false,
+      "cor": "milho",
+      "plataforma": "",
+      "imagem": "",
+      "link": ""
+    },
+    {
+      "id": "propostas-para-o-ceara",
+      "titulo": "Os impactos das propostas da Missão no Ceará",
+      "subtitulo": "Conversando sobre as propostas da Missão no Ceará",
+      "dia": "Quarta",
+      "data": "29/07",
+      "hora": "20H",
+      "aoVivo": true,
+      "cor": "ouro",
+      "plataforma": "youtube",
+      "imagem": "",
+      "link": "https://youtube.com/@moreiramissao"
+    },
+    {
+      "id": "sem-arrudeio",
+      "titulo": "Sem Arrudeio",
+      "subtitulo": "Pedro Arthur fala das ações nacionais e locais da Missão",
+      "dia": "Quinta",
+      "data": "30/07",
+      "hora": "19H",
+      "aoVivo": true,
+      "cor": "ouro",
+      "plataforma": "youtube",
+      "imagem": "",
+      "link": "https://youtube.com/@pedroarthurce",
+      "interno": false
+    },
+    {
+      "id": "fala-delegas",
+      "titulo": "Fala, Delegas!",
+      "subtitulo": "Live semanal com o Delegado Huggo",
+      "dia": "Sexta",
+      "data": "31/07",
+      "hora": "18H",
+      "aoVivo": true,
+      "cor": "azul",
+      "plataforma": "youtube",
+      "imagem": "",
+      "link": "https://youtube.com/@delegadohuggoce"
+    },
+    {
+      "id": "convenção-nacional",
+      "titulo": "Convenção Nacional",
+      "subtitulo": "Convenção Nacional da Missão",
+      "dia": "Sábado",
+      "data": "01/08",
+      "hora": "17H",
+      "aoVivo": false,
+      "cor": "escuro",
+      "plataforma": "",
+      "imagem": "",
+      "link": ""
+    }
+  ]
+}
