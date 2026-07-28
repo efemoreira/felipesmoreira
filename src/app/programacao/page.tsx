@@ -3,55 +3,15 @@ import React from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Icon, IconName } from "../icons";
+import CompartilharClient from "./CompartilharClient";
+import { C, temaDe, sigla, type Agenda, type ItemAgenda } from "./tipos";
 import data from "@/data/programacao.json";
-
-/* ===== Paleta do cordel (mesma da home) ===== */
-const C = {
-  ink: "#181203",
-  cream: "#F6F5EF",
-  paper: "#F3ECDA",
-  gold: "#FFCB05",
-  goldDim: "#B8860B",
-  night: "#14110C",
-};
 
 const FONT_ALFA = "var(--font-alfa), serif";
 const FONT_ELITE = "var(--font-elite), monospace";
 const FONT_BITTER = "var(--font-bitter), serif";
 
-/* ===== Tipos do JSON (src/data/programacao.json) ===== */
-type CorCartao = "ouro" | "milho" | "azul" | "escuro" | "papel";
-
-interface ItemAgenda {
-  id: string;
-  titulo: string;
-  subtitulo?: string;
-  dia: string;
-  data: string;
-  hora: string;
-  aoVivo?: boolean;
-  etiqueta?: string;
-  cor?: CorCartao;
-  plataforma?: string;
-  imagem?: string;
-  link?: string;
-  interno?: boolean;
-}
-
-interface Canal {
-  nome: string;
-  icone: string;
-  url: string;
-}
-
-interface Agenda {
-  titulo: string;
-  periodo?: string;
-  chamada?: string;
-  disponivelEm?: Canal[];
-  programacao: ItemAgenda[];
-}
-
+/* Conteúdo da página vem do JSON — ver src/data/programacao.json */
 const agenda = data as Agenda;
 
 /* Ícones aceitos no JSON — evita quebrar a página com um nome inválido */
@@ -71,31 +31,6 @@ const ICONES_VALIDOS: IconName[] = [
 
 const iconeSeguro = (nome: string | undefined, padrao: IconName): IconName =>
   nome && (ICONES_VALIDOS as string[]).includes(nome) ? (nome as IconName) : padrao;
-
-/* Cada cor vira um conjunto de variáveis CSS aplicadas no cartão */
-type Tema = { bg: string; fg: string; sub: string; badge: string; badgeFg: string; claro?: boolean };
-
-const TEMAS: Record<CorCartao, Tema> = {
-  ouro: { bg: C.gold, fg: C.ink, sub: "rgba(24,18,3,.72)", badge: C.ink, badgeFg: C.gold },
-  milho: { bg: "#F7E463", fg: C.ink, sub: "rgba(24,18,3,.72)", badge: C.ink, badgeFg: "#F7E463" },
-  papel: { bg: C.paper, fg: C.ink, sub: "rgba(24,18,3,.7)", badge: C.ink, badgeFg: C.gold },
-  azul: {
-    bg: "linear-gradient(105deg, #1B4FD8 0%, #2E7BE8 100%)",
-    fg: C.cream,
-    sub: "rgba(246,245,239,.82)",
-    badge: C.ink,
-    badgeFg: C.cream,
-    claro: true,
-  },
-  escuro: {
-    bg: "#1C1710",
-    fg: C.cream,
-    sub: "rgba(246,245,239,.72)",
-    badge: C.gold,
-    badgeFg: C.ink,
-    claro: true,
-  },
-};
 
 export const metadata: Metadata = {
   title: "Programação da Semana",
@@ -199,6 +134,11 @@ export default function ProgramacaoPage() {
           )}
 
           {agenda.chamada && <p className="ag-chamada">{agenda.chamada}</p>}
+
+          {/* Gera o PNG da agenda no próprio navegador */}
+          <div className="ag-compartilhar">
+            <CompartilharClient agenda={agenda} />
+          </div>
         </header>
 
         {/* ===== Lista da programação ===== */}
@@ -231,7 +171,7 @@ export default function ProgramacaoPage() {
 
 /* ===== Cartão de um dia da programação ===== */
 const Cartao: React.FC<{ item: ItemAgenda }> = ({ item }) => {
-  const tema = TEMAS[item.cor ?? "ouro"] ?? TEMAS.ouro;
+  const tema = temaDe(item.cor);
   const etiqueta = item.etiqueta ?? (item.aoVivo ? "Ao vivo" : null);
 
   const vars = {
@@ -317,7 +257,6 @@ const Cartao: React.FC<{ item: ItemAgenda }> = ({ item }) => {
 /* ===== utilidades de texto ===== */
 const primeiraPalavra = (t: string) => t.split(" ")[0] ?? t;
 const restoDoTitulo = (t: string) => t.split(" ").slice(1).join(" ");
-const sigla = (dia: string) => dia.trim().slice(0, 3).toUpperCase();
 
 /* ===== estilos ===== */
 const css = `
@@ -375,6 +314,8 @@ const css = `
     font-size: 15px; line-height: 1.5; color: ${C.cream};
     text-shadow: 0 1px 6px rgba(0,0,0,.7);
   }
+
+  .ag-compartilhar { margin-top: 22px; }
 
   .ag-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 16px; }
   .ag-item { animation: agIn .5s ease-out backwards; animation-delay: calc(.06s * var(--i, 0)); }
@@ -490,7 +431,8 @@ const css = `
       gap: 0;
       padding: 10px;
     }
-    .ag-thumb { width: 100%; margin-bottom: 12px; }
+    /* miniatura vira faixa: mantém o ritmo da lista sem esticar o cartão */
+    .ag-thumb { width: 100%; margin-bottom: 12px; aspect-ratio: 5 / 2; max-height: 150px; }
     .ag-texto { padding: 0 2px; }
     .ag-meta {
       flex-direction: row; align-items: baseline; justify-content: space-between;

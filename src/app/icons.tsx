@@ -141,6 +141,9 @@ const paths: Record<string, string[]> = {
 
 export type IconName = keyof typeof paths;
 
+/* Mesmos traçados reaproveitados no canvas (geração de PNG) via Path2D */
+export const iconPaths = paths;
+
 export const Icon: React.FC<IconProps & { name: IconName }> = ({
   name,
   size = 24,
