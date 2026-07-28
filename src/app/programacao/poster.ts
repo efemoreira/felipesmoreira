@@ -403,12 +403,6 @@ export async function gerarPoster(agenda: Agenda, formato: Formato = "9:16"): Pr
     align: "center",
     espaco: 4,
   });
-  escrever(ctx, "HORÁRIOS DE BRASÍLIA", cx, rodapeY + 78, {
-    font: `22px ${ELITE}`,
-    cor: "rgba(246,245,239,.75)",
-    align: "center",
-    espaco: 3,
-  });
 
   return canvas;
 }
