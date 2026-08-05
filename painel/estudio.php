@@ -6,11 +6,11 @@ declare(strict_types=1);
  *
  * O editor em si é uma página estática gerada pelo Next (estudio.html), que o
  * .htaccess da pasta impede de ser baixada direto. Quem serve o arquivo é este
- * script, e só depois de conferir a sessão.
+ * script, e só depois de conferir a sessão e a permissão de área.
  */
 
 require_once __DIR__ . '/sessao.php';
-exigir_login();
+exigir_area('estudio');
 
 $pagina = __DIR__ . '/estudio.html';
 if (!is_file($pagina)) {
