@@ -33,6 +33,8 @@ jobs:
           RewriteCond %{REQUEST_FILENAME} -f [OR]
           RewriteCond %{REQUEST_FILENAME} -d
           RewriteRule ^ - [L]
+          # Estúdio de artes: a URL limpa cai no porteiro PHP, nunca no HTML cru
+          RewriteRule ^painel/estudio/?$ /painel/estudio.php [L]
           # Redireciona /rota para /rota.html
           RewriteRule ^([^/]+)$ $1.html [L]
           # Redireciona tudo que não existir para index.html (SPA fallback)
@@ -41,6 +43,9 @@ jobs:
           # ===== MIME correto p/ rotas de metadata do Next (sem extensão) =====
           <IfModule mod_mime.c>
             AddType application/manifest+json .webmanifest
+            # recorte de fundo: sem o MIME certo o navegador recusa o wasm
+            AddType application/wasm .wasm
+            AddType application/octet-stream .tflite
           </IfModule>
           <FilesMatch "^(opengraph-image|twitter-image|apple-icon|icon)$">
             ForceType image/png
@@ -76,10 +81,26 @@ jobs:
 
           # Assets versionados do Next (_next/static) — imutáveis
           <IfModule mod_headers.c>
-            <FilesMatch "\.(?:js|css|woff2|png|jpg|jpeg|svg|ico)$">
+            <FilesMatch "\.(?:js|css|woff2|png|jpg|jpeg|svg|ico|wasm|tflite)$">
               Header set Cache-Control "public, max-age=31536000, immutable"
             </FilesMatch>
           </IfModule>
+          HTACCESS
+
+      - name: Trancar o HTML do estúdio (só o estudio.php serve a página)
+        run: |
+          cat > out/painel/.htaccess <<'HTACCESS'
+          Options -Indexes
+          # o HTML do Next e o payload que o acompanha só saem pelo estudio.php
+          <FilesMatch "^estudio\.(html|txt)$">
+            <IfModule mod_authz_core.c>
+              Require all denied
+            </IfModule>
+            <IfModule !mod_authz_core.c>
+              Order allow,deny
+              Deny from all
+            </IfModule>
+          </FilesMatch>
           HTACCESS
 
       - name: Push

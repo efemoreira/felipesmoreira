@@ -4,6 +4,8 @@
  * sem barra de redes sociais, fundo em cor e moldura de cordel.
  */
 import { iconPaths } from "../icons";
+import { familia, fontesProntas } from "@/lib/fontes";
+import { medir } from "@/lib/textoCanvas";
 import { C, temaDe, sigla, type Agenda, type ItemAgenda } from "./tipos";
 
 /** Formatos verticais aceitos — 9:16 (stories/status) e 3:4 (feed). */
@@ -24,16 +26,6 @@ const LINHA_MAX = 214; // agenda curta cresce até aqui
 
 const ASSINATURA = "felipesmoreira.com/programacao";
 
-/* ===== fontes (resolve as variáveis do next/font para uso no ctx.font) ===== */
-function familia(variavel: string, reserva: string): string {
-  const probe = document.createElement("span");
-  probe.style.cssText = `position:absolute;visibility:hidden;font-family:var(${variavel})`;
-  document.body.appendChild(probe);
-  const f = getComputedStyle(probe).fontFamily;
-  probe.remove();
-  return f || reserva;
-}
-
 /* ===== helpers de desenho ===== */
 type OpcoesTexto = {
   font: string;
@@ -53,17 +45,6 @@ function escrever(ctx: CanvasRenderingContext2D, txt: string, x: number, y: numb
   }
   ctx.fillText(txt, x, y);
   ctx.restore();
-}
-
-function medir(ctx: CanvasRenderingContext2D, txt: string, font: string, espaco = 0): number {
-  ctx.save();
-  ctx.font = font;
-  if (espaco && "letterSpacing" in ctx) {
-    (ctx as CanvasRenderingContext2D & { letterSpacing: string }).letterSpacing = `${espaco}px`;
-  }
-  const w = ctx.measureText(txt).width;
-  ctx.restore();
-  return w;
 }
 
 const cortado = (linhas: string[]) => linhas[linhas.length - 1]?.endsWith("…") ?? false;
@@ -247,7 +228,7 @@ function fundo(ctx: CanvasRenderingContext2D, h: number) {
 
 /* ===== poster ===== */
 export async function gerarPoster(agenda: Agenda, formato: Formato = "9:16"): Promise<HTMLCanvasElement> {
-  if (document.fonts?.ready) await document.fonts.ready;
+  await fontesProntas();
 
   const H_MIN = (FORMATOS[formato] ?? FORMATOS["9:16"]).altura;
 
