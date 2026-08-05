@@ -4,13 +4,13 @@
 import type Konva from "konva";
 import { fontesProntas } from "@/lib/fontes";
 
-export async function exportarPng(
+/** Desenha o palco no tamanho real do projeto e devolve o PNG. */
+async function gerarBlob(
   palco: Konva.Stage,
   largura: number,
   altura: number,
   escala: number,
-  nome: string,
-): Promise<void> {
+): Promise<Blob> {
   await fontesProntas();
 
   // desenha no tamanho real do projeto em vez de multiplicar o zoom de tela:
@@ -29,7 +29,17 @@ export async function exportarPng(
   palco.size({ width: larguraTela, height: alturaTela });
   palco.draw();
 
-  const blob = await (await fetch(url)).blob();
+  return (await fetch(url)).blob();
+}
+
+export async function exportarPng(
+  palco: Konva.Stage,
+  largura: number,
+  altura: number,
+  escala: number,
+  nome: string,
+): Promise<void> {
+  const blob = await gerarBlob(palco, largura, altura, escala);
   const objeto = URL.createObjectURL(blob);
 
   const link = document.createElement("a");
@@ -41,6 +51,25 @@ export async function exportarPng(
 
   // o navegador ainda precisa do blob durante o download
   setTimeout(() => URL.revokeObjectURL(objeto), 10_000);
+}
+
+/**
+ * Copia a arte para a área de transferência.
+ *
+ * É o caminho curto do dia a dia: colar direto na conversa do WhatsApp ou no
+ * Instagram web, sem passar pela pasta de downloads.
+ */
+export async function copiarPng(
+  palco: Konva.Stage,
+  largura: number,
+  altura: number,
+  escala: number,
+): Promise<void> {
+  if (typeof ClipboardItem === "undefined" || !navigator.clipboard?.write) {
+    throw new Error("Este navegador não deixa copiar imagem — use o Baixar PNG.");
+  }
+  const blob = await gerarBlob(palco, largura, altura, escala);
+  await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
 }
 
 export function nomeArquivo(nome: string, escala: number): string {

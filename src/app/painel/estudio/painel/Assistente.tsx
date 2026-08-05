@@ -11,7 +11,7 @@
 import { useEffect, useRef, useState } from "react";
 import { listarAtivos, prepararAtivo, salvarAtivo, urlDoAtivo } from "../armazenamento";
 import { MODELOS, type Briefing, type ImagemBriefing, type Modelo } from "../modelos";
-import { FORMATOS, novoId, type Ativo, type Formato } from "../tipos";
+import { FORMATOS, GRUPOS_FORMATO, novoId, type Ativo, type Formato } from "../tipos";
 import Recorte from "./Recorte";
 
 interface Props {
@@ -181,21 +181,44 @@ function PassoModelo({
   return (
     <>
       <h3 className="mb-2 text-[11px] uppercase tracking-[.14em] text-white/30">Formato</h3>
-      <div className="mb-6 flex flex-wrap gap-2">
-        {(Object.keys(FORMATOS) as Formato[]).map((f) => (
-          <button
-            key={f}
-            type="button"
-            onClick={() => onFormato(f)}
-            aria-pressed={f === formato}
-            className={`rounded-lg border px-4 py-2 text-sm transition ${
-              f === formato
-                ? "border-[#FFCB05] bg-[#FFCB05]/10 text-white"
-                : "border-white/12 text-white/60 hover:border-white/30"
-            }`}
-          >
-            {FORMATOS[f].rotulo}
-          </button>
+      <div className="mb-6 flex flex-col gap-3">
+        {GRUPOS_FORMATO.map((grupo) => (
+          <div key={grupo.rotulo} className="flex flex-wrap items-center gap-2">
+            <span className="w-16 shrink-0 text-[10px] uppercase tracking-[.14em] text-white/25">
+              {grupo.rotulo}
+            </span>
+            {grupo.formatos.map((f) => {
+              const { largura, altura, rotulo } = FORMATOS[f];
+              return (
+                <button
+                  key={f}
+                  type="button"
+                  onClick={() => onFormato(f)}
+                  aria-pressed={f === formato}
+                  className={`flex items-center gap-2.5 rounded-lg border px-3 py-2 text-sm transition ${
+                    f === formato
+                      ? "border-[#FFCB05] bg-[#FFCB05]/10 text-white"
+                      : "border-white/12 text-white/60 hover:border-white/30"
+                  }`}
+                >
+                  {/* a proporção desenhada diz mais que o rótulo */}
+                  <span
+                    aria-hidden
+                    style={{ aspectRatio: `${largura} / ${altura}` }}
+                    className={`block w-6 shrink-0 rounded-[2px] border ${
+                      f === formato ? "border-[#FFCB05] bg-[#FFCB05]/25" : "border-white/30"
+                    }`}
+                  />
+                  <span className="text-left leading-tight">
+                    {rotulo}
+                    <span className="block text-[10px] text-white/30">
+                      {largura}×{altura}
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         ))}
       </div>
 

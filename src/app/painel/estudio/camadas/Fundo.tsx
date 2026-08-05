@@ -1,5 +1,6 @@
 "use client";
 
+import type { KonvaEventObject } from "konva/lib/Node";
 import { Rect } from "react-konva";
 import type { CamadaFundo } from "../tipos";
 
@@ -7,7 +8,7 @@ interface Props {
   camada: CamadaFundo;
   largura: number;
   altura: number;
-  onSelecionar: () => void;
+  onSelecionar: (e?: KonvaEventObject<MouseEvent | TouchEvent>) => void;
 }
 
 /** Chapa de fundo — sempre a camada mais atrás, cobrindo a arte inteira. */

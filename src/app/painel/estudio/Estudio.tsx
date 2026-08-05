@@ -10,10 +10,18 @@
 import type Konva from "konva";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { fontesProntas, limparCacheDeFontes } from "@/lib/fontes";
-import { lerAtivo, listarProjetos, salvarProjeto } from "./armazenamento";
-import { exportarPng } from "./exportar";
+import {
+  lerAtivo,
+  listarProjetos,
+  prepararAtivo,
+  salvarAtivo,
+  salvarProjeto,
+} from "./armazenamento";
+import { copiarPng, exportarPng } from "./exportar";
 import {
   MODELOS,
+  criarFoto,
+  criarPessoa,
   montarComBriefing,
   novaCamada,
   projetoDoModelo,
@@ -30,6 +38,9 @@ import Recorte from "./painel/Recorte";
 import { useHistorico } from "./useHistorico";
 import {
   FORMATOS,
+  LIVRE_MAX,
+  LIVRE_MIN,
+  dimensoes,
   novoId,
   temImagem,
   type Ativo,
@@ -58,11 +69,14 @@ export default function Estudio() {
     podeRefazer,
   } = useHistorico<Projeto>(inicial);
 
-  const [selecionado, setSelecionado] = useState<string | null>(null);
+  const [selecionados, setSelecionados] = useState<string[]>([]);
   const [zoom, setZoom] = useState(0.4);
   const [selo, setSelo] = useState(0);
   const [salvando, setSalvando] = useState(false);
-  const [exportando, setExportando] = useState(false);
+  const [escalaExport, setEscalaExport] = useState(0);
+  const [recado, setRecado] = useState("");
+  const [previa, setPrevia] = useState(false);
+  const [guiasVisiveis, setGuiasVisiveis] = useState(true);
   const [assistenteAberto, setAssistenteAberto] = useState(false);
   const [bibliotecaPara, setBibliotecaPara] = useState<string | null>(null);
   const [recortando, setRecortando] = useState<Ativo | null>(null);
@@ -71,7 +85,11 @@ export default function Estudio() {
   const palcoRef = useRef<Konva.Stage | null>(null);
   const areaRef = useRef<HTMLDivElement>(null);
 
-  const camadaAtual = projeto.camadas.find((c) => c.id === selecionado) ?? null;
+  const camadaAtual =
+    selecionados.length === 1
+      ? projeto.camadas.find((c) => c.id === selecionados[0]) ?? null
+      : null;
+  const escolhidas = projeto.camadas.filter((c) => selecionados.includes(c.id));
 
   /* ===== fontes: os textos precisam remedir quando elas chegam ===== */
   useEffect(() => {
@@ -108,23 +126,41 @@ export default function Estudio() {
     return () => window.clearTimeout(id);
   }, [projeto]);
 
+  /* recado some sozinho: é aviso de passagem, não estado */
+  useEffect(() => {
+    if (!recado) return;
+    const id = window.setTimeout(() => setRecado(""), 4000);
+    return () => window.clearTimeout(id);
+  }, [recado]);
+
   /* ===== zoom que cabe na janela ===== */
   const ajustarZoom = useCallback(() => {
     const area = areaRef.current;
     if (!area) return;
-    const { largura, altura } = FORMATOS[projeto.formato];
+    const { largura, altura } = dimensoes(projeto);
     const cabe = Math.min(
       (area.clientWidth - 64) / largura,
       (area.clientHeight - 64) / altura,
     );
     setZoom(Math.max(0.08, Math.min(1, cabe)));
-  }, [projeto.formato]);
+  }, [projeto]);
 
   useEffect(() => {
     ajustarZoom();
     window.addEventListener("resize", ajustarZoom);
     return () => window.removeEventListener("resize", ajustarZoom);
-  }, [ajustarZoom]);
+    // só as medidas da arte importam aqui, não cada mudança de camada
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projeto.formato, projeto.tamanho?.largura, projeto.tamanho?.altura]);
+
+  /* ===== seleção ===== */
+  const selecionar = useCallback((id: string | null, juntar = false) => {
+    setSelecionados((atual) => {
+      if (id === null) return [];
+      if (!juntar) return [id];
+      return atual.includes(id) ? atual.filter((s) => s !== id) : [...atual, id];
+    });
+  }, []);
 
   /* ===== operações sobre camadas ===== */
   const mudarProjeto = useCallback(
@@ -144,29 +180,43 @@ export default function Estudio() {
     [mudarProjeto],
   );
 
+  /** A mesma mudança em todas as camadas selecionadas. */
+  const alterarSelecionadas = useCallback(
+    (mudanca: Partial<Camada>) =>
+      mudarProjeto((p) => ({
+        ...p,
+        camadas: p.camadas.map((c) =>
+          selecionados.includes(c.id) ? ({ ...c, ...mudanca } as Camada) : c,
+        ),
+      })),
+    [mudarProjeto, selecionados],
+  );
+
   const adicionar = useCallback(
     (tipo: TipoCamada) => {
-      const nova = novaCamada(tipo, projeto.formato);
+      const nova = novaCamada(tipo, dimensoes(projeto));
       mudarProjeto((p) => ({ ...p, camadas: [...p.camadas, nova] }));
-      setSelecionado(nova.id);
+      setSelecionados([nova.id]);
     },
-    [mudarProjeto, projeto.formato],
+    [mudarProjeto, projeto],
   );
 
   const duplicar = useCallback(
-    (id: string) =>
+    (ids: string[]) =>
       mudarProjeto((p) => {
-        const i = p.camadas.findIndex((c) => c.id === id);
-        if (i < 0) return p;
-        const copia = {
-          ...p.camadas[i],
-          id: novoId(),
-          nome: `${p.camadas[i].nome} (cópia)`,
-          x: p.camadas[i].x + 24,
-          y: p.camadas[i].y + 24,
-        } as Camada;
         const camadas = [...p.camadas];
-        camadas.splice(i + 1, 0, copia);
+        // de trás para a frente, senão os índices já inseridos deslocam os próximos
+        for (const id of [...ids].reverse()) {
+          const i = camadas.findIndex((c) => c.id === id);
+          if (i < 0) continue;
+          camadas.splice(i + 1, 0, {
+            ...camadas[i],
+            id: novoId(),
+            nome: `${camadas[i].nome} (cópia)`,
+            x: camadas[i].x + 24,
+            y: camadas[i].y + 24,
+          } as Camada);
+        }
         return { ...p, camadas };
       }),
     [mudarProjeto],
@@ -194,13 +244,13 @@ export default function Estudio() {
       camadas.splice(Math.max(0, i), 0, fantasma);
       return { ...p, camadas };
     });
-    setSelecionado(fantasma.id);
+    setSelecionados([fantasma.id]);
   }, [camadaAtual, mudarProjeto]);
 
   const excluir = useCallback(
-    (id: string) => {
-      mudarProjeto((p) => ({ ...p, camadas: p.camadas.filter((c) => c.id !== id) }));
-      setSelecionado((atual) => (atual === id ? null : atual));
+    (ids: string[]) => {
+      mudarProjeto((p) => ({ ...p, camadas: p.camadas.filter((c) => !ids.includes(c.id)) }));
+      setSelecionados((atual) => atual.filter((s) => !ids.includes(s)));
     },
     [mudarProjeto],
   );
@@ -219,13 +269,83 @@ export default function Estudio() {
   );
 
   const deslocarZ = useCallback(
-    (passo: number) => {
-      if (!selecionado) return;
-      const i = projeto.camadas.findIndex((c) => c.id === selecionado);
-      const destino = Math.max(0, Math.min(projeto.camadas.length - 1, i + passo));
-      if (i >= 0 && destino !== i) mover(selecionado, destino);
+    (passo: number | "topo" | "fundo") => {
+      if (!selecionados.length) return;
+      mudarProjeto((p) => {
+        const escolhidas = p.camadas.filter((c) => selecionados.includes(c.id));
+        const resto = p.camadas.filter((c) => !selecionados.includes(c.id));
+
+        if (passo === "topo") return { ...p, camadas: [...resto, ...escolhidas] };
+        if (passo === "fundo") return { ...p, camadas: [...escolhidas, ...resto] };
+
+        // passo a passo: move uma de cada vez, na ordem que não atropela as outras
+        const camadas = [...p.camadas];
+        const ordem = passo > 0 ? [...selecionados].reverse() : selecionados;
+        for (const id of ordem) {
+          const i = camadas.findIndex((c) => c.id === id);
+          const destino = Math.max(0, Math.min(camadas.length - 1, i + passo));
+          if (i < 0 || destino === i) continue;
+          const [item] = camadas.splice(i, 1);
+          camadas.splice(destino, 0, item);
+        }
+        return { ...p, camadas };
+      });
     },
-    [mover, projeto.camadas, selecionado],
+    [mudarProjeto, selecionados],
+  );
+
+  /* ===== alinhar e distribuir (só faz sentido com várias) ===== */
+  const alinhar = useCallback(
+    (onde: "esq" | "centroX" | "dir" | "topo" | "centroY" | "base") => {
+      const { largura: L, altura: A } = dimensoes(projeto);
+      mudarProjeto((p) => ({
+        ...p,
+        camadas: p.camadas.map((c) => {
+          if (!selecionados.includes(c.id) || !("largura" in c)) return c;
+          const meiaL = c.largura / 2;
+          const meiaA = "altura" in c ? (c as { altura: number }).altura / 2 : 0;
+          switch (onde) {
+            case "esq":
+              return { ...c, x: Math.round(meiaL) };
+            case "centroX":
+              return { ...c, x: Math.round(L / 2) };
+            case "dir":
+              return { ...c, x: Math.round(L - meiaL) };
+            case "topo":
+              return { ...c, y: Math.round(meiaA) };
+            case "centroY":
+              return { ...c, y: Math.round(A / 2) };
+            case "base":
+              return { ...c, y: Math.round(A - meiaA) };
+          }
+        }) as Camada[],
+      }));
+    },
+    [mudarProjeto, projeto, selecionados],
+  );
+
+  const distribuir = useCallback(
+    (eixo: "x" | "y") => {
+      if (selecionados.length < 3) return;
+      mudarProjeto((p) => {
+        const alvo = p.camadas.filter((c) => selecionados.includes(c.id) && "largura" in c);
+        if (alvo.length < 3) return p;
+        const ordenadas = [...alvo].sort((a, b) => a[eixo] - b[eixo]);
+        const inicio = ordenadas[0][eixo];
+        const fim = ordenadas[ordenadas.length - 1][eixo];
+        const passo = (fim - inicio) / (ordenadas.length - 1);
+        const posicoes = new Map(
+          ordenadas.map((c, i) => [c.id, Math.round(inicio + passo * i)] as const),
+        );
+        return {
+          ...p,
+          camadas: p.camadas.map((c) =>
+            posicoes.has(c.id) ? ({ ...c, [eixo]: posicoes.get(c.id) } as Camada) : c,
+          ),
+        };
+      });
+    },
+    [mudarProjeto, selecionados],
   );
 
   /* ===== imagens ===== */
@@ -256,6 +376,92 @@ export default function Estudio() {
     [aplicarAtivo, bibliotecaPara],
   );
 
+  /**
+   * Imagem que chega de fora — arrastada para o palco ou colada.
+   *
+   * PNG costuma ser recorte (vira `pessoa`); JPG e WEBP são cenário (viram
+   * `foto`, atrás de tudo). Se a de cima é uma imagem já selecionada, a nova só
+   * troca o conteúdo dela em vez de criar mais uma camada.
+   */
+  const receberArquivos = useCallback(
+    async (arquivos: File[], ponto?: { x: number; y: number }) => {
+      const imagens = arquivos.filter((a) => a.type.startsWith("image/"));
+      if (!imagens.length) return;
+
+      const trocar = camadaAtual && temImagem(camadaAtual) ? camadaAtual : null;
+      const { largura: L, altura: A } = dimensoes(projeto);
+
+      try {
+        const novas: Camada[] = [];
+        for (const arquivo of imagens) {
+          const recorte = arquivo.type === "image/png";
+          const ativo = await prepararAtivo(arquivo, recorte ? "pessoa" : "fundo", novoId());
+          await salvarAtivo(ativo);
+
+          if (trocar && imagens.length === 1) {
+            aplicarAtivo(trocar.id, ativo.id);
+            setRecado(`Imagem trocada em “${trocar.nome}”.`);
+            return;
+          }
+
+          const molde = recorte ? criarPessoa({ largura: L, altura: A }) : criarFoto({ largura: L, altura: A });
+          // cabe na arte sem distorcer, e cai onde foi solta
+          const escala = Math.min((L * 0.8) / ativo.largura, (A * 0.8) / ativo.altura, 1);
+          novas.push({
+            ...molde,
+            nome: ativo.nome,
+            ativoId: ativo.id,
+            largura: Math.max(8, Math.round(ativo.largura * escala)),
+            altura: Math.max(8, Math.round(ativo.altura * escala)),
+            x: Math.round(ponto?.x ?? L / 2),
+            y: Math.round(ponto?.y ?? A / 2),
+          } as Camada);
+        }
+
+        if (!novas.length) return;
+        mudarProjeto((p) => ({ ...p, camadas: [...p.camadas, ...novas] }));
+        setSelecionados(novas.map((c) => c.id));
+        setRecado(
+          novas.length === 1
+            ? `“${novas[0].nome}” entrou como ${novas[0].tipo === "pessoa" ? "pessoa" : "foto de contexto"}.`
+            : `${novas.length} imagens adicionadas.`,
+        );
+      } catch (e) {
+        setRecado(e instanceof Error ? e.message : "Não consegui abrir essa imagem.");
+      }
+    },
+    [aplicarAtivo, camadaAtual, mudarProjeto, projeto],
+  );
+
+  /** Onde o arquivo foi solto, em coordenadas da arte. */
+  const soltarNoPalco = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      const arquivos = Array.from(e.dataTransfer.files);
+      if (!arquivos.length) return;
+      const caixa = palcoRef.current?.container().getBoundingClientRect();
+      const ponto = caixa
+        ? { x: (e.clientX - caixa.left) / zoom, y: (e.clientY - caixa.top) / zoom }
+        : undefined;
+      void receberArquivos(arquivos, ponto);
+    },
+    [receberArquivos, zoom],
+  );
+
+  /* colar imagem da área de transferência */
+  useEffect(() => {
+    const aoColar = (e: ClipboardEvent) => {
+      const alvo = e.target as HTMLElement | null;
+      if (alvo && /^(INPUT|TEXTAREA|SELECT)$/.test(alvo.tagName)) return;
+      const arquivos = Array.from(e.clipboardData?.files ?? []);
+      if (!arquivos.length) return;
+      e.preventDefault();
+      void receberArquivos(arquivos);
+    };
+    window.addEventListener("paste", aoColar);
+    return () => window.removeEventListener("paste", aoColar);
+  }, [receberArquivos]);
+
   const abrirRecorte = useCallback(() => {
     if (!camadaAtual || !temImagem(camadaAtual) || !camadaAtual.ativoId) return;
     void lerAtivo(camadaAtual.ativoId).then((ativo) => ativo && setRecortando(ativo));
@@ -271,26 +477,77 @@ export default function Estudio() {
     });
   }, [alterarCamada, camadaAtual]);
 
+  /** Cobre a arte inteira sem distorcer — o "object-fit: cover" da camada. */
+  const preencherQuadro = useCallback(() => {
+    if (!camadaAtual || !temImagem(camadaAtual) || !camadaAtual.ativoId) return;
+    void lerAtivo(camadaAtual.ativoId).then((ativo) => {
+      if (!ativo) return;
+      const { largura: L, altura: A } = dimensoes(projeto);
+      const escala = Math.max(L / ativo.largura, A / ativo.altura);
+      alterarCamada(camadaAtual.id, {
+        largura: Math.round(ativo.largura * escala),
+        altura: Math.round(ativo.altura * escala),
+        x: Math.round(L / 2),
+        y: Math.round(A / 2),
+      } as Partial<Camada>);
+    });
+  }, [alterarCamada, camadaAtual, projeto]);
+
   /* ===== formato, modelo, exportação ===== */
   /**
-   * Todos os formatos têm 1080 de largura, então só a altura muda: as camadas
-   * acompanham na proporção. Sem isso, trocar de 4:5 para 9:16 deixaria tudo
-   * amontoado em cima, com a arte inteira para refazer.
+   * Trocar de formato reposiciona tudo em proporção nos dois eixos e escala os
+   * tamanhos por igual (o menor dos dois fatores), para nada distorcer.
+   * Antes só o eixo Y era mapeado, o que só funcionava porque todo formato tinha
+   * 1080 de largura — com paisagem no meio, isso amontoaria a arte à esquerda.
    */
   const trocarFormato = useCallback(
-    (formato: Formato) =>
+    (formato: Formato, tamanho?: { largura: number; altura: number }) =>
       mudarProjeto((p) => {
-        const razao = FORMATOS[formato].altura / FORMATOS[p.formato].altura;
-        if (razao === 1) return { ...p, formato };
+        const antes = dimensoes(p);
+        const alvo =
+          formato === "livre"
+            ? tamanho ?? p.tamanho ?? antes
+            : FORMATOS[formato];
+
+        const razaoL = alvo.largura / antes.largura;
+        const razaoA = alvo.altura / antes.altura;
+        const novoTamanho = formato === "livre" ? { ...alvo } : undefined;
+        if (razaoL === 1 && razaoA === 1) {
+          return { ...p, formato, tamanho: novoTamanho };
+        }
+        const escala = Math.min(razaoL, razaoA);
+
         return {
           ...p,
           formato,
-          camadas: p.camadas.map((c) =>
-            "largura" in c ? ({ ...c, y: Math.round(c.y * razao) } as Camada) : c,
-          ),
+          tamanho: novoTamanho,
+          camadas: p.camadas.map((c) => {
+            if (!("largura" in c)) return c; // fundo, sombreado e moldura são de borda a borda
+            const base = {
+              ...c,
+              x: Math.round(c.x * razaoL),
+              y: Math.round(c.y * razaoA),
+              largura: Math.max(8, Math.round(c.largura * escala)),
+            };
+            if (c.tipo === "texto") {
+              return { ...base, tamanho: Math.max(12, Math.round(c.tamanho * escala)) } as Camada;
+            }
+            return {
+              ...base,
+              altura: Math.max(8, Math.round((c as { altura: number }).altura * escala)),
+            } as Camada;
+          }),
         };
       }),
     [mudarProjeto],
+  );
+
+  const mudarTamanhoLivre = useCallback(
+    (largura: number, altura: number) => {
+      const limitar = (v: number) => Math.max(LIVRE_MIN, Math.min(LIVRE_MAX, Math.round(v || 0)));
+      trocarFormato("livre", { largura: limitar(largura), altura: limitar(altura) });
+    },
+    [trocarFormato],
   );
 
   /**
@@ -300,33 +557,46 @@ export default function Estudio() {
   const montarArte = useCallback(
     (modelo: Modelo, formato: Formato, briefing: Briefing) => {
       setAssistenteAberto(false);
-      setSelecionado(null);
+      setSelecionados([]);
       mudarProjeto((p) => ({
         ...p,
         nome: briefing.titulo.trim() ? briefing.titulo.trim().slice(0, 40) : modelo.nome,
         formato,
+        tamanho: formato === "livre" ? p.tamanho : undefined,
         camadas: montarComBriefing(modelo, formato, briefing),
       }));
     },
     [mudarProjeto],
   );
 
-  const exportar = useCallback(
-    async (escala: number) => {
+  /**
+   * Gera o PNG. A `escalaExport` também sobe a resolução do cache dos filtros:
+   * sem isso o 2× ampliava um bitmap de 1× e as camadas com ajuste, tinta ou
+   * esmaecer saíam borradas justamente no arquivo de maior qualidade.
+   */
+  const entregar = useCallback(
+    async (escala: number, copiar: boolean) => {
       const palco = palcoRef.current;
       if (!palco) return;
-      setSelecionado(null);
-      setExportando(true);
+      setSelecionados([]);
+      setEscalaExport(escala);
       try {
-        // um quadro para o palco redesenhar sem alças nem guias
+        // dois quadros para o palco redesenhar sem alças, guias nem cache antigo
         await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
-        const { largura, altura } = FORMATOS[projeto.formato];
-        await exportarPng(palco, largura, altura, escala, projeto.nome);
+        const { largura, altura } = dimensoes(projeto);
+        if (copiar) {
+          await copiarPng(palco, largura, altura, escala);
+          setRecado("Imagem copiada — é só colar no WhatsApp ou no Instagram.");
+        } else {
+          await exportarPng(palco, largura, altura, escala, projeto.nome);
+        }
+      } catch (e) {
+        setRecado(e instanceof Error ? e.message : "Não consegui gerar a imagem.");
       } finally {
-        setExportando(false);
+        setEscalaExport(0);
       }
     },
-    [projeto.formato, projeto.nome],
+    [projeto],
   );
 
   /* ===== atalhos ===== */
@@ -345,7 +615,12 @@ export default function Estudio() {
       }
       if (cmd && e.key.toLowerCase() === "d") {
         e.preventDefault();
-        if (selecionado) duplicar(selecionado);
+        if (selecionados.length) duplicar(selecionados);
+        return;
+      }
+      if (cmd && e.key.toLowerCase() === "a") {
+        e.preventDefault();
+        setSelecionados(projeto.camadas.filter((c) => !c.travada).map((c) => c.id));
         return;
       }
       if (cmd && e.key === "0") {
@@ -353,33 +628,47 @@ export default function Estudio() {
         ajustarZoom();
         return;
       }
-      if (!selecionado) return;
+      if (e.key === "Escape") {
+        setSelecionados([]);
+        setPrevia(false);
+        return;
+      }
+      if (e.key.toLowerCase() === "p" && !cmd) {
+        e.preventDefault();
+        setPrevia((v) => !v);
+        return;
+      }
+      if (!selecionados.length) return;
 
       if (e.key === "Delete" || e.key === "Backspace") {
         e.preventDefault();
-        if (camadaAtual?.tipo !== "fundo") excluir(selecionado);
+        excluir(escolhidas.filter((c) => c.tipo !== "fundo").map((c) => c.id));
         return;
       }
       if (e.key === "[" || e.key === "]") {
         e.preventDefault();
-        deslocarZ(e.key === "]" ? 1 : -1);
+        const paraFrente = e.key === "]";
+        deslocarZ(e.shiftKey ? (paraFrente ? "topo" : "fundo") : paraFrente ? 1 : -1);
         return;
       }
-      if (e.key.startsWith("Arrow") && camadaAtual && "largura" in camadaAtual) {
+      if (e.key.startsWith("Arrow")) {
         e.preventDefault();
         const passo = e.shiftKey ? 10 : 1;
         const delta = {
-          ArrowUp: { y: -passo },
-          ArrowDown: { y: passo },
-          ArrowLeft: { x: -passo },
-          ArrowRight: { x: passo },
+          ArrowUp: { x: 0, y: -passo },
+          ArrowDown: { x: 0, y: passo },
+          ArrowLeft: { x: -passo, y: 0 },
+          ArrowRight: { x: passo, y: 0 },
         }[e.key];
-        if (delta) {
-          alterarCamada(selecionado, {
-            x: camadaAtual.x + ("x" in delta ? delta.x! : 0),
-            y: camadaAtual.y + ("y" in delta ? delta.y! : 0),
-          } as Partial<Camada>);
-        }
+        if (!delta) return;
+        mudarProjeto((p) => ({
+          ...p,
+          camadas: p.camadas.map((c) =>
+            selecionados.includes(c.id) && "largura" in c
+              ? ({ ...c, x: c.x + delta.x, y: c.y + delta.y } as Camada)
+              : c,
+          ),
+        }));
       }
     };
 
@@ -387,14 +676,15 @@ export default function Estudio() {
     return () => window.removeEventListener("keydown", aoTeclar);
   }, [
     ajustarZoom,
-    alterarCamada,
-    camadaAtual,
     deslocarZ,
     desfazer,
     duplicar,
+    escolhidas,
     excluir,
+    mudarProjeto,
+    projeto.camadas,
     refazer,
-    selecionado,
+    selecionados,
   ]);
 
   const familiaBiblioteca =
@@ -404,22 +694,34 @@ export default function Estudio() {
       : "pessoa";
 
   return (
-    <div className="flex h-dvh flex-col bg-[#0D0B08] text-white">
+    /* --barra fica aqui, e não no <header>: as gavetas do celular são irmãs
+       dele e precisam ler a mesma altura para não nascerem por baixo da barra */
+    <div
+      style={{ ["--barra" as string]: "3.25rem" }}
+      className="flex h-dvh flex-col bg-[#0D0B08] text-white"
+    >
       <BarraSuperior
         nome={projeto.nome}
         formato={projeto.formato}
+        tamanho={dimensoes(projeto)}
         zoom={zoom}
         podeDesfazer={podeDesfazer}
         podeRefazer={podeRefazer}
         salvando={salvando}
-        exportando={exportando}
+        exportando={escalaExport > 0}
+        previa={previa}
+        guiasVisiveis={guiasVisiveis}
         onNome={(nome) => mudarProjeto((p) => ({ ...p, nome }), true)}
-        onFormato={trocarFormato}
+        onFormato={(f) => trocarFormato(f)}
+        onTamanhoLivre={mudarTamanhoLivre}
         onZoom={setZoom}
         onAjustarZoom={ajustarZoom}
         onDesfazer={desfazer}
         onRefazer={refazer}
-        onExportar={(escala) => void exportar(escala)}
+        onPrevia={() => setPrevia((v) => !v)}
+        onGuias={() => setGuiasVisiveis((v) => !v)}
+        onExportar={(escala) => void entregar(escala, false)}
+        onCopiar={() => void entregar(1, true)}
         onAbrirModelos={() => setAssistenteAberto(true)}
       />
 
@@ -428,18 +730,19 @@ export default function Estudio() {
         <aside
           className={`w-60 shrink-0 border-r border-white/10 bg-[#14110C] lg:block ${
             gavetas === "camadas"
-              ? "fixed inset-y-0 left-0 top-0 z-40 block pt-14"
+              ? "fixed bottom-0 left-0 top-[var(--barra)] z-40 block"
               : "hidden"
           }`}
         >
           <ListaCamadas
             camadas={projeto.camadas}
-            selecionado={selecionado}
-            onSelecionar={setSelecionado}
+            selecionados={selecionados}
+            formato={dimensoes(projeto)}
+            onSelecionar={selecionar}
             onAlterar={alterarCamada}
             onMover={mover}
-            onDuplicar={duplicar}
-            onExcluir={excluir}
+            onDuplicar={(id) => duplicar([id])}
+            onExcluir={(id) => excluir([id])}
             onAdicionar={adicionar}
           />
         </aside>
@@ -452,19 +755,23 @@ export default function Estudio() {
               "radial-gradient(circle at 1px 1px, rgba(255,255,255,.055) 1px, transparent 0)",
             backgroundSize: "22px 22px",
           }}
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={soltarNoPalco}
         >
           <div className="shadow-[0_20px_60px_rgba(0,0,0,.6)]">
             <Palco
               projeto={projeto}
-              selecionado={selecionado}
-              onSelecionar={setSelecionado}
+              selecionados={selecionados}
+              onSelecionar={selecionar}
               onAlterar={(id, m) => alterarCamada(id, m, true)}
               onFimDeGesto={fechar}
               zoom={zoom}
               onZoom={setZoom}
               palcoRef={palcoRef}
               selo={selo}
-              exportando={exportando}
+              escalaExport={escalaExport}
+              previa={previa}
+              guiasVisiveis={guiasVisiveis}
             />
           </div>
         </main>
@@ -472,17 +779,27 @@ export default function Estudio() {
         <aside
           className={`w-72 shrink-0 overflow-y-auto border-l border-white/10 bg-[#14110C] lg:block ${
             gavetas === "inspetor"
-              ? "fixed inset-y-0 right-0 top-0 z-40 block pt-14"
+              ? "fixed bottom-0 right-0 top-[var(--barra)] z-40 block"
               : "hidden"
           }`}
         >
           <Inspetor
             camada={camadaAtual}
-            formato={projeto.formato}
-            onAlterar={(m) => selecionado && alterarCamada(selecionado, m)}
-            onTrocarImagem={() => selecionado && setBibliotecaPara(selecionado)}
+            varias={escolhidas.length > 1 ? escolhidas : null}
+            medidas={dimensoes(projeto)}
+            onAlterar={(m) => camadaAtual && alterarCamada(camadaAtual.id, m)}
+            onAlterarVarias={alterarSelecionadas}
+            onAlinhar={alinhar}
+            onDistribuir={distribuir}
+            onOrdenar={deslocarZ}
+            onDuplicarSelecao={() => duplicar(selecionados)}
+            onExcluirSelecao={() =>
+              excluir(escolhidas.filter((c) => c.tipo !== "fundo").map((c) => c.id))
+            }
+            onTrocarImagem={() => camadaAtual && setBibliotecaPara(camadaAtual.id)}
             onDuplicarFantasma={duplicarFantasma}
             onAjustarProporcao={ajustarProporcao}
+            onPreencherQuadro={preencherQuadro}
             onRemoverFundo={abrirRecorte}
           />
         </aside>
@@ -503,6 +820,15 @@ export default function Estudio() {
           </button>
         ))}
       </nav>
+
+      {recado && (
+        <p
+          role="status"
+          className="pointer-events-none fixed bottom-20 left-1/2 z-50 -translate-x-1/2 rounded-md border border-[#FFCB05]/40 bg-[#14110C] px-4 py-2 text-sm text-white shadow-xl lg:bottom-6"
+        >
+          {recado}
+        </p>
+      )}
 
       {assistenteAberto && (
         <Assistente
@@ -526,7 +852,7 @@ export default function Estudio() {
           onFechar={() => setRecortando(null)}
           onPronto={(novo) => {
             setRecortando(null);
-            if (selecionado) aplicarAtivo(selecionado, novo);
+            if (camadaAtual) aplicarAtivo(camadaAtual.id, novo);
           }}
         />
       )}

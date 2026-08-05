@@ -1,5 +1,6 @@
 "use client";
 
+import type { KonvaEventObject } from "konva/lib/Node";
 import { Rect } from "react-konva";
 import { hexParaRgb } from "../filtros";
 import type { CamadaSombreado } from "../tipos";
@@ -8,7 +9,7 @@ interface Props {
   camada: CamadaSombreado;
   largura: number;
   altura: number;
-  onSelecionar: () => void;
+  onSelecionar: (e?: KonvaEventObject<MouseEvent | TouchEvent>) => void;
 }
 
 const rgba = (cor: string, a: number) => {
@@ -44,6 +45,29 @@ export default function Sombreado({ camada, largura, altura, onSelecionar }: Pro
         fillRadialGradientStartRadius={raio * (1 - camada.extensao)}
         fillRadialGradientEndRadius={raio}
         fillRadialGradientColorStops={[0, rgba(camada.cor, 0), 1, rgba(camada.cor, camada.forca)]}
+      />
+    );
+  }
+
+  /* laterais: o degradê vem de um lado e abre espaço para o texto no outro.
+     É o que uma peça em paisagem precisa — pessoa num terço, texto no resto. */
+  if (camada.direcao === "esquerda" || camada.direcao === "direita") {
+    const faixaX = Math.max(1, largura * camada.extensao);
+    const daEsquerda = camada.direcao === "esquerda";
+    return (
+      <Rect
+        {...comum}
+        x={daEsquerda ? 0 : largura - faixaX}
+        y={0}
+        width={faixaX}
+        height={altura}
+        fillLinearGradientStartPoint={{ x: 0, y: 0 }}
+        fillLinearGradientEndPoint={{ x: faixaX, y: 0 }}
+        fillLinearGradientColorStops={
+          daEsquerda
+            ? [0, rgba(camada.cor, camada.forca), 1, rgba(camada.cor, 0)]
+            : [0, rgba(camada.cor, 0), 1, rgba(camada.cor, camada.forca)]
+        }
       />
     );
   }

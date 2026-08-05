@@ -1,5 +1,6 @@
 "use client";
 
+import type { KonvaEventObject } from "konva/lib/Node";
 import { Rect } from "react-konva";
 import type { CamadaMoldura } from "../tipos";
 
@@ -7,7 +8,7 @@ interface Props {
   camada: CamadaMoldura;
   largura: number;
   altura: number;
-  onSelecionar: () => void;
+  onSelecionar: (e?: KonvaEventObject<MouseEvent | TouchEvent>) => void;
 }
 
 /** Moldura dourada de cordel — simples ou dupla, como no "É OFICIAL". */

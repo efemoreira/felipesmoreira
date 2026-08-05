@@ -5,16 +5,33 @@ import Konva from "konva";
 import { useEffect, type RefObject } from "react";
 import type { Filter, KonvaEventObject } from "konva/lib/Node";
 import { Esmaecer, Gradiente, Tinta } from "../filtros";
-import type { Ajustes, Camada } from "../tipos";
+import type { Ajustes, Camada, Esmaecimento } from "../tipos";
 
 export interface PropsCamada<T extends Camada> {
   camada: T;
   selecionada: boolean;
-  onSelecionar: () => void;
+  /** recebe o evento para ler Shift (juntar à seleção) e Alt (pegar a de baixo) */
+  onSelecionar: (e?: KonvaEventObject<MouseEvent | TouchEvent>) => void;
   onAlterar: (mudanca: Partial<T>) => void;
   /** durante a exportação nada é clicável nem arrastável */
   interativo: boolean;
+  /**
+   * Resolução do cache de filtro. É 1 enquanto se edita e sobe para a escala da
+   * exportação na hora de gerar o PNG — sem isso o 2× amplia um bitmap 1× e sai
+   * borrado justamente nas camadas trabalhadas.
+   */
+  qualidade: number;
 }
+
+/** Um esmaecimento só entra na conta se tiver alguma borda ligada. */
+export const esmaeceAlgo = (e: Esmaecimento | undefined): boolean =>
+  !!e?.ativo &&
+  (e.modo === "elipse" ||
+    e.topo > 0 ||
+    e.direita > 0 ||
+    e.base > 0 ||
+    e.esquerda > 0 ||
+    e.cantos > 0);
 
 /** Monta a lista de filtros do Konva a partir dos ajustes da camada. */
 export function filtrosDe(
@@ -30,6 +47,7 @@ export function filtrosDe(
   if (extras.tinta) filtros.push(Tinta);
   // depois da tinta: o gradiente também pinta, e precisa vir por cima dela
   if (extras.gradiente) filtros.push(Gradiente);
+  // por último: o esmaecer só corta alfa, então nada depois dele repinta o que sumiu
   if (extras.esmaecer) filtros.push(Esmaecer);
   return filtros;
 }
@@ -44,14 +62,31 @@ export function atributosDeAjuste(ajustes: Ajustes) {
   };
 }
 
+/** Atributos do filtro Esmaecer, lidos do nó pelo Konva. */
+export function atributosDeEsmaecer(e: Esmaecimento) {
+  return {
+    esmaecerModo: e.modo,
+    esmaecerTopo: e.topo,
+    esmaecerDireita: e.direita,
+    esmaecerBase: e.base,
+    esmaecerEsquerda: e.esquerda,
+    esmaecerCantos: e.cantos,
+    esmaecerDureza: e.dureza,
+  };
+}
+
 /**
  * Filtro no Konva só roda em nó cacheado, e o cache é caro.
  * Então: recacheia com um respiro depois da última mudança, nunca a cada frame.
+ *
+ * A `qualidade` entra na chave de propósito: quando a exportação sobe para 2×,
+ * o cache precisa ser refeito naquela resolução antes do `toDataURL`.
  */
 export function useCacheFiltros(
   ref: RefObject<Konva.Node | null>,
   precisa: boolean,
   chave: string,
+  qualidade = 1,
 ) {
   useEffect(() => {
     const no = ref.current;
@@ -63,12 +98,19 @@ export function useCacheFiltros(
       return;
     }
 
+    // na exportação não dá para esperar: o PNG é gerado dois quadros depois
+    if (qualidade > 1) {
+      no.cache({ pixelRatio: qualidade });
+      no.getLayer()?.batchDraw();
+      return;
+    }
+
     const id = window.setTimeout(() => {
       no.cache({ pixelRatio: 1 });
       no.getLayer()?.batchDraw();
     }, 90);
     return () => window.clearTimeout(id);
-  }, [ref, precisa, chave]);
+  }, [ref, precisa, chave, qualidade]);
 }
 
 /** Ao girar/redimensionar, o Konva mexe na escala; aqui ela volta para o tamanho. */

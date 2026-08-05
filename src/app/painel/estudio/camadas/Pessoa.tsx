@@ -11,6 +11,8 @@ import {
   aoArrastar,
   aoTransformar,
   atributosDeAjuste,
+  atributosDeEsmaecer,
+  esmaeceAlgo,
   filtrosDe,
   useCacheFiltros,
   type PropsCamada,
@@ -28,6 +30,7 @@ export default function Pessoa({
   onSelecionar,
   onAlterar,
   interativo,
+  qualidade,
 }: PropsCamada<CamadaPessoa>) {
   const img = useImagem(camada.ativoId);
   const principal = useRef<Konva.Image>(null);
@@ -37,18 +40,21 @@ export default function Pessoa({
   const filtros = filtrosDe(ajustes, {
     tinta: tinta.ativa,
     gradiente: gradiente.ativo,
+    esmaecer: esmaeceAlgo(camada.esmaecer),
   });
   const precisaCache = filtros.length > 0;
 
   useCacheFiltros(
     principal,
     precisaCache && !!img,
-    `${camada.ativoId}|${camada.largura}x${camada.altura}|${JSON.stringify(ajustes)}|${JSON.stringify(tinta)}|${JSON.stringify(gradiente)}`,
+    `${camada.ativoId}|${camada.largura}x${camada.altura}|${JSON.stringify(ajustes)}|${JSON.stringify(tinta)}|${JSON.stringify(gradiente)}|${JSON.stringify(camada.esmaecer)}`,
+    qualidade,
   );
   useCacheFiltros(
     halo,
     camada.halo.ativo && !!img,
     `${camada.ativoId}|${camada.largura}x${camada.altura}|${JSON.stringify(camada.halo)}`,
+    qualidade,
   );
 
   if (!img) {
@@ -115,6 +121,7 @@ export default function Pessoa({
         {...tamanho}
         filters={filtros}
         {...atributosDeAjuste(ajustes)}
+        {...atributosDeEsmaecer(camada.esmaecer)}
         tintaCor={tinta.cor}
         tintaForca={tinta.ativa ? tinta.forca : 0}
         gradienteModo={gradiente.modo}

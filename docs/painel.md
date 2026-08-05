@@ -82,6 +82,52 @@ Só o hash é guardado. **Não existe descobrir a senha, existe trocar.**
 - Senha provisória é gerada pelo painel em blocos legíveis (`abcd-efgh-ijkl`,
   sem `l`, `o`, `0` ou `1`), para passar por telefone sem erro.
 
+## Agenda da semana
+
+Cada item é um bloco que recolhe. Com a semana cheia, o cabeçalho mostra cor,
+título, dia, hora e plataforma sem precisar abrir. Dentro, uma prévia desenha o
+cartão como ele vai sair em `/programacao`.
+
+- **Reordenar** — arraste pelo `⠿`, ou use `↑` `↓` (o caminho de teclado).
+- **Imagem** — arraste o arquivo para a miniatura, cole com `Ctrl+V` com o item
+  em foco, ou clique na miniatura.
+- **Sair sem publicar** avisa. Se a gravação falhar, o formulário volta com tudo
+  que foi digitado — não é preciso refazer.
+- O envio inteiro é barrado no navegador quando as imagens somam mais de 8 MB:
+  o servidor recusaria o POST e o trabalho todo se perderia junto.
+
+## Estúdio de artes
+
+Roda inteiro no navegador, nada sobe para o servidor.
+
+**Formatos:** Feed 4:5, Stories 9:16, Quadrado 1:1, Capa/vídeo 16:9,
+Link 1.91:1 e Personalizado (320 a 4096 px). Trocar de formato reposiciona as
+camadas em proporção e reescala os tamanhos sem distorcer.
+
+**Atalhos:**
+
+| Tecla | O que faz |
+|---|---|
+| `⇧` ou `⌘` + clique | junta a camada à seleção |
+| `Alt` + clique | pega a camada de baixo |
+| `⇧` ao arrastar | trava o eixo |
+| `P` | vê sem guias nem alças |
+| `Esc` | desmarca tudo |
+| `⌘A` | seleciona todas as destravadas |
+| `⌘Z` / `⌘⇧Z` | desfaz / refaz |
+| `⌘D` | duplica |
+| `[` `]` | manda para trás / para a frente (com `⇧`, até o fim) |
+| setas | move 1 px (com `⇧`, 10 px) |
+| `⌘0` | ajusta o zoom à janela |
+| `⌘V` | cola uma imagem da área de transferência |
+
+Arrastar um arquivo para o palco cria a camada onde foi solto: **PNG** vira
+pessoa recortada, **JPG/WEBP** vira foto de contexto. Com uma camada de imagem
+já selecionada, o arquivo só troca o conteúdo dela.
+
+Com duas ou mais camadas selecionadas, o inspetor troca para alinhar, distribuir,
+ordenar e mexer em opacidade, visibilidade e travas de uma vez.
+
 ## URLs
 
 O `.htaccess` gerado no workflow mapeia as URLs limpas:

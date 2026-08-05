@@ -10,6 +10,8 @@ import {
   aoArrastar,
   aoTransformar,
   atributosDeAjuste,
+  atributosDeEsmaecer,
+  esmaeceAlgo,
   filtrosDe,
   useCacheFiltros,
   type PropsCamada,
@@ -25,16 +27,19 @@ export default function Foto({
   onSelecionar,
   onAlterar,
   interativo,
+  qualidade,
 }: PropsCamada<CamadaFoto>) {
   const img = useImagem(camada.ativoId);
   const ref = useRef<Konva.Image>(null);
 
-  const filtros = filtrosDe(camada.ajustes, { esmaecer: camada.esmaecer > 0 });
+  const esmaece = esmaeceAlgo(camada.esmaecer);
+  const filtros = filtrosDe(camada.ajustes, { esmaecer: esmaece });
 
   useCacheFiltros(
     ref,
     filtros.length > 0 && !!img,
-    `${camada.ativoId}|${camada.largura}x${camada.altura}|${JSON.stringify(camada.ajustes)}|${camada.esmaecer}`,
+    `${camada.ativoId}|${camada.largura}x${camada.altura}|${JSON.stringify(camada.ajustes)}|${JSON.stringify(camada.esmaecer)}`,
+    qualidade,
   );
 
   if (!img) {
@@ -79,7 +84,7 @@ export default function Foto({
       }
       filters={filtros}
       {...atributosDeAjuste(camada.ajustes)}
-      esmaecerForca={camada.esmaecer}
+      {...atributosDeEsmaecer(camada.esmaecer)}
       onMouseDown={onSelecionar}
       onTouchStart={onSelecionar}
       onDragEnd={aoArrastar((m) => onAlterar(m))}

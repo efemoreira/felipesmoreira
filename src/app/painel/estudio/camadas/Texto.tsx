@@ -70,8 +70,12 @@ export default function Texto({
         desenharTexto(nativo, camada, medida);
       }}
       hitFunc={(ctx: Konva.Context, shape: Konva.Shape) => {
+        // com fundo ligado, a caixa clicável cresce junto: senão a tarja aparece
+        // no palco mas não pega o clique nas bordas
+        const px = camada.fundo.ativo ? camada.fundo.padX : 0;
+        const py = camada.fundo.ativo ? camada.fundo.padY : 0;
         ctx.beginPath();
-        ctx.rect(0, 0, medida.largura, medida.altura);
+        ctx.rect(-px, -py, medida.largura + px * 2, medida.altura + py * 2);
         ctx.closePath();
         ctx.fillStrokeShape(shape);
       }}

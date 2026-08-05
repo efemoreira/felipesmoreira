@@ -231,6 +231,124 @@ export function Chave({
   );
 }
 
+/** Aviso curto dentro de uma seção, com uma saída de um clique. */
+export function Aviso({
+  texto,
+  acao,
+  onAcao,
+}: {
+  texto: string;
+  acao?: string;
+  onAcao?: () => void;
+}) {
+  return (
+    <p className="flex flex-wrap items-center gap-2 rounded-md border border-amber-400/40 bg-amber-400/10 px-2.5 py-2 text-[11px] leading-snug text-amber-200">
+      <span className="flex-1">{texto}</span>
+      {acao && onAcao && (
+        <button
+          type="button"
+          onClick={onAcao}
+          className="shrink-0 rounded border border-amber-300/50 px-2 py-0.5 font-medium text-amber-100 transition hover:bg-amber-300/20"
+        >
+          {acao}
+        </button>
+      )}
+    </p>
+  );
+}
+
+/** Atalhos que só preenchem os campos — depois é tudo manual. */
+export function Presets<T>({
+  rotulo,
+  opcoes,
+  onAplicar,
+}: {
+  rotulo: string;
+  opcoes: { nome: string; valor: T }[];
+  onAplicar: (v: T) => void;
+}) {
+  return (
+    <Campo rotulo={rotulo}>
+      <div className="flex flex-wrap gap-1.5">
+        {opcoes.map((o) => (
+          <button
+            key={o.nome}
+            type="button"
+            onClick={() => onAplicar(o.valor)}
+            className="rounded border border-white/15 px-2 py-1 text-[11px] text-white/70 transition hover:border-[#FFCB05] hover:text-white"
+          >
+            {o.nome}
+          </button>
+        ))}
+      </div>
+    </Campo>
+  );
+}
+
+/**
+ * Os quatro lados de uma imagem, com cadeado.
+ *
+ * Fechado, um slider move os quatro juntos (o comportamento antigo do valor
+ * único); aberto, cada borda tem o seu — é o que deixa esmaecer só a base, ou só
+ * o lado que encosta no texto.
+ */
+export function Lados({
+  valores,
+  ligados,
+  onLigados,
+  onMudar,
+  max = 1,
+  passo = 0.02,
+}: {
+  valores: { topo: number; direita: number; base: number; esquerda: number };
+  ligados: boolean;
+  onLigados: (v: boolean) => void;
+  onMudar: (m: Partial<typeof valores>) => void;
+  max?: number;
+  passo?: number;
+}) {
+  const todos = (v: number) => onMudar({ topo: v, direita: v, base: v, esquerda: v });
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center justify-between">
+        <span className="text-[11px] uppercase tracking-wider text-white/45">Lados</span>
+        <button
+          type="button"
+          onClick={() => onLigados(!ligados)}
+          aria-pressed={ligados}
+          title={ligados ? "Separar os lados" : "Mover os quatro juntos"}
+          className={`rounded border px-2 py-0.5 text-[11px] transition ${
+            ligados
+              ? "border-[#FFCB05] text-[#FFCB05]"
+              : "border-white/15 text-white/45 hover:text-white"
+          }`}
+        >
+          {ligados ? "🔗 juntos" : "⛓ separados"}
+        </button>
+      </div>
+
+      {ligados ? (
+        <Deslizante
+          rotulo="Todos os lados"
+          valor={valores.topo}
+          min={0}
+          max={max}
+          passo={passo}
+          onMudar={todos}
+        />
+      ) : (
+        <div className="grid grid-cols-2 gap-x-3 gap-y-1">
+          <Deslizante rotulo="Topo" valor={valores.topo} min={0} max={max} passo={passo} onMudar={(topo) => onMudar({ topo })} />
+          <Deslizante rotulo="Base" valor={valores.base} min={0} max={max} passo={passo} onMudar={(base) => onMudar({ base })} />
+          <Deslizante rotulo="Esquerda" valor={valores.esquerda} min={0} max={max} passo={passo} onMudar={(esquerda) => onMudar({ esquerda })} />
+          <Deslizante rotulo="Direita" valor={valores.direita} min={0} max={max} passo={passo} onMudar={(direita) => onMudar({ direita })} />
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function Cor({
   rotulo,
   valor,

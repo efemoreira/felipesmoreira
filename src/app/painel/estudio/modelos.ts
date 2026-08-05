@@ -5,7 +5,16 @@
  * (fundo → contexto → sombreado → pessoa → texto) com espaços reservados para
  * trocar foto e texto. É o que faz uma arte sair em minutos.
  */
-import { AJUSTES_NEUTROS, FORMATOS, novoId } from "./tipos";
+import {
+  AJUSTES_NEUTROS,
+  FORMATOS,
+  FUNDO_TEXTO_PADRAO,
+  SEM_ESMAECER,
+  TARJA_PADRAO,
+  esmaecerUniforme,
+  ladoBase,
+  novoId,
+} from "./tipos";
 import type {
   Camada,
   CamadaAvatar,
@@ -34,6 +43,33 @@ const base = (tipo: TipoCamada, nome: string) => ({
   travada: false,
 });
 
+/**
+ * O quadro em que a arte é montada: uma chave de formato ou medidas cruas.
+ *
+ * As medidas cruas existem por causa do formato "Personalizado", cujas dimensões
+ * moram no projeto e não na tabela — sem isto, uma arte de 2560×1440 ganharia
+ * camadas dimensionadas para o 1080×1080 da entrada de reserva.
+ */
+export type Quadro = Formato | { largura: number; altura: number };
+
+/**
+ * As medidas do quadro, com o menor lado à mão.
+ *
+ * Tudo que é tamanho (corpo de texto, altura de pessoa) nasce do menor lado, não
+ * da largura: num 16:9 de 1920px de largura, medir pela largura dava um título de
+ * 355px. Nos formatos verticais o menor lado continua sendo 1080, então nada muda.
+ */
+function medidas(f: Quadro) {
+  const d = typeof f === "string" ? FORMATOS[f] ?? FORMATOS["4:5"] : f;
+  return { largura: d.largura, altura: d.altura, base: ladoBase(d) };
+}
+
+/** Deitado é deitado, venha de um formato da tabela ou de um tamanho à mão. */
+export function ehPaisagem(f: Quadro): boolean {
+  const d = medidas(f);
+  return d.largura > d.altura;
+}
+
 /* ===== fábricas ===== */
 
 export const criarFundo = (): CamadaFundo => ({
@@ -44,26 +80,27 @@ export const criarFundo = (): CamadaFundo => ({
   angulo: 0,
 });
 
-export const criarFoto = (f: Formato, nome = "Foto de contexto"): CamadaFoto => {
-  const { largura, altura } = FORMATOS[f];
+export const criarFoto = (f: Quadro, nome = "Foto de contexto"): CamadaFoto => {
+  const { largura, altura, base: b } = medidas(f);
   return {
     ...(base("foto", nome) as CamadaFoto),
     x: largura / 2,
     y: altura / 2.6,
-    largura: Math.round(largura * 0.6),
-    altura: Math.round(largura * 0.6 * 1.2),
+    largura: Math.round(b * 0.6),
+    altura: Math.round(b * 0.6 * 1.2),
     ativoId: "",
     espelhado: false,
     ajustes: { ...AJUSTES_NEUTROS, cinza: true, brilho: -0.32, contraste: 12 },
     mistura: "normal",
-    esmaecer: 0.45,
+    esmaecer: esmaecerUniforme(0.45),
   };
 };
 
-export const criarPessoa = (f: Formato, nome = "Pessoa"): CamadaPessoa => {
-  const { largura, altura } = FORMATOS[f];
-  const l = Math.round(largura * 0.74);
-  const a = Math.round(l * 1.3);
+export const criarPessoa = (f: Quadro, nome = "Pessoa"): CamadaPessoa => {
+  const { largura, altura, base: b } = medidas(f);
+  // em paisagem a pessoa é limitada pela altura, não pela largura
+  const a = ehPaisagem(f) ? Math.round(altura * 0.92) : Math.round(b * 0.74 * 1.3);
+  const l = Math.round(a / 1.3);
   return {
     ...(base("pessoa", nome) as CamadaPessoa),
     x: largura / 2,
@@ -73,6 +110,7 @@ export const criarPessoa = (f: Formato, nome = "Pessoa"): CamadaPessoa => {
     ativoId: "",
     espelhado: false,
     ajustes: { ...AJUSTES_NEUTROS },
+    esmaecer: { ...SEM_ESMAECER },
     tinta: { ativa: false, cor: CORES.preto, forca: 1 },
     gradiente: {
       ativo: false,
@@ -95,10 +133,10 @@ export const criarSombreado = (nome = "Sombreado"): CamadaSombreado => ({
 });
 
 export const criarTexto = (
-  f: Formato,
+  f: Quadro,
   papel: "titulo" | "subtitulo" | "chapeu" = "titulo",
 ): CamadaTexto => {
-  const { largura, altura } = FORMATOS[f];
+  const { largura, altura, base: b } = medidas(f);
   const util = Math.round(largura * 0.9);
 
   // a cor de destaque nasce diferente da base, senão a marcação *assim* não
@@ -108,17 +146,19 @@ export const criarTexto = (
       nome: "Título",
       texto: "URGENTE!",
       fonte: "anton" as const,
-      tamanho: Math.round(largura * 0.185),
+      tamanho: Math.round(b * 0.185),
       cor: CORES.ouro,
       destaque: CORES.branco,
       y: altura * 0.78,
-      entrelinha: 0.92,
+      // 1.0 e não 0.92: com caixa alta acentuada (MILITÂNCIA) o circunflexo da
+      // segunda linha encostava na primeira
+      entrelinha: 1,
     },
     subtitulo: {
       nome: "Subtítulo",
       texto: "Explique o fato em *poucas palavras*\ne feche com ==a informação chave==",
       fonte: "oswald" as const,
-      tamanho: Math.round(largura * 0.058),
+      tamanho: Math.round(b * 0.058),
       cor: CORES.branco,
       destaque: CORES.ouro,
       y: altura * 0.92,
@@ -128,7 +168,7 @@ export const criarTexto = (
       nome: "Chapéu",
       texto: "ERA TUDO UMA FARSA?",
       fonte: "oswald" as const,
-      tamanho: Math.round(largura * 0.038),
+      tamanho: Math.round(b * 0.038),
       cor: "rgba(255,255,255,.72)",
       destaque: CORES.ouro,
       y: altura * 0.68,
@@ -157,6 +197,8 @@ export const criarTexto = (
     contorno: { ativo: false, cor: CORES.noite, espessura: 6 },
     sombra: { ativa: true, cor: "rgba(0,0,0,.85)", x: 6, y: 7, desfoque: 0 },
     autoAjuste: true,
+    fundo: { ...FUNDO_TEXTO_PADRAO, padX: Math.round(b * 0.026), padY: Math.round(b * 0.017) },
+    tarja: { ...TARJA_PADRAO },
   };
 };
 
@@ -169,9 +211,9 @@ export const criarMoldura = (): CamadaMoldura => ({
   raio: 0,
 });
 
-export const criarAvatar = (f: Formato): CamadaAvatar => {
-  const { largura, altura } = FORMATOS[f];
-  const d = Math.round(largura * 0.22);
+export const criarAvatar = (f: Quadro): CamadaAvatar => {
+  const { largura, altura, base: b } = medidas(f);
+  const d = Math.round(b * 0.22);
   return {
     ...(base("avatar", "Avatar") as CamadaAvatar),
     x: largura / 2,
@@ -181,13 +223,14 @@ export const criarAvatar = (f: Formato): CamadaAvatar => {
     ativoId: "",
     espelhado: false,
     ajustes: { ...AJUSTES_NEUTROS },
+    esmaecer: { ...SEM_ESMAECER },
     anel: { ativo: true, cor: CORES.branco, espessura: 6 },
     sombra: { ativa: true, cor: "rgba(0,0,0,.55)", x: 0, y: 8, desfoque: 24 },
   };
 };
 
 /** Cria uma camada avulsa pelo botão "+ Camada". */
-export function novaCamada(tipo: TipoCamada, f: Formato): Camada {
+export function novaCamada(tipo: TipoCamada, f: Quadro): Camada {
   switch (tipo) {
     case "fundo":
       return criarFundo();
@@ -212,22 +255,99 @@ export interface Modelo {
   chave: string;
   nome: string;
   resumo: string;
-  montar: (f: Formato) => Camada[];
+  montar: (f: Quadro) => Camada[];
+}
+
+/**
+ * Onde cada peça cai, conforme a orientação.
+ *
+ * No vertical a leitura é de cima para baixo: pessoa ocupando a base, texto por
+ * cima dela, sombreado pesando embaixo. No paisagem não há essa altura toda —
+ * a composição vira lado a lado: pessoa ancorada num terço, coluna de texto
+ * alinhada à esquerda no resto, e o sombreado entra pela lateral para abrir a
+ * área de leitura. Os modelos falam nestes termos em vez de frações soltas.
+ */
+function arranjo(f: Quadro) {
+  const { largura, altura, base: b } = medidas(f);
+
+  if (ehPaisagem(f)) {
+    return {
+      paisagem: true,
+      largura,
+      altura,
+      base: b,
+      focoX: Math.round(largura * 0.76),
+      focoY: altura,
+      textoX: Math.round(largura * 0.35),
+      textoLargura: Math.round(largura * 0.56),
+      alinhamento: "left" as const,
+      yChapeu: Math.round(altura * 0.26),
+      yTitulo: Math.round(altura * 0.45),
+      ySubtitulo: Math.round(altura * 0.74),
+      // degradê vindo da esquerda: é ele que dá fundo para a coluna de texto
+      sombreadoTexto: { direcao: "esquerda" as const, extensao: 0.78, forca: 0.92 },
+      contextoY: Math.round(altura * 0.5),
+    };
+  }
+
+  return {
+    paisagem: false,
+    largura,
+    altura,
+    base: b,
+    focoX: Math.round(largura / 2),
+    focoY: altura,
+    textoX: Math.round(largura / 2),
+    textoLargura: Math.round(largura * 0.9),
+    alinhamento: "center" as const,
+    yChapeu: Math.round(altura * 0.66),
+    yTitulo: Math.round(altura * 0.77),
+    ySubtitulo: Math.round(altura * 0.91),
+    sombreadoTexto: { direcao: "ambos" as const, extensao: 0.5, forca: 0.94 },
+    contextoY: Math.round(altura * 0.26),
+  };
+}
+
+type Arranjo = ReturnType<typeof arranjo>;
+
+/** Um texto do modelo já encaixado na coluna certa do arranjo. */
+function texto(
+  f: Quadro,
+  a: Arranjo,
+  papel: PapelTexto,
+  conteudo: string,
+  extra: Partial<CamadaTexto> = {},
+): CamadaTexto {
+  const y = papel === "chapeu" ? a.yChapeu : papel === "titulo" ? a.yTitulo : a.ySubtitulo;
+  return {
+    ...criarTexto(f, papel),
+    texto: conteudo,
+    x: a.textoX,
+    y,
+    largura: a.textoLargura,
+    alinhamento: a.alinhamento,
+    ...extra,
+  };
+}
+
+/** A pessoa em foco, ancorada onde o arranjo manda. */
+function foco(f: Quadro, a: Arranjo, nome = "Pessoa em foco", extra: Partial<CamadaPessoa> = {}) {
+  const p = criarPessoa(f, nome);
+  return { ...p, x: a.focoX, y: a.focoY - Math.round(p.altura / 2), ...extra };
 }
 
 /** Duas fotos de contexto esmaecidas nas laterais, como no "URGENTE!". */
-function contextoLateral(f: Formato): CamadaFoto[] {
-  const { largura, altura } = FORMATOS[f];
-  const l = Math.round(largura * 0.52);
-  const a = Math.round(l * 1.15);
-  const y = Math.round(altura * 0.22);
+function contextoLateral(f: Quadro): CamadaFoto[] {
+  const a = arranjo(f);
+  const l = Math.round(a.base * 0.52);
+  const alt = Math.round(l * 1.15);
 
   return (["Contexto esquerda", "Contexto direita"] as const).map((nome, i) => ({
     ...criarFoto(f, nome),
-    x: i === 0 ? Math.round(largura * 0.2) : Math.round(largura * 0.8),
-    y,
+    x: i === 0 ? Math.round(a.largura * 0.2) : Math.round(a.largura * 0.8),
+    y: a.contextoY,
     largura: l,
-    altura: a,
+    altura: alt,
   }));
 }
 
@@ -237,23 +357,14 @@ export const MODELOS: Modelo[] = [
     nome: "Manchete",
     resumo: "Fato do dia: título gigante em ouro e contexto atrás",
     montar: (f) => {
-      const { largura, altura } = FORMATOS[f];
+      const a = arranjo(f);
       return [
         criarFundo(),
         ...contextoLateral(f),
-        criarSombreado(),
-        { ...criarPessoa(f, "Pessoa em foco") },
-        {
-          ...criarTexto(f, "titulo"),
-          texto: "URGENTE!",
-          y: Math.round(altura * 0.75),
-          tamanho: Math.round(largura * 0.21),
-        },
-        {
-          ...criarTexto(f, "subtitulo"),
-          texto: "Resuma o fato em duas linhas\ne destaque ==o ponto principal==",
-          y: Math.round(altura * 0.9),
-        },
+        { ...criarSombreado(), ...a.sombreadoTexto },
+        foco(f, a),
+        texto(f, a, "titulo", "URGENTE!", { tamanho: Math.round(a.base * 0.21) }),
+        texto(f, a, "subtitulo", "Resuma o fato em duas linhas\ne destaque ==o ponto principal=="),
       ];
     },
   },
@@ -262,49 +373,55 @@ export const MODELOS: Modelo[] = [
     nome: "Vitória",
     resumo: "Conquista: título com palavras alternando ouro e branco",
     montar: (f) => {
-      const { largura, altura } = FORMATOS[f];
+      const a = arranjo(f);
       return [
         criarFundo(),
-        { ...criarFoto(f, "Contexto"), x: largura / 2, y: Math.round(altura * 0.24), esmaecer: 0.55 },
-        criarSombreado(),
-        criarPessoa(f, "Pessoa em foco"),
         {
-          ...criarTexto(f, "titulo"),
-          texto: "VITÓRIA!",
-          y: Math.round(altura * 0.73),
-          tamanho: Math.round(largura * 0.23),
+          ...criarFoto(f, "Contexto"),
+          x: a.paisagem ? Math.round(a.largura * 0.72) : Math.round(a.largura / 2),
+          y: a.contextoY,
+          esmaecer: esmaecerUniforme(0.55),
         },
-        {
-          ...criarTexto(f, "subtitulo"),
-          texto: "Câmara *aprova projeto* que muda\na regra e ==beneficia o Ceará==",
-          y: Math.round(altura * 0.9),
-        },
+        { ...criarSombreado(), ...a.sombreadoTexto },
+        foco(f, a),
+        texto(f, a, "titulo", "VITÓRIA!", { tamanho: Math.round(a.base * 0.23) }),
+        texto(
+          f,
+          a,
+          "subtitulo",
+          "Câmara *aprova projeto* que muda\na regra e ==beneficia o Ceará==",
+        ),
       ];
     },
   },
   {
     chave: "oficial",
     nome: "É oficial",
-    resumo: "Anúncio com moldura dourada e retrato central",
+    resumo: "Anúncio com moldura dourada e retrato em destaque",
     montar: (f) => {
-      const { largura, altura } = FORMATOS[f];
+      const a = arranjo(f);
       return [
         criarFundo(),
-        { ...criarFoto(f, "Bandeira / cenário"), x: largura / 2, y: Math.round(altura * 0.3), largura: Math.round(largura * 0.95), altura: Math.round(largura * 0.8), esmaecer: 0.35 },
-        { ...criarSombreado(), forca: 0.9, extensao: 0.45 },
-        { ...criarPessoa(f, "Pessoa em foco"), halo: { ativo: true, cor: CORES.ouro, tamanho: 8, desfoque: 30 } },
+        {
+          ...criarFoto(f, "Bandeira / cenário"),
+          x: Math.round(a.largura / 2),
+          y: a.paisagem ? Math.round(a.altura / 2) : Math.round(a.altura * 0.3),
+          largura: Math.round(a.largura * 0.95),
+          altura: Math.round(a.paisagem ? a.altura * 0.95 : a.base * 0.8),
+          esmaecer: esmaecerUniforme(0.35),
+        },
+        { ...criarSombreado(), ...a.sombreadoTexto, forca: 0.9 },
+        foco(f, a, "Pessoa em foco", {
+          halo: { ativo: true, cor: CORES.ouro, tamanho: 8, desfoque: 30 },
+        }),
         criarMoldura(),
-        {
-          ...criarTexto(f, "titulo"),
-          texto: "É OFICIAL!",
-          y: Math.round(altura * 0.76),
-          tamanho: Math.round(largura * 0.17),
-        },
-        {
-          ...criarTexto(f, "subtitulo"),
-          texto: "*Nome completo* foi escolhido como candidato a\nDEPUTADO FEDERAL",
-          y: Math.round(altura * 0.91),
-        },
+        texto(f, a, "titulo", "É OFICIAL!", { tamanho: Math.round(a.base * 0.17) }),
+        texto(
+          f,
+          a,
+          "subtitulo",
+          "*Nome completo* foi escolhido como candidato a\nDEPUTADO FEDERAL",
+        ),
       ];
     },
   },
@@ -313,51 +430,54 @@ export const MODELOS: Modelo[] = [
     nome: "Dupla",
     resumo: "Duas pessoas em foco com cópias fantasma atrás",
     montar: (f) => {
-      const { largura, altura } = FORMATOS[f];
-      const l = Math.round(largura * 0.62);
-      const a = Math.round(l * 1.35);
+      const a = arranjo(f);
+      const molde = criarPessoa(f, "Pessoa");
+      // lado a lado elas encolhem para as duas caberem sem se cobrirem
+      const alt = Math.round(molde.altura * (a.paisagem ? 0.92 : 0.88));
+      const larg = Math.round((molde.largura * alt) / molde.altura);
 
       const fantasma = (nome: string, x: number): CamadaPessoa => ({
-        ...criarPessoa(f, nome),
+        ...molde,
+        id: novoId(),
+        nome,
         x,
-        y: Math.round(altura * 0.55),
-        largura: Math.round(l * 0.8),
-        altura: Math.round(a * 0.8),
+        y: Math.round(a.altura * 0.55),
+        largura: Math.round(larg * 0.8),
+        altura: Math.round(alt * 0.8),
         opacidade: 0.16,
         tinta: { ativa: true, cor: CORES.branco, forca: 1 },
         // a cópia nasce do fundo em vez de terminar num corte reto
         gradiente: { ativo: true, modo: "dissolver", cor: CORES.noite, extensao: 0.45, forca: 1 },
       });
 
-      const foco = (nome: string, x: number): CamadaPessoa => ({
-        ...criarPessoa(f, nome),
+      const emFoco = (nome: string, x: number): CamadaPessoa => ({
+        ...molde,
+        id: novoId(),
+        nome,
         x,
-        y: altura - a / 2 + Math.round(a * 0.06),
-        largura: l,
-        altura: a,
+        y: a.altura - Math.round(alt / 2) + Math.round(alt * 0.06),
+        largura: larg,
+        altura: alt,
       });
+
+      /* o texto sobe para o topo: aqui quem ocupa a base são as duas pessoas */
+      const yChapeu = a.paisagem ? Math.round(a.altura * 0.12) : Math.round(a.altura * 0.07);
+      const yTitulo = a.paisagem ? Math.round(a.altura * 0.26) : Math.round(a.altura * 0.14);
 
       return [
         criarFundo(),
-        fantasma("Fantasma esquerda", Math.round(largura * 0.18)),
-        fantasma("Fantasma direita", Math.round(largura * 0.82)),
+        fantasma("Fantasma esquerda", Math.round(a.largura * 0.18)),
+        fantasma("Fantasma direita", Math.round(a.largura * 0.82)),
         { ...criarSombreado(), direcao: "topo", extensao: 0.4, forca: 0.8 },
-        foco("Pessoa 1", Math.round(largura * 0.36)),
-        foco("Pessoa 2", Math.round(largura * 0.68)),
-        {
-          ...criarTexto(f, "chapeu"),
-          texto: "NOME COMPLETO SERÁ",
-          y: Math.round(altura * 0.07),
+        emFoco("Pessoa 1", Math.round(a.largura * (a.paisagem ? 0.3 : 0.36))),
+        emFoco("Pessoa 2", Math.round(a.largura * (a.paisagem ? 0.7 : 0.68))),
+        texto(f, a, "chapeu", "NOME COMPLETO SERÁ", { y: yChapeu, alinhamento: "left" }),
+        texto(f, a, "titulo", "MINISTRO *da reforma do estado*", {
+          y: yTitulo,
+          tamanho: Math.round(a.base * 0.14),
           alinhamento: "left",
-          x: Math.round(largura * 0.5),
-        },
-        {
-          ...criarTexto(f, "titulo"),
-          texto: "MINISTRO *da reforma do estado*",
-          y: Math.round(altura * 0.14),
-          tamanho: Math.round(largura * 0.14),
           corDestaque: CORES.branco,
-        },
+        }),
       ];
     },
   },
@@ -366,29 +486,52 @@ export const MODELOS: Modelo[] = [
     nome: "Convite",
     resumo: "Chamada para evento com data, hora e local em tarja",
     montar: (f) => {
-      const { largura, altura } = FORMATOS[f];
+      const a = arranjo(f);
       return [
         criarFundo(),
-        { ...criarFoto(f, "Local / cenário"), x: largura / 2, y: Math.round(altura * 0.28), largura: Math.round(largura), altura: Math.round(largura * 0.9), esmaecer: 0.4 },
-        { ...criarSombreado(), forca: 0.96, extensao: 0.58 },
-        criarPessoa(f, "Pessoa em foco"),
+        {
+          ...criarFoto(f, "Local / cenário"),
+          x: Math.round(a.largura / 2),
+          y: a.paisagem ? Math.round(a.altura / 2) : Math.round(a.altura * 0.28),
+          largura: a.largura,
+          altura: Math.round(a.paisagem ? a.altura : a.base * 0.9),
+          esmaecer: esmaecerUniforme(0.4),
+        },
+        { ...criarSombreado(), ...a.sombreadoTexto, forca: 0.96 },
+        foco(f, a),
         criarMoldura(),
+        texto(f, a, "chapeu", "VOCÊ ESTÁ CONVIDADO"),
+        texto(f, a, "titulo", "ENCONTRO DA MISSÃO", { tamanho: Math.round(a.base * 0.13) }),
+        texto(f, a, "subtitulo", "==SÁBADO, 12 DE ABRIL — 19H==\nRua Exemplo, 100 · Fortaleza"),
+      ];
+    },
+  },
+  {
+    chave: "capa",
+    nome: "Capa / vídeo",
+    resumo: "Retrato de um lado, título enorme do outro — pensado para 16:9",
+    montar: (f) => {
+      const a = arranjo(f);
+      return [
+        { ...criarFundo(), modo: "gradiente", cor: "#2A2208", cor2: CORES.noite, angulo: 25 },
         {
-          ...criarTexto(f, "chapeu"),
-          texto: "VOCÊ ESTÁ CONVIDADO",
-          y: Math.round(altura * 0.66),
+          ...criarFoto(f, "Cenário"),
+          x: Math.round(a.largura * (a.paisagem ? 0.74 : 0.5)),
+          y: a.paisagem ? Math.round(a.altura / 2) : a.contextoY,
+          largura: Math.round(a.largura * (a.paisagem ? 0.55 : 1)),
+          altura: Math.round(a.altura * (a.paisagem ? 1 : 0.55)),
+          esmaecer: esmaecerUniforme(0.3, { cantos: 0.25 }),
         },
-        {
-          ...criarTexto(f, "titulo"),
-          texto: "ENCONTRO DA MISSÃO",
-          y: Math.round(altura * 0.77),
-          tamanho: Math.round(largura * 0.13),
-        },
-        {
-          ...criarTexto(f, "subtitulo"),
-          texto: "==SÁBADO, 12 DE ABRIL — 19H==\nRua Exemplo, 100 · Fortaleza",
-          y: Math.round(altura * 0.91),
-        },
+        { ...criarSombreado(), ...a.sombreadoTexto },
+        foco(f, a, "Pessoa em foco", {
+          halo: { ativo: true, cor: CORES.ouro, tamanho: 10, desfoque: 34 },
+        }),
+        texto(f, a, "chapeu", "AO VIVO · MISSÃO CEARÁ"),
+        texto(f, a, "titulo", "O QUE *ninguém* CONTOU", {
+          tamanho: Math.round(a.base * 0.16),
+          corDestaque: CORES.branco,
+        }),
+        texto(f, a, "subtitulo", "==HOJE, 20H==  ·  youtube.com/@moreiramissao"),
       ];
     },
   },
@@ -397,28 +540,15 @@ export const MODELOS: Modelo[] = [
     nome: "Reunião",
     resumo: "Aviso interno, sóbrio, com destaque para o horário",
     montar: (f) => {
-      const { largura, altura } = FORMATOS[f];
+      const a = arranjo(f);
       return [
         { ...criarFundo(), modo: "solida", cor: CORES.noite },
         { ...criarSombreado(), direcao: "vinheta", forca: 0.7, extensao: 0.5 },
-        { ...criarPessoa(f, "Pessoa em foco"), opacidade: 0.9 },
+        foco(f, a, "Pessoa em foco", { opacidade: 0.9 }),
         { ...criarMoldura(), dupla: false, espessura: 5 },
-        {
-          ...criarTexto(f, "chapeu"),
-          texto: "REUNIÃO DE EQUIPE",
-          y: Math.round(altura * 0.62),
-        },
-        {
-          ...criarTexto(f, "titulo"),
-          texto: "PAUTA DA SEMANA",
-          y: Math.round(altura * 0.73),
-          tamanho: Math.round(largura * 0.14),
-        },
-        {
-          ...criarTexto(f, "subtitulo"),
-          texto: "==QUARTA, 20H==\nLink no grupo do WhatsApp",
-          y: Math.round(altura * 0.88),
-        },
+        texto(f, a, "chapeu", "REUNIÃO DE EQUIPE"),
+        texto(f, a, "titulo", "PAUTA DA SEMANA", { tamanho: Math.round(a.base * 0.14) }),
+        texto(f, a, "subtitulo", "==QUARTA, 20H==\nLink no grupo do WhatsApp"),
       ];
     },
   },
@@ -487,31 +617,48 @@ function encaixar(img: ImagemBriefing, caixaL: number, caixaA: number) {
  * Uma pessoa fica no centro e grande; a partir de duas, elas encolhem e se
  * distribuem em intervalos iguais — é o arranjo das referências com dupla e
  * trio, sem ninguém sobrando fora do quadro.
+ *
+ * Em paisagem a conta é outra: sobra largura e falta altura, então elas podem
+ * ser altas sem se cobrirem. Com uma pessoa só, ela vai para o terço lateral em
+ * vez do centro, liberando a coluna de texto do arranjo.
  */
 function distribuirPessoas(
-  f: Formato,
+  f: Quadro,
   imagens: ImagemBriefing[],
   molde: CamadaPessoa,
 ): CamadaPessoa[] {
-  const { largura, altura } = FORMATOS[f];
+  const a = arranjo(f);
   const n = imagens.length;
-  // com mais gente, cada uma ocupa menos altura para as três caberem lado a lado
-  const fracaoAltura = n === 1 ? 0.72 : n === 2 ? 0.64 : 0.54;
-  const caixaA = Math.round(altura * fracaoAltura);
-  const caixaL = Math.round((largura / Math.max(n, 1)) * (n === 1 ? 0.86 : 1.05));
+  const uma = n === 1;
+
+  const fracaoAltura = a.paisagem
+    ? uma
+      ? 0.94
+      : n === 2
+        ? 0.88
+        : 0.8
+    : uma
+      ? 0.72
+      : n === 2
+        ? 0.64
+        : 0.54;
+  const caixaA = Math.round(a.altura * fracaoAltura);
+  // em paisagem, uma pessoa sozinha ocupa o terço da direita, não a largura toda
+  const fatia = a.paisagem && uma ? a.largura * 0.42 : a.largura / Math.max(n, 1);
+  const caixaL = Math.round(fatia * (uma ? 0.86 : 1.05));
 
   return imagens.map((img, i) => {
-    const { largura: l, altura: a } = encaixar(img, caixaL, caixaA);
+    const { largura: l, altura: alt } = encaixar(img, caixaL, caixaA);
     return {
       ...molde,
       id: novoId(),
-      nome: n === 1 ? "Pessoa em foco" : `Pessoa ${i + 1}`,
+      nome: uma ? "Pessoa em foco" : `Pessoa ${i + 1}`,
       ativoId: img.ativoId,
       largura: l,
-      altura: a,
+      altura: alt,
       // encostadas na base, com uma folga para o texto não nascer colado
-      x: Math.round((largura * (i + 1)) / (n + 1)),
-      y: altura - Math.round(a / 2),
+      x: a.paisagem && uma ? a.focoX : Math.round((a.largura * (i + 1)) / (n + 1)),
+      y: a.altura - Math.round(alt / 2),
       visivel: true,
     };
   });
@@ -521,8 +668,8 @@ function distribuirPessoas(
  * Monta a arte inicial: pega a pilha do modelo e vai trocando o que o briefing
  * preencheu. O que não veio no briefing continua como o modelo deixou.
  */
-export function montarComBriefing(modelo: Modelo, f: Formato, b: Briefing): Camada[] {
-  const { largura, altura } = FORMATOS[f];
+export function montarComBriefing(modelo: Modelo, f: Quadro, b: Briefing): Camada[] {
+  const { largura, altura } = medidas(f);
   let camadas = modelo.montar(f);
 
   /* ---- pessoas ---- */
@@ -579,7 +726,7 @@ export function montarComBriefing(modelo: Modelo, f: Formato, b: Briefing): Cama
           y: altura / 2,
           largura: Math.round(caixa.largura * escala),
           altura: Math.round(caixa.altura * escala),
-          esmaecer: 0.25,
+          esmaecer: esmaecerUniforme(0.25),
         } as CamadaFoto;
       });
       const depoisDoFundo = camadas.findIndex((c) => c.tipo !== "fundo");

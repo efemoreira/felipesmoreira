@@ -5,6 +5,7 @@
  * recortes e fundos já usados, guardados como Blob para reaproveitar sem subir
  * a mesma foto de novo).
  */
+import { normalizarProjeto } from "./tipos";
 import type { Ativo, Projeto } from "./tipos";
 
 const BANCO = "estudio-artes";
@@ -51,15 +52,21 @@ function transacionar<T>(
 export const salvarProjeto = (p: Projeto) =>
   transacionar(PROJETOS, "readwrite", (s) => s.put(p)).then(() => undefined);
 
+/* Tudo que sai daqui passa pelo `normalizarProjeto`: o IndexedDB devolve o
+   objeto exatamente como foi gravado, então uma arte de antes de um campo novo
+   chegaria sem ele e quebraria o palco na primeira leitura. */
+
 export const lerProjeto = (id: string) =>
-  transacionar<Projeto | undefined>(PROJETOS, "readonly", (s) => s.get(id));
+  transacionar<Projeto | undefined>(PROJETOS, "readonly", (s) => s.get(id)).then((p) =>
+    p ? normalizarProjeto(p) : undefined,
+  );
 
 export const apagarProjeto = (id: string) =>
   transacionar(PROJETOS, "readwrite", (s) => s.delete(id)).then(() => undefined);
 
 export const listarProjetos = () =>
   transacionar<Projeto[]>(PROJETOS, "readonly", (s) => s.getAll()).then((lista) =>
-    lista.sort((a, b) => b.atualizadoEm - a.atualizadoEm),
+    lista.map(normalizarProjeto).sort((a, b) => b.atualizadoEm - a.atualizadoEm),
   );
 
 /* ===== biblioteca ===== */

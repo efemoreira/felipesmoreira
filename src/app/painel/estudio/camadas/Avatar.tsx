@@ -10,6 +10,8 @@ import {
   aoArrastar,
   aoTransformar,
   atributosDeAjuste,
+  atributosDeEsmaecer,
+  esmaeceAlgo,
   filtrosDe,
   useCacheFiltros,
   type PropsCamada,
@@ -21,18 +23,20 @@ export default function Avatar({
   onSelecionar,
   onAlterar,
   interativo,
+  qualidade,
 }: PropsCamada<CamadaAvatar>) {
   const img = useImagem(camada.ativoId);
   const ref = useRef<Konva.Image>(null);
 
-  const filtros = filtrosDe(camada.ajustes);
+  const filtros = filtrosDe(camada.ajustes, { esmaecer: esmaeceAlgo(camada.esmaecer) });
   const d = Math.min(camada.largura, camada.altura);
   const raio = d / 2;
 
   useCacheFiltros(
     ref,
     filtros.length > 0 && !!img,
-    `${camada.ativoId}|${d}|${JSON.stringify(camada.ajustes)}`,
+    `${camada.ativoId}|${d}|${JSON.stringify(camada.ajustes)}|${JSON.stringify(camada.esmaecer)}`,
+    qualidade,
   );
 
   if (!img) {
@@ -101,6 +105,7 @@ export default function Avatar({
           height={ih}
           filters={filtros}
           {...atributosDeAjuste(camada.ajustes)}
+          {...atributosDeEsmaecer(camada.esmaecer)}
           listening={false}
         />
       </Group>

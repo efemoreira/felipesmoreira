@@ -35,6 +35,16 @@ const PLATAFORMAS = [
     'video'     => 'Kwai / vídeo',
 ];
 const DIAS = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
+
+/* As mesmas cores de src/app/programacao/tipos.ts — a prévia tem de mostrar o
+   cartão como ele vai sair na página, não uma aproximação. */
+const TEMAS = [
+    'ouro'   => ['bg' => '#FFCB05', 'fg' => '#181203', 'sub' => 'rgba(24,18,3,.72)',   'claro' => false],
+    'milho'  => ['bg' => '#F7E463', 'fg' => '#181203', 'sub' => 'rgba(24,18,3,.72)',   'claro' => false],
+    'azul'   => ['bg' => 'linear-gradient(105deg,#1B4FD8 0%,#2E7BE8 100%)', 'fg' => '#F6F5EF', 'sub' => 'rgba(246,245,239,.82)', 'claro' => true],
+    'escuro' => ['bg' => '#1C1710', 'fg' => '#F6F5EF', 'sub' => 'rgba(246,245,239,.72)', 'claro' => true],
+    'papel'  => ['bg' => '#F3ECDA', 'fg' => '#181203', 'sub' => 'rgba(24,18,3,.7)',    'claro' => false],
+];
 const CANAIS_PADRAO = [
     ['nome' => 'YouTube',   'icone' => 'youtube',   'url' => 'https://youtube.com/@moreiramissao'],
     ['nome' => 'Instagram', 'icone' => 'instagram', 'url' => 'https://instagram.com/moreiramissao'],
@@ -346,6 +356,8 @@ function varrer_imagens_orfas(array $agenda): void
 $aviso = null;
 $sucesso = null;
 $acao = (string) ($_POST['acao'] ?? '');
+/* o que foi digitado, para devolver ao formulário quando a gravação falha */
+$rascunho = null;
 
 if ($acao === 'salvar') {
     if (!token_valido()) {
@@ -362,14 +374,17 @@ if ($acao === 'salvar') {
             $aviso = implode(' ', $recados) . ' O resto foi salvo normalmente.';
         }
     } else {
-        $aviso = 'Não consegui gravar dados/agenda.json. Confira as permissões da pasta no hPanel.';
+        $aviso = 'Não consegui gravar dados/agenda.json. Confira as permissões da pasta no hPanel. '
+               . 'O que você digitou continua aqui na tela — tente publicar de novo.';
+        // sem isto a tela recarregava do disco e o trabalho todo sumia junto com o erro
+        $rascunho = $nova;
     }
 } elseif ($acao === '' && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && !$_POST) {
     // POST vazio com corpo grande = passou do post_max_size do PHP (upload pesado demais)
     $aviso = 'O envio passou do limite do servidor. Reduza a imagem (ou envie uma de cada vez) e tente de novo.';
 }
 
-$agenda = agenda_atual();
+$agenda = $rascunho ?? agenda_atual();
 $canaisAtivos = array_column($agenda['disponivelEm'] ?? CANAIS_PADRAO, 'icone');
 
 abrir_pagina('Agenda da semana');
@@ -420,90 +435,117 @@ abrir_pagina('Agenda da semana');
 
     <fieldset>
       <legend>Itens da semana</legend>
+      <p class="dica" style="margin:0 0 12px">
+        Arraste pelo ⠿ para reordenar, ou use ↑ ↓. Clique no cabeçalho para recolher um item.
+      </p>
       <div id="itens">
         <?php
         $itens = $agenda['programacao'] ?? [];
         if (!$itens) {
             $itens = [[]];
         }
+        /* itens já preenchidos nascem recolhidos: com 7 na semana, tudo aberto
+           vira uma parede de campos em que ninguém acha o que veio editar */
+        $recolher = count($itens) > 2;
         foreach (array_values($itens) as $n => $it):
             $cor = $it['cor'] ?? 'ouro';
             $plat = $it['plataforma'] ?? '';
+            $temTitulo = !empty($it['titulo']);
         ?>
-        <div class="item">
-          <div class="item-topo">
+        <details class="item" <?= ($recolher && $temTitulo) ? '' : 'open' ?>>
+          <summary class="item-topo">
+            <span class="pega" title="Arraste para reordenar" aria-hidden="true">⠿</span>
             <span class="item-num">Item <?= $n + 1 ?></span>
+            <span class="item-resumo"></span>
             <span class="acoes">
-              <button class="btn btn-mini" type="button" data-mover="-1">↑</button>
-              <button class="btn btn-mini" type="button" data-mover="1">↓</button>
-              <button class="btn btn-mini" type="button" data-remover>Remover</button>
+              <button class="btn btn-mini" type="button" data-mover="-1" title="Subir" aria-label="Subir item">↑</button>
+              <button class="btn btn-mini" type="button" data-mover="1" title="Descer" aria-label="Descer item">↓</button>
+              <button class="btn btn-mini" type="button" data-duplicar title="Duplicar">⧉</button>
+              <button class="btn btn-mini btn-risco" type="button" data-remover>Remover</button>
             </span>
-          </div>
-          <input type="hidden" name="item[<?= $n ?>][id]" value="<?= h($it['id'] ?? '') ?>">
-          <div class="campo">
-            <label>Título</label>
-            <input type="text" name="item[<?= $n ?>][titulo]" value="<?= h($it['titulo'] ?? '') ?>" maxlength="120">
-          </div>
-          <div class="campo">
-            <label>Subtítulo</label>
-            <input type="text" name="item[<?= $n ?>][subtitulo]" value="<?= h($it['subtitulo'] ?? '') ?>" maxlength="160">
-          </div>
-          <div class="linha g4">
+          </summary>
+
+          <div class="item-corpo">
+            <!-- desenhada pelo JS a cada tecla; some se o navegador não rodar script -->
+            <div class="previa" hidden>
+              <span class="previa-rotulo">Como vai aparecer na página</span>
+              <div class="cartao">
+                <div class="cartao-thumb"><span class="sigla"></span></div>
+                <div class="cartao-texto">
+                  <strong class="cartao-titulo"></strong>
+                  <span class="cartao-sub"></span>
+                </div>
+                <div class="cartao-meta">
+                  <span class="cartao-data"></span>
+                  <span class="cartao-dia"></span>
+                </div>
+              </div>
+            </div>
+
+            <input type="hidden" name="item[<?= $n ?>][id]" value="<?= h($it['id'] ?? '') ?>">
             <div class="campo">
-              <label>Dia</label>
-              <input type="text" name="item[<?= $n ?>][dia]" value="<?= h($it['dia'] ?? '') ?>" list="dias" maxlength="20">
+              <label for="it<?= $n ?>-titulo">Título</label>
+              <input id="it<?= $n ?>-titulo" data-papel="titulo" type="text" name="item[<?= $n ?>][titulo]" value="<?= h($it['titulo'] ?? '') ?>" maxlength="120">
             </div>
             <div class="campo">
-              <label>Data</label>
-              <input type="text" name="item[<?= $n ?>][data]" value="<?= h($it['data'] ?? '') ?>" maxlength="20" placeholder="29/07">
+              <label for="it<?= $n ?>-subtitulo">Subtítulo</label>
+              <input id="it<?= $n ?>-subtitulo" type="text" name="item[<?= $n ?>][subtitulo]" value="<?= h($it['subtitulo'] ?? '') ?>" maxlength="160">
+            </div>
+            <div class="linha g4">
+              <div class="campo">
+                <label for="it<?= $n ?>-dia">Dia</label>
+                <input id="it<?= $n ?>-dia" data-papel="dia" type="text" name="item[<?= $n ?>][dia]" value="<?= h($it['dia'] ?? '') ?>" list="dias" maxlength="20">
+              </div>
+              <div class="campo">
+                <label for="it<?= $n ?>-data">Data</label>
+                <input id="it<?= $n ?>-data" type="text" name="item[<?= $n ?>][data]" value="<?= h($it['data'] ?? '') ?>" maxlength="20" placeholder="29/07">
+              </div>
+              <div class="campo">
+                <label for="it<?= $n ?>-hora">Hora</label>
+                <input id="it<?= $n ?>-hora" data-papel="hora" type="text" name="item[<?= $n ?>][hora]" value="<?= h($it['hora'] ?? '') ?>" maxlength="20" placeholder="19H">
+              </div>
+              <div class="campo">
+                <label for="it<?= $n ?>-cor">Cor</label>
+                <select id="it<?= $n ?>-cor" data-papel="cor" name="item[<?= $n ?>][cor]">
+                  <?php foreach (CORES as $v => $rotulo): ?>
+                    <option value="<?= h($v) ?>" <?= $cor === $v ? 'selected' : '' ?>><?= h($rotulo) ?></option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+            </div>
+            <div class="linha g2">
+              <div class="campo">
+                <label for="it<?= $n ?>-plataforma">Plataforma (selo)</label>
+                <select id="it<?= $n ?>-plataforma" data-papel="plataforma" name="item[<?= $n ?>][plataforma]">
+                  <?php foreach (PLATAFORMAS as $v => $rotulo): ?>
+                    <option value="<?= h($v) ?>" <?= $plat === $v ? 'selected' : '' ?>><?= h($rotulo) ?></option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+              <div class="campo">
+                <label for="it<?= $n ?>-link">Link</label>
+                <input id="it<?= $n ?>-link" type="text" name="item[<?= $n ?>][link]" value="<?= h($it['link'] ?? '') ?>" maxlength="300" placeholder="https://youtube.com/@moreiramissao">
+              </div>
             </div>
             <div class="campo">
-              <label>Hora</label>
-              <input type="text" name="item[<?= $n ?>][hora]" value="<?= h($it['hora'] ?? '') ?>" maxlength="20" placeholder="19H">
+              <label class="check">
+                <input type="checkbox" data-papel="aoVivo" name="item[<?= $n ?>][aoVivo]" value="1" <?= !empty($it['aoVivo']) ? 'checked' : '' ?>>
+                Ao vivo
+              </label>
             </div>
             <div class="campo">
-              <label>Cor</label>
-              <select name="item[<?= $n ?>][cor]">
-                <?php foreach (CORES as $v => $rotulo): ?>
-                  <option value="<?= h($v) ?>" <?= $cor === $v ? 'selected' : '' ?>><?= h($rotulo) ?></option>
-                <?php endforeach; ?>
-              </select>
-            </div>
-          </div>
-          <div class="linha g2">
-            <div class="campo">
-              <label>Plataforma (selo)</label>
-              <select name="item[<?= $n ?>][plataforma]">
-                <?php foreach (PLATAFORMAS as $v => $rotulo): ?>
-                  <option value="<?= h($v) ?>" <?= $plat === $v ? 'selected' : '' ?>><?= h($rotulo) ?></option>
-                <?php endforeach; ?>
-              </select>
-            </div>
-            <div class="campo">
-              <label>Link</label>
-              <input type="text" name="item[<?= $n ?>][link]" value="<?= h($it['link'] ?? '') ?>" maxlength="300" placeholder="https://youtube.com/@moreiramissao">
-            </div>
-          </div>
-          <div class="campo">
-            <label class="check">
-              <input type="checkbox" name="item[<?= $n ?>][aoVivo]" value="1" <?= !empty($it['aoVivo']) ? 'checked' : '' ?>>
-              Ao vivo
-            </label>
-          </div>
-          <div>
-            <div class="campo">
-              <label>Imagem (opcional)</label>
+              <label for="it<?= $n ?>-arquivo">Imagem (opcional)</label>
               <div class="imagem">
                 <?php $temImagem = !empty($it['imagem']); ?>
-                <div class="miniatura<?= $temImagem ? '' : ' vazia' ?>">
+                <label for="it<?= $n ?>-arquivo" class="miniatura<?= $temImagem ? '' : ' vazia' ?>" title="Solte uma imagem aqui, cole com Ctrl+V ou clique para escolher">
                   <?php if ($temImagem): ?>
                     <img src="<?= h($it['imagem']) ?>" alt="">
                   <?php else: ?>
-                    <span>sem<br>imagem</span>
+                    <span>solte<br>a imagem</span>
                   <?php endif; ?>
-                </div>
+                </label>
                 <div class="imagem-acoes">
-                  <input type="file" name="imagem[<?= $n ?>]" accept="image/jpeg,image/png,image/webp,image/gif">
+                  <input id="it<?= $n ?>-arquivo" type="file" name="imagem[<?= $n ?>]" accept="image/jpeg,image/png,image/webp,image/gif">
                   <input type="hidden" name="item[<?= $n ?>][imagem]" value="<?= h($it['imagem'] ?? '') ?>">
                   <?php if ($temImagem): ?>
                     <label class="check">
@@ -511,12 +553,12 @@ abrir_pagina('Agenda da semana');
                       Remover a imagem atual
                     </label>
                   <?php endif; ?>
-                  <p class="dica">JPG, PNG ou WEBP até 8 MB. Ela é reduzida e cortada em 16:9 no cartão; sem imagem, entra o fundo hachurado com a sigla do dia.</p>
+                  <p class="dica">JPG, PNG ou WEBP até 8 MB. Arraste para a miniatura, ou clique nela e escolha. Ela é reduzida e cortada em 16:9 no cartão; sem imagem, entra o fundo hachurado com a sigla do dia.</p>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        </details>
         <?php endforeach; ?>
       </div>
       <button class="btn" type="button" id="add">+ Adicionar item</button>
@@ -539,23 +581,138 @@ abrir_pagina('Agenda da semana');
 <script>
 (function () {
   const caixa = document.getElementById('itens');
+  const form = document.getElementById('form');
+  const MAX_UPLOAD = <?= MAX_UPLOAD ?>;
+  const ROTULO_PLATAFORMA = <?= json_encode(PLATAFORMAS, JSON_UNESCAPED_UNICODE) ?>;
+  const TEMAS = <?= json_encode(TEMAS, JSON_UNESCAPED_UNICODE) ?>;
 
-  // Renumera item[N][campo] e imagem[N] — o índice precisa casar com o $_FILES lá no PHP
+  let sujo = false;
+  const marcarSujo = () => { sujo = true; };
+
+  /* ---------- prévia do cartão ---------- */
+
+  const valorDe = (item, papel) => {
+    const campo = item.querySelector('[data-papel="' + papel + '"]');
+    return campo ? campo.value.trim() : '';
+  };
+
+  /**
+   * Desenha o cartão como ele vai sair em /programacao.
+   *
+   * Escolher "azul" ou "papel" num <select> não diz nada até se ver o resultado;
+   * e é aqui que se percebe um título longo demais ou um dia sem sigla.
+   */
+  function prever(item) {
+    const previa = item.querySelector('.previa');
+    if (!previa) return;
+    previa.hidden = false;
+
+    const tema = TEMAS[valorDe(item, 'cor')] || TEMAS.ouro;
+    const cartao = previa.querySelector('.cartao');
+    cartao.style.background = tema.bg;
+    cartao.style.color = tema.fg;
+    cartao.classList.toggle('claro', !!tema.claro);
+
+    const dia = valorDe(item, 'dia');
+    const hora = valorDe(item, 'hora');
+    const data = item.querySelector('[name*="[data]"]')?.value.trim() || '';
+    const subtitulo = item.querySelector('[name*="[subtitulo]"]')?.value.trim() || '';
+
+    previa.querySelector('.cartao-titulo').textContent = valorDe(item, 'titulo') || 'Sem título';
+    const sub = previa.querySelector('.cartao-sub');
+    sub.textContent = subtitulo;
+    sub.style.color = tema.sub;
+    previa.querySelector('.cartao-data').textContent = [data, hora].filter(Boolean).join(' · ');
+    previa.querySelector('.cartao-dia').textContent = dia;
+
+    // a miniatura: a imagem escolhida, ou o fundo hachurado com a sigla do dia
+    const thumb = previa.querySelector('.cartao-thumb');
+    const escolhida = item.querySelector('.miniatura img');
+    const atual = thumb.querySelector('img');
+    if (escolhida && atual?.src !== escolhida.src) {
+      thumb.querySelector('img')?.remove();
+      const img = document.createElement('img');
+      img.alt = '';
+      img.src = escolhida.src;
+      thumb.appendChild(img);
+    } else if (!escolhida) {
+      atual?.remove();
+    }
+    thumb.classList.toggle('vazia', !escolhida);
+    thumb.querySelector('.sigla').textContent = escolhida ? '' : dia.slice(0, 3).toUpperCase();
+
+    // a etiqueta "Ao vivo" só existe na página, não no PNG
+    let etiqueta = thumb.querySelector('.cartao-etiqueta');
+    if (item.querySelector('[data-papel="aoVivo"]')?.checked) {
+      if (!etiqueta) {
+        etiqueta = document.createElement('span');
+        etiqueta.className = 'cartao-etiqueta';
+        etiqueta.textContent = 'Ao vivo';
+        thumb.appendChild(etiqueta);
+      }
+    } else {
+      etiqueta?.remove();
+    }
+  }
+
+  /* ---------- resumo do cabeçalho ---------- */
+
+  // Com os itens recolhidos, é este resumo que diz o que tem dentro.
+  function resumir(item) {
+    prever(item);
+    const val = (papel) => valorDe(item, papel);
+    const titulo = val('titulo');
+    const partes = [val('dia'), val('hora')].filter(Boolean);
+    const plataforma = val('plataforma');
+    if (plataforma && ROTULO_PLATAFORMA[plataforma]) partes.push(ROTULO_PLATAFORMA[plataforma]);
+    if (item.querySelector('[data-papel="aoVivo"]')?.checked) partes.push('ao vivo');
+
+    const alvo = item.querySelector('.item-resumo');
+    if (!alvo) return;
+    alvo.innerHTML = '';
+
+    const bolinha = document.createElement('i');
+    bolinha.className = 'ponto ponto-' + (val('cor') || 'ouro');
+    alvo.appendChild(bolinha);
+
+    const forte = document.createElement('strong');
+    forte.textContent = titulo || 'sem título';
+    if (!titulo) forte.classList.add('vazio');
+    alvo.appendChild(forte);
+
+    if (partes.length) {
+      const resto = document.createElement('span');
+      resto.textContent = partes.join(' · ');
+      alvo.appendChild(resto);
+    }
+  }
+
+  const resumirTodos = () => caixa.querySelectorAll('.item').forEach(resumir);
+
+  /* ---------- índices ---------- */
+
+  // Renumera item[N][campo] e imagem[N] — o índice precisa casar com o $_FILES lá no PHP.
+  // Os id/for também: sem isso, clicar no rótulo de um item foca o campo de outro.
   function renumerar() {
     caixa.querySelectorAll('.item').forEach((item, i) => {
       item.querySelector('.item-num').textContent = 'Item ' + (i + 1);
       item.querySelectorAll('[name]').forEach((campo) => {
         campo.name = campo.name.replace(/^(item|imagem)\[\d+\]/, (_, base) => base + '[' + i + ']');
       });
+      item.querySelectorAll('[id^="it"]').forEach((campo) => {
+        campo.id = campo.id.replace(/^it\d+-/, 'it' + i + '-');
+      });
+      item.querySelectorAll('label[for^="it"]').forEach((rot) => {
+        rot.htmlFor = rot.htmlFor.replace(/^it\d+-/, 'it' + i + '-');
+      });
     });
+    resumirTodos();
   }
 
-  // Mostra na hora a foto escolhida, antes mesmo de publicar
-  caixa.addEventListener('change', (e) => {
-    const campo = e.target;
-    if (campo.type !== 'file' || !campo.files || !campo.files[0]) return;
-    const mini = campo.closest('.imagem').querySelector('.miniatura');
-    const url = URL.createObjectURL(campo.files[0]);
+  /* ---------- imagem: escolher, soltar, colar ---------- */
+
+  function mostrar(mini, arquivo) {
+    const url = URL.createObjectURL(arquivo);
     mini.classList.remove('vazia');
     mini.innerHTML = '';
     const img = document.createElement('img');
@@ -563,16 +720,102 @@ abrir_pagina('Agenda da semana');
     img.src = url;
     img.onload = () => URL.revokeObjectURL(url);
     mini.appendChild(img);
+  }
+
+  /** Põe o arquivo no input daquele item — é ele que o PHP vai receber. */
+  function usarArquivo(item, arquivo) {
+    if (!arquivo || !arquivo.type.startsWith('image/')) return;
+    if (arquivo.size > MAX_UPLOAD) {
+      alert('“' + arquivo.name + '” passa de 8 MB. Reduza a imagem antes de enviar.');
+      return;
+    }
+    const entrada = item.querySelector('input[type=file]');
+    const lista = new DataTransfer();
+    lista.items.add(arquivo);
+    entrada.files = lista.files;
+    // se estava marcado para remover, escolher uma nova desfaz isso
+    const remover = item.querySelector('[name*="remover_imagem"]');
+    if (remover) remover.checked = false;
+    mostrar(item.querySelector('.miniatura'), arquivo);
+    marcarSujo();
+  }
+
+  caixa.addEventListener('change', (e) => {
+    marcarSujo();
+    const campo = e.target;
+    if (campo.type === 'file' && campo.files && campo.files[0]) {
+      usarArquivo(campo.closest('.item'), campo.files[0]);
+    }
+    resumir(campo.closest('.item'));
   });
+  caixa.addEventListener('input', (e) => {
+    marcarSujo();
+    resumir(e.target.closest('.item'));
+  });
+
+  caixa.addEventListener('dragover', (e) => {
+    const mini = e.target.closest('.miniatura');
+    if (!mini || !e.dataTransfer.types.includes('Files')) return;
+    e.preventDefault();
+    mini.classList.add('sobre');
+  });
+  caixa.addEventListener('dragleave', (e) => {
+    e.target.closest('.miniatura')?.classList.remove('sobre');
+  });
+  caixa.addEventListener('drop', (e) => {
+    const mini = e.target.closest('.miniatura');
+    if (!mini || !e.dataTransfer.files.length) return;
+    e.preventDefault();
+    mini.classList.remove('sobre');
+    usarArquivo(mini.closest('.item'), e.dataTransfer.files[0]);
+  });
+
+  // colar uma captura direto no item em que se está mexendo
+  document.addEventListener('paste', (e) => {
+    const item = document.activeElement?.closest?.('.item');
+    if (!item) return;
+    const arquivo = Array.from(e.clipboardData?.files || [])[0];
+    if (!arquivo) return;
+    e.preventDefault();
+    usarArquivo(item, arquivo);
+  });
+
+  /* ---------- botões do cabeçalho ---------- */
+
+  function limpar(item) {
+    item.querySelectorAll('input[type=text], input[type=hidden], input[type=file]').forEach((c) => (c.value = ''));
+    item.querySelectorAll('input[type=checkbox]').forEach((c) => (c.checked = false));
+    item.querySelectorAll('select').forEach((s) => (s.selectedIndex = 0));
+    const mini = item.querySelector('.miniatura');
+    if (mini) {
+      mini.classList.add('vazia');
+      mini.innerHTML = '<span>solte<br>a imagem</span>';
+    }
+    item.querySelectorAll('.check').forEach((rot) => {
+      if (rot.querySelector('[name*="remover_imagem"]')) rot.remove();
+    });
+  }
 
   caixa.addEventListener('click', (e) => {
     const alvo = e.target.closest('button');
     if (!alvo) return;
+    // o cabeçalho é um <summary>: sem isto, cada botão abriria e fecharia o item
+    e.preventDefault();
     const item = alvo.closest('.item');
+    marcarSujo();
 
     if (alvo.hasAttribute('data-remover')) {
-      if (caixa.querySelectorAll('.item').length === 1) { item.querySelectorAll('input[type=text]').forEach(c => c.value = ''); return; }
+      if (caixa.querySelectorAll('.item').length === 1) { limpar(item); resumir(item); return; }
       if (confirm('Remover este item?')) { item.remove(); renumerar(); }
+      return;
+    }
+    if (alvo.hasAttribute('data-duplicar')) {
+      const copia = item.cloneNode(true);
+      copia.open = true;
+      // o id sai junto na cópia e dois itens com o mesmo id viram um só no PHP
+      copia.querySelectorAll('[name*="[id]"]').forEach((c) => (c.value = ''));
+      item.after(copia);
+      renumerar();
       return;
     }
     const passo = alvo.getAttribute('data-mover');
@@ -585,26 +828,89 @@ abrir_pagina('Agenda da semana');
     }
   });
 
+  /* ---------- reordenar arrastando ---------- */
+
+  let arrastado = null;
+
+  caixa.addEventListener('mousedown', (e) => {
+    // só a pega inicia o arrasto: o resto do cabeçalho continua abrindo o item
+    const item = e.target.closest('.pega') ? e.target.closest('.item') : null;
+    if (item) item.draggable = true;
+  });
+  caixa.addEventListener('mouseup', () => {
+    caixa.querySelectorAll('.item').forEach((i) => (i.draggable = false));
+  });
+
+  caixa.addEventListener('dragstart', (e) => {
+    const item = e.target.closest('.item');
+    if (!item || !item.draggable) return;
+    arrastado = item;
+    item.classList.add('arrastando');
+    e.dataTransfer.effectAllowed = 'move';
+    // o Firefox exige algum dado para o arrasto acontecer
+    e.dataTransfer.setData('text/plain', '');
+  });
+
+  caixa.addEventListener('dragover', (e) => {
+    if (!arrastado) return;
+    const sobre = e.target.closest('.item');
+    if (!sobre || sobre === arrastado) return;
+    e.preventDefault();
+    const caixaSobre = sobre.getBoundingClientRect();
+    const acima = e.clientY < caixaSobre.top + caixaSobre.height / 2;
+    sobre.parentNode.insertBefore(arrastado, acima ? sobre : sobre.nextSibling);
+  });
+
+  caixa.addEventListener('dragend', () => {
+    if (!arrastado) return;
+    arrastado.classList.remove('arrastando');
+    arrastado.draggable = false;
+    arrastado = null;
+    renumerar();
+    marcarSujo();
+  });
+
+  /* ---------- adicionar ---------- */
+
   document.getElementById('add').addEventListener('click', () => {
     const modelo = caixa.querySelector('.item');
     const novo = modelo.cloneNode(true);
-    novo.querySelectorAll('input[type=text], input[type=hidden], input[type=file]').forEach((c) => (c.value = ''));
-    novo.querySelectorAll('input[type=checkbox]').forEach((c) => (c.checked = false));
-    novo.querySelectorAll('select').forEach((s) => (s.selectedIndex = 0));
-    // o item novo começa sem imagem, mesmo que o modelo tivesse uma
-    const mini = novo.querySelector('.miniatura');
-    if (mini) {
-      mini.classList.add('vazia');
-      mini.innerHTML = '<span>sem<br>imagem</span>';
-    }
-    novo.querySelectorAll('.check').forEach((rot) => {
-      if (rot.querySelector('[name*="remover_imagem"]')) rot.remove();
-    });
+    novo.open = true;
+    limpar(novo);
     caixa.appendChild(novo);
     renumerar();
     novo.scrollIntoView({ behavior: 'smooth', block: 'center' });
     novo.querySelector('input[type=text]').focus();
+    marcarSujo();
   });
+
+  /* ---------- não perder o trabalho ---------- */
+
+  form.addEventListener('submit', (e) => {
+    // o servidor recusa o POST inteiro se a soma passar do limite dele, e aí
+    // some tudo de uma vez; melhor barrar aqui, com o formulário ainda na tela
+    let total = 0;
+    caixa.querySelectorAll('input[type=file]').forEach((c) => {
+      if (c.files && c.files[0]) total += c.files[0].size;
+    });
+    if (total > MAX_UPLOAD) {
+      e.preventDefault();
+      alert(
+        'As imagens somam ' + (total / 1048576).toFixed(1) + ' MB, acima do limite de 8 MB por envio.\n\n' +
+        'Publique agora sem parte delas e envie as que faltam num segundo envio.'
+      );
+      return;
+    }
+    sujo = false; // saiu para publicar: o aviso de saída não vale mais
+  });
+
+  window.addEventListener('beforeunload', (e) => {
+    if (!sujo) return;
+    e.preventDefault();
+    e.returnValue = '';
+  });
+
+  resumirTodos();
 })();
 </script>
 <?php

@@ -1,6 +1,8 @@
 "use client";
 
 /** Propriedades da camada selecionada — muda conforme o tipo. */
+import { useState } from "react";
+import { medirTexto } from "../texto";
 import { FONTES, FUNDOS, TINTAS } from "../paleta";
 import type {
   Ajustes,
@@ -13,51 +15,95 @@ import type {
   CamadaSombreado,
   CamadaTexto,
   ChaveFonte,
-  Formato,
+  Esmaecimento,
   Sombra,
 } from "../tipos";
-import { FORMATOS, temImagem } from "../tipos";
+import { ROTULO_TIPO, temImagem } from "../tipos";
 import {
   AreaTexto,
+  Aviso,
   Botoes,
   Chave,
   Cor,
   Deslizante,
   Escolha,
+  Lados,
   Numero,
+  Presets,
   Secao,
   Texto as CampoTexto,
 } from "./Controles";
 
 interface Props {
   camada: Camada | null;
-  formato: Formato;
+  /** quando há mais de uma selecionada, elas vêm aqui e `camada` é null */
+  varias: Camada[] | null;
+  medidas: { largura: number; altura: number };
   onAlterar: (mudanca: Partial<Camada>) => void;
+  onAlterarVarias: (mudanca: Partial<Camada>) => void;
+  onAlinhar: (onde: "esq" | "centroX" | "dir" | "topo" | "centroY" | "base") => void;
+  onDistribuir: (eixo: "x" | "y") => void;
+  onOrdenar: (passo: number | "topo" | "fundo") => void;
+  onDuplicarSelecao: () => void;
+  onExcluirSelecao: () => void;
   onTrocarImagem: () => void;
   onDuplicarFantasma: () => void;
   onAjustarProporcao: () => void;
+  onPreencherQuadro: () => void;
   onRemoverFundo: () => void;
 }
 
 export default function Inspetor({
   camada,
-  formato,
+  varias,
+  medidas,
   onAlterar,
+  onAlterarVarias,
+  onAlinhar,
+  onDistribuir,
+  onOrdenar,
+  onDuplicarSelecao,
+  onExcluirSelecao,
   onTrocarImagem,
   onDuplicarFantasma,
   onAjustarProporcao,
+  onPreencherQuadro,
   onRemoverFundo,
 }: Props) {
+  if (varias?.length) {
+    return (
+      <PainelVarios
+        camadas={varias}
+        onAlterar={onAlterarVarias}
+        onAlinhar={onAlinhar}
+        onDistribuir={onDistribuir}
+        onOrdenar={onOrdenar}
+        onDuplicar={onDuplicarSelecao}
+        onExcluir={onExcluirSelecao}
+      />
+    );
+  }
+
   if (!camada) {
     return (
-      <p className="px-4 py-8 text-center text-sm leading-relaxed text-white/35">
-        Escolha uma camada no palco ou na lista à esquerda para editar.
-      </p>
+      <div className="px-4 py-8 text-center">
+        <p className="text-sm leading-relaxed text-white/35">
+          Escolha uma camada no palco ou na lista à esquerda para editar.
+        </p>
+        <p className="mt-4 text-[11px] leading-relaxed text-white/25">
+          Arraste uma imagem para o palco ou cole com ⌘V — PNG entra como pessoa
+          recortada, JPG como foto de contexto.
+          <br />
+          <span className="mt-2 block">
+            ⇧ ou ⌘ + clique junta camadas · Alt + clique pega a de baixo · P vê sem guias
+          </span>
+        </p>
+      </div>
     );
   }
 
   const alterar = onAlterar as (m: Record<string, unknown>) => void;
-  const { largura: L, altura: A } = FORMATOS[formato];
+  const { largura: L, altura: A } = medidas;
 
   return (
     <div className="flex flex-col">
@@ -71,6 +117,10 @@ export default function Inspetor({
           passo={0.01}
           onMudar={(opacidade) => alterar({ opacidade })}
         />
+        <div className="flex gap-2">
+          <BotaoMenor onClick={() => onOrdenar("fundo")}>⤓ Para o fundo</BotaoMenor>
+          <BotaoMenor onClick={() => onOrdenar("topo")}>⤒ Para a frente</BotaoMenor>
+        </div>
       </Secao>
 
       {"largura" in camada && (
@@ -126,10 +176,13 @@ export default function Inspetor({
             <>
               <BotaoMenor onClick={onRemoverFundo}>✂ Remover o fundo</BotaoMenor>
               <BotaoMenor onClick={onAjustarProporcao}>Ajustar à proporção original</BotaoMenor>
+              <BotaoMenor onClick={onPreencherQuadro}>Preencher o quadro</BotaoMenor>
             </>
           )}
         </Secao>
       )}
+
+      {temImagem(camada) && <PainelBordas esmaecer={camada.esmaecer} alterar={alterar} />}
 
       {camada.tipo === "fundo" && <PainelFundo camada={camada} alterar={alterar} />}
       {camada.tipo === "sombreado" && <PainelSombreado camada={camada} alterar={alterar} />}
@@ -156,10 +209,12 @@ function BotaoMenor({
   children,
   onClick,
   destaque,
+  risco,
 }: {
   children: React.ReactNode;
   onClick: () => void;
   destaque?: boolean;
+  risco?: boolean;
 }) {
   return (
     <button
@@ -168,11 +223,96 @@ function BotaoMenor({
       className={`w-full rounded-md px-3 py-2 text-xs font-medium transition ${
         destaque
           ? "bg-[#FFCB05] text-[#14110C] hover:bg-[#ffd63a]"
-          : "border border-white/12 text-white/70 hover:border-white/30 hover:text-white"
+          : risco
+            ? "border border-red-400/40 text-red-200 hover:border-red-400 hover:bg-red-500/10"
+            : "border border-white/12 text-white/70 hover:border-white/30 hover:text-white"
       }`}
     >
       {children}
     </button>
+  );
+}
+
+/**
+ * O que dá para fazer com várias camadas de uma vez.
+ *
+ * Alinhar duas pessoas pela base, ou esconder o trio de fantasmas, era item a
+ * item antes disto — e é justamente o que mais se repete montando uma arte.
+ */
+function PainelVarios({
+  camadas,
+  onAlterar,
+  onAlinhar,
+  onDistribuir,
+  onOrdenar,
+  onDuplicar,
+  onExcluir,
+}: {
+  camadas: Camada[];
+  onAlterar: (m: Partial<Camada>) => void;
+  onAlinhar: (onde: "esq" | "centroX" | "dir" | "topo" | "centroY" | "base") => void;
+  onDistribuir: (eixo: "x" | "y") => void;
+  onOrdenar: (passo: number | "topo" | "fundo") => void;
+  onDuplicar: () => void;
+  onExcluir: () => void;
+}) {
+  const alterar = onAlterar as Alterar;
+  const todasVisiveis = camadas.every((c) => c.visivel);
+  const todasTravadas = camadas.every((c) => c.travada);
+  const tipos = [...new Set(camadas.map((c) => ROTULO_TIPO[c.tipo]))];
+
+  return (
+    <div className="flex flex-col">
+      <Secao titulo={`${camadas.length} camadas`}>
+        <p className="text-[11px] leading-relaxed text-white/35">{tipos.join(" · ")}</p>
+        <Deslizante
+          rotulo="Opacidade"
+          valor={camadas[0].opacidade}
+          min={0}
+          max={1}
+          passo={0.01}
+          onMudar={(opacidade) => alterar({ opacidade })}
+        />
+        <Chave
+          rotulo="Visíveis"
+          ligada={todasVisiveis}
+          onMudar={() => alterar({ visivel: !todasVisiveis })}
+        />
+        <Chave
+          rotulo="Travadas"
+          ligada={todasTravadas}
+          onMudar={() => alterar({ travada: !todasTravadas })}
+        />
+      </Secao>
+
+      <Secao titulo="Alinhar">
+        <div className="grid grid-cols-3 gap-1.5">
+          <BotaoMenor onClick={() => onAlinhar("esq")}>⇤ Esq.</BotaoMenor>
+          <BotaoMenor onClick={() => onAlinhar("centroX")}>↔ Centro</BotaoMenor>
+          <BotaoMenor onClick={() => onAlinhar("dir")}>⇥ Dir.</BotaoMenor>
+          <BotaoMenor onClick={() => onAlinhar("topo")}>⇡ Topo</BotaoMenor>
+          <BotaoMenor onClick={() => onAlinhar("centroY")}>↕ Meio</BotaoMenor>
+          <BotaoMenor onClick={() => onAlinhar("base")}>⇣ Base</BotaoMenor>
+        </div>
+        {camadas.length >= 3 && (
+          <div className="flex gap-2">
+            <BotaoMenor onClick={() => onDistribuir("x")}>Distribuir ↔</BotaoMenor>
+            <BotaoMenor onClick={() => onDistribuir("y")}>Distribuir ↕</BotaoMenor>
+          </div>
+        )}
+      </Secao>
+
+      <Secao titulo="Ordem e ações">
+        <div className="flex gap-2">
+          <BotaoMenor onClick={() => onOrdenar("fundo")}>⤓ Fundo</BotaoMenor>
+          <BotaoMenor onClick={() => onOrdenar("topo")}>⤒ Frente</BotaoMenor>
+        </div>
+        <BotaoMenor onClick={onDuplicar}>⧉ Duplicar todas</BotaoMenor>
+        <BotaoMenor onClick={onExcluir} risco>
+          ✕ Excluir todas
+        </BotaoMenor>
+      </Secao>
+    </div>
   );
 }
 
@@ -191,6 +331,90 @@ function PainelAjustes({
       <Deslizante rotulo="Saturação" valor={ajustes.saturacao} min={-2} max={4} passo={0.1} onMudar={(saturacao) => set({ saturacao })} />
       <Deslizante rotulo="Desfoque" valor={ajustes.desfoque} min={0} max={60} onMudar={(desfoque) => set({ desfoque })} />
       <Chave rotulo="Preto e branco" ligada={ajustes.cinza} onMudar={(cinza) => set({ cinza })} />
+    </Secao>
+  );
+}
+
+/**
+ * Como a imagem termina.
+ *
+ * Uma foto que acaba num retângulo duro nunca se compõe com o fundo — é o que
+ * mais salta numa arte montada às pressas. Aqui dá para dissolver cada lado no
+ * seu ritmo, apagar só os cantos, ou fechar tudo numa vinheta oval.
+ */
+function PainelBordas({ esmaecer, alterar }: { esmaecer: Esmaecimento; alterar: Alterar }) {
+  const set = (m: Partial<Esmaecimento>) => alterar({ esmaecer: { ...esmaecer, ...m } });
+  const [ligados, setLigados] = useState(
+    esmaecer.topo === esmaecer.direita &&
+      esmaecer.direita === esmaecer.base &&
+      esmaecer.base === esmaecer.esquerda,
+  );
+
+  return (
+    <Secao titulo="Bordas" aberta={esmaecer.ativo}>
+      <Chave rotulo="Esmaecer as bordas" ligada={esmaecer.ativo} onMudar={(ativo) => set({ ativo })} />
+      {esmaecer.ativo && (
+        <>
+          <Presets
+            rotulo="Começar de"
+            opcoes={[
+              { nome: "Suave", valor: { modo: "lados", topo: 0.3, direita: 0.3, base: 0.3, esquerda: 0.3, cantos: 0, dureza: 0.5 } },
+              { nome: "Só a base", valor: { modo: "lados", topo: 0, direita: 0, base: 0.45, esquerda: 0, cantos: 0, dureza: 0.4 } },
+              { nome: "Cantos", valor: { modo: "lados", topo: 0.08, direita: 0.08, base: 0.08, esquerda: 0.08, cantos: 0.35, dureza: 0.5 } },
+              { nome: "Vinheta", valor: { modo: "elipse", topo: 0.5, direita: 0.5, base: 0.5, esquerda: 0.5, cantos: 0, dureza: 0.6 } },
+            ]}
+            onAplicar={(v) => {
+              const p = v as Partial<Esmaecimento>;
+              setLigados(p.topo === p.base && p.base === p.esquerda);
+              set(p);
+            }}
+          />
+          <Botoes
+            rotulo="Modo"
+            valor={esmaecer.modo}
+            opcoes={[
+              { valor: "lados", rotulo: "Lados" },
+              { valor: "elipse", rotulo: "Oval" },
+            ]}
+            onMudar={(modo) => set({ modo })}
+          />
+          {esmaecer.modo === "lados" ? (
+            <>
+              <Lados
+                valores={esmaecer}
+                ligados={ligados}
+                onLigados={setLigados}
+                onMudar={(m) => set(m)}
+              />
+              <Deslizante
+                rotulo="Cantos"
+                valor={esmaecer.cantos}
+                min={0}
+                max={1}
+                passo={0.02}
+                onMudar={(cantos) => set({ cantos })}
+              />
+            </>
+          ) : (
+            <Deslizante
+              rotulo="Abertura"
+              valor={esmaecer.topo}
+              min={0.05}
+              max={1}
+              passo={0.02}
+              onMudar={(v) => set({ topo: v, direita: v, base: v, esquerda: v })}
+            />
+          )}
+          <Deslizante
+            rotulo="Dureza"
+            valor={esmaecer.dureza}
+            min={0}
+            max={1}
+            passo={0.02}
+            onMudar={(dureza) => set({ dureza })}
+          />
+        </>
+      )}
     </Secao>
   );
 }
@@ -263,6 +487,7 @@ function PainelFundo({ camada, alterar }: { camada: CamadaFundo; alterar: Altera
 }
 
 function PainelSombreado({ camada, alterar }: { camada: CamadaSombreado; alterar: Alterar }) {
+  const lateral = camada.direcao === "esquerda" || camada.direcao === "direita";
   return (
     <Secao titulo="Sombreado">
       <Escolha
@@ -272,13 +497,28 @@ function PainelSombreado({ camada, alterar }: { camada: CamadaSombreado; alterar
           { valor: "base", rotulo: "Base pesada" },
           { valor: "topo", rotulo: "Topo suave" },
           { valor: "ambos", rotulo: "Topo e base" },
+          { valor: "esquerda", rotulo: "Lateral esquerda" },
+          { valor: "direita", rotulo: "Lateral direita" },
           { valor: "vinheta", rotulo: "Vinheta" },
         ]}
         onMudar={(direcao) => alterar({ direcao })}
       />
+      {lateral && (
+        <p className="text-[11px] leading-snug text-white/35">
+          Abre uma coluna escura de um lado — é o que dá leitura ao texto numa arte
+          em paisagem, com a pessoa do outro lado.
+        </p>
+      )}
       <Cor rotulo="Cor" valor={camada.cor} onMudar={(cor) => alterar({ cor })} />
       <Deslizante rotulo="Força" valor={camada.forca} min={0} max={1} passo={0.02} onMudar={(forca) => alterar({ forca })} />
-      <Deslizante rotulo="Extensão" valor={camada.extensao} min={0.05} max={1} passo={0.01} onMudar={(extensao) => alterar({ extensao })} />
+      <Deslizante
+        rotulo={lateral ? "Largura" : "Extensão"}
+        valor={camada.extensao}
+        min={0.05}
+        max={1}
+        passo={0.01}
+        onMudar={(extensao) => alterar({ extensao })}
+      />
     </Secao>
   );
 }
@@ -296,6 +536,18 @@ function PainelMoldura({ camada, alterar }: { camada: CamadaMoldura; alterar: Al
 }
 
 function PainelTexto({ camada, alterar }: { camada: CamadaTexto; alterar: Alterar }) {
+  /* mede com as métricas reais para avisar quando as linhas vão se encostar —
+     é o "Â" de MILITÂNCIA batendo na linha de cima */
+  let apertado = 0;
+  try {
+    const m = medirTexto(camada);
+    if (m.linhas.length > 1 && m.alturaMinima > m.alturaLinha) {
+      apertado = Number((m.alturaMinima / m.tamanho).toFixed(2));
+    }
+  } catch {
+    // medir depende do canvas: no primeiro render do servidor não existe
+  }
+
   return (
     <>
       <Secao titulo="Texto">
@@ -316,6 +568,13 @@ function PainelTexto({ camada, alterar }: { camada: CamadaTexto; alterar: Altera
         />
         <Deslizante rotulo="Corpo" valor={camada.tamanho} min={16} max={420} onMudar={(tamanho) => alterar({ tamanho })} />
         <Deslizante rotulo="Entrelinha" valor={camada.entrelinha} min={0.7} max={2} passo={0.02} onMudar={(entrelinha) => alterar({ entrelinha })} />
+        {apertado > 0 && (
+          <Aviso
+            texto="As linhas estão se tocando — com acento em caixa alta o circunflexo encosta na linha de cima."
+            acao={`Abrir p/ ${apertado}`}
+            onAcao={() => alterar({ entrelinha: apertado })}
+          />
+        )}
         <Deslizante rotulo="Entre letras" valor={camada.espacamento} min={-8} max={30} onMudar={(espacamento) => alterar({ espacamento })} />
         <Botoes
           rotulo="Alinhamento"
@@ -337,6 +596,9 @@ function PainelTexto({ camada, alterar }: { camada: CamadaTexto; alterar: Altera
         <Cor rotulo="Tarja ==assim==" valor={camada.corTarja} onMudar={(corTarja) => alterar({ corTarja })} />
         <Cor rotulo="Texto na tarja" valor={camada.corTextoTarja} onMudar={(corTextoTarja) => alterar({ corTextoTarja })} />
       </Secao>
+
+      <PainelFundoTexto camada={camada} alterar={alterar} />
+      <PainelTarja camada={camada} alterar={alterar} />
 
       <PainelSombra titulo="Sombra dura" sombra={camada.sombra} alterar={alterar} />
 
@@ -367,6 +629,91 @@ function PainelTexto({ camada, alterar }: { camada: CamadaTexto; alterar: Altera
   );
 }
 
+/**
+ * A caixa atrás do texto inteiro.
+ *
+ * É o que faltava para pôr "SEXTA 18:30" em cima de uma foto e continuar legível
+ * sem depender de a roupa da pessoa ser escura. Tudo na mão do artista: bloco ou
+ * faixa por linha, respiro, cantos e inclinação.
+ */
+function PainelFundoTexto({ camada, alterar }: { camada: CamadaTexto; alterar: Alterar }) {
+  const f = camada.fundo;
+  const set = (m: Partial<CamadaTexto["fundo"]>) => alterar({ fundo: { ...f, ...m } });
+
+  return (
+    <Secao titulo="Tarja atrás do texto" aberta={f.ativo}>
+      <Chave rotulo="Ligada" ligada={f.ativo} onMudar={(ativo) => set({ ativo })} />
+      {f.ativo && (
+        <>
+          <Presets
+            rotulo="Começar de"
+            opcoes={[
+              { nome: "Sólida", valor: { modo: "bloco", opacidade: 1, raio: 0, inclinacao: 0, larguraTotal: false } },
+              { nome: "Véu", valor: { modo: "bloco", opacidade: 0.62, raio: 0, inclinacao: 0, larguraTotal: true } },
+              { nome: "Faixa por linha", valor: { modo: "linha", opacidade: 1, raio: 0, inclinacao: 0, larguraTotal: false } },
+              { nome: "Torta", valor: { modo: "linha", opacidade: 1, raio: 4, inclinacao: -2.5, larguraTotal: false } },
+            ]}
+            onAplicar={(v) => set(v as Partial<CamadaTexto["fundo"]>)}
+          />
+          <Botoes
+            rotulo="Formato"
+            valor={f.modo}
+            opcoes={[
+              { valor: "bloco", rotulo: "Uma caixa" },
+              { valor: "linha", rotulo: "Por linha" },
+            ]}
+            onMudar={(modo) => set({ modo })}
+          />
+          <Cor rotulo="Cor" valor={f.cor} onMudar={(cor) => set({ cor })} />
+          <Deslizante rotulo="Opacidade" valor={f.opacidade} min={0} max={1} passo={0.02} onMudar={(opacidade) => set({ opacidade })} />
+          <div className="grid grid-cols-2 gap-2">
+            <Numero rotulo="Respiro ↔" valor={f.padX} onMudar={(padX) => set({ padX: Math.max(0, padX) })} />
+            <Numero rotulo="Respiro ↕" valor={f.padY} onMudar={(padY) => set({ padY: Math.max(0, padY) })} />
+          </div>
+          <Deslizante rotulo="Cantos" valor={f.raio} min={0} max={120} onMudar={(raio) => set({ raio })} />
+          <Deslizante rotulo="Inclinação" valor={f.inclinacao} min={-15} max={15} passo={0.5} sufixo="°" onMudar={(inclinacao) => set({ inclinacao })} />
+          <Chave
+            rotulo="Ocupar a largura toda"
+            ligada={f.larguraTotal}
+            onMudar={(larguraTotal) => set({ larguraTotal })}
+          />
+        </>
+      )}
+    </Secao>
+  );
+}
+
+/** Acabamento das tarjas por palavra — antes eram números fixos no código. */
+function PainelTarja({ camada, alterar }: { camada: CamadaTexto; alterar: Alterar }) {
+  const t = camada.tarja;
+  const set = (m: Partial<CamadaTexto["tarja"]>) => alterar({ tarja: { ...t, ...m } });
+  const usa = camada.texto.includes("==");
+
+  return (
+    <Secao titulo="Acabamento do ==assim==" aberta={false}>
+      {!usa && (
+        <p className="text-[11px] leading-snug text-white/35">
+          Escreva <code className="text-[#FFCB05]">==uma palavra==</code> no conteúdo para
+          ela sair sobre tarja. Estes ajustes valem para essas marcações.
+        </p>
+      )}
+      <Botoes
+        rotulo="Altura da banda"
+        valor={t.ajuste}
+        opcoes={[
+          { valor: "metricas", rotulo: "Abraçar letras" },
+          { valor: "fixo", rotulo: "Fixa" },
+        ]}
+        onMudar={(ajuste) => set({ ajuste })}
+      />
+      <Deslizante rotulo="Respiro ↔" valor={t.padX} min={0} max={0.6} passo={0.01} onMudar={(padX) => set({ padX })} />
+      <Deslizante rotulo="Respiro ↕" valor={t.padY} min={0} max={0.6} passo={0.01} onMudar={(padY) => set({ padY })} />
+      <Deslizante rotulo="Cantos" valor={t.raio} min={0} max={80} onMudar={(raio) => set({ raio })} />
+      <Deslizante rotulo="Inclinação" valor={t.inclinacao} min={-15} max={15} passo={0.5} sufixo="°" onMudar={(inclinacao) => set({ inclinacao })} />
+    </Secao>
+  );
+}
+
 function PainelFoto({ camada, alterar }: { camada: CamadaFoto; alterar: Alterar }) {
   return (
     <>
@@ -383,14 +730,6 @@ function PainelFoto({ camada, alterar }: { camada: CamadaFoto; alterar: Alterar 
             { valor: "luminosity", rotulo: "Luminosidade" },
           ]}
           onMudar={(mistura) => alterar({ mistura })}
-        />
-        <Deslizante
-          rotulo="Esmaecer bordas"
-          valor={camada.esmaecer}
-          min={0}
-          max={1}
-          passo={0.02}
-          onMudar={(esmaecer) => alterar({ esmaecer })}
         />
       </Secao>
       <PainelAjustes ajustes={camada.ajustes} alterar={alterar} />
