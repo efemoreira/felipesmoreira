@@ -1,0 +1,16 @@
+Recorte de fundo — arquivos de terceiros
+========================================
+
+wasm/            MediaPipe Tasks Vision (Google) — Apache License 2.0
+                 copiado de node_modules/@mediapipe/tasks-vision/wasm
+
+selfie_multiclass_256x256.tflite
+                 Modelo de segmentação de pessoas (Google) — Apache License 2.0
+                 https://storage.googleapis.com/mediapipe-models/image_segmenter/
+                 selfie_multiclass_256x256/float32/latest/
+
+Ficam hospedados aqui de propósito: assim o recorte roda inteiro no navegador,
+sem depender de CDN de terceiros e sem nenhuma foto sair da máquina.
+
+Para atualizar o wasm depois de um `npm update @mediapipe/tasks-vision`:
+  cp node_modules/@mediapipe/tasks-vision/wasm/vision_wasm_{internal,nosimd_internal}.{js,wasm} public/modelos/wasm/

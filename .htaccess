@@ -6,6 +6,8 @@ ErrorDocument 404 /404.html
 RewriteCond %{REQUEST_FILENAME} -f [OR]
 RewriteCond %{REQUEST_FILENAME} -d
 RewriteRule ^ - [L]
+# Estúdio de artes: a URL limpa cai no porteiro PHP, nunca no HTML cru
+RewriteRule ^painel/estudio/?$ /painel/estudio.php [L]
 # Redireciona /rota para /rota.html
 RewriteRule ^([^/]+)$ $1.html [L]
 # Redireciona tudo que não existir para index.html (SPA fallback)
@@ -14,6 +16,9 @@ RewriteRule ^ index.html [QSA,L]
 # ===== MIME correto p/ rotas de metadata do Next (sem extensão) =====
 <IfModule mod_mime.c>
   AddType application/manifest+json .webmanifest
+  # recorte de fundo: sem o MIME certo o navegador recusa o wasm
+  AddType application/wasm .wasm
+  AddType application/octet-stream .tflite
 </IfModule>
 <FilesMatch "^(opengraph-image|twitter-image|apple-icon|icon)$">
   ForceType image/png
@@ -49,7 +54,7 @@ RewriteRule ^ index.html [QSA,L]
 
 # Assets versionados do Next (_next/static) — imutáveis
 <IfModule mod_headers.c>
-  <FilesMatch "\.(?:js|css|woff2|png|jpg|jpeg|svg|ico)$">
+  <FilesMatch "\.(?:js|css|woff2|png|jpg|jpeg|svg|ico|wasm|tflite)$">
     Header set Cache-Control "public, max-age=31536000, immutable"
   </FilesMatch>
 </IfModule>

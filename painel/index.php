@@ -12,6 +12,8 @@ declare(strict_types=1);
  * dados/config.php — nada de senha dentro do repositório.
  */
 
+require_once __DIR__ . '/sessao.php'; // cookie, sessão, autenticado() e SESSAO_SEG
+
 const PASTA_DADOS   = __DIR__ . '/../dados';
 const ARQ_AGENDA    = PASTA_DADOS . '/agenda.json';
 const ARQ_CONFIG    = PASTA_DADOS . '/config.php';
@@ -23,7 +25,6 @@ const ARQ_SEMENTE   = __DIR__ . '/../dados-semente.json'; // cópia do build, s�
 
 const MAX_TENTATIVAS = 5;
 const BLOQUEIO_SEG   = 900;   // 15 min
-const SESSAO_SEG     = 7200;  // 2 h
 const MAX_BACKUPS    = 12;
 const MAX_UPLOAD     = 8388608; // 8 MB — foto de celular passa folgado
 const LARGURA_MAX    = 1000;    // a miniatura aparece com ~240px; 1000 cobre telas retina
@@ -50,23 +51,6 @@ const CANAIS_PADRAO = [
 ];
 
 /* ===================== infraestrutura ===================== */
-
-header('X-Robots-Tag: noindex, nofollow');
-header('Referrer-Policy: same-origin');
-header('X-Content-Type-Options: nosniff');
-
-$https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
-    || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
-
-session_set_cookie_params([
-    'lifetime' => 0,
-    'path'     => '/painel',
-    'httponly' => true,
-    'secure'   => $https,
-    'samesite' => 'Strict',
-]);
-session_name('painel_agenda');
-session_start();
 
 /** Aceita qualquer coisa vinda do JSON (inclusive null/número) e devolve HTML seguro. */
 function h($s): string
@@ -160,20 +144,7 @@ function limpar_falhas(): void
     }
 }
 
-/* ---- sessão ---- */
-function autenticado(): bool
-{
-    if (empty($_SESSION['ok'])) {
-        return false;
-    }
-    if ((time() - (int) ($_SESSION['visto'] ?? 0)) > SESSAO_SEG) {
-        session_destroy();
-        return false;
-    }
-    $_SESSION['visto'] = time();
-    return true;
-}
-
+/* ---- sessão (autenticado() vem do sessao.php) ---- */
 function token(): string
 {
     if (empty($_SESSION['csrf'])) {
@@ -818,6 +789,7 @@ $canaisAtivos = array_column($agenda['disponivelEm'] ?? CANAIS_PADRAO, 'icone');
       <div class="barra acoes">
         <button class="btn btn-ouro" type="submit">Publicar agenda</button>
         <a class="btn" href="/programacao" target="_blank" rel="noopener">Ver a página</a>
+        <a class="btn" href="/painel/estudio">Estúdio de artes</a>
       </div>
     </form>
 
