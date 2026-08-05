@@ -16,6 +16,7 @@ import type {
   CamadaSombreado,
   CamadaTexto,
   Formato,
+  PapelTexto,
   Projeto,
   TipoCamada,
 } from "./tipos";
@@ -138,6 +139,7 @@ export const criarTexto = (
 
   return {
     ...(base("texto", r.nome) as CamadaTexto),
+    papel,
     x: largura / 2,
     y: Math.round(r.y),
     texto: r.texto,
@@ -434,6 +436,198 @@ export function projetoDoModelo(modelo: Modelo, formato: Formato): Projeto {
     nome: modelo.nome,
     formato,
     camadas: modelo.montar(formato),
+    atualizadoEm: Date.now(),
+  };
+}
+
+/* ===== arte inicial a partir de um briefing ===== */
+
+/** O necessário de um ativo da biblioteca para dimensionar a camada. */
+export interface ImagemBriefing {
+  ativoId: string;
+  largura: number;
+  altura: number;
+}
+
+/**
+ * O que a pessoa entregou no assistente antes de a arte existir: as fotos, os
+ * textos e se quer moldura. Tudo é opcional — o que faltar continua sendo o
+ * espaço reservado do modelo, para preencher depois no editor.
+ */
+export interface Briefing {
+  pessoas: ImagemBriefing[];
+  fundos: ImagemBriefing[];
+  chapeu: string;
+  titulo: string;
+  subtitulo: string;
+  moldura: boolean;
+}
+
+export const BRIEFING_VAZIO: Briefing = {
+  pessoas: [],
+  fundos: [],
+  chapeu: "",
+  titulo: "",
+  subtitulo: "",
+  moldura: false,
+};
+
+/** Encaixa a imagem na caixa da camada sem distorcer: a maior dimensão manda. */
+function encaixar(img: ImagemBriefing, caixaL: number, caixaA: number) {
+  const escala = Math.min(caixaL / img.largura, caixaA / img.altura);
+  return {
+    largura: Math.max(1, Math.round(img.largura * escala)),
+    altura: Math.max(1, Math.round(img.altura * escala)),
+  };
+}
+
+/**
+ * Espalha N pessoas na base da arte.
+ *
+ * Uma pessoa fica no centro e grande; a partir de duas, elas encolhem e se
+ * distribuem em intervalos iguais — é o arranjo das referências com dupla e
+ * trio, sem ninguém sobrando fora do quadro.
+ */
+function distribuirPessoas(
+  f: Formato,
+  imagens: ImagemBriefing[],
+  molde: CamadaPessoa,
+): CamadaPessoa[] {
+  const { largura, altura } = FORMATOS[f];
+  const n = imagens.length;
+  // com mais gente, cada uma ocupa menos altura para as três caberem lado a lado
+  const fracaoAltura = n === 1 ? 0.72 : n === 2 ? 0.64 : 0.54;
+  const caixaA = Math.round(altura * fracaoAltura);
+  const caixaL = Math.round((largura / Math.max(n, 1)) * (n === 1 ? 0.86 : 1.05));
+
+  return imagens.map((img, i) => {
+    const { largura: l, altura: a } = encaixar(img, caixaL, caixaA);
+    return {
+      ...molde,
+      id: novoId(),
+      nome: n === 1 ? "Pessoa em foco" : `Pessoa ${i + 1}`,
+      ativoId: img.ativoId,
+      largura: l,
+      altura: a,
+      // encostadas na base, com uma folga para o texto não nascer colado
+      x: Math.round((largura * (i + 1)) / (n + 1)),
+      y: altura - Math.round(a / 2),
+      visivel: true,
+    };
+  });
+}
+
+/**
+ * Monta a arte inicial: pega a pilha do modelo e vai trocando o que o briefing
+ * preencheu. O que não veio no briefing continua como o modelo deixou.
+ */
+export function montarComBriefing(modelo: Modelo, f: Formato, b: Briefing): Camada[] {
+  const { largura, altura } = FORMATOS[f];
+  let camadas = modelo.montar(f);
+
+  /* ---- pessoas ---- */
+  if (b.pessoas.length > 0) {
+    const doModelo = camadas.filter((c): c is CamadaPessoa => c.tipo === "pessoa");
+    // o molde é a última pessoa do modelo: nos modelos com fantasma atrás, é ela
+    // que carrega o acabamento de quem fica em foco
+    const molde = doModelo[doModelo.length - 1] ?? criarPessoa(f);
+    const novas = distribuirPessoas(f, b.pessoas, molde);
+    const semPessoas = camadas.filter((c) => c.tipo !== "pessoa");
+
+    /*
+     * Elas entram logo depois do sombreado — é o empilhamento das referências
+     * (fundo → contexto → sombreado → pessoas → moldura → textos). Colocar
+     * antes do sombreado escureceria justamente quem está em foco, que é o erro
+     * em que os modelos com cópia fantasma atrás fazem cair.
+     */
+    const ultimoSombreado = semPessoas.map((c) => c.tipo).lastIndexOf("sombreado");
+    const antesDoTexto = semPessoas.findIndex((c) => c.tipo === "texto" || c.tipo === "moldura");
+    const posicao =
+      ultimoSombreado !== -1
+        ? ultimoSombreado + 1
+        : antesDoTexto === -1
+          ? semPessoas.length
+          : antesDoTexto;
+
+    camadas = [...semPessoas.slice(0, posicao), ...novas, ...semPessoas.slice(posicao)];
+  }
+
+  /* ---- fundos e fotos de contexto ---- */
+  if (b.fundos.length > 0) {
+    const slots = camadas.filter((c): c is CamadaFoto => c.tipo === "foto");
+    const sobrando = b.fundos.slice(slots.length);
+
+    let usados = 0;
+    camadas = camadas.flatMap((c): Camada[] => {
+      if (c.tipo !== "foto") return [c];
+      const img = b.fundos[usados++];
+      if (!img) return []; // slot que ninguém preencheu: some, para não ficar buraco
+      const { largura: l, altura: a } = encaixar(img, c.largura, c.altura);
+      return [{ ...c, ativoId: img.ativoId, largura: l, altura: a }];
+    });
+
+    // fundo extra (ou modelo sem nenhum slot) entra cobrindo a arte, atrás de tudo
+    if (sobrando.length > 0 || slots.length === 0) {
+      const extras = slots.length === 0 ? b.fundos : sobrando;
+      const cobrindo = extras.map((img, i) => {
+        const caixa = encaixar(img, largura, altura);
+        const escala = Math.max(largura / caixa.largura, altura / caixa.altura);
+        return {
+          ...criarFoto(f, extras.length === 1 ? "Fundo" : `Fundo ${i + 1}`),
+          ativoId: img.ativoId,
+          x: largura / 2,
+          y: altura / 2,
+          largura: Math.round(caixa.largura * escala),
+          altura: Math.round(caixa.altura * escala),
+          esmaecer: 0.25,
+        } as CamadaFoto;
+      });
+      const depoisDoFundo = camadas.findIndex((c) => c.tipo !== "fundo");
+      const onde = depoisDoFundo === -1 ? camadas.length : depoisDoFundo;
+      camadas = [...camadas.slice(0, onde), ...cobrindo, ...camadas.slice(onde)];
+    }
+  }
+
+  /* ---- textos ---- */
+  const escritos: PapelTexto[] = ["chapeu", "titulo", "subtitulo"];
+
+  for (const papel of escritos) {
+    const texto = b[papel].trim();
+    const onde = camadas.findIndex((c) => c.tipo === "texto" && c.papel === papel);
+
+    if (texto === "") {
+      // não escreveu nada: tira o texto de exemplo em vez de publicar "URGENTE!"
+      if (onde !== -1) camadas = camadas.filter((_, i) => i !== onde);
+      continue;
+    }
+    if (onde !== -1) {
+      camadas = camadas.map((c, i) => (i === onde ? { ...(c as CamadaTexto), texto } : c));
+    } else {
+      // o modelo não tinha esse texto, mas foi digitado: entra no lugar de sempre
+      camadas = [...camadas, { ...criarTexto(f, papel), texto }];
+    }
+  }
+
+  /* ---- moldura ---- */
+  const temMoldura = camadas.some((c) => c.tipo === "moldura");
+  if (b.moldura && !temMoldura) {
+    // a moldura fica atrás dos textos e à frente do resto
+    const primeiroTexto = camadas.findIndex((c) => c.tipo === "texto");
+    const onde = primeiroTexto === -1 ? camadas.length : primeiroTexto;
+    camadas = [...camadas.slice(0, onde), criarMoldura(), ...camadas.slice(onde)];
+  } else if (!b.moldura && temMoldura) {
+    camadas = camadas.filter((c) => c.tipo !== "moldura");
+  }
+
+  return camadas;
+}
+
+export function projetoDoBriefing(modelo: Modelo, formato: Formato, b: Briefing): Projeto {
+  return {
+    id: novoId(),
+    nome: b.titulo.trim() ? b.titulo.trim().slice(0, 40) : modelo.nome,
+    formato,
+    camadas: montarComBriefing(modelo, formato, b),
     atualizadoEm: Date.now(),
   };
 }

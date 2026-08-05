@@ -154,8 +154,14 @@ export interface CamadaSombreado extends Base {
 export type ChaveFonte = "anton" | "oswald" | "alfa" | "bitter";
 export type Alinhamento = "left" | "center" | "right";
 
+/** Que lugar o texto ocupa na arte — é por aqui que o assistente sabe onde
+ *  encaixar o título que foi digitado, sem depender do nome da camada. */
+export type PapelTexto = "titulo" | "subtitulo" | "chapeu";
+
 export interface CamadaTexto extends Base {
   tipo: "texto";
+  /** ausente nos projetos criados antes do assistente */
+  papel?: PapelTexto;
   /** aceita *destaque* e ==tarja== */
   texto: string;
   fonte: ChaveFonte;

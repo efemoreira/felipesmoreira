@@ -12,13 +12,20 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { fontesProntas, limparCacheDeFontes } from "@/lib/fontes";
 import { lerAtivo, listarProjetos, salvarProjeto } from "./armazenamento";
 import { exportarPng } from "./exportar";
-import { MODELOS, novaCamada, projetoDoModelo, type Modelo } from "./modelos";
+import {
+  MODELOS,
+  montarComBriefing,
+  novaCamada,
+  projetoDoModelo,
+  type Briefing,
+  type Modelo,
+} from "./modelos";
 import Palco from "./Palco";
 import BarraSuperior from "./painel/BarraSuperior";
 import Biblioteca from "./painel/Biblioteca";
 import Inspetor from "./painel/Inspetor";
 import ListaCamadas from "./painel/ListaCamadas";
-import ModelosModal from "./painel/Modelos";
+import Assistente from "./painel/Assistente";
 import Recorte from "./painel/Recorte";
 import { useHistorico } from "./useHistorico";
 import {
@@ -56,7 +63,7 @@ export default function Estudio() {
   const [selo, setSelo] = useState(0);
   const [salvando, setSalvando] = useState(false);
   const [exportando, setExportando] = useState(false);
-  const [modelosAbertos, setModelosAbertos] = useState(false);
+  const [assistenteAberto, setAssistenteAberto] = useState(false);
   const [bibliotecaPara, setBibliotecaPara] = useState<string | null>(null);
   const [recortando, setRecortando] = useState<Ativo | null>(null);
   const [gavetas, setGavetas] = useState<"camadas" | "inspetor" | null>(null);
@@ -286,15 +293,19 @@ export default function Estudio() {
     [mudarProjeto],
   );
 
-  const usarModelo = useCallback(
-    (modelo: Modelo, formato: Formato) => {
-      setModelosAbertos(false);
+  /**
+   * Troca a arte inteira pelo que o assistente montou. O nome do projeto passa
+   * a ser o título digitado — é assim que o PNG exportado já sai nomeado.
+   */
+  const montarArte = useCallback(
+    (modelo: Modelo, formato: Formato, briefing: Briefing) => {
+      setAssistenteAberto(false);
       setSelecionado(null);
       mudarProjeto((p) => ({
         ...p,
-        nome: modelo.nome,
+        nome: briefing.titulo.trim() ? briefing.titulo.trim().slice(0, 40) : modelo.nome,
         formato,
-        camadas: modelo.montar(formato),
+        camadas: montarComBriefing(modelo, formato, briefing),
       }));
     },
     [mudarProjeto],
@@ -409,7 +420,7 @@ export default function Estudio() {
         onDesfazer={desfazer}
         onRefazer={refazer}
         onExportar={(escala) => void exportar(escala)}
-        onAbrirModelos={() => setModelosAbertos(true)}
+        onAbrirModelos={() => setAssistenteAberto(true)}
       />
 
       <div className="flex min-h-0 flex-1">
@@ -493,11 +504,11 @@ export default function Estudio() {
         ))}
       </nav>
 
-      {modelosAbertos && (
-        <ModelosModal
+      {assistenteAberto && (
+        <Assistente
           formato={projeto.formato}
-          onEscolher={usarModelo}
-          onFechar={() => setModelosAbertos(false)}
+          onMontar={montarArte}
+          onFechar={() => setAssistenteAberto(false)}
         />
       )}
 

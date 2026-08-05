@@ -33,8 +33,12 @@ jobs:
           RewriteCond %{REQUEST_FILENAME} -f [OR]
           RewriteCond %{REQUEST_FILENAME} -d
           RewriteRule ^ - [L]
-          # Estúdio de artes: a URL limpa cai no porteiro PHP, nunca no HTML cru
+          # Painel: as URLs limpas caem no PHP, que confere a sessão. O estúdio é
+          # o único cujo HTML existe no build — e ele nunca é servido cru.
           RewriteRule ^painel/estudio/?$ /painel/estudio.php [L]
+          RewriteRule ^painel/agenda/?$ /painel/agenda.php [L]
+          RewriteRule ^painel/usuarios/?$ /painel/usuarios.php [L]
+          RewriteRule ^painel/conta/?$ /painel/conta.php [L]
           # Redireciona /rota para /rota.html
           RewriteRule ^([^/]+)$ $1.html [L]
           # Redireciona tudo que não existir para index.html (SPA fallback)
