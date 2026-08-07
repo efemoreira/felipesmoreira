@@ -8,8 +8,10 @@ import Avatar from "./camadas/Avatar";
 import Foto from "./camadas/Foto";
 import Fundo from "./camadas/Fundo";
 import Moldura from "./camadas/Moldura";
+import Padrao from "./camadas/Padrao";
 import Pessoa from "./camadas/Pessoa";
 import Sombreado from "./camadas/Sombreado";
+import Textura from "./camadas/Textura";
 import Texto from "./camadas/Texto";
 import { CORES } from "./paleta";
 import { dimensoes, transformavel, type Camada, type Formato, type Projeto } from "./tipos";
@@ -255,6 +257,14 @@ export default function Palco({
             case "fundo":
               return (
                 <Fundo key={c.id} camada={c} largura={L} altura={A} {...props(c)} />
+              );
+            case "padrao":
+              return (
+                <Padrao key={c.id} camada={c} largura={L} altura={A} {...props(c)} />
+              );
+            case "textura":
+              return (
+                <Textura key={c.id} camada={c} largura={L} altura={A} {...props(c)} />
               );
             case "sombreado":
               return (

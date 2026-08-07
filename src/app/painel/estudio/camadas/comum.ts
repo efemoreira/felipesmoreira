@@ -4,7 +4,7 @@
 import Konva from "konva";
 import { useEffect, type RefObject } from "react";
 import type { Filter, KonvaEventObject } from "konva/lib/Node";
-import { Esmaecer, Gradiente, Tinta } from "../filtros";
+import { Esmaecer, Gradiente, LuzBorda, Tinta } from "../filtros";
 import type { Ajustes, Camada, Esmaecimento } from "../tipos";
 
 export interface PropsCamada<T extends Camada> {
@@ -36,7 +36,7 @@ export const esmaeceAlgo = (e: Esmaecimento | undefined): boolean =>
 /** Monta a lista de filtros do Konva a partir dos ajustes da camada. */
 export function filtrosDe(
   ajustes: Ajustes,
-  extras: { tinta?: boolean; gradiente?: boolean; esmaecer?: boolean } = {},
+  extras: { tinta?: boolean; gradiente?: boolean; esmaecer?: boolean; luzBorda?: boolean } = {},
 ): Filter[] {
   const filtros: Filter[] = [];
   if (ajustes.desfoque > 0) filtros.push(Konva.Filters.Blur);
@@ -47,6 +47,8 @@ export function filtrosDe(
   if (extras.tinta) filtros.push(Tinta);
   // depois da tinta: o gradiente também pinta, e precisa vir por cima dela
   if (extras.gradiente) filtros.push(Gradiente);
+  // a luz de contorno lê o alfa ainda inteiro, antes de o esmaecer comer as bordas
+  if (extras.luzBorda) filtros.push(LuzBorda);
   // por último: o esmaecer só corta alfa, então nada depois dele repinta o que sumiu
   if (extras.esmaecer) filtros.push(Esmaecer);
   return filtros;
@@ -87,6 +89,12 @@ export function useCacheFiltros(
   precisa: boolean,
   chave: string,
   qualidade = 1,
+  /**
+   * Folga em px em volta do nó ao cachear. O halo dilata o alfa para fora do
+   * desenho original; sem esta folga o Konva recorta o cache na caixa do nó e a
+   * luz aparece cortada em linha reta nas bordas.
+   */
+  folga = 0,
 ) {
   useEffect(() => {
     const no = ref.current;
@@ -98,19 +106,21 @@ export function useCacheFiltros(
       return;
     }
 
+    const opcoes = folga > 0 ? { offset: Math.ceil(folga) } : {};
+
     // na exportação não dá para esperar: o PNG é gerado dois quadros depois
     if (qualidade > 1) {
-      no.cache({ pixelRatio: qualidade });
+      no.cache({ ...opcoes, pixelRatio: qualidade });
       no.getLayer()?.batchDraw();
       return;
     }
 
     const id = window.setTimeout(() => {
-      no.cache({ pixelRatio: 1 });
+      no.cache({ ...opcoes, pixelRatio: 1 });
       no.getLayer()?.batchDraw();
     }, 90);
     return () => window.clearTimeout(id);
-  }, [ref, precisa, chave, qualidade]);
+  }, [ref, precisa, chave, qualidade, folga]);
 }
 
 /** Ao girar/redimensionar, o Konva mexe na escala; aqui ela volta para o tamanho. */

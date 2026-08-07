@@ -33,6 +33,38 @@ export default function Sombreado({ camada, largura, altura, onSelecionar }: Pro
     onTouchStart: onSelecionar,
   };
 
+  /*
+   * O holofote é o contrário da vinheta: em vez de fechar as bordas, ele
+   * **soma** luz num ponto. É o que dá o clarão quente atrás das pessoas nas
+   * referências — sem ele o recorte fica boiando num fundo morto.
+   */
+  if (camada.direcao === "foco") {
+    const cx = largura * camada.centro.x;
+    const cy = altura * camada.centro.y;
+    const raio = Math.max(largura, altura) * Math.max(0.05, camada.extensao);
+    return (
+      <Rect
+        {...comum}
+        y={0}
+        height={altura}
+        globalCompositeOperation="lighter"
+        fillRadialGradientStartPoint={{ x: cx, y: cy }}
+        fillRadialGradientEndPoint={{ x: cx, y: cy }}
+        fillRadialGradientStartRadius={0}
+        fillRadialGradientEndRadius={raio}
+        fillRadialGradientColorStops={[
+          0,
+          rgba(camada.cor, camada.forca),
+          // a queda cedo evita o disco chapado: o brilho tem de morrer no meio
+          0.45,
+          rgba(camada.cor, camada.forca * 0.28),
+          1,
+          rgba(camada.cor, 0),
+        ]}
+      />
+    );
+  }
+
   if (camada.direcao === "vinheta") {
     const raio = Math.max(largura, altura) * 0.75;
     return (

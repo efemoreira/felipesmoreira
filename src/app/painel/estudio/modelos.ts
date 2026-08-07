@@ -7,10 +7,17 @@
  */
 import {
   AJUSTES_NEUTROS,
+  BRILHO_PADRAO,
+  CONTATO_PADRAO,
   FORMATOS,
   FUNDO_TEXTO_PADRAO,
+  HALO_PADRAO,
+  LUZ_BORDA_PADRAO,
+  MENOR_PADRAO,
+  PREENCHIMENTO_PADRAO,
   SEM_ESMAECER,
   TARJA_PADRAO,
+  TEXTURA_TEXTO_PADRAO,
   esmaecerUniforme,
   ladoBase,
   novoId,
@@ -21,8 +28,10 @@ import type {
   CamadaFoto,
   CamadaFundo,
   CamadaMoldura,
+  CamadaPadrao,
   CamadaPessoa,
   CamadaSombreado,
+  CamadaTextura,
   CamadaTexto,
   Formato,
   PapelTexto,
@@ -80,6 +89,31 @@ export const criarFundo = (): CamadaFundo => ({
   angulo: 0,
 });
 
+export const criarPadrao = (f: Quadro, nome = "Padrão"): CamadaPadrao => {
+  const { base: b } = medidas(f);
+  return {
+    ...(base("padrao", nome) as CamadaPadrao),
+    forma: "chevron",
+    cor: CORES.ouroEscuro,
+    espessura: Math.max(2, Math.round(b * 0.012)),
+    escala: Math.round(b * 0.22),
+    angulo: 0,
+    opacidade: 0.12,
+    mistura: "normal",
+  };
+};
+
+export const criarTextura = (nome = "Textura"): CamadaTextura => ({
+  ...(base("textura", nome) as CamadaTextura),
+  modo: "grao",
+  ativoId: "",
+  cor: CORES.branco,
+  escala: 1,
+  semente: 11,
+  opacidade: 0.1,
+  mistura: "overlay",
+});
+
 export const criarFoto = (f: Quadro, nome = "Foto de contexto"): CamadaFoto => {
   const { largura, altura, base: b } = medidas(f);
   return {
@@ -120,7 +154,9 @@ export const criarPessoa = (f: Quadro, nome = "Pessoa"): CamadaPessoa => {
       forca: 1,
     },
     sombra: { ativa: false, cor: "rgba(0,0,0,.6)", x: 0, y: 0, desfoque: 40 },
-    halo: { ativo: false, cor: CORES.ouro, tamanho: 10, desfoque: 26 },
+    halo: { ...HALO_PADRAO },
+    luzBorda: { ...LUZ_BORDA_PADRAO },
+    contato: { ...CONTATO_PADRAO },
   };
 };
 
@@ -130,6 +166,17 @@ export const criarSombreado = (nome = "Sombreado"): CamadaSombreado => ({
   cor: CORES.noite,
   forca: 0.94,
   extensao: 0.5,
+  centro: { x: 0.5, y: 0.5 },
+});
+
+/** O holofote quente atrás das pessoas — sombreado que soma luz em vez de tirar. */
+export const criarFoco = (nome = "Holofote"): CamadaSombreado => ({
+  ...criarSombreado(nome),
+  direcao: "foco",
+  cor: CORES.ouro,
+  forca: 0.34,
+  extensao: 0.55,
+  centro: { x: 0.5, y: 0.55 },
 });
 
 export const criarTexto = (
@@ -199,6 +246,10 @@ export const criarTexto = (
     autoAjuste: true,
     fundo: { ...FUNDO_TEXTO_PADRAO, padX: Math.round(b * 0.026), padY: Math.round(b * 0.017) },
     tarja: { ...TARJA_PADRAO },
+    preenchimento: { ...PREENCHIMENTO_PADRAO },
+    textura: { ...TEXTURA_TEXTO_PADRAO },
+    brilho: { ...BRILHO_PADRAO },
+    menor: { ...MENOR_PADRAO },
   };
 };
 
@@ -209,6 +260,7 @@ export const criarMoldura = (): CamadaMoldura => ({
   recuo: 22,
   dupla: true,
   raio: 0,
+  chanfro: 0,
 });
 
 export const criarAvatar = (f: Quadro): CamadaAvatar => {
@@ -234,12 +286,16 @@ export function novaCamada(tipo: TipoCamada, f: Quadro): Camada {
   switch (tipo) {
     case "fundo":
       return criarFundo();
+    case "padrao":
+      return criarPadrao(f);
     case "foto":
       return criarFoto(f);
     case "pessoa":
       return criarPessoa(f);
     case "sombreado":
       return criarSombreado();
+    case "textura":
+      return criarTextura();
     case "texto":
       return criarTexto(f, "titulo");
     case "moldura":
@@ -412,7 +468,7 @@ export const MODELOS: Modelo[] = [
         },
         { ...criarSombreado(), ...a.sombreadoTexto, forca: 0.9 },
         foco(f, a, "Pessoa em foco", {
-          halo: { ativo: true, cor: CORES.ouro, tamanho: 8, desfoque: 30 },
+          halo: { ...HALO_PADRAO, ativo: true, tamanho: 8, desfoque: 30, forca: 0.55 },
         }),
         criarMoldura(),
         texto(f, a, "titulo", "É OFICIAL!", { tamanho: Math.round(a.base * 0.17) }),
@@ -524,7 +580,7 @@ export const MODELOS: Modelo[] = [
         },
         { ...criarSombreado(), ...a.sombreadoTexto },
         foco(f, a, "Pessoa em foco", {
-          halo: { ativo: true, cor: CORES.ouro, tamanho: 10, desfoque: 34 },
+          halo: { ...HALO_PADRAO, ativo: true, tamanho: 10, desfoque: 34, forca: 0.55 },
         }),
         texto(f, a, "chapeu", "AO VIVO · MISSÃO CEARÁ"),
         texto(f, a, "titulo", "O QUE *ninguém* CONTOU", {
@@ -549,6 +605,141 @@ export const MODELOS: Modelo[] = [
         texto(f, a, "chapeu", "REUNIÃO DE EQUIPE"),
         texto(f, a, "titulo", "PAUTA DA SEMANA", { tamanho: Math.round(a.base * 0.14) }),
         texto(f, a, "subtitulo", "==QUARTA, 20H==\nLink no grupo do WhatsApp"),
+      ];
+    },
+  },
+  {
+    chave: "evento",
+    nome: "Evento",
+    resumo: "Chamada de rua com acabamento: fundo texturizado, título gasto e placa de horário",
+    montar: (f) => {
+      const a = arranjo(f);
+      const b = a.base;
+
+      /* o título sobe para o topo e as pessoas ocupam a base inteira — é o
+         arranjo do convite de rua, diferente do "texto por cima da pessoa" */
+      const yTitulo = Math.round(a.altura * (a.paisagem ? 0.24 : 0.22));
+      const yPlaca = Math.round(a.altura * (a.paisagem ? 0.72 : 0.79));
+      const yEndereco = Math.round(a.altura * (a.paisagem ? 0.88 : 0.915));
+
+      /*
+       * O Evento é centrado em qualquer orientação — e é por isso que ele não
+       * usa o `textoX` do arranjo. Em paisagem o arranjo joga a coluna de texto
+       * para 35% da largura (pessoa de um lado, texto do outro); aqui o bloco é
+       * desenhado a partir do próprio centro, então herdar aquele x fazia o
+       * título nascer com a metade esquerda fora do quadro.
+       */
+      const cx = Math.round(a.largura / 2);
+      /* dois cortes diferentes: o da moldura é um lasco na quina, o da placa
+         precisa de mais para se ler como selo numa caixa bem mais baixa */
+      const chanfroMoldura = Math.round(b * 0.028);
+      const chanfroPlaca = Math.round(b * 0.022);
+
+      const molde = criarPessoa(f, "Pessoa");
+      const alt = Math.round(molde.altura * (a.paisagem ? 0.94 : 0.9));
+      const larg = Math.round((molde.largura * alt) / molde.altura);
+
+      /* as duas em foco recebem o mesmo acabamento: halo quente para descolar do
+         fundo, luz de contorno vinda de cima e mancha de contato no chão */
+      const emFoco = (nome: string, x: number): CamadaPessoa => ({
+        ...molde,
+        id: novoId(),
+        nome,
+        x,
+        y: a.altura - Math.round(alt / 2),
+        largura: larg,
+        altura: alt,
+        halo: {
+          ...HALO_PADRAO,
+          ativo: true,
+          tamanho: Math.max(2, Math.round(b * 0.005)),
+          desfoque: 16,
+          forca: 0.45,
+        },
+        luzBorda: {
+          ativa: true,
+          cor: CORES.ouro,
+          angulo: 300,
+          espessura: Math.max(3, Math.round(b * 0.006)),
+          forca: 0.7,
+        },
+        contato: { ativa: true, cor: CORES.preto, largura: 0.9, altura: 0.14, forca: 0.5 },
+      });
+
+      return [
+        { ...criarFundo(), cor: "#2A2208", cor2: CORES.noite, angulo: 20 },
+        {
+          ...criarPadrao(f, "Chevron do fundo"),
+          escala: Math.round(b * 0.26),
+          espessura: Math.max(3, Math.round(b * 0.014)),
+          opacidade: 0.1,
+        },
+        criarFoco(),
+        emFoco("Pessoa 1", Math.round(a.largura * (a.paisagem ? 0.34 : 0.34))),
+        emFoco("Pessoa 2", Math.round(a.largura * (a.paisagem ? 0.66 : 0.68))),
+        { ...criarSombreado(), direcao: "ambos", extensao: 0.44, forca: 0.9 },
+        { ...criarTextura("Grão"), opacidade: 0.1 },
+        {
+          ...criarMoldura(),
+          espessura: 5,
+          recuo: Math.round(b * 0.022),
+          chanfro: chanfroMoldura,
+        },
+
+        texto(f, a, "titulo", "ESQUENTA ^com^ MILITÂNCIA", {
+          x: cx,
+          y: yTitulo,
+          // em paisagem sobra largura e falta altura: o corpo cede para caber
+          tamanho: Math.round(b * (a.paisagem ? 0.11 : 0.145)),
+          entrelinha: 0.94,
+          largura: Math.round(a.largura * 0.88),
+          alinhamento: "center",
+          // ouro claro no topo caindo para bronze na base, com desgaste por cima
+          preenchimento: { modo: "gradiente", cor2: "#8A6A0B", angulo: 0 },
+          textura: { ativa: true, forca: 0.3, escala: 0.6, semente: 19 },
+          brilho: { ativo: true, cor: CORES.ouro, desfoque: Math.round(b * 0.03), forca: 0.35 },
+          sombra: { ativa: true, cor: "rgba(0,0,0,.8)", x: 4, y: 8, desfoque: 6 },
+        }),
+
+        // o horário sai em ouro pelo *destaque*: é o dado que a rua precisa ler primeiro
+        texto(f, a, "subtitulo", "SEXTA | *18:30*", {
+          x: cx,
+          y: yPlaca,
+          fonte: "anton",
+          tamanho: Math.round(b * (a.paisagem ? 0.07 : 0.085)),
+          largura: Math.round(a.largura * 0.78),
+          alinhamento: "center",
+          cor: CORES.creme,
+          corDestaque: CORES.ouro,
+          sombra: { ativa: false, cor: "rgba(0,0,0,.8)", x: 0, y: 0, desfoque: 0 },
+          fundo: {
+            ...FUNDO_TEXTO_PADRAO,
+            ativo: true,
+            modo: "bloco",
+            cor: "#0D0B07",
+            opacidade: 0.82,
+            padX: Math.round(b * 0.055),
+            padY: Math.round(b * 0.03),
+            chanfro: chanfroPlaca,
+            borda: { ativa: true, cor: CORES.ouro, espessura: 3 },
+          },
+        }),
+
+        {
+          ...criarTexto(f, "subtitulo"),
+          nome: "Endereço",
+          // sem papel: o assistente não sobrescreve, fica para ajustar no inspetor
+          papel: undefined,
+          texto: ":pin: RUA ALCÂNTARAS, 126 - FÁTIMA\n:building: FORTALEZA - CE, 60055-350",
+          x: cx,
+          y: yEndereco,
+          largura: Math.round(a.largura * 0.86),
+          alinhamento: "center",
+          tamanho: Math.round(b * (a.paisagem ? 0.034 : 0.04)),
+          entrelinha: 1.7,
+          cor: CORES.creme,
+          sombra: { ativa: true, cor: "rgba(0,0,0,.7)", x: 0, y: 2, desfoque: 6 },
+        } as CamadaTexto,
       ];
     },
   },

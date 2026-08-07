@@ -20,15 +20,26 @@ interface Props {
 
 const ICONE: Record<TipoCamada, string> = {
   fundo: "▦",
+  padrao: "◤",
   foto: "▧",
   pessoa: "☻",
   sombreado: "◑",
+  textura: "░",
   texto: "T",
   moldura: "◻",
   avatar: "◉",
 };
 
-const TIPOS_NOVOS: TipoCamada[] = ["texto", "pessoa", "foto", "sombreado", "moldura", "avatar"];
+const TIPOS_NOVOS: TipoCamada[] = [
+  "texto",
+  "pessoa",
+  "foto",
+  "sombreado",
+  "padrao",
+  "textura",
+  "moldura",
+  "avatar",
+];
 
 /** A camada está inteiramente fora da arte? */
 function foraDoQuadro(c: Camada, f: { largura: number; altura: number }): boolean {
@@ -283,7 +294,12 @@ function Miniatura({ camada }: { camada: Camada }) {
     );
   }
 
-  if (camada.tipo === "moldura" || camada.tipo === "sombreado") {
+  if (
+    camada.tipo === "moldura" ||
+    camada.tipo === "sombreado" ||
+    camada.tipo === "padrao" ||
+    camada.tipo === "textura"
+  ) {
     return <span className={caixa} style={{ color: camada.cor }}>{ICONE[camada.tipo]}</span>;
   }
 

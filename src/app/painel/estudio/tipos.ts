@@ -33,13 +33,24 @@ export const GRUPOS_FORMATO: { rotulo: string; formatos: Formato[] }[] = [
 export const LIVRE_MIN = 320;
 export const LIVRE_MAX = 4096;
 
-export type TipoCamada = "fundo" | "foto" | "pessoa" | "sombreado" | "texto" | "moldura" | "avatar";
+export type TipoCamada =
+  | "fundo"
+  | "padrao"
+  | "foto"
+  | "pessoa"
+  | "sombreado"
+  | "textura"
+  | "texto"
+  | "moldura"
+  | "avatar";
 
 export const ROTULO_TIPO: Record<TipoCamada, string> = {
   fundo: "Fundo",
+  padrao: "Padrão geométrico",
   foto: "Foto de contexto",
   pessoa: "Pessoa",
   sombreado: "Sombreado",
+  textura: "Textura",
   texto: "Texto",
   moldura: "Moldura",
   avatar: "Avatar",
@@ -156,14 +167,78 @@ export interface GradientePessoa {
   forca: number;
 }
 
-/** Halo atrás do recorte — a luz de contorno dourada das referências. */
+/**
+ * Halo atrás do recorte — a luz de contorno dourada das referências.
+ *
+ * O `tamanho` é engorda do contorno em px, medida no alfa: a silhueta cresce o
+ * mesmo tanto em volta do corpo inteiro. A primeira versão escalava a imagem, e
+ * aí o topo da cabeça ganhava muito mais halo que os ombros — era a franja
+ * amarela irregular que aparecia nas artes.
+ */
 export interface Halo {
   ativo: boolean;
   cor: string;
   /** px de "engorda" do contorno */
   tamanho: number;
   desfoque: number;
+  /** 0 a 1 — sem isto o halo sai sempre chapado e vira uma aura */
+  forca: number;
 }
+
+export const HALO_PADRAO: Halo = {
+  ativo: false,
+  cor: "#FFCB05",
+  tamanho: 10,
+  desfoque: 26,
+  forca: 0.7,
+};
+
+/**
+ * Luz de contorno na própria pessoa — o brilho quente que corre pela borda do
+ * corpo, vindo de um lado só. É o que integra o recorte ao holofote do fundo em
+ * vez de deixá-lo colado por cima.
+ */
+export interface LuzBorda {
+  ativa: boolean;
+  cor: string;
+  /** graus, 0 = luz vindo da direita, cresce no sentido horário */
+  angulo: number;
+  /** px da faixa acesa */
+  espessura: number;
+  /** 0 a 1 */
+  forca: number;
+}
+
+/**
+ * Sombra elíptica no chão, sob a pessoa — sem ela o recorte flutua.
+ * É um gradiente radial achatado, então já nasce macia: não tem desfoque à parte.
+ */
+export interface Contato {
+  ativa: boolean;
+  cor: string;
+  /** fração da largura da pessoa */
+  largura: number;
+  /** achatamento: fração da largura da elipse */
+  altura: number;
+  /** 0 a 1 */
+  forca: number;
+}
+
+export const LUZ_BORDA_PADRAO: LuzBorda = {
+  ativa: false,
+  cor: "#FFCB05",
+  angulo: 315,
+  espessura: 6,
+  forca: 0.85,
+};
+
+export const CONTATO_PADRAO: Contato = {
+  ativa: false,
+  cor: "#000000",
+  largura: 0.8,
+  altura: 0.16,
+  forca: 0.6,
+};
 
 interface ComImagem {
   /** id do ativo na biblioteca (IndexedDB); vazio = espaço reservado do modelo */
@@ -198,9 +273,54 @@ export interface CamadaPessoa extends Base, ComImagem {
   gradiente: GradientePessoa;
   sombra: Sombra;
   halo: Halo;
+  luzBorda: LuzBorda;
+  contato: Contato;
 }
 
-export type DirecaoSombreado = "base" | "topo" | "ambos" | "vinheta" | "esquerda" | "direita";
+/**
+ * Geometria repetida no fundo — o X gigante em ouro escuro das referências.
+ *
+ * É a camada que tira o fundo do "preto liso" sem competir com ninguém: fica
+ * atrás de tudo, em opacidade baixa, e dá o que o olho lê como profundidade.
+ */
+export type FormaPadrao = "chevron" | "raios" | "diagonais" | "grade" | "pontos";
+
+export interface CamadaPadrao extends Base {
+  tipo: "padrao";
+  forma: FormaPadrao;
+  cor: string;
+  espessura: number;
+  /** px entre repetições (ou tamanho do motivo, no chevron) */
+  escala: number;
+  /** graus */
+  angulo: number;
+  mistura: Mistura;
+}
+
+/**
+ * Grão, riscos e desgaste por cima da arte inteira (ver textura.ts).
+ * Com `ativoId` preenchido, usa um PNG da biblioteca no lugar do procedural.
+ */
+export interface CamadaTextura extends Base {
+  tipo: "textura";
+  modo: "grao" | "riscos" | "desgaste";
+  /** vazio = textura procedural; preenchido = imagem da biblioteca, ladrilhada */
+  ativoId: string;
+  cor: string;
+  /** 1 é o desenho no tamanho natural; acima disso ele engrossa */
+  escala: number;
+  semente: number;
+  mistura: Mistura;
+}
+
+export type DirecaoSombreado =
+  | "base"
+  | "topo"
+  | "ambos"
+  | "vinheta"
+  | "esquerda"
+  | "direita"
+  | "foco";
 
 export interface CamadaSombreado extends Base {
   tipo: "sombreado";
@@ -210,6 +330,8 @@ export interface CamadaSombreado extends Base {
   forca: number;
   /** 0 a 1 — fração da altura coberta pelo degradê */
   extensao: number;
+  /** só no "foco": onde o holofote bate, em fração da arte (0 a 1) */
+  centro: { x: number; y: number };
 }
 
 export type ChaveFonte = "anton" | "oswald" | "alfa" | "bitter";
@@ -235,10 +357,46 @@ export interface FundoTexto {
   padX: number;
   padY: number;
   raio: number;
+  /** px de canto cortado — a placa chanfrada, em vez do canto redondo do raio */
+  chanfro: number;
+  /** filete em volta da placa; é ele que dá o acabamento de "selo" */
+  borda: { ativa: boolean; cor: string; espessura: number };
   /** graus — a tarja levemente torta das referências */
   inclinacao: number;
   /** só no modo "linha": ocupa a largura da caixa em vez de seguir o texto */
   larguraTotal: boolean;
+}
+
+/**
+ * Como o glifo é pintado por dentro.
+ *
+ * Cor chapada é o que denuncia uma arte feita no automático: nas referências o
+ * título vai de ouro claro no topo a bronze na base, e ainda leva desgaste por
+ * cima. O gradiente atravessa o bloco de texto inteiro, não cada palavra.
+ */
+export interface PreenchimentoTexto {
+  modo: "solido" | "gradiente";
+  cor2: string;
+  /** graus, 0 = de cima para baixo */
+  angulo: number;
+}
+
+/** Desgaste procedural comendo as letras por dentro (ver textura.ts). */
+export interface TexturaTexto {
+  ativa: boolean;
+  /** 0 a 1 — quanto do glifo o desgaste chega a apagar */
+  forca: number;
+  escala: number;
+  semente: number;
+}
+
+/** Brilho difuso em volta das letras — separado da sombra dura, que é de contato. */
+export interface BrilhoTexto {
+  ativo: boolean;
+  cor: string;
+  desfoque: number;
+  /** 0 a 1 */
+  forca: number;
 }
 
 /** Acabamento das tarjas `==assim==` — antes eram constantes no código. */
@@ -259,6 +417,8 @@ export const FUNDO_TEXTO_PADRAO: FundoTexto = {
   padX: 28,
   padY: 18,
   raio: 0,
+  chanfro: 0,
+  borda: { ativa: false, cor: "#FFCB05", espessura: 3 },
   inclinacao: 0,
   larguraTotal: false,
 };
@@ -271,11 +431,34 @@ export const TARJA_PADRAO: AcabamentoTarja = {
   ajuste: "metricas",
 };
 
+export const PREENCHIMENTO_PADRAO: PreenchimentoTexto = {
+  modo: "solido",
+  cor2: "#8A6A0B",
+  angulo: 0,
+};
+
+export const TEXTURA_TEXTO_PADRAO: TexturaTexto = {
+  ativa: false,
+  forca: 0.35,
+  escala: 1,
+  semente: 7,
+};
+
+export const BRILHO_PADRAO: BrilhoTexto = {
+  ativo: false,
+  cor: "#FFCB05",
+  desfoque: 34,
+  forca: 0.5,
+};
+
+/** Acabamento do trecho `^assim^` — a palavra pequena dentro do título. */
+export const MENOR_PADRAO = { cor: "#F6F5EF", escala: 0.42 };
+
 export interface CamadaTexto extends Base {
   tipo: "texto";
   /** ausente nos projetos criados antes do assistente */
   papel?: PapelTexto;
-  /** aceita *destaque* e ==tarja== */
+  /** aceita *destaque*, ==tarja==, ^menor^, :icone: e o filete | */
   texto: string;
   fonte: ChaveFonte;
   tamanho: number;
@@ -296,6 +479,11 @@ export interface CamadaTexto extends Base {
   autoAjuste: boolean;
   fundo: FundoTexto;
   tarja: AcabamentoTarja;
+  preenchimento: PreenchimentoTexto;
+  textura: TexturaTexto;
+  brilho: BrilhoTexto;
+  /** o trecho `^assim^`: corpo reduzido e cor própria, dentro da mesma frase */
+  menor: { cor: string; escala: number };
 }
 
 export interface CamadaMoldura extends Base {
@@ -305,6 +493,8 @@ export interface CamadaMoldura extends Base {
   recuo: number;
   dupla: boolean;
   raio: number;
+  /** px de canto cortado — a moldura de quinas chanfradas das referências */
+  chanfro: number;
 }
 
 export interface CamadaAvatar extends Base, ComImagem {
@@ -316,9 +506,11 @@ export interface CamadaAvatar extends Base, ComImagem {
 
 export type Camada =
   | CamadaFundo
+  | CamadaPadrao
   | CamadaFoto
   | CamadaPessoa
   | CamadaSombreado
+  | CamadaTextura
   | CamadaTexto
   | CamadaMoldura
   | CamadaAvatar;
@@ -393,9 +585,32 @@ function normalizarCamada(bruta: Camada): Camada {
   }
 
   if (c.tipo === "texto") {
-    c.fundo = { ...FUNDO_TEXTO_PADRAO, ...(c.fundo as object | undefined) };
+    c.fundo = {
+      ...FUNDO_TEXTO_PADRAO,
+      ...(c.fundo as object | undefined),
+      borda: {
+        ...FUNDO_TEXTO_PADRAO.borda,
+        ...((c.fundo as FundoTexto | undefined)?.borda as object | undefined),
+      },
+    };
     c.tarja = { ...TARJA_PADRAO, ...(c.tarja as object | undefined) };
+    c.preenchimento = { ...PREENCHIMENTO_PADRAO, ...(c.preenchimento as object | undefined) };
+    c.textura = { ...TEXTURA_TEXTO_PADRAO, ...(c.textura as object | undefined) };
+    c.brilho = { ...BRILHO_PADRAO, ...(c.brilho as object | undefined) };
+    c.menor = { ...MENOR_PADRAO, ...(c.menor as object | undefined) };
   }
+
+  if (c.tipo === "pessoa") {
+    c.halo = { ...HALO_PADRAO, ...(c.halo as object | undefined) };
+    c.luzBorda = { ...LUZ_BORDA_PADRAO, ...(c.luzBorda as object | undefined) };
+    c.contato = { ...CONTATO_PADRAO, ...(c.contato as object | undefined) };
+  }
+
+  if (c.tipo === "sombreado") {
+    c.centro = { x: 0.5, y: 0.5, ...(c.centro as object | undefined) };
+  }
+
+  if (c.tipo === "moldura") c.chanfro = num(c.chanfro, 0);
 
   return c as Camada;
 }
