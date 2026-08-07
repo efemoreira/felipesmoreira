@@ -27,7 +27,7 @@ import { familia } from "@/lib/fontes";
 import { iconPaths } from "../../icons";
 import { caminhoChanfrado } from "./formas";
 import { FONTES } from "./paleta";
-import { mascaraDesgaste } from "./textura";
+import { texturaPronta } from "./textura";
 import type { AcabamentoTarja, CamadaTexto } from "./tipos";
 
 export type Estilo = "base" | "destaque" | "tarja" | "menor";
@@ -90,7 +90,7 @@ const corpoDe = (p: Palavra, camada: CamadaTexto, tamanho: number) =>
 const ICONE = /^:([a-z][a-z0-9-]*):$/i;
 
 /** Divide o texto cru em palavras já com o estilo e o papel de cada uma. */
-export function analisar(cru: string, caixaAlta: boolean): Palavra[][] {
+function analisar(cru: string, caixaAlta: boolean): Palavra[][] {
   const fonte = caixaAlta ? cru.toLocaleUpperCase("pt-BR") : cru;
 
   return fonte.split("\n").map((linha) => {
@@ -585,10 +585,10 @@ function desenharPalavras(
   const espaco = camada.espacamento * (tamanho / camada.tamanho || 1);
   const font = fonteCss(camada, tamanho);
   const gradiente = camada.preenchimento.modo === "gradiente";
-  const desgaste = camada.textura.ativa && camada.textura.forca > 0;
+  const texturado = camada.textura.ativa && camada.textura.forca > 0;
 
   /* caminho curto: sem material especial, cada palavra sai na sua cor e pronto */
-  if (!gradiente && !desgaste) {
+  if (!gradiente && !texturado) {
     for (const { meio, postas } of montadas) {
       for (const p of postas) escreverPalavra(ctx, p, meio, camada, tamanho, espaco, false);
     }
@@ -662,18 +662,29 @@ function desenharPalavras(
       escreverPalavra(oc, p, meio, camada, tamanho, espaco, false);
     }
 
-    if (desgaste) {
-      const mascara = mascaraDesgaste(
-        camada.textura.semente,
-        ow * escala,
-        oh * escala,
-        camada.textura.escala * escala,
-      );
+    if (texturado) {
+      const t = camada.textura;
+      const comer = t.aplicacao === "comer";
+      const desenho = texturaPronta({
+        modo: t.modo,
+        semente: t.semente,
+        cor: t.cor,
+        largura: ow * escala,
+        altura: oh * escala,
+        escala: t.escala * escala,
+        // comer só usa o alfa: o grão precisa vir virado em recorte
+        comoMascara: comer,
+      });
       oc.save();
-      // "destination-out": onde a mancha é opaca, o glifo é comido
-      oc.globalCompositeOperation = "destination-out";
-      oc.globalAlpha = camada.textura.forca;
-      oc.drawImage(mascara, -folga, -folga, ow, oh);
+      /*
+       * Os dois caminhos são recortados pelo glifo, e é isso que separa esta
+       * textura da camada `textura` de tela cheia: "destination-out" come onde a
+       * mancha é opaca, "source-atop" pinta só onde já existe letra. Em nenhum
+       * dos dois sobra tinta para o que está desenhado por baixo do texto.
+       */
+      oc.globalCompositeOperation = comer ? "destination-out" : "source-atop";
+      oc.globalAlpha = t.forca;
+      oc.drawImage(desenho, -folga, -folga, ow, oh);
       oc.restore();
     }
   });

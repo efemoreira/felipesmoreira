@@ -1,31 +1,26 @@
 "use client";
 
 import type Konva from "konva";
-import type { KonvaEventObject } from "konva/lib/Node";
 import { Rect, Shape } from "react-konva";
 import { caminhoChanfrado } from "../formas";
 import type { CamadaMoldura } from "../tipos";
-
-interface Props {
-  camada: CamadaMoldura;
-  largura: number;
-  altura: number;
-  onSelecionar: (e?: KonvaEventObject<MouseEvent | TouchEvent>) => void;
-}
+import type { PropsDecorativa } from "./comum";
 
 /**
  * Moldura dourada de cordel — simples ou dupla, como no "É OFICIAL".
  *
  * Com `chanfro`, as quinas viram cortes de 45°: é o acabamento de placa das
  * referências, que o canto redondo do `raio` não alcança.
+ *
+ * O `listening: false` importa mais aqui do que nas outras: a moldura é só um
+ * filete, mas o canvas de acerto do Konva preenche o caminho inteiro — ou seja,
+ * ela era um tapa-clique do tamanho da arte por cima das pessoas e das fotos.
  */
-export default function Moldura({ camada, largura, altura, onSelecionar }: Props) {
+export default function Moldura({ camada, largura, altura }: PropsDecorativa<CamadaMoldura>) {
   const comum = {
     visible: camada.visivel,
     opacity: camada.opacidade,
-    listening: !camada.travada,
-    onMouseDown: onSelecionar,
-    onTouchStart: onSelecionar,
+    listening: false,
   };
 
   /** `dentro` é o quanto esta linha se afasta da externa. */

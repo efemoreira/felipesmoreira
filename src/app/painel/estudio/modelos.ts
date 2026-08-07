@@ -11,6 +11,7 @@ import {
   CONTATO_PADRAO,
   FORMATOS,
   FUNDO_TEXTO_PADRAO,
+  GRADIENTE_PESSOA_PADRAO,
   HALO_PADRAO,
   LUZ_BORDA_PADRAO,
   MENOR_PADRAO,
@@ -146,13 +147,7 @@ export const criarPessoa = (f: Quadro, nome = "Pessoa"): CamadaPessoa => {
     ajustes: { ...AJUSTES_NEUTROS },
     esmaecer: { ...SEM_ESMAECER },
     tinta: { ativa: false, cor: CORES.preto, forca: 1 },
-    gradiente: {
-      ativo: false,
-      modo: "dissolver",
-      cor: CORES.noite,
-      extensao: 0.3,
-      forca: 1,
-    },
+    gradiente: { ...GRADIENTE_PESSOA_PADRAO },
     sombra: { ativa: false, cor: "rgba(0,0,0,.6)", x: 0, y: 0, desfoque: 40 },
     halo: { ...HALO_PADRAO },
     luzBorda: { ...LUZ_BORDA_PADRAO },
@@ -503,7 +498,7 @@ export const MODELOS: Modelo[] = [
         opacidade: 0.16,
         tinta: { ativa: true, cor: CORES.branco, forca: 1 },
         // a cópia nasce do fundo em vez de terminar num corte reto
-        gradiente: { ativo: true, modo: "dissolver", cor: CORES.noite, extensao: 0.45, forca: 1 },
+        gradiente: { ...GRADIENTE_PESSOA_PADRAO, ativo: true, extensao: 0.45 },
       });
 
       const emFoco = (nome: string, x: number): CamadaPessoa => ({
@@ -696,7 +691,7 @@ export const MODELOS: Modelo[] = [
           alinhamento: "center",
           // ouro claro no topo caindo para bronze na base, com desgaste por cima
           preenchimento: { modo: "gradiente", cor2: "#8A6A0B", angulo: 0 },
-          textura: { ativa: true, forca: 0.3, escala: 0.6, semente: 19 },
+          textura: { ...TEXTURA_TEXTO_PADRAO, ativa: true, forca: 0.3, escala: 0.6, semente: 19 },
           brilho: { ativo: true, cor: CORES.ouro, desfoque: Math.round(b * 0.03), forca: 0.35 },
           sombra: { ativa: true, cor: "rgba(0,0,0,.8)", x: 4, y: 8, desfoque: 6 },
         }),
@@ -783,15 +778,6 @@ export interface Briefing {
   subtitulo: string;
   moldura: boolean;
 }
-
-export const BRIEFING_VAZIO: Briefing = {
-  pessoas: [],
-  fundos: [],
-  chapeu: "",
-  titulo: "",
-  subtitulo: "",
-  moldura: false,
-};
 
 /** Encaixa a imagem na caixa da camada sem distorcer: a maior dimensão manda. */
 function encaixar(img: ImagemBriefing, caixaL: number, caixaA: number) {
@@ -958,14 +944,4 @@ export function montarComBriefing(modelo: Modelo, f: Quadro, b: Briefing): Camad
   }
 
   return camadas;
-}
-
-export function projetoDoBriefing(modelo: Modelo, formato: Formato, b: Briefing): Projeto {
-  return {
-    id: novoId(),
-    nome: b.titulo.trim() ? b.titulo.trim().slice(0, 40) : modelo.nome,
-    formato,
-    camadas: montarComBriefing(modelo, formato, b),
-    atualizadoEm: Date.now(),
-  };
 }

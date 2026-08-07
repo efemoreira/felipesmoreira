@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { FORMATOS, GRUPOS_FORMATO, LIVRE_MAX, LIVRE_MIN, type Formato } from "../tipos";
+import { useDica } from "./Dica";
 
 interface Props {
   nome: string;
@@ -26,6 +27,8 @@ interface Props {
   onExportar: (escala: number) => void;
   onCopiar: () => void;
   onAbrirModelos: () => void;
+  onAbrirArtes: () => void;
+  onNovaArte: () => void;
 }
 
 /**
@@ -58,6 +61,8 @@ export default function BarraSuperior({
   onExportar,
   onCopiar,
   onAbrirModelos,
+  onAbrirArtes,
+  onNovaArte,
 }: Props) {
   const [maisAberto, setMaisAberto] = useState(false);
 
@@ -71,24 +76,32 @@ export default function BarraSuperior({
         ←<span className="ml-1 hidden sm:inline">Painel</span>
       </a>
 
-      <input
-        value={nome}
-        onChange={(e) => onNome(e.target.value)}
-        aria-label="Nome da arte"
-        className="min-w-0 flex-1 rounded-md border border-transparent bg-transparent px-2 py-1.5 text-sm font-medium text-white outline-none transition hover:border-white/12 focus:border-[#FFCB05]/60"
-      />
+      <Nomeador nome={nome} onNome={onNome} />
 
       <span className="hidden shrink-0 text-[11px] text-white/25 xl:inline">
         {salvando ? "salvando…" : "salvo no navegador"}
       </span>
 
-      <button
-        type="button"
+      <BotaoTexto
+        onClick={onNovaArte}
+        dica="Abre uma arte em branco no formato de agora. A que está aberta continua guardada em “Artes”."
+      >
+        + Nova
+      </BotaoTexto>
+
+      <BotaoTexto
+        onClick={onAbrirArtes}
+        dica="Todas as artes salvas neste navegador: abrir, duplicar, renomear e apagar."
+      >
+        Artes
+      </BotaoTexto>
+
+      <BotaoTexto
         onClick={onAbrirModelos}
-        className="hidden shrink-0 rounded-md border border-white/12 px-3 py-1.5 text-sm text-white/70 transition hover:border-white/30 hover:text-white lg:block"
+        dica="Monta a arte inteira a partir de um modelo pronto, já com as suas fotos e os seus textos."
       >
         Modelos
-      </button>
+      </BotaoTexto>
 
       <div className="hidden lg:block">
         <SeletorFormato
@@ -103,14 +116,7 @@ export default function BarraSuperior({
         <Botao titulo="Diminuir" onClick={() => onZoom(Math.max(0.08, zoom * 0.9))}>
           −
         </Botao>
-        <button
-          type="button"
-          onClick={onAjustarZoom}
-          title="Ajustar à janela (⌘0)"
-          className="min-w-[3.2rem] px-1 font-mono text-xs text-white/60 transition hover:text-white"
-        >
-          {Math.round(zoom * 100)}%
-        </button>
+        <Zoom valor={zoom} onAjustar={onAjustarZoom} />
         <Botao titulo="Aumentar" onClick={() => onZoom(Math.min(1.5, zoom * 1.1))}>
           +
         </Botao>
@@ -132,32 +138,25 @@ export default function BarraSuperior({
       </div>
 
       <div className="flex shrink-0 items-center gap-1">
-        <button
-          type="button"
+        <Exportador
+          rotulo={exportando ? "Gerando…" : "PNG"}
+          dica="Baixa a arte em PNG, no tamanho real do formato escolhido."
+          destaque
+          desabilitado={exportando}
           onClick={() => onExportar(1)}
-          disabled={exportando}
-          className="rounded-md bg-[#FFCB05] px-3 py-1.5 text-sm font-semibold text-[#14110C] transition hover:bg-[#ffd63a] disabled:opacity-50 sm:px-4"
-        >
-          {exportando ? "Gerando…" : "PNG"}
-        </button>
-        <button
-          type="button"
+        />
+        <Exportador
+          rotulo="2×"
+          dica="Baixa no dobro do tamanho. Vale quando a arte vai para impressão ou para uma tela grande."
+          desabilitado={exportando}
           onClick={() => onExportar(2)}
-          disabled={exportando}
-          title="Baixar no dobro do tamanho"
-          className="hidden rounded-md border border-white/12 px-2 py-1.5 text-xs text-white/60 transition hover:border-white/30 hover:text-white disabled:opacity-50 sm:block"
-        >
-          2×
-        </button>
-        <button
-          type="button"
+        />
+        <Exportador
+          rotulo="⧉"
+          dica="Copia a imagem para a área de transferência — é só colar no WhatsApp ou no Instagram."
+          desabilitado={exportando}
           onClick={onCopiar}
-          disabled={exportando}
-          title="Copiar a imagem para colar no WhatsApp"
-          className="hidden rounded-md border border-white/12 px-2 py-1.5 text-xs text-white/60 transition hover:border-white/30 hover:text-white disabled:opacity-50 sm:block"
-        >
-          ⧉
-        </button>
+        />
       </div>
 
       {/* o que não coube: menu só em tela estreita */}
@@ -167,6 +166,12 @@ export default function BarraSuperior({
         </Botao>
         {maisAberto && (
           <Mais aoFechar={() => setMaisAberto(false)}>
+            <button type="button" onClick={onNovaArte} className={itemMenu}>
+              + Nova arte
+            </button>
+            <button type="button" onClick={onAbrirArtes} className={itemMenu}>
+              Minhas artes
+            </button>
             <button type="button" onClick={onAbrirModelos} className={itemMenu}>
               Modelos
             </button>
@@ -207,6 +212,102 @@ export default function BarraSuperior({
 
 const itemMenu =
   "w-full flex-1 px-3 py-2 text-left text-sm text-white/70 transition hover:bg-[#FFCB05]/15 hover:text-white";
+
+/** O nome da arte — é ele que batiza o PNG na hora de baixar. */
+function Nomeador({ nome, onNome }: { nome: string; onNome: (v: string) => void }) {
+  const { props, balao } = useDica(
+    "O nome da arte. É por ele que ela aparece em “Artes” e é com ele que o PNG é baixado.",
+  );
+  return (
+    <>
+      <input
+        {...props}
+        value={nome}
+        onChange={(e) => onNome(e.target.value)}
+        aria-label="Nome da arte"
+        className="min-w-0 flex-1 rounded-md border border-transparent bg-transparent px-2 py-1.5 text-sm font-medium text-white outline-none transition hover:border-white/12 focus:border-[#FFCB05]/60"
+      />
+      {balao}
+    </>
+  );
+}
+
+function Zoom({ valor, onAjustar }: { valor: number; onAjustar: () => void }) {
+  const { props, balao } = useDica("Clique para ajustar a arte à janela (⌘0). Ctrl + roda também dá zoom.");
+  return (
+    <>
+      <button
+        type="button"
+        {...props}
+        onClick={onAjustar}
+        className="min-w-[3.2rem] px-1 font-mono text-xs text-white/60 transition hover:text-white"
+      >
+        {Math.round(valor * 100)}%
+      </button>
+      {balao}
+    </>
+  );
+}
+
+function BotaoTexto({
+  children,
+  dica,
+  onClick,
+}: {
+  children: React.ReactNode;
+  dica: string;
+  onClick: () => void;
+}) {
+  const { props, balao } = useDica(dica);
+  return (
+    <>
+      <button
+        type="button"
+        {...props}
+        onClick={onClick}
+        className="hidden shrink-0 rounded-md border border-white/12 px-3 py-1.5 text-sm text-white/70 transition hover:border-white/30 hover:text-white lg:block"
+      >
+        {children}
+      </button>
+      {balao}
+    </>
+  );
+}
+
+function Exportador({
+  rotulo,
+  dica,
+  destaque,
+  desabilitado,
+  onClick,
+}: {
+  rotulo: string;
+  dica: string;
+  destaque?: boolean;
+  desabilitado?: boolean;
+  onClick: () => void;
+}) {
+  const { props, balao } = useDica(dica);
+  return (
+    <>
+      <button
+        type="button"
+        {...props}
+        onClick={onClick}
+        disabled={desabilitado}
+        aria-label={dica}
+        className={
+          destaque
+            ? "rounded-md bg-[#FFCB05] px-3 py-1.5 text-sm font-semibold text-[#14110C] transition hover:bg-[#ffd63a] disabled:opacity-50 sm:px-4"
+            : "hidden rounded-md border border-white/12 px-2 py-1.5 text-xs text-white/60 transition hover:border-white/30 hover:text-white disabled:opacity-50 sm:block"
+        }
+      >
+        {rotulo}
+      </button>
+      {balao}
+    </>
+  );
+}
 
 function Mais({ children, aoFechar }: { children: React.ReactNode; aoFechar: () => void }) {
   const caixa = useRef<HTMLDivElement>(null);
@@ -322,32 +423,42 @@ function Medida({
   );
 }
 
+/**
+ * Os botões de ícone da barra. Sem `title`: quem explica é a dica de 3 s, e ter
+ * os dois faria aparecer dois balões um em cima do outro.
+ */
 function Botao({
   children,
   titulo,
+  dica,
   onClick,
   desabilitado,
   ativo,
 }: {
   children: React.ReactNode;
   titulo: string;
+  dica?: string;
   onClick: () => void;
   desabilitado?: boolean;
   ativo?: boolean;
 }) {
+  const { props, balao } = useDica(dica ?? titulo);
   return (
-    <button
-      type="button"
-      title={titulo}
-      aria-label={titulo}
-      aria-pressed={ativo}
-      onClick={onClick}
-      disabled={desabilitado}
-      className={`grid h-7 w-7 shrink-0 place-items-center rounded text-sm transition hover:bg-white/10 hover:text-white disabled:opacity-25 disabled:hover:bg-transparent ${
-        ativo ? "bg-[#FFCB05]/20 text-[#FFCB05]" : "text-white/60"
-      }`}
-    >
-      {children}
-    </button>
+    <>
+      <button
+        type="button"
+        {...props}
+        aria-label={titulo}
+        aria-pressed={ativo}
+        onClick={onClick}
+        disabled={desabilitado}
+        className={`grid h-7 w-7 shrink-0 place-items-center rounded text-sm transition hover:bg-white/10 hover:text-white disabled:opacity-25 disabled:hover:bg-transparent ${
+          ativo ? "bg-[#FFCB05]/20 text-[#FFCB05]" : "text-white/60"
+        }`}
+      >
+        {children}
+      </button>
+      {balao}
+    </>
   );
 }

@@ -4,6 +4,7 @@
 import { useEffect, useState } from "react";
 import { urlDoAtivo } from "../armazenamento";
 import { ROTULO_TIPO, temImagem, type Camada, type TipoCamada } from "../tipos";
+import { useDica } from "./Dica";
 
 interface Props {
   camadas: Camada[];
@@ -320,17 +321,21 @@ function Acao({
   /** fica visível sem hover — para o dedo no celular e para ler o estado de relance */
   sempre?: boolean;
 }) {
+  const { props, balao } = useDica(titulo);
   return (
-    <button
-      type="button"
-      title={titulo}
-      aria-label={titulo}
-      onClick={onClick}
-      className={`grid h-6 w-6 place-items-center rounded text-[11px] transition hover:bg-white/15 ${
-        ativa ? "text-[#FFCB05]" : "text-white/45"
-      } ${sempre ? "" : "opacity-0 group-hover:opacity-100 focus:opacity-100 max-lg:opacity-100"}`}
-    >
-      {children}
-    </button>
+    <>
+      <button
+        type="button"
+        {...props}
+        aria-label={titulo}
+        onClick={onClick}
+        className={`grid h-6 w-6 place-items-center rounded text-[11px] transition hover:bg-white/15 ${
+          ativa ? "text-[#FFCB05]" : "text-white/45"
+        } ${sempre ? "" : "opacity-0 group-hover:opacity-100 focus:opacity-100 max-lg:opacity-100"}`}
+      >
+        {children}
+      </button>
+      {balao}
+    </>
   );
 }

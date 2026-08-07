@@ -5,6 +5,7 @@
  * que aparece nas referências: fundo → fotos de contexto → sombreado → pessoas
  * recortadas → moldura → textos.
  */
+import type { ModoTextura } from "./textura";
 
 export type Formato = "4:5" | "1:1" | "9:16" | "16:9" | "1.91:1" | "livre";
 
@@ -100,6 +101,16 @@ export interface Esmaecimento {
   ativo: boolean;
   /** "lados" trata cada borda; "elipse" é uma máscara radial a partir do centro */
   modo: "lados" | "elipse";
+  /**
+   * Onde a borda vai dar.
+   *
+   * "transparente" abre um buraco e deixa o fundo aparecer — é o comportamento
+   * de sempre. "cor" leva a borda até um tom em vez de sumir: sobre um fundo
+   * escuro, é o que faz a foto morrer no preto em vez de recortar um vazio de
+   * formato estranho no meio da arte.
+   */
+  saida: "transparente" | "cor";
+  cor: string;
   /** 0 a 1 — fração daquele lado que vira degradê */
   topo: number;
   direita: number;
@@ -114,6 +125,8 @@ export interface Esmaecimento {
 export const SEM_ESMAECER: Esmaecimento = {
   ativo: false,
   modo: "lados",
+  saida: "transparente",
+  cor: "#14110C",
   topo: 0,
   direita: 0,
   base: 0,
@@ -150,22 +163,34 @@ export interface Sombra {
 }
 
 /**
- * Gradiente na própria pessoa, subindo da base.
+ * Gradiente na própria pessoa, entrando por uma das bordas do recorte.
  *
  * É o que faz o corpo se dissolver no fundo em vez de terminar num corte reto
- * (modo "dissolver") ou ganhar cor só na parte de baixo (modo "pintar").
- * Diferente da camada `sombreado`, que cobre a arte inteira: este anda junto
- * com o recorte, então vale por pessoa quando são 2 ou 3 em foco.
+ * (modo "dissolver"), ganhar cor de um lado ("pintar"), ou as duas coisas ao
+ * mesmo tempo ("ambos" — some *na* cor, que é o efeito de fumaça das
+ * referências). Diferente da camada `sombreado`, que cobre a arte inteira: este
+ * anda junto com o recorte, então vale por pessoa quando são 2 ou 3 em foco.
  */
 export interface GradientePessoa {
   ativo: boolean;
-  modo: "dissolver" | "pintar";
+  modo: "dissolver" | "pintar" | "ambos";
+  /** de que borda do recorte o gradiente entra */
+  direcao: "base" | "topo" | "esquerda" | "direita";
   cor: string;
-  /** 0 a 1 — fração da altura da pessoa que o gradiente cobre, de baixo p/ cima */
+  /** 0 a 1 — fração do recorte que o gradiente cobre, a partir da borda */
   extensao: number;
-  /** 0 a 1 — intensidade na base */
+  /** 0 a 1 — intensidade na borda */
   forca: number;
 }
+
+export const GRADIENTE_PESSOA_PADRAO: GradientePessoa = {
+  ativo: false,
+  modo: "dissolver",
+  direcao: "base",
+  cor: "#14110C",
+  extensao: 0.3,
+  forca: 1,
+};
 
 /**
  * Halo atrás do recorte — a luz de contorno dourada das referências.
@@ -283,7 +308,19 @@ export interface CamadaPessoa extends Base, ComImagem {
  * É a camada que tira o fundo do "preto liso" sem competir com ninguém: fica
  * atrás de tudo, em opacidade baixa, e dá o que o olho lê como profundidade.
  */
-export type FormaPadrao = "chevron" | "raios" | "diagonais" | "grade" | "pontos";
+export type FormaPadrao =
+  | "chevron"
+  | "raios"
+  | "diagonais"
+  | "grade"
+  | "pontos"
+  | "ondas"
+  | "ziguezague"
+  | "triangulos"
+  | "hexagonos"
+  | "xadrez"
+  | "concentricos"
+  | "cruzes";
 
 export interface CamadaPadrao extends Base {
   tipo: "padrao";
@@ -334,7 +371,16 @@ export interface CamadaSombreado extends Base {
   centro: { x: number; y: number };
 }
 
-export type ChaveFonte = "anton" | "oswald" | "alfa" | "bitter";
+export type ChaveFonte =
+  | "anton"
+  | "oswald"
+  | "bebas"
+  | "archivo"
+  | "alfa"
+  | "playfair"
+  | "bitter"
+  | "elite"
+  | "gotica";
 export type Alinhamento = "left" | "center" | "right";
 
 /** Que lugar o texto ocupa na arte — é por aqui que o assistente sabe onde
@@ -381,10 +427,23 @@ export interface PreenchimentoTexto {
   angulo: number;
 }
 
-/** Desgaste procedural comendo as letras por dentro (ver textura.ts). */
+/**
+ * Textura procedural presa às letras (ver textura.ts).
+ *
+ * Não confundir com a **camada** `textura`, que passa por cima da arte inteira:
+ * esta vive dentro do bloco de texto e é recortada no glifo, então nada dela
+ * encosta na foto ou na pessoa que estiver por baixo.
+ *
+ * `comer` tira pedaços da letra (o título gasto das referências); `cobrir` põe o
+ * desenho por cima dela — grão, riscos ou manchas, na cor escolhida.
+ */
 export interface TexturaTexto {
   ativa: boolean;
-  /** 0 a 1 — quanto do glifo o desgaste chega a apagar */
+  modo: ModoTextura;
+  aplicacao: "comer" | "cobrir";
+  /** vale no `cobrir`, e no `comer` é indiferente: ali só o alfa conta */
+  cor: string;
+  /** 0 a 1 — quanto do glifo a textura chega a apagar (ou a cobrir) */
   forca: number;
   escala: number;
   semente: number;
@@ -439,6 +498,9 @@ export const PREENCHIMENTO_PADRAO: PreenchimentoTexto = {
 
 export const TEXTURA_TEXTO_PADRAO: TexturaTexto = {
   ativa: false,
+  modo: "desgaste",
+  aplicacao: "comer",
+  cor: "#14110C",
   forca: 0.35,
   escala: 1,
   semente: 7,
@@ -601,6 +663,7 @@ function normalizarCamada(bruta: Camada): Camada {
   }
 
   if (c.tipo === "pessoa") {
+    c.gradiente = { ...GRADIENTE_PESSOA_PADRAO, ...(c.gradiente as object | undefined) };
     c.halo = { ...HALO_PADRAO, ...(c.halo as object | undefined) };
     c.luzBorda = { ...LUZ_BORDA_PADRAO, ...(c.luzBorda as object | undefined) };
     c.contato = { ...CONTATO_PADRAO, ...(c.contato as object | undefined) };

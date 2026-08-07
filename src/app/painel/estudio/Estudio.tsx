@@ -29,6 +29,7 @@ import {
   type Modelo,
 } from "./modelos";
 import Palco from "./Palco";
+import Artes from "./painel/Artes";
 import BarraSuperior from "./painel/BarraSuperior";
 import Biblioteca from "./painel/Biblioteca";
 import Inspetor from "./painel/Inspetor";
@@ -78,6 +79,7 @@ export default function Estudio() {
   const [previa, setPrevia] = useState(false);
   const [guiasVisiveis, setGuiasVisiveis] = useState(true);
   const [assistenteAberto, setAssistenteAberto] = useState(false);
+  const [artesAbertas, setArtesAbertas] = useState(false);
   const [bibliotecaPara, setBibliotecaPara] = useState<string | null>(null);
   const [recortando, setRecortando] = useState<Ativo | null>(null);
   const [gavetas, setGavetas] = useState<"camadas" | "inspetor" | null>(null);
@@ -550,6 +552,32 @@ export default function Estudio() {
     [trocarFormato],
   );
 
+  /* ===== trocar de arte =====
+     `substituir` e não `mudarProjeto`: abrir outra arte não é um passo de
+     edição, e ninguém espera que ⌘Z traga de volta a arte anterior. */
+
+  const abrirArte = useCallback(
+    (arte: Projeto) => {
+      setArtesAbertas(false);
+      setSelecionados([]);
+      substituir(arte);
+      setRecado(`Abri “${arte.nome}”.`);
+    },
+    [substituir],
+  );
+
+  /** Uma arte em branco, no formato de agora — o modelo "Do zero". */
+  const novaArte = useCallback(() => {
+    const limpo = MODELOS.find((m) => m.chave === "limpo") ?? MODELOS[0];
+    const arte = projetoDoModelo(limpo, projeto.formato);
+    setArtesAbertas(false);
+    setSelecionados([]);
+    substituir(
+      projeto.formato === "livre" ? { ...arte, tamanho: projeto.tamanho } : arte,
+    );
+    setRecado("Arte nova. A anterior continua guardada em “Artes”.");
+  }, [projeto.formato, projeto.tamanho, substituir]);
+
   /**
    * Troca a arte inteira pelo que o assistente montou. O nome do projeto passa
    * a ser o título digitado — é assim que o PNG exportado já sai nomeado.
@@ -723,6 +751,8 @@ export default function Estudio() {
         onExportar={(escala) => void entregar(escala, false)}
         onCopiar={() => void entregar(1, true)}
         onAbrirModelos={() => setAssistenteAberto(true)}
+        onAbrirArtes={() => setArtesAbertas(true)}
+        onNovaArte={novaArte}
       />
 
       <div className="flex min-h-0 flex-1">
@@ -828,6 +858,15 @@ export default function Estudio() {
         >
           {recado}
         </p>
+      )}
+
+      {artesAbertas && (
+        <Artes
+          atual={projeto}
+          onAbrir={abrirArte}
+          onNova={novaArte}
+          onFechar={() => setArtesAbertas(false)}
+        />
       )}
 
       {assistenteAberto && (

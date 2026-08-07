@@ -376,10 +376,12 @@ function PainelBordas({ esmaecer, alterar }: { esmaecer: Esmaecimento; alterar: 
           <Presets
             rotulo="Começar de"
             opcoes={[
-              { nome: "Suave", valor: { modo: "lados", topo: 0.3, direita: 0.3, base: 0.3, esquerda: 0.3, cantos: 0, dureza: 0.5 } },
-              { nome: "Só a base", valor: { modo: "lados", topo: 0, direita: 0, base: 0.45, esquerda: 0, cantos: 0, dureza: 0.4 } },
-              { nome: "Cantos", valor: { modo: "lados", topo: 0.08, direita: 0.08, base: 0.08, esquerda: 0.08, cantos: 0.35, dureza: 0.5 } },
-              { nome: "Vinheta", valor: { modo: "elipse", topo: 0.5, direita: 0.5, base: 0.5, esquerda: 0.5, cantos: 0, dureza: 0.6 } },
+              { nome: "Suave", valor: { modo: "lados", saida: "transparente", topo: 0.3, direita: 0.3, base: 0.3, esquerda: 0.3, cantos: 0, dureza: 0.5 } },
+              { nome: "Só a base", valor: { modo: "lados", saida: "transparente", topo: 0, direita: 0, base: 0.45, esquerda: 0, cantos: 0, dureza: 0.4 } },
+              { nome: "Só a esquerda", valor: { modo: "lados", saida: "transparente", topo: 0, direita: 0, base: 0, esquerda: 0.5, cantos: 0, dureza: 0.4 } },
+              { nome: "Cantos", valor: { modo: "lados", saida: "transparente", topo: 0.08, direita: 0.08, base: 0.08, esquerda: 0.08, cantos: 0.35, dureza: 0.5 } },
+              { nome: "Vinheta", valor: { modo: "elipse", saida: "transparente", topo: 0.5, direita: 0.5, base: 0.5, esquerda: 0.5, cantos: 0, dureza: 0.6 } },
+              { nome: "Nasce do fundo", valor: { modo: "lados", saida: "cor", cor: "#14110C", topo: 0.35, direita: 0.35, base: 0.35, esquerda: 0.35, cantos: 0, dureza: 0.45 } },
             ]}
             onAplicar={(v) => {
               const p = v as Partial<Esmaecimento>;
@@ -396,6 +398,25 @@ function PainelBordas({ esmaecer, alterar }: { esmaecer: Esmaecimento; alterar: 
             ]}
             onMudar={(modo) => set({ modo })}
           />
+          <Botoes
+            rotulo="A borda vira"
+            valor={esmaecer.saida}
+            opcoes={[
+              { valor: "transparente", rotulo: "Transparência" },
+              { valor: "cor", rotulo: "Uma cor" },
+            ]}
+            onMudar={(saida) => set({ saida })}
+          />
+          {esmaecer.saida === "cor" && (
+            <>
+              <Cor rotulo="Cor da borda" valor={esmaecer.cor} onMudar={(cor) => set({ cor })} />
+              <p className="text-[11px] leading-snug text-white/35">
+                A borda morre nessa cor em vez de abrir buraco. Pondo o mesmo tom
+                do fundo, a foto some sem recortar uma forma estranha no meio da
+                arte.
+              </p>
+            </>
+          )}
           {esmaecer.modo === "lados" ? (
             <>
               <Lados
@@ -574,7 +595,14 @@ function PainelPadrao({ camada, alterar }: { camada: CamadaPadrao; alterar: Alte
           { valor: "chevron", rotulo: "Chevron (o X)" },
           { valor: "raios", rotulo: "Raios" },
           { valor: "diagonais", rotulo: "Diagonais" },
+          { valor: "ziguezague", rotulo: "Zigue-zague" },
+          { valor: "ondas", rotulo: "Ondas" },
           { valor: "grade", rotulo: "Grade" },
+          { valor: "xadrez", rotulo: "Xadrez" },
+          { valor: "triangulos", rotulo: "Triângulos" },
+          { valor: "hexagonos", rotulo: "Hexágonos" },
+          { valor: "concentricos", rotulo: "Círculos concêntricos" },
+          { valor: "cruzes", rotulo: "Cruzes" },
           { valor: "pontos", rotulo: "Pontos" },
         ]}
         onMudar={(forma) => alterar({ forma })}
@@ -606,6 +634,11 @@ function PainelTextura({
 
   return (
     <Secao titulo="Textura">
+      <p className="text-[11px] leading-snug text-white/35">
+        Esta camada passa por cima da arte inteira. Para texturizar{" "}
+        <strong>só as letras</strong>, é em “Acabamento do glifo”, na camada de
+        texto.
+      </p>
       {!proprio && (
         <Escolha
           rotulo="Tipo"
@@ -684,7 +717,7 @@ function PainelTexto({ camada, alterar }: { camada: CamadaTexto; alterar: Altera
         <AreaTexto
           rotulo="Conteúdo"
           valor={camada.texto}
-          dica="*palavra* pinta na cor de destaque · ==palavra== põe sobre tarja · ^palavra^ sai pequena · :pin: e :building: viram ícone · | vira filete divisor · Enter quebra a linha"
+          legenda="*palavra* pinta na cor de destaque · ==palavra== põe sobre tarja · ^palavra^ sai pequena · :pin: e :building: viram ícone · | vira filete divisor · Enter quebra a linha"
           onMudar={(texto) => alterar({ texto })}
         />
         <Escolha
@@ -797,8 +830,46 @@ function PainelAcabamentoTexto({ camada, alterar }: { camada: CamadaTexto; alter
             nome: "Metal gasto",
             valor: {
               preenchimento: { ...p, modo: "gradiente" as const, cor2: "#8A6A0B", angulo: 0 },
-              textura: { ...t, ativa: true, forca: 0.3, escala: 0.6 },
+              textura: {
+                ...t,
+                ativa: true,
+                modo: "desgaste" as const,
+                aplicacao: "comer" as const,
+                forca: 0.3,
+                escala: 0.6,
+              },
               brilho: { ...b, ativo: true, forca: 0.35 },
+            },
+          },
+          {
+            nome: "Grão por cima",
+            valor: {
+              preenchimento: p,
+              textura: {
+                ...t,
+                ativa: true,
+                modo: "grao" as const,
+                aplicacao: "cobrir" as const,
+                forca: 0.35,
+                escala: 1,
+              },
+              brilho: b,
+            },
+          },
+          {
+            nome: "Riscada",
+            valor: {
+              preenchimento: p,
+              textura: {
+                ...t,
+                ativa: true,
+                modo: "riscos" as const,
+                aplicacao: "cobrir" as const,
+                cor: "#14110C",
+                forca: 0.55,
+                escala: 1,
+              },
+              brilho: b,
             },
           },
           {
@@ -841,12 +912,38 @@ function PainelAcabamentoTexto({ camada, alterar }: { camada: CamadaTexto; alter
         </>
       )}
 
-      <Chave rotulo="Desgaste nas letras" ligada={t.ativa} onMudar={(ativa) => setT({ ativa })} />
+      <Chave rotulo="Textura nas letras" ligada={t.ativa} onMudar={(ativa) => setT({ ativa })} />
       {t.ativa && (
         <>
+          <Botoes
+            rotulo="Como aplicar"
+            valor={t.aplicacao}
+            opcoes={[
+              { valor: "comer", rotulo: "Comer o glifo" },
+              { valor: "cobrir", rotulo: "Cobrir o glifo" },
+            ]}
+            onMudar={(aplicacao) => setT({ aplicacao })}
+          />
+          <Escolha
+            rotulo="Desenho"
+            valor={t.modo}
+            opcoes={(Object.keys(ROTULO_TEXTURA) as CamadaTexto["textura"]["modo"][]).map((k) => ({
+              valor: k,
+              rotulo: ROTULO_TEXTURA[k],
+            }))}
+            onMudar={(modo) => setT({ modo })}
+          />
+          {t.aplicacao === "cobrir" && (
+            <Cor rotulo="Cor da textura" valor={t.cor} onMudar={(cor) => setT({ cor })} />
+          )}
           <Deslizante rotulo="Força" valor={t.forca} min={0} max={1} passo={0.02} onMudar={(forca) => setT({ forca })} />
           <Deslizante rotulo="Tamanho da mancha" valor={t.escala} min={0.2} max={4} passo={0.1} onMudar={(escala) => setT({ escala })} />
           <Deslizante rotulo="Semente" valor={t.semente} min={1} max={99} onMudar={(semente) => setT({ semente })} />
+          <p className="text-[11px] leading-snug text-white/35">
+            Fica presa às letras: nada dela encosta na foto nem na pessoa que
+            estiver por baixo. Para texturizar a arte inteira, é a camada
+            “Textura”.
+          </p>
         </>
       )}
 
@@ -1096,7 +1193,7 @@ function PainelPessoa({
         <BotaoMenor onClick={onDuplicarFantasma}>Duplicar como fantasma atrás</BotaoMenor>
       </Secao>
 
-      <Secao titulo="Gradiente na base">
+      <Secao titulo="Dissolver a pessoa">
         <Chave
           rotulo="Ligado"
           ligada={camada.gradiente.ativo}
@@ -1108,20 +1205,39 @@ function PainelPessoa({
               rotulo="Modo"
               valor={camada.gradiente.modo}
               opcoes={[
-                { valor: "dissolver", rotulo: "Dissolver" },
+                { valor: "dissolver", rotulo: "Sumir" },
                 { valor: "pintar", rotulo: "Pintar" },
+                { valor: "ambos", rotulo: "Sumir na cor" },
               ]}
               onMudar={(modo) => setGradiente({ modo })}
             />
-            {camada.gradiente.modo === "pintar" && (
+            <Escolha
+              rotulo="Entra por"
+              valor={camada.gradiente.direcao}
+              opcoes={[
+                { valor: "base", rotulo: "Base (dos pés para cima)" },
+                { valor: "topo", rotulo: "Topo (da cabeça para baixo)" },
+                { valor: "esquerda", rotulo: "Esquerda" },
+                { valor: "direita", rotulo: "Direita" },
+              ]}
+              onMudar={(direcao) => setGradiente({ direcao })}
+            />
+            {camada.gradiente.modo !== "dissolver" && (
               <Cor
-                rotulo="Cor da base"
+                rotulo="Cor"
                 valor={camada.gradiente.cor}
                 onMudar={(cor) => setGradiente({ cor })}
               />
             )}
+            <p className="text-[11px] leading-snug text-white/35">
+              {camada.gradiente.modo === "dissolver"
+                ? "O corpo vai ficando transparente até sumir no fundo — sem cor nenhuma, é o fundo da arte que aparece."
+                : camada.gradiente.modo === "pintar"
+                  ? "O corpo ganha a cor naquela borda e continua opaco. Bom para casar o recorte com um fundo chapado."
+                  : "Some e tinge na mesma rampa: o corpo vira fumaça da cor escolhida. É o que fecha melhor sobre fundo com degradê."}
+            </p>
             <Deslizante
-              rotulo="Altura do gradiente"
+              rotulo="Alcance do gradiente"
               valor={camada.gradiente.extensao}
               min={0.05}
               max={1}

@@ -217,6 +217,15 @@ export interface PedidoTextura {
   altura: number;
   /** 1 é o desenho no tamanho natural; acima disso ele engrossa */
   escala: number;
+  /**
+   * Devolve o desenho como recorte em vez de como pintura.
+   *
+   * Riscos e desgaste já nascem assim — são manchas com alfa. O grão não: ele é
+   * cinza opaco de ponta a ponta, porque vive de `overlay`. Quem quer *comer* a
+   * letra com grão precisa dele virado em máscara, senão o `destination-out`
+   * apagaria o glifo inteiro em vez de salpicá-lo.
+   */
+  comoMascara?: boolean;
 }
 
 /**
@@ -230,7 +239,9 @@ export function texturaPronta(p: PedidoTextura): HTMLCanvasElement {
   const l = Math.max(1, Math.round(p.largura));
   const a = Math.max(1, Math.round(p.altura));
   const escala = Math.max(0.1, p.escala);
-  const chave = `${p.modo}|${p.semente}|${TINGE[p.modo] ? p.cor : "-"}|${l}x${a}|${escala.toFixed(2)}`;
+  const mascara = !!p.comoMascara;
+  const tinge = TINGE[p.modo] || mascara;
+  const chave = `${p.modo}|${p.semente}|${tinge ? p.cor : "-"}|${l}x${a}|${escala.toFixed(2)}|${mascara ? "m" : "p"}`;
 
   return prontas(chave, () => {
     const canvas = novoCanvas(l, a);
@@ -251,41 +262,21 @@ export function texturaPronta(p: PedidoTextura): HTMLCanvasElement {
       }
     }
 
-    if (TINGE[p.modo]) {
+    // grão pedido como recorte: o brilho de cada pixel vira o alfa dele
+    if (mascara && p.modo === "grao") {
+      const quadro = ctx.getImageData(0, 0, l, a);
+      const d = quadro.data;
+      for (let i = 0; i < d.length; i += 4) d[i + 3] = d[i];
+      ctx.putImageData(quadro, 0, 0);
+    }
+
+    if (tinge) {
       const [r, g, b] = hexParaRgb(p.cor);
       ctx.globalCompositeOperation = "source-in";
       ctx.fillStyle = `rgb(${r},${g},${b})`;
       ctx.fillRect(0, 0, l, a);
     }
 
-    return canvas;
-  });
-}
-
-/**
- * Só a máscara de desgaste, para comer as letras por dentro.
- * Volta em branco com alfa: quem chama compõe com `source-atop` na cor que quiser.
- */
-export function mascaraDesgaste(
-  semente: number,
-  largura: number,
-  altura: number,
-  escala: number,
-): HTMLCanvasElement {
-  const l = Math.max(1, Math.round(largura));
-  const a = Math.max(1, Math.round(altura));
-  const e = Math.max(0.1, escala);
-
-  return prontas(`mascara|${semente}|${l}x${a}|${e.toFixed(2)}`, () => {
-    const canvas = novoCanvas(l, a);
-    const ctx = canvas.getContext("2d")!;
-    const ladrilho = ladrilhos(`desgaste|${semente}`, () => ladrilhoDesgaste(semente));
-    const padrao = ctx.createPattern(ladrilho, "repeat");
-    if (padrao) {
-      padrao.setTransform(new DOMMatrix([e, 0, 0, e, 0, 0]));
-      ctx.fillStyle = padrao;
-      ctx.fillRect(0, 0, l, a);
-    }
     return canvas;
   });
 }

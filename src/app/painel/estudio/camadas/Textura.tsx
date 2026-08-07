@@ -1,20 +1,11 @@
 "use client";
 
 import type Konva from "konva";
-import type { KonvaEventObject } from "konva/lib/Node";
 import { Shape } from "react-konva";
 import { texturaPronta } from "../textura";
 import { useImagem } from "../useImagem";
 import type { CamadaTextura } from "../tipos";
-
-interface Props {
-  camada: CamadaTextura;
-  largura: number;
-  altura: number;
-  onSelecionar: (e?: KonvaEventObject<MouseEvent | TouchEvent>) => void;
-  /** 1 no palco, 2 na exportação — a textura é gerada nessa resolução */
-  qualidade: number;
-}
+import type { PropsDecorativa } from "./comum";
 
 /**
  * Grão, riscos e desgaste por cima da arte inteira.
@@ -25,7 +16,12 @@ interface Props {
  * Com `ativoId` preenchido, ladrilha um PNG da biblioteca no lugar do desenho
  * procedural — para quem já tem uma textura de que gosta.
  */
-export default function Textura({ camada, largura, altura, onSelecionar, qualidade }: Props) {
+export default function Textura({
+  camada,
+  largura,
+  altura,
+  qualidade,
+}: PropsDecorativa<CamadaTextura>) {
   const img = useImagem(camada.ativoId);
 
   return (
@@ -37,12 +33,10 @@ export default function Textura({ camada, largura, altura, onSelecionar, qualida
       height={altura}
       visible={camada.visivel}
       opacity={camada.opacidade}
-      listening={!camada.travada}
+      listening={false}
       globalCompositeOperation={
         camada.mistura === "normal" ? undefined : (camada.mistura as GlobalCompositeOperation)
       }
-      onMouseDown={onSelecionar}
-      onTouchStart={onSelecionar}
       sceneFunc={(ctx: Konva.Context) => {
         const nativo = (ctx as unknown as { _context: CanvasRenderingContext2D })._context;
 
@@ -69,12 +63,6 @@ export default function Textura({ camada, largura, altura, onSelecionar, qualida
           escala: camada.escala * qualidade,
         });
         nativo.drawImage(pronta, 0, 0, largura, altura);
-      }}
-      hitFunc={(ctx: Konva.Context, shape: Konva.Shape) => {
-        ctx.beginPath();
-        ctx.rect(0, 0, largura, altura);
-        ctx.closePath();
-        ctx.fillStrokeShape(shape);
       }}
     />
   );

@@ -1,16 +1,9 @@
 "use client";
 
-import type { KonvaEventObject } from "konva/lib/Node";
 import { Rect } from "react-konva";
 import { hexParaRgb } from "../filtros";
 import type { CamadaSombreado } from "../tipos";
-
-interface Props {
-  camada: CamadaSombreado;
-  largura: number;
-  altura: number;
-  onSelecionar: (e?: KonvaEventObject<MouseEvent | TouchEvent>) => void;
-}
+import type { PropsDecorativa } from "./comum";
 
 const rgba = (cor: string, a: number) => {
   const [r, g, b] = hexParaRgb(cor);
@@ -21,16 +14,18 @@ const rgba = (cor: string, a: number) => {
  * A camada que faz o texto ser legível: escurece a base (e/ou o topo) da arte
  * num degradê. Em todas as referências ela existe, mesmo quando não se nota.
  */
-export default function Sombreado({ camada, largura, altura, onSelecionar }: Props) {
+export default function Sombreado({
+  camada,
+  largura,
+  altura,
+}: PropsDecorativa<CamadaSombreado>) {
   const comum = {
     id: camada.id,
     x: 0,
     width: largura,
     visible: camada.visivel,
     opacity: camada.opacidade,
-    listening: !camada.travada,
-    onMouseDown: onSelecionar,
-    onTouchStart: onSelecionar,
+    listening: false,
   };
 
   /*

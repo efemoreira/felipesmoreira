@@ -120,6 +120,10 @@ export default function Avatar({
           listening={false}
         />
       )}
+
+      {/* a chapa de pega — ver a explicação em Pessoa.tsx. Redonda aqui, para o
+          clique respeitar o retrato em vez da caixa quadrada em volta dele */}
+      <Circle x={raio} y={raio} radius={raio} />
     </Group>
   );
 }

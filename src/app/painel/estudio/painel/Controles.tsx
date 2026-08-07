@@ -1,33 +1,58 @@
 "use client";
 
-/** Peças de formulário do inspetor — mesma cara em todas as camadas. */
+/**
+ * Peças de formulário do inspetor — mesma cara em todas as camadas.
+ *
+ * Todas aceitam `dica`: parar três segundos em cima abre uma explicação. Quando
+ * a `dica` não é passada, o próprio rótulo é procurado no dicionário de
+ * painel/dicas.ts — é assim que o inspetor inteiro fica explicado sem ter de
+ * escrever `dica=` em cada um dos cem campos.
+ */
 import { useId, type ReactNode } from "react";
 import { ATALHOS_COR } from "../paleta";
+import { useDica } from "./Dica";
 
 export function Secao({
   titulo,
   children,
   aberta = true,
+  dica,
 }: {
   titulo: string;
   children: ReactNode;
   aberta?: boolean;
+  dica?: string;
 }) {
+  const { props, balao } = useDica(dica, titulo);
   return (
     <details open={aberta} className="border-b border-white/10 last:border-0">
-      <summary className="cursor-pointer list-none px-4 py-3 text-[11px] font-semibold uppercase tracking-[.14em] text-[#FFCB05]/80 hover:text-[#FFCB05] [&::-webkit-details-marker]:hidden">
+      <summary
+        {...props}
+        className="cursor-pointer list-none px-4 py-3 text-[11px] font-semibold uppercase tracking-[.14em] text-[#FFCB05]/80 hover:text-[#FFCB05] [&::-webkit-details-marker]:hidden"
+      >
         {titulo}
       </summary>
       <div className="flex flex-col gap-3 px-4 pb-4">{children}</div>
+      {balao}
     </details>
   );
 }
 
-export function Campo({ rotulo, children }: { rotulo: string; children: ReactNode }) {
+export function Campo({
+  rotulo,
+  children,
+  dica,
+}: {
+  rotulo: string;
+  children: ReactNode;
+  dica?: string;
+}) {
+  const { props, balao } = useDica(dica, rotulo);
   return (
-    <label className="flex flex-col gap-1.5">
+    <label {...props} className="flex flex-col gap-1.5">
       <span className="text-[11px] uppercase tracking-wider text-white/45">{rotulo}</span>
       {children}
+      {balao}
     </label>
   );
 }
@@ -42,6 +67,7 @@ export function Deslizante({
   max,
   passo = 1,
   sufixo,
+  dica,
   onMudar,
 }: {
   rotulo: string;
@@ -50,10 +76,12 @@ export function Deslizante({
   max: number;
   passo?: number;
   sufixo?: string;
+  dica?: string;
   onMudar: (v: number) => void;
 }) {
+  const { props, balao } = useDica(dica, rotulo);
   return (
-    <div className="flex flex-col gap-1.5">
+    <div {...props} className="flex flex-col gap-1.5">
       <div className="flex items-baseline justify-between">
         <span className="text-[11px] uppercase tracking-wider text-white/45">{rotulo}</span>
         <span className="font-mono text-[11px] text-white/70">
@@ -70,6 +98,7 @@ export function Deslizante({
         onChange={(e) => onMudar(Number(e.target.value))}
         className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-white/15 accent-[#FFCB05]"
       />
+      {balao}
     </div>
   );
 }
@@ -78,15 +107,17 @@ export function Numero({
   rotulo,
   valor,
   passo = 1,
+  dica,
   onMudar,
 }: {
   rotulo: string;
   valor: number;
   passo?: number;
+  dica?: string;
   onMudar: (v: number) => void;
 }) {
   return (
-    <Campo rotulo={rotulo}>
+    <Campo rotulo={rotulo} dica={dica}>
       <input
         type="number"
         step={passo}
@@ -101,22 +132,6 @@ export function Numero({
 export function Texto({
   rotulo,
   valor,
-  onMudar,
-}: {
-  rotulo: string;
-  valor: string;
-  onMudar: (v: string) => void;
-}) {
-  return (
-    <Campo rotulo={rotulo}>
-      <input type="text" value={valor} onChange={(e) => onMudar(e.target.value)} className={entradaCss} />
-    </Campo>
-  );
-}
-
-export function AreaTexto({
-  rotulo,
-  valor,
   dica,
   onMudar,
 }: {
@@ -126,14 +141,36 @@ export function AreaTexto({
   onMudar: (v: string) => void;
 }) {
   return (
-    <Campo rotulo={rotulo}>
+    <Campo rotulo={rotulo} dica={dica}>
+      <input type="text" value={valor} onChange={(e) => onMudar(e.target.value)} className={entradaCss} />
+    </Campo>
+  );
+}
+
+export function AreaTexto({
+  rotulo,
+  valor,
+  dica,
+  legenda,
+  onMudar,
+}: {
+  rotulo: string;
+  valor: string;
+  /** a explicação de 3 s */
+  dica?: string;
+  /** o texto miúdo fixo embaixo do campo — o resumo da marcação, por exemplo */
+  legenda?: string;
+  onMudar: (v: string) => void;
+}) {
+  return (
+    <Campo rotulo={rotulo} dica={dica}>
       <textarea
         rows={4}
         value={valor}
         onChange={(e) => onMudar(e.target.value)}
         className={`${entradaCss} resize-y font-mono text-[13px] leading-relaxed`}
       />
-      {dica && <span className="text-[11px] leading-snug text-white/35">{dica}</span>}
+      {legenda && <span className="text-[11px] leading-snug text-white/35">{legenda}</span>}
     </Campo>
   );
 }
@@ -142,15 +179,17 @@ export function Escolha<T extends string>({
   rotulo,
   valor,
   opcoes,
+  dica,
   onMudar,
 }: {
   rotulo: string;
   valor: T;
   opcoes: { valor: T; rotulo: string }[];
+  dica?: string;
   onMudar: (v: T) => void;
 }) {
   return (
-    <Campo rotulo={rotulo}>
+    <Campo rotulo={rotulo} dica={dica}>
       <select
         value={valor}
         onChange={(e) => onMudar(e.target.value as T)}
@@ -170,15 +209,17 @@ export function Botoes<T extends string>({
   rotulo,
   valor,
   opcoes,
+  dica,
   onMudar,
 }: {
   rotulo: string;
   valor: T;
   opcoes: { valor: T; rotulo: string }[];
+  dica?: string;
   onMudar: (v: T) => void;
 }) {
   return (
-    <Campo rotulo={rotulo}>
+    <Campo rotulo={rotulo} dica={dica}>
       <div className="flex gap-1 rounded-md bg-black/40 p-1">
         {opcoes.map((o) => (
           <button
@@ -202,14 +243,20 @@ export function Botoes<T extends string>({
 export function Chave({
   rotulo,
   ligada,
+  dica,
   onMudar,
 }: {
   rotulo: string;
   ligada: boolean;
+  dica?: string;
   onMudar: (v: boolean) => void;
 }) {
+  const { props, balao } = useDica(dica, rotulo);
   return (
-    <label className="flex cursor-pointer items-center justify-between gap-3 py-0.5">
+    <label
+      {...props}
+      className="flex cursor-pointer items-center justify-between gap-3 py-0.5"
+    >
       <span className="text-[11px] uppercase tracking-wider text-white/45">{rotulo}</span>
       <button
         type="button"
@@ -227,6 +274,7 @@ export function Chave({
           }`}
         />
       </button>
+      {balao}
     </label>
   );
 }
@@ -261,14 +309,16 @@ export function Aviso({
 export function Presets<T>({
   rotulo,
   opcoes,
+  dica = "Preenchem os campos abaixo de uma vez. Depois é tudo ajustável na mão.",
   onAplicar,
 }: {
   rotulo: string;
   opcoes: { nome: string; valor: T }[];
+  dica?: string;
   onAplicar: (v: T) => void;
 }) {
   return (
-    <Campo rotulo={rotulo}>
+    <Campo rotulo={rotulo} dica={dica}>
       <div className="flex flex-wrap gap-1.5">
         {opcoes.map((o) => (
           <button
@@ -308,9 +358,10 @@ export function Lados({
   passo?: number;
 }) {
   const todos = (v: number) => onMudar({ topo: v, direita: v, base: v, esquerda: v });
+  const { props, balao } = useDica(undefined, "Lados");
 
   return (
-    <div className="flex flex-col gap-2">
+    <div {...props} className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
         <span className="text-[11px] uppercase tracking-wider text-white/45">Lados</span>
         <button
@@ -345,6 +396,7 @@ export function Lados({
           <Deslizante rotulo="Direita" valor={valores.direita} min={0} max={max} passo={passo} onMudar={(direita) => onMudar({ direita })} />
         </div>
       )}
+      {balao}
     </div>
   );
 }
@@ -352,19 +404,22 @@ export function Lados({
 export function Cor({
   rotulo,
   valor,
+  dica,
   onMudar,
 }: {
   rotulo: string;
   valor: string;
+  dica?: string;
   onMudar: (v: string) => void;
 }) {
   const id = useId();
+  const { props, balao } = useDica(dica, rotulo);
   // o input nativo só entende #rrggbb; rgba() cai no preto do seletor mas
   // continua valendo no desenho até alguém escolher outra cor
   const hex = /^#[0-9a-f]{6}$/i.test(valor) ? valor : "#000000";
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div {...props} className="flex flex-col gap-1.5">
       <span className="text-[11px] uppercase tracking-wider text-white/45">{rotulo}</span>
       <div className="flex items-center gap-2">
         <input
@@ -392,6 +447,7 @@ export function Cor({
           ))}
         </div>
       </div>
+      {balao}
     </div>
   );
 }

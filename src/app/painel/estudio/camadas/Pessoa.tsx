@@ -2,7 +2,7 @@
 
 import Konva from "konva";
 import { useRef } from "react";
-import { Group, Image as ImagemKonva, Shape } from "react-konva";
+import { Group, Image as ImagemKonva, Rect, Shape } from "react-konva";
 import { Halo, hexParaRgb } from "../filtros";
 import { useImagem } from "../useImagem";
 import type { CamadaPessoa } from "../tipos";
@@ -160,6 +160,7 @@ export default function Pessoa({
         tintaCor={tinta.cor}
         tintaForca={tinta.ativa ? tinta.forca : 0}
         gradienteModo={gradiente.modo}
+        gradienteDirecao={gradiente.direcao}
         gradienteCor={gradiente.cor}
         gradienteExtensao={gradiente.extensao}
         gradienteForca={gradiente.ativo ? gradiente.forca : 0}
@@ -175,6 +176,22 @@ export default function Pessoa({
         shadowOpacity={1}
         listening={false}
       />
+
+      {/*
+       * A chapa de pega.
+       *
+       * Um Group não tem geometria própria: a área de clique dele é o que os
+       * filhos pintam no canvas de acerto. Com contato, halo e recorte todos em
+       * `listening={false}` — e eles precisam ficar assim, senão o clique cairia
+       * no halo desfocado — o grupo ficava invisível ao mouse: não selecionava
+       * pelo palco e o `draggable` nunca disparava.
+       *
+       * Este retângulo resolve sem aparecer: sem `fill`, o canvas de desenho não
+       * pinta nada, mas o de acerto preenche a caixa inteira. É a mesma ideia do
+       * `hitFunc` do texto — e é o que faz a pessoa ser agarrável pela caixa
+       * toda, inclusive na parte transparente ao lado do corpo.
+       */}
+      <Rect width={camada.largura} height={camada.altura} />
     </Group>
   );
 }

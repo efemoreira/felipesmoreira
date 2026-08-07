@@ -48,37 +48,59 @@ export const Tinta: FilterFunction = function (this: Nó, imageData: ImageData) 
 const suavizar = (t: number) => t * t * (3 - 2 * t);
 
 /**
- * Gradiente que sobe da base do recorte.
+ * Gradiente entrando por uma das bordas do recorte.
  *
  * "dissolver" apaga o corpo aos poucos, fazendo a pessoa nascer do fundo em vez
- * de terminar num corte reto; "pintar" leva a base para uma cor. Cada pessoa
- * tem o seu, então dá para dissolver duas em profundidades diferentes.
+ * de terminar num corte reto; "pintar" leva aquela borda para uma cor; "ambos"
+ * faz as duas na mesma rampa — o corpo some *na* cor, que é o que dá o efeito
+ * de fumaça. Cada pessoa tem o seu, então dá para dissolver duas em
+ * profundidades e direções diferentes.
  */
 export const Gradiente: FilterFunction = function (this: Nó, imageData: ImageData) {
   const forca = entre(Number(this.getAttr("gradienteForca") ?? 0), 0, 1);
   const extensao = entre(Number(this.getAttr("gradienteExtensao") ?? 0), 0.01, 1);
   if (forca <= 0) return;
 
-  const pintar = this.getAttr("gradienteModo") === "pintar";
+  const modo = String(this.getAttr("gradienteModo") ?? "dissolver");
+  const pinta = modo === "pintar" || modo === "ambos";
+  const dissolve = modo === "dissolver" || modo === "ambos";
+  const direcao = String(this.getAttr("gradienteDirecao") ?? "base");
+
   const [r, g, b] = hexParaRgb(String(this.getAttr("gradienteCor") ?? "#14110C"));
   const { width: w, height: h, data: d } = imageData;
-  const faixa = Math.max(1, h * extensao);
+
+  /* A rampa só depende da distância até a borda escolhida, então ela é tabelada
+     uma vez em vez de recalculada por pixel — numa pessoa de 900px isso é a
+     diferença entre o palco responder e engasgar ao arrastar o slider. */
+  const vertical = direcao === "base" || direcao === "topo";
+  const total = vertical ? h : w;
+  const faixa = Math.max(1, total * extensao);
+  const rampas = new Float32Array(total);
+  for (let i = 0; i < total; i++) {
+    // 1 na própria borda, 0 no fim da faixa
+    rampas[i] = suavizar(1 - entre(i / faixa, 0, 1)) * forca;
+  }
+
+  // distância de cada linha (ou coluna) até a borda de onde o gradiente entra
+  const daBorda = (i: number, tamanho: number, doFim: boolean) => (doFim ? tamanho - 1 - i : i);
+  const doFim = direcao === "base" || direcao === "direita";
 
   for (let y = 0; y < h; y++) {
-    // 1 na última linha, 0 no topo da faixa
-    const rampa = suavizar(1 - entre((h - 1 - y) / faixa, 0, 1)) * forca;
-    if (rampa <= 0) continue;
+    const rampaLinha = vertical ? rampas[daBorda(y, h, doFim)] : 0;
+    if (vertical && rampaLinha <= 0) continue;
 
     for (let x = 0; x < w; x++) {
+      const rampa = vertical ? rampaLinha : rampas[daBorda(x, w, doFim)];
+      if (rampa <= 0) continue;
+
       const i = (y * w + x) * 4;
       if (d[i + 3] === 0) continue;
-      if (pintar) {
+      if (pinta) {
         d[i] += (r - d[i]) * rampa;
         d[i + 1] += (g - d[i + 1]) * rampa;
         d[i + 2] += (b - d[i + 2]) * rampa;
-      } else {
-        d[i + 3] *= 1 - rampa;
       }
+      if (dissolve) d[i + 3] *= 1 - rampa;
     }
   }
 };
@@ -117,6 +139,28 @@ export const Esmaecer: FilterFunction = function (this: Nó, imageData: ImageDat
 
   const { width: w, height: h, data: d } = imageData;
 
+  /*
+   * Duas saídas para a mesma rampa: abrir buraco (o alfa cai) ou morrer numa cor
+   * (o RGB caminha até ela e o alfa fica de pé). A segunda existe porque, sobre
+   * um fundo escuro, uma foto que vira vazio recorta uma forma estranha no meio
+   * da arte — enquanto uma que morre no tom do fundo simplesmente some.
+   */
+  const paraCor = this.getAttr("esmaecerSaida") === "cor";
+  const [cr, cg, cb] = hexParaRgb(String(this.getAttr("esmaecerCor") ?? "#14110C"));
+
+  /** Aplica a rampa no pixel que começa em `p`. */
+  const aplicar = (p: number, alfa: number) => {
+    if (alfa >= 1) return;
+    if (!paraCor) {
+      d[p + 3] *= alfa;
+      return;
+    }
+    const m = 1 - alfa;
+    d[p] += (cr - d[p]) * m;
+    d[p + 1] += (cg - d[p + 1]) * m;
+    d[p + 2] += (cb - d[p + 2]) * m;
+  };
+
   if (elipse) {
     // a maior fração pedida manda: o "raio limpo" no centro encolhe conforme ela
     const forca = Math.max(topo, direita, base, esquerda, cantos);
@@ -127,12 +171,12 @@ export const Esmaecer: FilterFunction = function (this: Nó, imageData: ImageDat
     for (let y = 0; y < h; y++) {
       const ny = (y - cy) / Math.max(1, cy);
       for (let x = 0; x < w; x++) {
-        const i = (y * w + x) * 4 + 3;
-        if (d[i] === 0) continue;
+        const p = (y * w + x) * 4;
+        if (d[p + 3] === 0) continue;
         const nx = (x - cx) / Math.max(1, cx);
         const r = Math.sqrt(nx * nx + ny * ny);
         // fora do raio limpo, a opacidade cai até zerar na borda do quadro
-        d[i] *= rampa((1 - r) / forca);
+        aplicar(p, rampa((1 - r) / forca));
       }
     }
     return;
@@ -151,8 +195,8 @@ export const Esmaecer: FilterFunction = function (this: Nó, imageData: ImageDat
     const aBase = fBase ? rampa((h - 1 - y) / fBase) : 1;
 
     for (let x = 0; x < w; x++) {
-      const i = (y * w + x) * 4 + 3;
-      if (d[i] === 0) continue; // já transparente: nada a fazer
+      const p = (y * w + x) * 4;
+      if (d[p + 3] === 0) continue; // já transparente: nada a fazer
 
       let alfa = Math.min(aTopo, aBase);
       if (fEsq) alfa = Math.min(alfa, rampa(x / fEsq));
@@ -167,7 +211,7 @@ export const Esmaecer: FilterFunction = function (this: Nó, imageData: ImageDat
         }
       }
 
-      if (alfa < 1) d[i] *= alfa;
+      aplicar(p, alfa);
     }
   }
 };

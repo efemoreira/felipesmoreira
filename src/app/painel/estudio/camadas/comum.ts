@@ -23,6 +23,30 @@ export interface PropsCamada<T extends Camada> {
   qualidade: number;
 }
 
+/**
+ * As camadas de enfeite que cobrem a arte de borda a borda: fundo, padrão,
+ * textura, sombreado e moldura.
+ *
+ * Elas não arrastam, não giram e não redimensionam (`transformavel()` não as
+ * inclui), então **não escutam o mouse**: um clique nelas só serviria para
+ * selecionar, que a lista de camadas já faz — e, enquanto escutavam, o
+ * retângulo de tela cheia delas roubava o clique das fotos e das pessoas que
+ * ficam por baixo. Quem seleciona é a lista; quem manda no palco é a arte.
+ *
+ * O tipo existe para casar com o que o Palco realmente espalha nelas: antes cada
+ * uma declarava um `Props` mais estreito e o TypeScript deixava passar, porque
+ * spread em JSX não reclama de propriedade a mais.
+ */
+export interface PropsDecorativa<T extends Camada> {
+  camada: T;
+  largura: number;
+  altura: number;
+  selecionada: boolean;
+  onSelecionar: (e?: KonvaEventObject<MouseEvent | TouchEvent>) => void;
+  interativo: boolean;
+  qualidade: number;
+}
+
 /** Um esmaecimento só entra na conta se tiver alguma borda ligada. */
 export const esmaeceAlgo = (e: Esmaecimento | undefined): boolean =>
   !!e?.ativo &&
@@ -49,7 +73,8 @@ export function filtrosDe(
   if (extras.gradiente) filtros.push(Gradiente);
   // a luz de contorno lê o alfa ainda inteiro, antes de o esmaecer comer as bordas
   if (extras.luzBorda) filtros.push(LuzBorda);
-  // por último: o esmaecer só corta alfa, então nada depois dele repinta o que sumiu
+  // por último: o esmaecer decide como a imagem termina, então nada depois dele
+  // pode repintar o que ele já dissolveu (ou levou para a cor de saída)
   if (extras.esmaecer) filtros.push(Esmaecer);
   return filtros;
 }
@@ -68,6 +93,8 @@ export function atributosDeAjuste(ajustes: Ajustes) {
 export function atributosDeEsmaecer(e: Esmaecimento) {
   return {
     esmaecerModo: e.modo,
+    esmaecerSaida: e.saida,
+    esmaecerCor: e.cor,
     esmaecerTopo: e.topo,
     esmaecerDireita: e.direita,
     esmaecerBase: e.base,
