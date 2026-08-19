@@ -71,6 +71,83 @@ HTML administrativas que já existia. Regras para endpoint novo:
 Endpoint de referência: `public/painel/api/sessao.php` +
 `src/lib/api/sessao.ts`.
 
+### Endpoint público (sem login)
+
+`public/painel/api/inscricao.php` é o único aberto para a internet, e por isso
+segue regras próprias:
+
+- **CSRF não serve aqui.** O cookie de sessão tem `path=/painel` e
+  `SameSite=Strict`, e visitante anônimo não tem sessão nenhuma. O que protege
+  é: armadilha (honeypot), teto de envios por visitante, conferência de
+  `Origin` e checagem de duplicado.
+- **O teto usa IP embaralhado, não IP.** `chave_visitante()` faz HMAC do IP com
+  um segredo do site (`dados/segredo.php`, criado sozinho). Dá para contar
+  tentativas sem guardar endereço, que é dado pessoal.
+- **Erro de robô não é explicado.** Honeypot preenchido responde `{"ok":true}`
+  e descarta em silêncio — dizer a verdade ensina o robô a contornar.
+
+### Onde guardar dado pessoal
+
+`public_html/dados/` tem um `.htaccess` que bloqueia **só** arquivos `.php` —
+`.json` de lá é baixável pela web de propósito (a página `/programacao` busca
+`agenda.json`). Então:
+
+> **Qualquer arquivo com dado pessoal — telefone, e-mail, endereço — tem que
+> ser `.php` retornando array** (`var_export`), como `usuarios.php` e
+> `inscricoes.php`. Um `.json` ali vaza para qualquer um com o link.
+
+## Funções da militância
+
+`src/data/funcoes.json` é a lista canônica dos papéis do movimento (Olheiro,
+Roteirista, Design…), com resumo, entrega, ritmo e passo a passo em linguagem
+de recrutamento — o texto vem de `update/Manual-da-Militancia.md`, traduzido do
+jargão interno.
+
+Uma fonte só para os dois lados: o Next importa no build (formulário
+`/quero-ajudar`) e o PHP lê o mesmo arquivo (`out/funcoes.json`, copiado pelo
+`publish.yml`) para validar o que chega e sugerir as áreas na aprovação.
+
+**Não confunda `funcoes` com `areas`:** `funcoes` é o papel da pessoa no
+movimento; `areas` é permissão de tela no painel. O `areas` de cada função vive
+no próprio `funcoes.json`.
+
+**Ao acrescentar função nova:** entre no `funcoes.json` (o `icone` precisa
+existir em `src/components/icons.tsx`) e pronto — formulário, validação e
+sugestão de áreas seguem sozinhos.
+
+## Fluxo de entrada de militante
+
+1. Pessoa preenche `/quero-ajudar` (3 passos, com consentimento LGPD).
+2. `api/inscricao.php` valida e grava em `dados/inscricoes.php` com status
+   `nova`. **Não cria conta** — o formulário é público.
+3. Coordenação abre `/painel/inscricoes`, confere e aprova.
+4. A aprovação cria o usuário com `trocarSenha = true` e mostra a senha
+   provisória **uma vez**, com um botão que abre o WhatsApp da pessoa com a
+   mensagem pronta.
+5. `exigir_login()` prende quem entra em `conta.php` até definir a própria
+   senha — isso já existia e não precisou de código novo.
+
+O consentimento fica registrado no cadastro (`consentimentoEm`,
+`consentimentoVersao`). Ao mudar o texto de LGPD do formulário, suba
+`VERSAO_CONSENTIMENTO` em `public/painel/inscricoes-comum.php`.
+
+## Responsividade
+
+O site inteiro precisa funcionar bem em celular — é de onde vem a maioria, por
+link de WhatsApp. O que já está resolvido e não deve regredir:
+
+- `globals.css` tem `html { overflow-x: clip }` (trava global contra rolagem
+  horizontal) e força `font-size` mínimo de 16px em campos de formulário —
+  abaixo disso o Safari do iPhone dá zoom sozinho ao focar.
+- Alvo de toque mínimo de **44px** em botão, link de navegação e campo.
+- O layout declara `color-scheme: dark`; página de fundo claro precisa declarar
+  `color-scheme: light` no container, senão o navegador desenha caixa de seleção
+  e `<select>` em tema escuro.
+- `public/painel/painel.css`: ao acrescentar um `type` de input novo, inclua no
+  seletor de estilo (linha dos `input[type=...]`) — type fora da lista vira
+  caixa branca no fundo escuro. E **suba `VERSAO_ESTILO` em `layout.php`**, que
+  o `.htaccess` põe cache imutável de 1 ano em `.css`.
+
 ### Áreas e permissões
 
 O painel usa um único modelo de permissão por "área" (`AREAS` em

@@ -243,7 +243,7 @@ const css = `
     text-transform: uppercase; color: ${C.gold}; margin: 0;
   }
   .cp-fechar {
-    width: 34px; height: 34px; display: grid; place-items: center; cursor: pointer;
+    width: 44px; height: 44px; display: grid; place-items: center; cursor: pointer;
     background: transparent; color: ${C.cream}; border: 2px solid rgba(246,245,239,.35);
   }
   .cp-fechar:hover { background: ${C.gold}; color: ${C.ink}; border-color: ${C.gold}; }
@@ -253,6 +253,7 @@ const css = `
     flex: 1 1 0; min-width: 0; cursor: pointer;
     font-family: ${FONT_ELITE}; font-size: 11px; letter-spacing: 1.6px; text-transform: uppercase;
     color: ${C.cream}; background: transparent;
+    min-height: 44px;
     padding: 9px 8px; border: 2px solid rgba(255,203,5,.4);
     transition: background .12s ease, color .12s ease, border-color .12s ease;
   }
@@ -268,11 +269,14 @@ const css = `
   .cp-status { font-family: ${FONT_ELITE}; font-size: 12px; letter-spacing: 2px; text-align: center; opacity: .85; }
 
   .cp-acoes { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+  /* Sem \`nowrap\` e sem \`min-width: 0\`: num celular de 360px os rótulos
+     estouravam a própria borda e criavam rolagem horizontal dentro do modal. */
   .cp-btn {
-    flex: 1 1 128px; min-width: 0; cursor: pointer;
+    flex: 1 1 140px; cursor: pointer;
     display: inline-flex; align-items: center; justify-content: center; gap: 8px;
     font-family: ${FONT_ELITE}; font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
-    color: ${C.cream}; background: transparent; white-space: nowrap;
+    color: ${C.cream}; background: transparent; text-align: center;
+    min-height: 44px;
     padding: 12px 14px; border: 2px solid ${C.gold};
     transition: background .12s ease, color .12s ease;
   }

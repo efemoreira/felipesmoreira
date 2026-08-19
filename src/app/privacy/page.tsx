@@ -1,113 +1,120 @@
-export const metadata = {
-  title: 'Política de Privacidade',
+import type { Metadata } from "next";
+import PaginaLegal, { type Secao } from "@/features/legal/PaginaLegal";
+
+export const metadata: Metadata = {
+  title: "Política de Privacidade",
+  description:
+    "Como a Missão Ceará trata os dados de quem se inscreve para ajudar a militância: o que é coletado, para quê, por quanto tempo e como pedir a exclusão.",
+  alternates: { canonical: "https://felipesmoreira.com/privacy" },
 };
 
-export default function PrivacyPolicy() {
+const secoes: Secao[] = [
+  {
+    titulo: "Quem é o responsável pelos seus dados",
+    blocos: [
+      "Este site é de Felipe Moreira, e os dados coletados aqui são tratados pela coordenação da Missão Ceará. Somos nós que decidimos o que é guardado e para quê — em linguagem de lei, somos o controlador dos dados.",
+      "Para falar sobre seus dados, use contato@felipesmoreira.com ou o WhatsApp (85) 99722-3863. A mesma pessoa que cuida da coordenação responde por isso.",
+    ],
+  },
+  {
+    titulo: "O que a gente coleta",
+    blocos: [
+      "Navegar pelo site não exige cadastro nenhum. Só coletamos dado pessoal quando você mesmo preenche o formulário da página “Quero ajudar”. Nele pedimos:",
+      [
+        "Nome completo — para saber com quem estamos falando.",
+        "WhatsApp — é por onde a coordenação entra em contato e envia seu acesso.",
+        "Cidade e bairro — para montar os times por região.",
+        "E-mail — opcional, só como segunda forma de contato.",
+        "As funções em que você quer ajudar — para saber onde você se encaixa.",
+      ],
+      "Não pedimos CPF, RG, data de nascimento, título de eleitor, dados bancários nem qualquer outro documento. Se algum dia isso mudar, este texto muda junto e você é avisado antes.",
+    ],
+  },
+  {
+    titulo: "Por que a gente pode guardar isso",
+    blocos: [
+      "A base legal é o seu consentimento (art. 7º, I da LGPD — Lei 13.709/2018). Ele é dado quando você marca a caixinha no fim do formulário, e o site registra a data e a versão do texto que você aceitou.",
+      "Consentimento é livre: você pode voltar atrás quando quiser, e isso não tem consequência nenhuma além de a gente parar de te chamar.",
+    ],
+  },
+  {
+    titulo: "Para que a gente usa",
+    blocos: [
+      "Seus dados servem só para organizar a militância:",
+      [
+        "Entrar em contato sobre a sua participação.",
+        "Enviar seu usuário e senha de acesso à área da militância.",
+        "Organizar os times por região e por função.",
+        "Avisar sobre encontros, formações e atividades do movimento.",
+      ],
+      "Nada de propaganda de terceiros, nada de assunto fora do movimento.",
+    ],
+  },
+  {
+    titulo: "Com quem a gente compartilha",
+    blocos: [
+      "Com ninguém de fora. Seus dados não são vendidos, alugados, trocados nem cedidos a outras campanhas, partidos, empresas ou serviços de marketing.",
+      "Dentro do movimento, só a coordenação e quem tem acesso liberado no painel administrativo enxerga essas informações.",
+      "A única exceção é uma ordem judicial ou obrigação legal — se isso acontecer, a gente cumpre a lei.",
+    ],
+  },
+  {
+    titulo: "Onde os dados ficam",
+    blocos: [
+      "As informações ficam guardadas no servidor do próprio site, em área protegida por senha e fora do alcance de buscadores. As senhas de acesso são guardadas embaralhadas (hash), então nem a coordenação consegue ler a sua senha — se você esquecer, o caminho é criar uma nova.",
+      "O site é servido por HTTPS, ou seja, o que você digita no formulário trafega criptografado até o servidor.",
+    ],
+  },
+  {
+    titulo: "Por quanto tempo a gente guarda",
+    blocos: [
+      "Enquanto você fizer parte da militância, ou até você pedir a exclusão. Inscrições que não viram acesso são apagadas quando deixam de ser úteis para a organização do movimento.",
+      "Pedindo exclusão, a gente apaga — e só guarda o mínimo que a lei exigir, se exigir.",
+    ],
+  },
+  {
+    titulo: "Seus direitos",
+    blocos: [
+      "A LGPD te dá, e a gente respeita, o direito de:",
+      [
+        "Saber se temos dados seus e quais são.",
+        "Pedir cópia deles.",
+        "Corrigir o que estiver errado ou desatualizado.",
+        "Pedir a exclusão dos seus dados.",
+        "Retirar o consentimento a qualquer momento.",
+        "Saber com quem compartilhamos (a resposta é: ninguém de fora).",
+      ],
+      "É só pedir por e-mail ou WhatsApp. A gente responde em até 15 dias e não cobra nada por isso. Para confirmar que é você mesmo, podemos fazer uma pergunta simples de conferência.",
+    ],
+  },
+  {
+    titulo: "Cookies",
+    blocos: [
+      "O site público não usa cookie de rastreamento, nem publicidade, nem ferramenta de análise que siga você por outros sites.",
+      "O painel administrativo usa um único cookie de sessão, necessário para manter você logado enquanto usa o painel. Ele expira sozinho e não serve para rastrear nada.",
+    ],
+  },
+  {
+    titulo: "Menores de idade",
+    blocos: [
+      "A inscrição na militância é pensada para maiores de 16 anos. Quem tiver entre 16 e 18 deve conversar com os pais ou responsáveis antes de se inscrever. Se descobrirmos cadastro de menor de 16 sem autorização, apagamos.",
+    ],
+  },
+  {
+    titulo: "Mudanças nesta política",
+    blocos: [
+      "Se algo mudar de forma relevante — dado novo coletado, finalidade nova — a gente atualiza esta página e avisa quem já está cadastrado antes de a mudança valer.",
+    ],
+  },
+];
+
+export default function PoliticaDePrivacidade() {
   return (
-    <main className="min-h-screen bg-white py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl mx-auto">
-        <h1 className="text-4xl font-bold text-gray-900 mb-8">Política de Privacidade</h1>
-        
-        <div className="space-y-8 text-gray-700">
-          <section>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">1. Introdução</h2>
-            <p>
-              Esta Política de Privacidade descreve como nosso aplicativo de WhatsApp coleta, 
-              utiliza e protege suas informações pessoais. Comprometemo-nos com a proteção de 
-              sua privacidade e a segurança dos seus dados.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">2. Informações que Coletamos</h2>
-            <p className="mb-4">O aplicativo coleta as seguintes informações:</p>
-            <ul className="list-disc list-inside space-y-2">
-              <li>Dados de acesso da sua conta WhatsApp</li>
-              <li>Conteúdo de mensagens processadas pelo aplicativo</li>
-              <li>Informações de contatos com os quais você interage</li>
-              <li>Histórico de conversas armazenadas localmente</li>
-              <li>Dados de uso e preferências do aplicativo</li>
-            </ul>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">3. Como Usamos Suas Informações</h2>
-            <p className="mb-4">As informações coletadas são utilizadas para:</p>
-            <ul className="list-disc list-inside space-y-2">
-              <li>Enviar mensagens do WhatsApp conforme solicitado por você</li>
-              <li>Melhorar a experiência do usuário no aplicativo</li>
-              <li>Manter registro das suas conversas para seu acesso pessoal</li>
-              <li>Fornecer funcionalidades de automação de mensagens</li>
-              <li>Análise de uso para otimização do aplicativo</li>
-            </ul>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">4. Armazenamento de Dados</h2>
-            <p className="mb-4">
-              Os dados são armazenados da seguinte forma:
-            </p>
-            <ul className="list-disc list-inside space-y-2">
-              <li>Principalmente em armazenamento local no seu dispositivo</li>
-              <li>Dados de sessão podem ser armazenados em cache seguro</li>
-              <li>Backup opcional podem ser armazenados em serviços em nuvem de sua escolha</li>
-              <li>Nenhum dado é compartilhado com terceiros sem seu consentimento explícito</li>
-            </ul>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">5. Segurança</h2>
-            <p>
-              Implementamos medidas de segurança técnicas e organizacionais para proteger seus dados 
-              contra acesso não autorizado, alteração e destruição. As comunicações do WhatsApp são 
-              criptografadas ponta a ponta conforme os padrões de segurança da plataforma.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">6. Cookies e Tecnologias de Rastreamento</h2>
-            <p>
-              Este aplicativo pode utilizar cookies e tecnologias similares para melhorar a experiência 
-              do usuário. Você pode controlar as configurações de cookies em seu navegador ou dispositivo.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">7. Seus Direitos</h2>
-            <p className="mb-4">Você possui os seguintes direitos:</p>
-            <ul className="list-disc list-inside space-y-2">
-              <li>Acessar seus dados pessoais armazenados</li>
-              <li>Solicitar correção de dados incorretos</li>
-              <li>Solicitar exclusão de dados</li>
-              <li>Revogar seu consentimento a qualquer momento</li>
-              <li>Solicitar informações sobre como seus dados são utilizados</li>
-            </ul>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">8. Alterações nesta Política</h2>
-            <p>
-              Reservamos o direito de modificar esta Política de Privacidade a qualquer momento. 
-              Alterações significativas serão comunicadas ao usuário com antecedência. O uso continuado 
-              do aplicativo após alterações implica aceitação da nova política.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">9. Contato</h2>
-            <p>
-              Se tiver dúvidas ou preocupações sobre esta Política de Privacidade, entre em contato conosco 
-              através das informações de contato fornecidas no aplicativo.
-            </p>
-          </section>
-
-          <section>
-            <p className="text-sm text-gray-500">
-              Última atualização: {new Date().toLocaleDateString('pt-BR')}
-            </p>
-          </section>
-        </div>
-      </div>
-    </main>
+    <PaginaLegal
+      titulo="Política de Privacidade"
+      resumo="Em resumo: a gente só coleta o que você digita no formulário “Quero ajudar”, usa isso só para organizar a militância, não compartilha com ninguém de fora, e apaga quando você pedir."
+      atualizadoEm="19 de agosto de 2026"
+      secoes={secoes}
+    />
   );
 }

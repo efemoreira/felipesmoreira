@@ -30,9 +30,10 @@ const SENHA_MIN      = 8;   // com o bloqueio por login, 8 já segura tentativa 
 
 /** As funcionalidades do painel. A chave entra no usuarios.php. */
 const AREAS = [
-    'agenda'  => 'Agenda da semana',
-    'estudio' => 'Estúdio de artes',
-    'aulas'   => 'Aulas em vídeo',
+    'agenda'     => 'Agenda da semana',
+    'estudio'    => 'Estúdio de artes',
+    'aulas'      => 'Aulas em vídeo',
+    'inscricoes' => 'Inscrições da militância',
 ];
 
 const PAPEIS = [
@@ -42,9 +43,10 @@ const PAPEIS = [
 
 /** Para onde cada área leva, e uma linha do que ela faz. */
 const DESTINO_AREA = [
-    'agenda'  => ['url' => '/painel/agenda.php', 'resumo' => 'Editar a programação que aparece em /programacao'],
-    'estudio' => ['url' => '/painel/estudio.php', 'resumo' => 'Montar as artes dos posts a partir de um modelo'],
-    'aulas'   => ['url' => '/painel/aulas.php', 'resumo' => 'Gerenciar as aulas em vídeo (em construção)'],
+    'agenda'     => ['url' => '/painel/agenda.php', 'resumo' => 'Editar a programação que aparece em /programacao'],
+    'estudio'    => ['url' => '/painel/estudio.php', 'resumo' => 'Montar as artes dos posts a partir de um modelo'],
+    'aulas'      => ['url' => '/painel/aulas.php', 'resumo' => 'Gerenciar as aulas em vídeo (em construção)'],
+    'inscricoes' => ['url' => '/painel/inscricoes.php', 'resumo' => 'Aprovar quem se inscreveu em /quero-ajudar e mandar o acesso'],
 ];
 
 header('X-Robots-Tag: noindex, nofollow');
@@ -80,6 +82,24 @@ function gravar_atomico(string $destino, string $conteudo): bool
     }
     @chmod($tmp, 0644);
     return @rename($tmp, $destino);
+}
+
+/**
+ * Corta, apara e tira caracteres de controle. Vale para todo texto que chega
+ * de fora — mora aqui, e não no agenda.php, porque o formulário público e a
+ * tela de inscrições também precisam e não podem incluir aquele arquivo.
+ */
+function limpar_texto($v, int $max): string
+{
+    $s = is_scalar($v) ? trim((string) $v) : '';
+    $s = preg_replace('/[\x00-\x1F\x7F]/u', '', $s) ?? '';
+    return mb_substr($s, 0, $max);
+}
+
+/** Só os dígitos — é assim que telefone entra no arquivo e no link do WhatsApp. */
+function so_digitos($v): string
+{
+    return preg_replace('/\D/', '', is_scalar($v) ? (string) $v : '') ?? '';
 }
 
 /** Escreve a regra só quando ela mudou — assim uma versão nova se conserta sozinha. */
@@ -129,6 +149,8 @@ function normalizar_usuario($u): ?array
     $papel = (($u['papel'] ?? 'editor') === 'admin') ? 'admin' : 'editor';
     $pedidas = is_array($u['areas'] ?? null) ? $u['areas'] : [];
 
+    $funcoes = is_array($u['funcoes'] ?? null) ? $u['funcoes'] : [];
+
     return [
         'id'           => (string) ($u['id'] ?? ''),
         'usuario'      => (string) $u['usuario'],
@@ -143,6 +165,22 @@ function normalizar_usuario($u): ?array
         'trocarSenha'  => !empty($u['trocarSenha']),
         'criadoEm'     => (string) ($u['criadoEm'] ?? ''),
         'ultimoAcesso' => (string) ($u['ultimoAcesso'] ?? ''),
+
+        /* Vindos da inscrição em /quero-ajudar. Este array é literal de
+           propósito: campo que não estiver aqui some na próxima gravação. */
+        'telefone'     => so_digitos($u['telefone'] ?? ''),
+        'email'        => limpar_texto($u['email'] ?? '', 120),
+        'cidade'       => limpar_texto($u['cidade'] ?? '', 60),
+        'bairro'       => limpar_texto($u['bairro'] ?? '', 60),
+        // as funções no movimento (Olheiro, Design…), diferente de 'areas',
+        // que é permissão de tela no painel
+        'funcoes'      => array_values(array_filter(array_map(
+            fn ($f) => limpar_texto($f, 40),
+            $funcoes
+        ))),
+        'origem'       => ($u['origem'] ?? '') === 'inscricao' ? 'inscricao' : 'painel',
+        'consentimentoEm'     => limpar_texto($u['consentimentoEm'] ?? '', 40),
+        'consentimentoVersao' => limpar_texto($u['consentimentoVersao'] ?? '', 20),
     ];
 }
 

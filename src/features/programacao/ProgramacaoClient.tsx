@@ -273,7 +273,7 @@ const css = `
     display: inline-flex; align-items: center; gap: 7px;
     font-family: ${FONT_ELITE}; font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
     color: ${C.ink}; background: ${C.gold}; text-decoration: none;
-    padding: 6px 13px; border: 2px solid ${C.ink};
+    padding: 11px 16px; min-height: 44px; border: 2px solid ${C.ink};
     box-shadow: 3px 3px 0 rgba(24,18,3,.45);
     transition: transform .12s ease, box-shadow .12s ease;
   }
@@ -287,7 +287,7 @@ const css = `
   }
   .ag-canais-lista { display: flex; gap: 7px; }
   .ag-canal {
-    width: 30px; height: 30px; display: grid; place-items: center;
+    width: 44px; height: 44px; display: grid; place-items: center;
     color: ${C.gold}; background: rgba(24,18,3,.85);
     border: 2px solid ${C.gold}; border-radius: 50%; text-decoration: none;
     transition: transform .12s ease, background .12s ease, color .12s ease;
@@ -444,6 +444,9 @@ const css = `
       gap: 10px; width: 100%; text-align: left;
       padding: 10px 2px 2px; margin-top: 10px;
       border-left: 0; border-top: 2px solid rgba(24,18,3,.3);
+      /* solta o nowrap: data/hora longa vinda do painel empurrava a coluna
+         e gerava rolagem horizontal na página inteira */
+      white-space: normal;
     }
     .ag-cartao-claro .ag-meta { border-top-color: rgba(246,245,239,.3); }
     .ag-titulo { letter-spacing: 1.5px; }

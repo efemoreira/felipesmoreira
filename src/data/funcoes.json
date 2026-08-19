@@ -1,0 +1,219 @@
+{
+  "versao": "1",
+  "grupos": {
+    "comunicacao": {
+      "nome": "Comunicação",
+      "resumo": "Transformar o que acontece no Ceará em conteúdo que informa e mobiliza. Dá pra ajudar de casa, pelo celular."
+    },
+    "eventos": {
+      "nome": "Eventos",
+      "resumo": "Fazer os encontros acontecerem: escolher o lugar, chamar o povo, receber bem e registrar tudo."
+    },
+    "outro": {
+      "nome": "Ainda não sei",
+      "resumo": "Sem problema nenhum — a coordenação conversa com você e ajuda a encontrar seu lugar."
+    }
+  },
+  "funcoes": [
+    {
+      "id": "olheiro",
+      "nome": "Olheiro",
+      "grupo": "comunicacao",
+      "icone": "search",
+      "resumo": "Você acompanha as notícias do dia e traz o que for importante, sempre com o link da fonte.",
+      "entrega": "Um resumo curto de cada acontecimento: o que houve, quem é o responsável, quando, quanto e quem é afetado.",
+      "ritmo": "Duas olhadas por dia, de manhã e no fim da tarde. Cerca de 30 a 60 minutos no total.",
+      "detalhe": [
+        "Passe pelos portais locais, páginas oficiais e diários oficiais.",
+        "Só entra fato dos últimos 2 dias.",
+        "Preencha a ficha: o que houve, quem, quando, quanto e quem é afetado.",
+        "Cole o link da fonte e a data — print não vale como fonte.",
+        "Poste no canal do time para a Checagem conferir."
+      ],
+      "areas": ["aulas"]
+    },
+    {
+      "id": "checagem",
+      "nome": "Checagem",
+      "grupo": "comunicacao",
+      "icone": "microscope",
+      "resumo": "Você é a trava que impede um boato de virar vídeo: confere cada fato antes dele seguir adiante.",
+      "entrega": "Cada fato aprovado ou barrado, com o motivo anotado.",
+      "ritmo": "Confere ao longo do dia, conforme os fatos chegam. Uns 30 minutos por dia.",
+      "detalhe": [
+        "Abra o link de cada fato que chegou.",
+        "Confirme com os próprios olhos: a data bate? o número bate?",
+        "Se a afirmação for forte, procure uma segunda fonte independente.",
+        "Aprovado, segue para o Roteirista. Duvidoso, vai para a lista de pendentes.",
+        "Nada dorme sem resposta."
+      ],
+      "areas": ["aulas"]
+    },
+    {
+      "id": "roteirista",
+      "nome": "Roteirista",
+      "grupo": "comunicacao",
+      "icone": "bolt",
+      "resumo": "Você transforma um fato já conferido em roteiro de vídeo curto, de 1 a 2 minutos.",
+      "entrega": "Um roteiro pronto para gravar, com a abertura que prende e o fechamento certo.",
+      "ritmo": "No mesmo dia do fato. Cerca de 1 hora por roteiro.",
+      "detalhe": [
+        "Use só fatos que a Checagem aprovou.",
+        "Monte na estrutura: abertura, o fato, o contraste, quem é o responsável e o fechamento.",
+        "Toda crítica traz junto uma alternativa possível — nunca termina na denúncia.",
+        "Revise pelas regras do movimento antes de entregar."
+      ],
+      "areas": ["aulas"]
+    },
+    {
+      "id": "design",
+      "nome": "Design",
+      "grupo": "comunicacao",
+      "icone": "star",
+      "resumo": "Você cria as artes dos posts e dos eventos, com a identidade visual do movimento.",
+      "entrega": "Cards prontos para feed e stories, no padrão visual da campanha.",
+      "ritmo": "1 a 2 peças por dia, mais as artes de evento. Cerca de 1 hora por peça.",
+      "detalhe": [
+        "Receba o fato aprovado ou o roteiro pronto.",
+        "Aplique o modelo visual: cores, logo e fontes do movimento.",
+        "Se a arte traz um número, a fonte do número aparece na própria arte.",
+        "Exporte nos formatos de feed e de stories.",
+        "Você vai usar o Estúdio de Artes, a ferramenta que já existe aqui no site."
+      ],
+      "areas": ["aulas", "estudio"]
+    },
+    {
+      "id": "editor",
+      "nome": "Editor de vídeo",
+      "grupo": "comunicacao",
+      "icone": "video",
+      "resumo": "Você monta o vídeo final a partir do roteiro e do material gravado, com legenda.",
+      "entrega": "Vídeo vertical legendado, pronto para publicar.",
+      "ritmo": "Até 24h depois da gravação. De 1 a 2 horas por vídeo.",
+      "detalhe": [
+        "Corte seguindo o roteiro: comece pelo gancho, sem enrolação.",
+        "Legenda é obrigatória — a maioria assiste sem som.",
+        "Insira as artes e o dado com a fonte na tela.",
+        "Confira o áudio e o fechamento antes de exportar.",
+        "Guarde o projeto para ajustes depois."
+      ],
+      "areas": ["aulas"]
+    },
+    {
+      "id": "acervo",
+      "nome": "Acervo",
+      "grupo": "comunicacao",
+      "icone": "book",
+      "resumo": "Você mantém tudo organizado e achável — é quem evita que material se perca.",
+      "entrega": "Pastas em ordem e um índice do que já foi publicado.",
+      "ritmo": "Uns 20 minutos no fim do dia. Índice atualizado uma vez por semana.",
+      "detalhe": [
+        "Confira se cada arquivo entrou na pasta certa com o nome padrão.",
+        "Guarde os brutos de vídeo e as fotos dos eventos.",
+        "Mantenha uma planilha do que já saiu, com data e link.",
+        "A meta é simples: qualquer peça achável em 1 minuto."
+      ],
+      "areas": ["aulas"]
+    },
+    {
+      "id": "local-hora",
+      "nome": "Local e Hora",
+      "grupo": "eventos",
+      "icone": "pin",
+      "resumo": "Você encontra e reserva o lugar do encontro, no melhor horário para o povo chegar.",
+      "entrega": "Local reservado e confirmado por escrito, com o time todo avisado.",
+      "ritmo": "Por evento, com uma semana de antecedência. Algumas horas de pesquisa e visita.",
+      "detalhe": [
+        "Confirme com a coordenação o tipo de evento e quanta gente é esperada.",
+        "Levante 3 opções e compare: capacidade, custo, acesso, energia, som e banheiro.",
+        "Feche a reserva e peça confirmação por escrito com data, hora e valor.",
+        "Avise Logística, Divulgação, Gravação e Recepção.",
+        "Se for ao ar livre, defina o plano B de chuva."
+      ],
+      "areas": ["aulas"]
+    },
+    {
+      "id": "logistica",
+      "nome": "Logística",
+      "grupo": "eventos",
+      "icone": "building",
+      "resumo": "Você garante que todo o material esteja no lugar e funcionando antes da primeira pessoa chegar.",
+      "entrega": "Evento montado e testado antes de começar, e recolhido no fim.",
+      "ritmo": "Por evento. Chega antes e sai depois — algumas horas no dia.",
+      "detalhe": [
+        "Monte a lista de material: som, cadeiras, mesa, banner, água, energia.",
+        "Defina quem traz cada item e como chega no local.",
+        "Chegue antes para montar tudo.",
+        "Teste o som e o microfone antes do horário de início.",
+        "No fim, desmonte e devolva o que foi emprestado."
+      ],
+      "areas": ["aulas"]
+    },
+    {
+      "id": "divulgacao",
+      "nome": "Divulgação",
+      "grupo": "eventos",
+      "icone": "broadcast",
+      "resumo": "Você convida as pessoas para o encontro e confirma quem vai.",
+      "entrega": "Lista de confirmados entregue para a Recepção.",
+      "ritmo": "Começa 1 semana antes, com lembretes na véspera e no dia.",
+      "detalhe": [
+        "Monte a lista de convidados: contatos, grupos e lideranças de bairro.",
+        "Use o modelo de convite aprovado — personalize só o nome.",
+        "Dispare pelos canais e anote para quem já mandou.",
+        "Peça confirmação de presença e anote quem confirmou.",
+        "Mande lembrete na véspera e no dia, com local e como chegar."
+      ],
+      "areas": ["aulas"]
+    },
+    {
+      "id": "gravacao",
+      "nome": "Gravação",
+      "grupo": "eventos",
+      "icone": "play",
+      "resumo": "Você registra o evento com imagem e som bons, para virar conteúdo depois.",
+      "entrega": "O material bruto salvo e entregue para o Editor.",
+      "ritmo": "Por evento. Chega 1 hora antes e entrega o material no mesmo dia.",
+      "detalhe": [
+        "Chegue antes e teste câmera, bateria, memória e áudio.",
+        "Tenha um plano do que gravar: a chegada, as falas, o público e os detalhes.",
+        "Grave na horizontal e na vertical.",
+        "Priorize o áudio de quem está falando: chegue perto.",
+        "No fim, salve tudo e faça backup."
+      ],
+      "areas": ["aulas"]
+    },
+    {
+      "id": "recepcao",
+      "nome": "Recepção",
+      "grupo": "eventos",
+      "icone": "users",
+      "resumo": "Você recebe bem quem chega e anota o contato de cada pessoa nova.",
+      "entrega": "Lista de presença preenchida e contatos organizados para a coordenação.",
+      "ritmo": "Por evento. Mesa pronta 30 minutos antes.",
+      "detalhe": [
+        "Monte a mesa na entrada com a lista e o QR de cadastro.",
+        "Receba cada pessoa pelo nome e mostre onde sentar.",
+        "Registre quem chegou.",
+        "Fique de olho em novos rostos e lideranças que valem um contato depois.",
+        "No fim, entregue os contatos organizados para a coordenação."
+      ],
+      "areas": ["aulas"]
+    },
+    {
+      "id": "onde-precisar",
+      "nome": "Onde precisar",
+      "grupo": "outro",
+      "icone": "heartHandshake",
+      "resumo": "Você quer ajudar mas ainda não sabe em quê — a coordenação conversa e te encaixa.",
+      "entrega": "Uma conversa rápida para descobrir onde seu tempo e seu jeito rendem mais.",
+      "ritmo": "Você diz quanto tempo tem, e a gente acha uma função que caiba.",
+      "detalhe": [
+        "Marque esta opção se nenhuma das outras pareceu sua cara.",
+        "A coordenação vai conversar com você sobre tempo disponível e o que você gosta de fazer.",
+        "Ninguém precisa chegar sabendo: o movimento forma quem entra."
+      ],
+      "areas": ["aulas"]
+    }
+  ]
+}

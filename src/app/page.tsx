@@ -24,6 +24,16 @@ type LinkCard = {
 
 const links: LinkCard[] = [
   {
+    icon: "flag",
+    title: "Quero ajudar",
+    subtitle: "Entre pra militância da Missão Ceará",
+    description:
+      "Escolha como quer ajudar o movimento no Ceará — comunicação, eventos ou onde precisar — e a coordenação entra em contato",
+    href: "/quero-ajudar",
+    internal: true,
+    accent: true,
+  },
+  {
     icon: "calendar",
     title: "Programação da Semana",
     subtitle: "Onde e quando me assistir",

@@ -74,12 +74,8 @@ function agenda_atual(): array
     ];
 }
 
-function limpar_texto($v, int $max): string
-{
-    $s = is_string($v) ? trim($v) : '';
-    $s = preg_replace('/[\x00-\x1F\x7F]/u', '', $s) ?? '';
-    return mb_substr($s, 0, $max);
-}
+/* limpar_texto() agora mora no sessao.php: o formulário público de inscrição
+   precisa dela e não pode incluir este arquivo (que exige área 'agenda'). */
 
 /** Só http(s), caminho interno ou mailto/tel — nada de javascript: no href. */
 function limpar_link($v): string

@@ -22,6 +22,12 @@ jobs:
       - name: Semente do painel (preenche /painel no primeiro acesso)
         run: cp src/data/programacao.json out/dados-semente.json
 
+      # Lista canônica das funções da militância. O formulário (Next) importa no
+      # build; o PHP lê este arquivo para validar o que chega e sugerir as áreas
+      # na aprovação — uma fonte só, sem lista repetida em duas linguagens.
+      - name: Catálogo de funções (usado pelo painel PHP)
+        run: cp src/data/funcoes.json out/funcoes.json
+
       - name: Criar .htaccess (SPA + SEO headers)
         run: |
           cat > out/.htaccess <<'HTACCESS'
@@ -38,6 +44,7 @@ jobs:
           RewriteRule ^painel/estudio/?$ /painel/estudio.php [L]
           RewriteRule ^painel/agenda/?$ /painel/agenda.php [L]
           RewriteRule ^painel/aulas/?$ /painel/aulas.php [L]
+          RewriteRule ^painel/inscricoes/?$ /painel/inscricoes.php [L]
           RewriteRule ^painel/usuarios/?$ /painel/usuarios.php [L]
           RewriteRule ^painel/conta/?$ /painel/conta.php [L]
           # Redireciona /rota para /rota.html

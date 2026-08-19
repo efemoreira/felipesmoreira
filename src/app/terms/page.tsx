@@ -1,163 +1,82 @@
-export const metadata = {
-  title: 'Termos de Uso',
+import type { Metadata } from "next";
+import PaginaLegal, { type Secao } from "@/features/legal/PaginaLegal";
+
+export const metadata: Metadata = {
+  title: "Termos de Uso",
+  description:
+    "As regras de uso do site felipesmoreira.com e da área da militância da Missão Ceará.",
+  alternates: { canonical: "https://felipesmoreira.com/terms" },
 };
 
-export default function TermsOfUse() {
+const secoes: Secao[] = [
+  {
+    titulo: "O que é este site",
+    blocos: [
+      "felipesmoreira.com é o site de Felipe Moreira, militante do MBL Ceará e parte da Missão Ceará. Aqui ficam a apresentação do movimento, a programação da semana, conteúdo sobre o Ceará e o formulário para quem quer ajudar na militância.",
+      "Usar o site significa concordar com o que está escrito nesta página. Se você não concordar, é só não usar.",
+    ],
+  },
+  {
+    titulo: "Quem pode se inscrever",
+    blocos: [
+      "Qualquer pessoa a partir de 16 anos que queira ajudar o movimento. Ao se inscrever, você se compromete a dar informações verdadeiras — nome e telefone precisam ser seus de verdade, porque é por eles que a coordenação vai falar com você.",
+      "A inscrição não gera acesso automático. A coordenação analisa cada uma e decide, e não é obrigada a aceitar todas.",
+    ],
+  },
+  {
+    titulo: "Sua conta de acesso",
+    blocos: [
+      "Se a sua inscrição for aprovada, você recebe um usuário e uma senha provisória pelo WhatsApp. No primeiro acesso o site obriga você a criar sua própria senha.",
+      "A senha é sua responsabilidade: não empreste, não compartilhe e não deixe anotada onde outra pessoa alcance. Se desconfiar que alguém descobriu, avise a coordenação para trocarmos na hora.",
+      "A coordenação pode suspender ou encerrar um acesso a qualquer momento, principalmente em caso de uso indevido das ferramentas ou do conteúdo do movimento.",
+    ],
+  },
+  {
+    titulo: "Como usar as ferramentas e o conteúdo",
+    blocos: [
+      "A área da militância traz ferramentas, materiais de formação e artes do movimento. Eles existem para o trabalho da Missão Ceará. Ao usar, você concorda em:",
+      [
+        "Não repassar material interno para fora do movimento sem autorização.",
+        "Não usar as artes ou a identidade visual para outra campanha, candidatura ou fim comercial.",
+        "Não usar os contatos que você conhecer dentro do movimento para spam ou assunto fora da militância.",
+        "Seguir as regras de conduta do movimento na produção de conteúdo.",
+      ],
+    ],
+  },
+  {
+    titulo: "Conteúdo do site",
+    blocos: [
+      "Textos, imagens e materiais publicados aqui são do movimento ou usados com autorização. Compartilhar o conteúdo público nas redes é bem-vindo e incentivado — é justamente para isso que ele existe. O que não pode é alterar o conteúdo de modo a mudar o sentido, ou apresentá-lo como se fosse de outra pessoa.",
+      "A página “Heróis do Ceará” reúne informação histórica de domínio público, organizada pelo movimento.",
+    ],
+  },
+  {
+    titulo: "Disponibilidade",
+    blocos: [
+      "O site é mantido por uma equipe pequena e pode ficar fora do ar para manutenção ou por problema no serviço de hospedagem. A gente faz o possível para manter tudo funcionando, mas não dá para garantir funcionamento ininterrupto.",
+    ],
+  },
+  {
+    titulo: "Seus dados",
+    blocos: [
+      "O tratamento dos seus dados pessoais está explicado na Política de Privacidade, que faz parte destes termos.",
+    ],
+  },
+  {
+    titulo: "Mudanças nestes termos",
+    blocos: [
+      "Estes termos podem mudar conforme o site cresce. Mudança relevante é avisada nesta página, com a data de atualização no topo.",
+    ],
+  },
+];
+
+export default function TermosDeUso() {
   return (
-    <main className="min-h-screen bg-white py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl mx-auto">
-        <h1 className="text-4xl font-bold text-gray-900 mb-8">Termos de Uso</h1>
-        
-        <div className="space-y-8 text-gray-700">
-          <section>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">1. Aceitação dos Termos</h2>
-            <p>
-              Ao acessar e utilizar este aplicativo, você aceita estar vinculado a estes Termos de Uso. 
-              Se não concorda com qualquer parte destes termos, você não está autorizado a utilizar o aplicativo.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">2. Descrição do Serviço</h2>
-            <p>
-              Este aplicativo fornece funcionalidades para automação e gerenciamento de mensagens do WhatsApp, 
-              incluindo envio de mensagens, automação de respostas e organização de conversas. 
-              O serviço é destinado exclusivamente para uso pessoal.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">3. Uso Autorizado</h2>
-            <p className="mb-4">Você concorda em utilizar este aplicativo apenas para:</p>
-            <ul className="list-disc list-inside space-y-2">
-              <li>Fins pessoais e privados</li>
-              <li>Comunicação legítima através do WhatsApp</li>
-              <li>Gerenciamento de suas próprias conversas</li>
-              <li>Fins não comerciais, a menos que autorizado por escrito</li>
-            </ul>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">4. Uso Proibido</h2>
-            <p className="mb-4">Você concorda em NÃO utilizar este aplicativo para:</p>
-            <ul className="list-disc list-inside space-y-2">
-              <li>Enviar spam ou mensagens não solicitadas</li>
-              <li>Assédio, ameaças ou comportamento abusivo</li>
-              <li>Violação de privacidade ou direitos de terceiros</li>
-              <li>Atividades ilegais ou fraudulentas</li>
-              <li>Distribuição de conteúdo malicioso ou prejudicial</li>
-              <li>Tentativas de acesso não autorizado a dados alheios</li>
-              <li>Violação dos Termos de Serviço do WhatsApp</li>
-            </ul>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">5. Responsabilidade do Usuário</h2>
-            <p>
-              Você é responsável por todas as atividades realizadas através de sua conta. 
-              Você concorda em manter a confidencialidade de seus dados de acesso e notificar imediatamente 
-              sobre qualquer uso não autorizado.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">6. Conformidade Legal</h2>
-            <p>
-              Você concorda em cumprir todas as leis, regulamentos e políticas aplicáveis, 
-              incluindo os Termos de Serviço do WhatsApp. O usuário é o único responsável 
-              por garantir que seu uso do aplicativo está em conformidade com a legislação local.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">7. Descargo de Responsabilidade</h2>
-            <p>
-              Este aplicativo é fornecido &quot;como está&quot; e &quot;conforme disponível&quot;. 
-              Não garantimos que o serviço será ininterrupto, seguro ou livre de erros. 
-              O criador não é responsável por danos diretos ou indiretos resultantes do uso ou 
-              incapacidade de usar o aplicativo.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">8. Limitação de Responsabilidade</h2>
-            <p>
-              O criador deste aplicativo não será responsável por:
-            </p>
-            <ul className="list-disc list-inside space-y-2">
-              <li>Perda de dados ou mensagens</li>
-              <li>Interrupção do serviço</li>
-              <li>Danos causados por vírus ou malware</li>
-              <li>Problemas de segurança não relacionados ao aplicativo</li>
-              <li>Ações de terceiros, incluindo plataformas como WhatsApp</li>
-            </ul>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">9. Modificações do Serviço</h2>
-            <p>
-              Nos reservamos o direito de modificar, suspender ou descontinuar o aplicativo a qualquer momento, 
-              com ou sem aviso prévio. Não seremos responsáveis por qualquer modificação ou descontinuação do serviço.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">10. Rescisão</h2>
-            <p>
-              Podemos rescindir sua permissão de usar este aplicativo a qualquer momento, 
-              sem aviso prévio, se você violar estes Termos de Uso.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">11. Propriedade Intelectual</h2>
-            <p>
-              Todos os direitos, títulos e juros no aplicativo e seu conteúdo permanecem com o criador. 
-              Você não pode reproduzir, modificar ou distribuir o aplicativo sem permissão explícita.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">12. Integração com WhatsApp</h2>
-            <p>
-              Este aplicativo é uma ferramenta independente que funciona em conjunto com o WhatsApp. 
-              O usuário é responsável por cumprir os Termos de Serviço do WhatsApp. 
-              O criador não é afiliado, autorizado ou endossado pelo WhatsApp ou Meta Platforms, Inc.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">13. Alterações nos Termos</h2>
-            <p>
-              Reservamos o direito de alterar estes Termos de Uso a qualquer momento. 
-              Alterações significativas serão comunicadas ao usuário. O uso continuado do aplicativo 
-              após alterações implica aceitação dos novos termos.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">14. Lei Aplicável</h2>
-            <p>
-              Estes Termos de Uso são regidos pelas leis aplicáveis da jurisdição onde o criador reside. 
-              Qualquer disputa será resolvida nos tribunais competentes dessa jurisdição.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">15. Contato</h2>
-            <p>
-              Se tiver dúvidas sobre estes Termos de Uso, entre em contato através das informações 
-              de contato fornecidas no aplicativo.
-            </p>
-          </section>
-
-          <section>
-            <p className="text-sm text-gray-500">
-              Última atualização: {new Date().toLocaleDateString('pt-BR')}
-            </p>
-          </section>
-        </div>
-      </div>
-    </main>
+    <PaginaLegal
+      titulo="Termos de Uso"
+      resumo="As regras de convivência do site e da área da militância. Em resumo: informação verdadeira na inscrição, senha é pessoal, e material do movimento é para o movimento."
+      atualizadoEm="19 de agosto de 2026"
+      secoes={secoes}
+    />
   );
 }

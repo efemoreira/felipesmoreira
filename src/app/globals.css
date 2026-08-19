@@ -40,3 +40,17 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Trava global contra rolagem horizontal: `clip` não cria contexto de rolagem,
+   então continua valendo para os fundos e barras em `position: fixed`. */
+html {
+  overflow-x: clip;
+}
+
+/* Abaixo de 16px o Safari do iPhone dá zoom no site inteiro ao focar o campo,
+   e o visitante fica preso no zoom. Vale para todo formulário do site. */
+input,
+select,
+textarea {
+  font-size: max(16px, 1em);
+}

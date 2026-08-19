@@ -25,6 +25,7 @@ a { color:var(--ouro); }
 .nav a, .nav button {
   font:inherit; font-size:12px; letter-spacing:1px; text-transform:uppercase; cursor:pointer;
   padding:7px 11px; border:2px solid transparent; background:transparent; color:#c9c2b2; text-decoration:none;
+  display:inline-flex; align-items:center; min-height:44px;
 }
 .nav a:hover, .nav button:hover { border-color:rgba(255,203,5,.45); color:var(--creme); }
 .nav a[aria-current="page"] { border-color:var(--ouro); color:var(--ouro); }
@@ -35,9 +36,15 @@ a { color:var(--ouro); }
 fieldset { border:2px solid rgba(255,203,5,.35); margin:0 0 18px; padding:16px; background:rgba(0,0,0,.25); }
 legend { color:var(--ouro); font-size:12px; letter-spacing:2px; text-transform:uppercase; padding:0 8px; }
 label { display:block; font-size:12px; letter-spacing:1px; text-transform:uppercase; color:#c9c2b2; margin:0 0 4px; }
-input[type=text], input[type=password], select, textarea {
-  width:100%; padding:9px 10px; background:#0e0c08; color:var(--creme);
-  border:2px solid rgba(255,203,5,.3); border-radius:0; font:inherit;
+/* Todos os tipos usados no painel precisam entrar aqui: um type novo (tel,
+   email…) fora desta lista vira caixa branca do navegador no fundo escuro.
+   O font-size de 16px é o mínimo que impede o iPhone de dar zoom no foco. */
+input[type=text], input[type=password], input[type=tel], input[type=email],
+input[type=number], input[type=date], input[type=time], input[type=url],
+input[type=search], select, textarea {
+  width:100%; padding:11px 10px; background:#0e0c08; color:var(--creme);
+  border:2px solid rgba(255,203,5,.3); border-radius:0;
+  font:inherit; font-size:16px; min-height:44px;
 }
 input:focus, select:focus, textarea:focus { outline:2px solid var(--ouro); outline-offset:1px; border-color:var(--ouro); }
 .linha { display:grid; gap:12px; }
@@ -122,16 +129,40 @@ input:focus, select:focus, textarea:focus { outline:2px solid var(--ouro); outli
   .item-topo { flex-wrap:wrap; }
   .cartao-thumb { width:84px; }
   .cartao-titulo { font-size:13px; }
+
+  /* No celular a barra de cima empilhava numa torre que comia a tela:
+     a marca some (já tem o título da página) e a navegação rola na horizontal. */
+  body { padding:16px 12px 48px; }
+  .topo-painel { gap:8px; margin-bottom:16px; }
+  .marca { display:none; }
+  .nav {
+    flex-wrap:nowrap; overflow-x:auto; width:100%;
+    -webkit-overflow-scrolling:touch; scrollbar-width:none;
+  }
+  .nav::-webkit-scrollbar { display:none; }
+  .nav a, .nav button { flex:0 0 auto; }
+  .quem { width:100%; }
+  .caixa { margin:4vh auto; padding:20px 16px; }
+  .acoes .btn { flex:1 1 auto; }
+}
+
+/* Em telas de toque o :hover fica "grudado" depois do toque */
+@media (hover: none) {
+  .btn:hover, .btn-ouro:hover, .btn-risco:hover,
+  .nav a:hover, .nav button:hover { background:transparent; }
+  .btn-ouro:hover { background:var(--ouro); }
 }
 
 .btn {
-  display:inline-flex; align-items:center; gap:7px; cursor:pointer; font:inherit; font-size:13px;
-  letter-spacing:1.5px; text-transform:uppercase; padding:10px 16px;
+  display:inline-flex; align-items:center; justify-content:center; gap:7px; cursor:pointer;
+  font:inherit; font-size:13px;
+  letter-spacing:1.5px; text-transform:uppercase; padding:10px 16px; min-height:44px;
   background:transparent; color:var(--creme); border:2px solid var(--ouro); text-decoration:none;
 }
 .btn:hover { background:rgba(255,203,5,.15); }
 .btn-ouro { background:var(--ouro); color:var(--ink); border-color:var(--ink); font-weight:600; }
 .btn-ouro:hover { background:#ffd93d; }
+/* menor visualmente, mas mantém os 44px de alvo de toque do .btn */
 .btn-mini { padding:6px 10px; font-size:11px; border-color:rgba(255,203,5,.45); }
 .btn-risco { border-color:#f87171; color:#fecaca; }
 .btn-risco:hover { background:rgba(248,113,113,.15); }

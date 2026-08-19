@@ -56,8 +56,10 @@ const fieldStyle: React.CSSProperties = {
   background: C.cream,
   border: `3px solid ${C.ink}`,
   boxShadow: "3px 3px 0 rgba(24,18,3,.28)",
-  padding: "9px 12px",
-  fontSize: 14,
+  padding: "10px 12px",
+  /* 16px é o mínimo que impede o iPhone de dar zoom ao focar o campo */
+  fontSize: 16,
+  minHeight: 44,
   fontFamily: FONT_BITTER,
   color: C.ink,
   borderRadius: 0,
@@ -106,6 +108,9 @@ export default function HeroisClient() {
         background: `${HATCH}, ${C.paper}`,
         color: C.ink,
         fontFamily: FONT_BITTER,
+        /* o layout declara dark; esta página é papel claro, e sem isto os
+           <select> saem com fundo escuro do navegador */
+        colorScheme: "light",
       }}
     >
       <style>{`
@@ -146,7 +151,8 @@ export default function HeroisClient() {
               background: C.cream,
               border: `3px solid ${C.ink}`,
               boxShadow: "3px 3px 0 rgba(24,18,3,.28)",
-              padding: "6px 14px",
+              padding: "11px 16px",
+              minHeight: 44,
               marginBottom: 22,
             }}
           >
@@ -361,6 +367,8 @@ export default function HeroisClient() {
                 borderLeft: `4px solid ${C.ink}`,
                 boxShadow: "-6px 0 0 rgba(24,18,3,.3)",
                 overflowY: "auto",
+                /* impede o scroll de "vazar" para a página atrás no iOS */
+                overscrollBehavior: "contain",
                 zIndex: 999,
                 padding: "0 22px 26px",
               }}
@@ -428,8 +436,8 @@ export default function HeroisClient() {
                   aria-label="Fechar ficha"
                   style={{
                     flexShrink: 0,
-                    width: 38,
-                    height: 38,
+                    width: 44,
+                    height: 44,
                     display: "grid",
                     placeItems: "center",
                     background: C.gold,
