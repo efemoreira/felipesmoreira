@@ -12,7 +12,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/sessao.php';
 
 /** Versão do CSS — muda junto com o painel.css para furar o cache do navegador. */
-const VERSAO_ESTILO = '2';
+const VERSAO_ESTILO = '3';
 
 function abrir_pagina(string $titulo, bool $comNav = true): void
 {
