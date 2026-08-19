@@ -36,13 +36,23 @@ apaga o que foi editado no painel:
 - `agenda.json` — a agenda que a página `/programacao` lê.
 - `imagens/` — as fotos enviadas nos itens da agenda.
 - `backups/` — as 12 últimas versões da agenda.
-- `tentativas.json` — contador de tentativas de login, por login.
+- `tentativas.php` — contador de tentativas de login, por login.
+- `inscricoes.php` — quem se inscreveu em `/quero-ajudar`, com telefone e e-mail.
+- `inscricoes-limite.php` e `segredo.php` — teto de envios do formulário público.
 
-O `.htaccess` dessa pasta bloqueia o download de qualquer `.php`, então os hashes
-não saem pela web. O `agenda.json` continua legível, porque a página precisa dele.
+O `.htaccess` dessa pasta é **fechado por padrão**: bloqueia o download de
+qualquer `.php` e de qualquer `.json`, e abre exceção só para o `agenda.json`,
+que a página `/programacao` precisa ler. As fotos em `imagens/` continuam
+públicas — a regra é por extensão e elas são `.jpg`.
+
+Por isso todo arquivo com dado sensível é `.php` retornando array: hash de
+senha, telefone e e-mail de inscrição, contador de tentativas.
 
 Se existir um `dados/config.php` do painel antigo (senha única, sem usuários),
 ele é **ignorado** e pode ser apagado.
+
+Se existir um `dados/tentativas.json` (versão antiga, que ficava legível pela
+web), ele é **apagado sozinho** no primeiro acesso ao painel.
 
 ## Primeiro acesso
 

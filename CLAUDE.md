@@ -88,13 +88,21 @@ segue regras próprias:
 
 ### Onde guardar dado pessoal
 
-`public_html/dados/` tem um `.htaccess` que bloqueia **só** arquivos `.php` —
-`.json` de lá é baixável pela web de propósito (a página `/programacao` busca
-`agenda.json`). Então:
+`public_html/dados/` é **fechado por padrão**: o `.htaccess` gerado por
+`preparar_pastas()` bloqueia `.php` e `.json`, e libera **um único arquivo** —
+`agenda.json`, porque a página `/programacao` busca ele no navegador. A ordem
+importa: a liberação vem depois do bloqueio, e a última regra que casa é a que
+vale.
 
-> **Qualquer arquivo com dado pessoal — telefone, e-mail, endereço — tem que
-> ser `.php` retornando array** (`var_export`), como `usuarios.php` e
-> `inscricoes.php`. Um `.json` ali vaza para qualquer um com o link.
+> **Qualquer arquivo com dado pessoal — telefone, e-mail, endereço, hash de
+> senha — deve ser `.php` retornando array** (`var_export`), como
+> `usuarios.php`, `inscricoes.php` e `tentativas.php`.
+
+As imagens da agenda (`/dados/imagens/*.jpg`) continuam públicas: a regra é por
+extensão e elas não são `.php` nem `.json`.
+
+Ao precisar de um arquivo novo em `/dados` legível pela web, acrescente um
+`<Files>` liberando **aquele nome**, nunca afrouxe o bloqueio por extensão.
 
 ## Funções da militância
 
@@ -147,6 +155,31 @@ link de WhatsApp. O que já está resolvido e não deve regredir:
   seletor de estilo (linha dos `input[type=...]`) — type fora da lista vira
   caixa branca no fundo escuro. E **suba `VERSAO_ESTILO` em `layout.php`**, que
   o `.htaccess` põe cache imutável de 1 ano em `.css`.
+
+## Visual do painel
+
+O painel usa a **mesma linguagem do site público**: ouro sobre noite, bordas
+grossas, sombra dura deslocada, nada arredondado. Militante entra nos dois, e
+não pode parecer que trocou de produto.
+
+- **Fontes:** Alfa Slab One (títulos), Special Elite (rótulos, botões, navegação)
+  e Bitter (texto). Ficam em `public/painel/fontes/`, servidas do próprio
+  domínio — ver o `LEIA-ME.md` de lá para licenças e como atualizar. Não troque
+  por CDN de terceiro: a Política de Privacidade promete que nada do visitante
+  vai para fora.
+- **Ícones:** `public/painel/icones.php`, com os mesmos traçados de
+  `src/components/icons.tsx`. Ícone novo entra nos dois para não divergir.
+- **Tokens** ficam no `:root` do `painel.css` (`--ouro`, `--ink`, `--display`,
+  `--etiqueta`, `--corpo`…). Use-os em vez de repetir cor ou família na regra.
+
+**Cuidado com especificidade em cartão:** uma regra como `.area-cartao span`
+(0,1,1) vence `.area-icone` (0,1,0) e repinta o ícone. Ao estilizar filhos de um
+cartão, escreva o seletor com a classe junto (`.area-cartao .area-icone`) ou
+mire o filho direto (`.area-texto > span`).
+
+**Fila grande pede recolher:** listas de decisão (como as inscrições) mostram só
+o resumo, com o formulário dentro de um `<details class="decidir">`. Com 20
+pessoas na fila, formulário aberto para todas vira um paredão impossível de ler.
 
 ### Áreas e permissões
 
