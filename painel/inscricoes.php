@@ -259,82 +259,96 @@ abrir_pagina('Inscrições');
 
     <?php foreach ($novas as $i): ?>
       <?php $sugeridas = areas_sugeridas($i['funcoes']); ?>
-      <div class="item" style="padding:14px">
-        <div class="item-topo" style="cursor:default">
-          <span class="item-num"><?= h($i['nome']) ?></span>
-          <span class="selo selo-cinza"><?= h($formatar($i['criadoEm'])) ?></span>
-        </div>
+      <article class="ficha">
+        <header class="ficha-topo">
+          <span class="ficha-inicial" aria-hidden="true"><?= h(iniciais($i['nome'])) ?></span>
+          <span class="ficha-quem">
+            <strong><?= h($i['nome']) ?></strong>
+            <span><?= h($i['bairro']) ?>, <?= h($i['cidade']) ?> · chegou <?= h($formatar($i['criadoEm'])) ?></span>
+          </span>
+        </header>
 
-        <div class="linha g2" style="margin:12px 0">
+        <dl class="ficha-dados">
           <div>
-            <p style="margin:0 0 6px"><strong>WhatsApp:</strong>
+            <dt>WhatsApp</dt>
+            <dd>
               <a href="https://wa.me/<?= h(numero_whatsapp($i['telefone'])) ?>" target="_blank" rel="noopener">
-                <?= h($i['telefone']) ?>
+                <?= h(telefone_bonito($i['telefone'])) ?>
               </a>
-            </p>
-            <p style="margin:0 0 6px"><strong>Onde mora:</strong> <?= h($i['bairro']) ?>, <?= h($i['cidade']) ?></p>
-            <?php if ($i['email'] !== ''): ?>
-              <p style="margin:0"><strong>E-mail:</strong> <?= h($i['email']) ?></p>
-            <?php endif; ?>
+            </dd>
           </div>
-          <div>
-            <p style="margin:0 0 6px"><strong>Quer ajudar em:</strong></p>
-            <p style="margin:0">
+          <?php if ($i['email'] !== ''): ?>
+            <div>
+              <dt>E-mail</dt>
+              <dd><?= h($i['email']) ?></dd>
+            </div>
+          <?php endif; ?>
+          <div class="ficha-funcoes">
+            <dt>Quer ajudar em</dt>
+            <dd>
               <?php foreach ($i['funcoes'] as $f): ?>
                 <span class="selo"><?= h(nome_funcao($f)) ?></span>
               <?php endforeach; ?>
-            </p>
+            </dd>
           </div>
-        </div>
+        </dl>
 
-        <form method="post">
-          <input type="hidden" name="acao" value="aprovar">
-          <input type="hidden" name="id" value="<?= h($i['id']) ?>">
-          <input type="hidden" name="csrf" value="<?= h(token()) ?>">
+        <!-- a decisão fica recolhida: com fila grande, a lista continua legível -->
+        <details class="decidir">
+          <summary class="btn btn-ouro">Decidir sobre esta inscrição</summary>
+          <div class="decidir-corpo">
+            <form method="post">
+              <input type="hidden" name="acao" value="aprovar">
+              <input type="hidden" name="id" value="<?= h($i['id']) ?>">
+              <input type="hidden" name="csrf" value="<?= h(token()) ?>">
 
-          <div class="linha g2">
-            <div class="campo">
-              <label for="u-<?= h($i['id']) ?>">Login de acesso</label>
-              <input id="u-<?= h($i['id']) ?>" type="text" name="usuario"
-                     value="<?= h(login_sugerido($i['nome'])) ?>" maxlength="24" required>
-            </div>
-            <div class="campo">
-              <label for="p-<?= h($i['id']) ?>">Papel</label>
-              <select id="p-<?= h($i['id']) ?>" name="papel">
-                <?php foreach (PAPEIS as $chave => $rotulo): ?>
-                  <option value="<?= h($chave) ?>"<?= $chave === 'editor' ? ' selected' : '' ?>><?= h($rotulo) ?></option>
-                <?php endforeach; ?>
-              </select>
-            </div>
+              <div class="linha g2">
+                <div class="campo">
+                  <label for="u-<?= h($i['id']) ?>">Login de acesso</label>
+                  <input id="u-<?= h($i['id']) ?>" type="text" name="usuario"
+                         value="<?= h(login_sugerido($i['nome'])) ?>" maxlength="24" required>
+                  <p class="dica">Sugerido a partir do nome. Pode trocar.</p>
+                </div>
+                <div class="campo">
+                  <label for="p-<?= h($i['id']) ?>">Papel</label>
+                  <select id="p-<?= h($i['id']) ?>" name="papel">
+                    <?php foreach (PAPEIS as $chave => $rotulo): ?>
+                      <option value="<?= h($chave) ?>"<?= $chave === 'editor' ? ' selected' : '' ?>><?= h($rotulo) ?></option>
+                    <?php endforeach; ?>
+                  </select>
+                  <p class="dica">Administrador mexe em usuários. Na dúvida, deixe Editor.</p>
+                </div>
+              </div>
+
+              <div class="campo">
+                <label>Áreas liberadas</label>
+                <div class="canais">
+                  <?php foreach (AREAS as $chave => $rotulo): ?>
+                    <label class="check">
+                      <input type="checkbox" name="areas[]" value="<?= h($chave) ?>"
+                        <?= in_array($chave, $sugeridas, true) ? ' checked' : '' ?>>
+                      <?= h($rotulo) ?>
+                    </label>
+                  <?php endforeach; ?>
+                </div>
+                <p class="dica">Já vem marcado conforme as funções que a pessoa escolheu. Dá para mudar depois em Usuários.</p>
+              </div>
+
+              <div class="acoes">
+                <button class="btn btn-ouro" type="submit">Aprovar e criar acesso</button>
+              </div>
+            </form>
+
+            <form method="post" class="decidir-recusa"
+                  onsubmit="return confirm('Recusar a inscrição de <?= h($i['nome']) ?>? Ela fica registrada, mas não vira acesso.')">
+              <input type="hidden" name="acao" value="recusar">
+              <input type="hidden" name="id" value="<?= h($i['id']) ?>">
+              <input type="hidden" name="csrf" value="<?= h(token()) ?>">
+              <button class="btn btn-mini btn-risco" type="submit">Recusar inscrição</button>
+            </form>
           </div>
-
-          <div class="campo">
-            <label>Áreas liberadas</label>
-            <div class="canais">
-              <?php foreach (AREAS as $chave => $rotulo): ?>
-                <label class="check">
-                  <input type="checkbox" name="areas[]" value="<?= h($chave) ?>"
-                    <?= in_array($chave, $sugeridas, true) ? ' checked' : '' ?>>
-                  <?= h($rotulo) ?>
-                </label>
-              <?php endforeach; ?>
-            </div>
-            <p class="dica">Já vem marcado conforme as funções que a pessoa escolheu. Dá para mudar depois em Usuários.</p>
-          </div>
-
-          <div class="acoes">
-            <button class="btn btn-ouro" type="submit">Aprovar e criar acesso</button>
-          </div>
-        </form>
-
-        <form method="post" style="margin-top:10px"
-              onsubmit="return confirm('Recusar a inscrição de <?= h($i['nome']) ?>? Ela fica registrada, mas não vira acesso.')">
-          <input type="hidden" name="acao" value="recusar">
-          <input type="hidden" name="id" value="<?= h($i['id']) ?>">
-          <input type="hidden" name="csrf" value="<?= h(token()) ?>">
-          <button class="btn btn-mini btn-risco" type="submit">Recusar</button>
-        </form>
-      </div>
+        </details>
+      </article>
     <?php endforeach; ?>
   </fieldset>
 

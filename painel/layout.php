@@ -10,9 +10,10 @@ declare(strict_types=1);
  */
 
 require_once __DIR__ . '/sessao.php';
+require_once __DIR__ . '/icones.php';
 
 /** Versão do CSS — muda junto com o painel.css para furar o cache do navegador. */
-const VERSAO_ESTILO = '3';
+const VERSAO_ESTILO = '4';
 
 function abrir_pagina(string $titulo, bool $comNav = true): void
 {
@@ -30,29 +31,32 @@ function abrir_pagina(string $titulo, bool $comNav = true): void
 <body>
 <?php if ($comNav && $u !== null): ?>
   <div class="topo-painel">
-    <span class="marca">Painel · Missão Ceará</span>
-    <nav class="nav">
-      <?php
-      $aqui = basename((string) ($_SERVER['SCRIPT_NAME'] ?? ''));
-      $links = [['index.php', '/painel/', 'Início']];
-      foreach (areas_do_usuario() as $area) {
-          $links[] = [basename(DESTINO_AREA[$area]['url']), DESTINO_AREA[$area]['url'], AREAS[$area]];
-      }
-      if (e_admin()) {
-          $links[] = ['usuarios.php', '/painel/usuarios.php', 'Usuários'];
-      }
-      $links[] = ['conta.php', '/painel/conta.php', 'Minha senha'];
-      foreach ($links as [$arquivo, $url, $rotulo]):
-      ?>
+    <span class="marca">Missão Ceará</span>
+    <?php
+    $aqui = basename((string) ($_SERVER['SCRIPT_NAME'] ?? ''));
+    // as áreas de trabalho ficam à esquerda; conta e saída, separadas à direita
+    $links = [['index.php', '/painel/', 'Início']];
+    foreach (areas_do_usuario() as $area) {
+        $links[] = [basename(DESTINO_AREA[$area]['url']), DESTINO_AREA[$area]['url'], AREAS[$area]];
+    }
+    if (e_admin()) {
+        $links[] = ['usuarios.php', '/painel/usuarios.php', 'Usuários'];
+    }
+    ?>
+    <nav class="nav" aria-label="Áreas do painel">
+      <?php foreach ($links as [$arquivo, $url, $rotulo]): ?>
         <a href="<?= h($url) ?>"<?= $aqui === $arquivo ? ' aria-current="page"' : '' ?>><?= h($rotulo) ?></a>
       <?php endforeach; ?>
+    </nav>
+    <span class="quem"><strong><?= h($u['nome']) ?></strong> · <?= h(PAPEIS[$u['papel']]) ?></span>
+    <div class="nav nav-conta">
+      <a href="/painel/conta.php"<?= $aqui === 'conta.php' ? ' aria-current="page"' : '' ?>>Minha senha</a>
       <form method="post" action="/painel/" style="display:inline">
         <input type="hidden" name="acao" value="sair">
         <input type="hidden" name="csrf" value="<?= h(token()) ?>">
         <button type="submit">Sair</button>
       </form>
-    </nav>
-    <span class="quem"><strong><?= h($u['nome']) ?></strong> · <?= h(PAPEIS[$u['papel']]) ?></span>
+    </div>
   </div>
 <?php endif;
 }

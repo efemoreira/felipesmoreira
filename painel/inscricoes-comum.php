@@ -189,6 +189,31 @@ function novo_id_inscricao(): string
     return bin2hex(random_bytes(8));
 }
 
+/** 85997223863 -> (85) 99722-3863. Guardamos só dígitos; ler assim é humano. */
+function telefone_bonito(string $telefone): string
+{
+    $d = so_digitos($telefone);
+    if (strlen($d) === 11) {
+        return sprintf('(%s) %s-%s', substr($d, 0, 2), substr($d, 2, 5), substr($d, 7));
+    }
+    if (strlen($d) === 10) {
+        return sprintf('(%s) %s-%s', substr($d, 0, 2), substr($d, 2, 4), substr($d, 6));
+    }
+    return $d;
+}
+
+/** As iniciais do nome, para o cartão ter um rosto. */
+function iniciais(string $nome): string
+{
+    $partes = array_values(array_filter(explode(' ', trim($nome))));
+    if ($partes === []) {
+        return '?';
+    }
+    $primeira = mb_strtoupper(mb_substr($partes[0], 0, 1));
+    $ultima = count($partes) > 1 ? mb_strtoupper(mb_substr((string) end($partes), 0, 1)) : '';
+    return $primeira . $ultima;
+}
+
 /* ===================== limite por IP ===================== */
 
 /**

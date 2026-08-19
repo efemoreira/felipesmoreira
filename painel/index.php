@@ -133,22 +133,30 @@ if ($u === null) {
         <button class="btn btn-ouro" type="submit">Criar administrador</button>
       </form>
     <?php else: ?>
-      <h1>Painel</h1>
-      <p class="sub">Missão Ceará</p>
+      <div class="caixa-selo" aria-hidden="true">✦</div>
+      <h1>Missão Ceará</h1>
+      <p class="sub">
+        A área de trabalho da militância. Entre com o usuário e a senha que a
+        coordenação mandou no seu WhatsApp.
+      </p>
       <?php recado($aviso, $sucesso); ?>
       <form method="post">
         <input type="hidden" name="acao" value="entrar">
         <div class="campo">
-          <label for="usuario">Login</label>
+          <label for="usuario">Seu usuário</label>
           <input id="usuario" type="text" name="usuario" maxlength="24" required autofocus
                  autocomplete="username" value="<?= h($_POST['usuario'] ?? '') ?>">
         </div>
         <div class="campo">
-          <label for="senha">Senha</label>
+          <label for="senha">Sua senha</label>
           <input id="senha" type="password" name="senha" autocomplete="current-password" required>
         </div>
         <button class="btn btn-ouro" type="submit">Entrar</button>
       </form>
+      <p class="dica" style="margin-top:20px">
+        Esqueceu a senha ou ainda não tem acesso? Fale com a coordenação no
+        <a href="https://wa.me/5585997223863" target="_blank" rel="noopener">WhatsApp</a>.
+      </p>
     <?php endif; ?>
     </div>
     <?php
@@ -158,6 +166,18 @@ if ($u === null) {
 
 /* ---------- hub ---------- */
 $areas = areas_do_usuario();
+
+/* Quantas inscrições esperam decisão — vira o contador no cartão da área.
+   Sem isso o Felipe só descobre que tem gente na fila entrando na tela. */
+$inscricoes_esperando = 0;
+if (in_array('inscricoes', $areas, true)) {
+    require_once __DIR__ . '/inscricoes-comum.php';
+    foreach (ler_inscricoes() as $i) {
+        if ($i['status'] === 'nova') {
+            $inscricoes_esperando++;
+        }
+    }
+}
 $negado = (string) ($_GET['negado'] ?? '');
 if ($negado !== '') {
     $aviso = $negado === 'usuarios'
@@ -180,16 +200,32 @@ abrir_pagina('Início');
   <?php else: ?>
     <div class="areas-hub">
       <?php foreach ($areas as $area): ?>
-        <a class="area-cartao" href="<?= h(DESTINO_AREA[$area]['url']) ?>">
-          <strong><?= h(AREAS[$area]) ?></strong>
-          <span><?= h(DESTINO_AREA[$area]['resumo']) ?></span>
+        <?php $pend = $area === 'inscricoes' ? $inscricoes_esperando : 0; ?>
+        <a class="area-cartao<?= $pend > 0 ? ' tem-aviso' : '' ?>" href="<?= h(DESTINO_AREA[$area]['url']) ?>">
+          <?php if ($pend > 0): ?>
+            <span class="area-aviso" aria-hidden="true"><?= $pend ?></span>
+          <?php endif; ?>
+          <span class="area-icone"><?= icone(ICONE_AREA[$area] ?? 'star') ?></span>
+          <span class="area-texto">
+            <strong><?= h(AREAS[$area]) ?></strong>
+            <span>
+              <?php if ($pend > 0): ?>
+                <?= $pend === 1 ? '1 pessoa esperando decisão' : $pend . ' pessoas esperando decisão' ?>
+              <?php else: ?>
+                <?= h(DESTINO_AREA[$area]['resumo']) ?>
+              <?php endif; ?>
+            </span>
+          </span>
         </a>
       <?php endforeach; ?>
 
       <?php if (e_admin()): ?>
         <a class="area-cartao" href="/painel/usuarios.php">
-          <strong>Usuários</strong>
-          <span>Quem entra no painel e o que cada um pode abrir</span>
+          <span class="area-icone"><?= icone('users') ?></span>
+          <span class="area-texto">
+            <strong>Usuários</strong>
+            <span>Quem entra no painel e o que cada um pode abrir</span>
+          </span>
         </a>
       <?php endif; ?>
     </div>

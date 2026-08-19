@@ -19,7 +19,11 @@ const SESSAO_SEG = 7200;  // 2 h de inatividade
 
 const PASTA_DADOS    = __DIR__ . '/../dados';
 const ARQ_USUARIOS   = PASTA_DADOS . '/usuarios.php';
-const ARQ_TENTATIVAS = PASTA_DADOS . '/tentativas.json';
+// .php, e não .json: o arquivo tem os logins de quem errou senha, e em /dados
+// só arquivo .php fica fora do alcance da web.
+const ARQ_TENTATIVAS = PASTA_DADOS . '/tentativas.php';
+/** Versão antiga do arquivo acima, legível pela web — apagada ao passar por aqui. */
+const ARQ_TENTATIVAS_ANTIGO = PASTA_DADOS . '/tentativas.json';
 const PASTA_BACKUP   = PASTA_DADOS . '/backups';
 const PASTA_IMAGENS  = PASTA_DADOS . '/imagens';
 const URL_IMAGENS    = '/dados/imagens';  // como a página enxerga a pasta
@@ -121,6 +125,9 @@ function preparar_pastas(): void
     $negar = "<IfModule mod_authz_core.c>\n  Require all denied\n</IfModule>\n"
            . "<IfModule !mod_authz_core.c>\n  Order allow,deny\n  Deny from all\n</IfModule>\n";
 
+    $permitir = "<IfModule mod_authz_core.c>\n  Require all granted\n</IfModule>\n"
+              . "<IfModule !mod_authz_core.c>\n  Order allow,deny\n  Allow from all\n</IfModule>\n";
+
     // Nada de PHP rodando dentro da pasta de imagens, mesmo se algo escapar da validação.
     fixar_regra(
         PASTA_IMAGENS . '/.htaccess',
@@ -130,12 +137,29 @@ function preparar_pastas(): void
     // Backups não saem pela web.
     fixar_regra(PASTA_BACKUP . '/.htaccess', "Options -Indexes\n" . $negar);
 
-    // Em /dados o agenda.json precisa ser legível (a página lê), mas nenhum .php
-    // pode ser baixado: é lá que ficam os hashes das senhas.
+    /* Em /dados nada sai pela web, com UMA exceção: o agenda.json, que a página
+       /programacao busca no navegador.
+
+       O .php já era bloqueado (é onde ficam os hashes de senha e os dados
+       pessoais das inscrições). O .json passou a ser bloqueado também: o
+       tentativas.json antigo entregava a lista de logins que erraram senha para
+       qualquer um com o link. A liberação do agenda.json vem depois na ordem,
+       porque a última regra que casa é a que vale.
+
+       As imagens da agenda (/dados/imagens/*.jpg) não entram aqui: a regra é
+       por extensão, e elas não são .php nem .json. */
     fixar_regra(
         PASTA_DADOS . '/.htaccess',
-        "Options -Indexes\n<FilesMatch \"\\.(php|php5|phtml|phar|inc)$\">\n" . $negar . "</FilesMatch>\n"
+        "Options -Indexes\n"
+        . "<FilesMatch \"\\.(php|php5|phtml|phar|inc)$\">\n" . $negar . "</FilesMatch>\n"
+        . "<FilesMatch \"\\.json$\">\n" . $negar . "</FilesMatch>\n"
+        . "<Files \"agenda.json\">\n" . $permitir . "</Files>\n"
     );
+
+    // Versão antiga do contador de tentativas, que ficava legível pela web.
+    if (is_file(ARQ_TENTATIVAS_ANTIGO)) {
+        @unlink(ARQ_TENTATIVAS_ANTIGO);
+    }
 }
 
 /* ===================== usuários ===================== */
@@ -300,8 +324,19 @@ function novo_id_usuario(): string
 
 function estado_tentativas(): array
 {
-    $bruto = is_file(ARQ_TENTATIVAS) ? json_decode((string) @file_get_contents(ARQ_TENTATIVAS), true) : null;
+    $bruto = is_file(ARQ_TENTATIVAS) ? @include ARQ_TENTATIVAS : null;
     return is_array($bruto) ? $bruto : [];
+}
+
+function gravar_tentativas(array $tudo): void
+{
+    gravar_atomico(
+        ARQ_TENTATIVAS,
+        "<?php\n// Gerado pelo painel. Contagem de erro de senha.\nreturn " . var_export($tudo, true) . ";\n"
+    );
+    if (function_exists('opcache_invalidate')) {
+        @opcache_invalidate(ARQ_TENTATIVAS, true);
+    }
 }
 
 /** O bloqueio é por login: errar o meu não tranca o dos outros. */
@@ -333,7 +368,7 @@ function registrar_falha(string $usuario): void
             unset($tudo[$k]);
         }
     }
-    gravar_atomico(ARQ_TENTATIVAS, (string) json_encode($tudo));
+    gravar_tentativas($tudo);
 }
 
 function limpar_falhas(string $usuario): void
@@ -342,7 +377,7 @@ function limpar_falhas(string $usuario): void
     $tudo = estado_tentativas();
     if (isset($tudo[$chave])) {
         unset($tudo[$chave]);
-        gravar_atomico(ARQ_TENTATIVAS, (string) json_encode($tudo));
+        gravar_tentativas($tudo);
     }
 }
 
