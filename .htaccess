@@ -10,6 +10,7 @@ RewriteRule ^ - [L]
 # o único cujo HTML existe no build — e ele nunca é servido cru.
 RewriteRule ^painel/estudio/?$ /painel/estudio.php [L]
 RewriteRule ^painel/agenda/?$ /painel/agenda.php [L]
+RewriteRule ^painel/aulas/?$ /painel/aulas.php [L]
 RewriteRule ^painel/usuarios/?$ /painel/usuarios.php [L]
 RewriteRule ^painel/conta/?$ /painel/conta.php [L]
 # Redireciona /rota para /rota.html
