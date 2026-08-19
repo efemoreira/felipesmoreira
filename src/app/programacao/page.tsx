@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import ProgramacaoClient from "./ProgramacaoClient";
-import type { Agenda } from "./tipos";
+import ProgramacaoClient from "@/features/programacao/ProgramacaoClient";
+import type { Agenda } from "@/features/programacao/tipos";
 import data from "@/data/programacao.json";
 
 /* Conteúdo do build — serve de semente para o SEO e de reserva caso o painel

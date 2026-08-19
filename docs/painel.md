@@ -1,8 +1,13 @@
 # Painel — felipesmoreira.com/painel
 
 Painel administrativo do site. Roda no PHP da Hostinger, ao lado do site estático
-gerado pelo Next. Duas funcionalidades hoje: **Agenda da semana** e **Estúdio de
-artes**.
+gerado pelo Next. Três áreas hoje: **Agenda da semana**, **Estúdio de artes** e
+**Aulas em vídeo** (em construção — ver `public/painel/aulas.php`).
+
+Desde a reorganização de arquitetura do site, o painel também expõe uma API
+JSON em `public/painel/api/` para o Next.js consumir (ex: saber se o visitante
+está logado e em que áreas). Ver `CLAUDE.md` na raiz do repo para o contrato
+completo entre o site estático e este painel.
 
 > Este arquivo mora em `docs/` de propósito: nada em `public/` fica fora do ar,
 > e explicar o mecanismo de recuperação numa URL pública não ajuda ninguém.
@@ -16,9 +21,11 @@ artes**.
 | `public/painel/index.php` | Login, criação do primeiro admin e hub das áreas. |
 | `public/painel/agenda.php` | Editor da programação da semana. |
 | `public/painel/estudio.php` | Porteiro do estúdio (serve o `estudio.html` do build). |
+| `public/painel/aulas.php` | Gestão das aulas em vídeo (placeholder — feature completa vem depois). |
 | `public/painel/usuarios.php` | Gestão de usuários — só admin. |
 | `public/painel/conta.php` | Cada um troca a própria senha. |
 | `public/painel/painel.css` | Visual das telas. |
+| `public/painel/api/sessao.php` | Endpoint JSON: quem está logado e em quais áreas. Consumido pelo Next.js. |
 
 ## Onde ficam os dados
 
@@ -53,8 +60,8 @@ pelo `usuarios.php`.
 - **Administrador** — abre todas as áreas, marcadas ou não, e é o único que
   gerencia usuários. O painel não deixa ficar sem nenhum admin ativo: não dá para
   se rebaixar, se desativar nem remover o último.
-- **Editor** — abre só as áreas marcadas (Agenda, Estúdio). Sem marcação nenhuma,
-  entra e vê um painel vazio.
+- **Editor** — abre só as áreas marcadas (Agenda, Estúdio, Aulas). Sem marcação
+  nenhuma, entra e vê um painel vazio.
 
 Tirar uma permissão vale na hora: a sessão é conferida contra o disco a cada
 requisição, não fica presa ao que valia no login.
@@ -136,9 +143,16 @@ O `.htaccess` gerado no workflow mapeia as URLs limpas:
 /painel/            → index.php
 /painel/agenda      → agenda.php
 /painel/estudio     → estudio.php
+/painel/aulas       → aulas.php
 /painel/usuarios    → usuarios.php
 /painel/conta       → conta.php
 ```
+
+Os endpoints em `public/painel/api/` não têm URL limpa — não são feitos para
+digitar no navegador, só para o Next.js chamar pelo caminho real
+(`/painel/api/sessao.php`). Como são arquivos de verdade no `out/`, o Apache já
+os serve direto pela primeira regra do `.htaccess` (arquivo existe → serve),
+sem precisar de `RewriteRule` específica.
 
 O `estudio.html` gerado pelo Next fica bloqueado no `.htaccess` de `/painel`:
 a única forma de recebê-lo é pelo `estudio.php`, depois da conferência de sessão.

@@ -24,7 +24,7 @@
  */
 import { extremos, medir } from "@/lib/textoCanvas";
 import { familia } from "@/lib/fontes";
-import { iconPaths } from "../../icons";
+import { iconPaths } from "@/components/icons";
 import { caminhoChanfrado } from "./formas";
 import { FONTES } from "./paleta";
 import { texturaPronta } from "./textura";

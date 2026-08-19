@@ -1,8 +1,8 @@
 /**
- * Paleta e presets do estúdio — as cores da marca vêm de programacao/tipos.ts
+ * Paleta e presets do estúdio — as cores da marca vêm de lib/theme.ts
  * para não existirem dois "ouro" diferentes no projeto.
  */
-import { C } from "../../programacao/tipos";
+import { C } from "@/lib/theme";
 import type { ChaveFonte } from "./tipos";
 
 export const CORES = {

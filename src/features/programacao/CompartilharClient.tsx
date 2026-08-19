@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Icon } from "../icons";
+import { Icon } from "@/components/icons";
 import { C, type Agenda } from "./tipos";
 import { FORMATOS, canvasParaBlob, gerarPoster, nomeArquivo, type Formato } from "./poster";
 

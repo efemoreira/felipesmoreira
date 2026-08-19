@@ -2,22 +2,8 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Icon, IconName } from "./icons";
-
-/* ===== Paleta do cordel (mesma do fundo animado) ===== */
-const C = {
-  ink: "#181203",
-  cream: "#F6F5EF",
-  paper: "#F3ECDA",
-  gold: "#FFCB05",
-  goldDim: "#B8860B",
-  night: "#14110C",
-};
-
-/* Fontes auto-hospedadas via next/font (variáveis definidas no layout) */
-const FONT_ALFA = "var(--font-alfa), serif";
-const FONT_ELITE = "var(--font-elite), monospace";
-const FONT_BITTER = "var(--font-bitter), serif";
+import { Icon, IconName } from "@/components/icons";
+import { C, FONT_ALFA, FONT_ELITE, FONT_BITTER } from "@/lib/theme";
 
 const profile = {
   name: "Felipe Moreira",

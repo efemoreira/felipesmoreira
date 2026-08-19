@@ -3,7 +3,7 @@
  * O poster é um layout próprio (não é um "print" da página): sem botão de voltar,
  * sem barra de redes sociais, fundo em cor e moldura de cordel.
  */
-import { iconPaths } from "../icons";
+import { iconPaths } from "@/components/icons";
 import { familia, fontesProntas } from "@/lib/fontes";
 import { medir } from "@/lib/textoCanvas";
 import { C, temaDe, sigla, type Agenda, type ItemAgenda } from "./tipos";

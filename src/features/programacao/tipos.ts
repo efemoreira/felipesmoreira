@@ -1,13 +1,7 @@
 /* Tipos e temas compartilhados entre a página e o gerador de PNG */
+import { C } from "@/lib/theme";
 
-export const C = {
-  ink: "#181203",
-  cream: "#F6F5EF",
-  paper: "#F3ECDA",
-  gold: "#FFCB05",
-  goldDim: "#B8860B",
-  night: "#14110C",
-};
+export { C };
 
 export type CorCartao = "ouro" | "milho" | "azul" | "escuro" | "papel";
 

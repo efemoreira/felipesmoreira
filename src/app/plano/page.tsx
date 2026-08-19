@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import PlanoClient from "./PlanoClient";
+import PlanoClient from "@/features/plano/PlanoClient";
 
 /* Página interna para a militância — circula por link direto, fora de buscadores */
 export const metadata: Metadata = {

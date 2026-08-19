@@ -1,21 +1,8 @@
 "use client";
 import React, { useEffect, useRef } from "react";
-import { Icon, IconName } from "../icons";
-
-/* ===== Paleta do cordel (mesma da home) ===== */
-const C = {
-  ink: "#181203",
-  cream: "#F6F5EF",
-  paper: "#F3ECDA",
-  gold: "#FFCB05",
-  gold2: "#FFDE5A",
-  goldDim: "#B8860B",
-  night: "#14110C",
-};
-
-const FONT_ALFA = "var(--font-alfa), serif";
-const FONT_ELITE = "var(--font-elite), monospace";
-const FONT_BITTER = "var(--font-bitter), serif";
+import { Icon, IconName } from "@/components/icons";
+import { C, FONT_ALFA, FONT_ELITE, FONT_BITTER } from "@/lib/theme";
+import { escada, times, semana, fases, regras } from "./data";
 
 /* hachuras de xilogravura sobre o papel (mesma textura da página de heróis) */
 const HATCH =
@@ -28,100 +15,6 @@ const STARS: { l: number; t: number; s: number; d: number; g?: boolean }[] = [
   { l: 36, t: 82, s: 10, d: 0.6 }, { l: 44, t: 16, s: 12, d: 1.8 }, { l: 57, t: 60, s: 9, d: 0.3 },
   { l: 66, t: 24, s: 15, d: 2.6, g: true }, { l: 74, t: 76, s: 11, d: 1.5 }, { l: 84, t: 40, s: 13, d: 0.9 },
   { l: 92, t: 14, s: 10, d: 2.2 }, { l: 12, t: 44, s: 8, d: 3 }, { l: 90, t: 84, s: 14, d: 1.1, g: true },
-];
-
-/* ===== Conteúdo (destilado do documento de ação — sem datas não confirmadas) ===== */
-
-const escada: { icon: IconName; passo: string; titulo: string; detalhe: string }[] = [
-  { icon: "flag",           passo: "Passo 1", titulo: "Reagir com 🚩",              detalhe: "Um clique na mensagem do grupo. É o primeiro sinal de vida." },
-  { icon: "bolt",           passo: "Passo 2", titulo: "Mandar a palavra EQUIPE",     detalhe: "Uma palavra no privado do Levi. Sem link, sem formulário, sem burocracia." },
-  { icon: "whatsapp",       passo: "Passo 3", titulo: "Conversar 3 minutos",         detalhe: "O Levi conversa com você: cidade, tempo disponível, o que você sabe fazer. Quem anota é ele." },
-  { icon: "users",          passo: "Passo 4", titulo: "Aparecer numa atividade",     detalhe: "Live conta. Presencial vale o dobro. É onde você conhece o seu time." },
-  { icon: "star",           passo: "Passo 5", titulo: "Receber a primeira tarefa",   detalhe: "Pequena e específica, com prazo. A partir daqui você não é seguidor — é militante com função." },
-];
-
-const times: { icon: IconName; nome: string; desc: string }[] = [
-  { icon: "flag",       nome: "Rua",         desc: "Cara a cara, bairro a bairro. Adesivo, conversa e presença — sempre em dupla, nunca sozinho." },
-  { icon: "video",      nome: "Comunicação", desc: "Edits, cards, vídeo e o kit da semana. A linha de maior alcance do movimento." },
-  { icon: "ticket",     nome: "Eventos",     desc: "Encontros que enchem e acolhem. Presença física retém; tela não." },
-  { icon: "microscope", nome: "Bastidor",    desc: "Dados, checagem, organização. Quem faz acontecer sem precisar aparecer." },
-];
-
-const semana: { dia: string; oq: string }[] = [
-  { dia: "SEG", oq: "Balanço da semana no grupo · live" },
-  { dia: "TER", oq: "Reunião de coordenação (30 min, online)" },
-  { dia: "QUA", oq: "Reunião do seu time · 20 min de formação antes · live" },
-  { dia: "QUI", oq: "Dia de produção de conteúdo" },
-  { dia: "SEX", oq: "Ação de rua leve · live" },
-  { dia: "SÁB", oq: "Evento da semana (cada sábado, um time organiza)" },
-  { dia: "DOM", oq: "A live principal: balanço e convocação" },
-];
-
-const fases: { quando: string; titulo: string; itens: string[] }[] = [
-  {
-    quando: "Agora",
-    titulo: "Reativação",
-    itens: [
-      "Live de abertura no domingo — o plano inteiro, ao vivo",
-      "Reunião da estrutura na quarta, 19h30 — quem aparece, sai com função",
-      "Times criados e coordenadores definidos",
-    ],
-  },
-  {
-    quando: "Julho → Agosto",
-    titulo: "Consolidação",
-    itens: [
-      "Convenção estadual — a maior mobilização do período",
-      "Formação de 20 minutos rodando em toda reunião",
-      "Kit de argumentos novo toda semana",
-    ],
-  },
-  {
-    quando: "16 de agosto",
-    titulo: "Vira a chave",
-    itens: [
-      "Começa a campanha de rua com material oficial",
-      "Kit diário de conteúdo até as 10h",
-      "Lives sobem de frequência — por escada, com rodízio",
-    ],
-  },
-  {
-    quando: "Setembro",
-    titulo: "O grande encontro",
-    itens: [
-      "Congresso estadual com as principais lideranças do movimento no palco",
-      "A estrutura anunciada diante de todos — quem constrói, é chamado pelo nome",
-      "Cada militante leva duas pessoas",
-      "Data anunciada no grupo assim que estiver confirmada",
-    ],
-  },
-  {
-    quando: "Reta final",
-    titulo: "Até 4 de outubro",
-    itens: [
-      "Ritmo máximo: live diária e rua todo dia",
-      "Todo mundo com escala, ninguém sem saber o que fazer",
-    ],
-  },
-  {
-    quando: "Novembro",
-    titulo: "Não acaba na eleição",
-    itens: [
-      "Confraternização ganhe-ou-perca — quem construiu, celebra junto",
-      "Times viram estrutura permanente",
-      "Abre o ciclo de 2028 — e ele começa aqui",
-    ],
-  },
-];
-
-const regras: string[] = [
-  "Conversa, não formulário",
-  "Todo mundo num time de 8 a 14",
-  "Formação de 20 minutos, sempre",
-  "Nada sai sem checagem",
-  "Todo evento captura contato",
-  "Cadência sobe por escada",
-  "Data só se anuncia confirmada",
 ];
 
 /* ===== Peças visuais ===== */

@@ -2,7 +2,7 @@
 /* eslint-disable @next/next/no-img-element */
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { Icon, IconName } from "../icons";
+import { Icon, IconName } from "@/components/icons";
 import CompartilharClient from "./CompartilharClient";
 import { C, temaDe, sigla, type Agenda, type ItemAgenda } from "./tipos";
 import { CAMINHO_AGENDA_AO_VIVO, normalizarAgenda } from "./dados";

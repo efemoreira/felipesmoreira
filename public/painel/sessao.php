@@ -32,6 +32,7 @@ const SENHA_MIN      = 8;   // com o bloqueio por login, 8 já segura tentativa 
 const AREAS = [
     'agenda'  => 'Agenda da semana',
     'estudio' => 'Estúdio de artes',
+    'aulas'   => 'Aulas em vídeo',
 ];
 
 const PAPEIS = [
@@ -43,6 +44,7 @@ const PAPEIS = [
 const DESTINO_AREA = [
     'agenda'  => ['url' => '/painel/agenda.php', 'resumo' => 'Editar a programação que aparece em /programacao'],
     'estudio' => ['url' => '/painel/estudio.php', 'resumo' => 'Montar as artes dos posts a partir de um modelo'],
+    'aulas'   => ['url' => '/painel/aulas.php', 'resumo' => 'Gerenciar as aulas em vídeo (em construção)'],
 ];
 
 header('X-Robots-Tag: noindex, nofollow');
