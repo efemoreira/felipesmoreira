@@ -18,7 +18,7 @@ completo entre o site estático e este painel.
 | Arquivo | O que faz |
 |---|---|
 | `public/painel/sessao.php` | Núcleo: sessão, usuários, permissões. Todos os outros começam por aqui. |
-| `public/painel/layout.php` | Cabeçalho, menu e rodapé compartilhados. |
+| `public/painel/layout.php` | A moldura: lateral agrupada, barra do celular, cabeçalho de tela e o tema. |
 | `public/painel/index.php` | Login, criação do primeiro admin e o hub: mesa da função, fila do dia, encontros e formação. |
 | `public/painel/agora.php` | Fonte única do que está pendente — a fila do hub e o contador do menu saem daqui. |
 | `public/painel/agenda.php` | Editor da programação da semana. |
@@ -35,6 +35,7 @@ completo entre o site estático e este painel.
 | `public/painel/eventos-comum.php` | Dados dos encontros e dos contatos, playbooks das 5 famílias. |
 | `public/painel/usuarios.php` | Gestão de usuários — só admin. |
 | `public/painel/conta.php` | Cada um troca a própria senha. |
+| `public/painel/tema.php` | Grava o cookie do tema (claro/escuro/sistema) e volta para a página. |
 | `public/painel/painel.css` | Visual das telas. |
 | `public/painel/api/sessao.php` | Endpoint JSON: quem está logado e em quais áreas. Consumido pelo Next.js. |
 | `public/painel/api/aulas.php` | Endpoint JSON da formação: currículo, vídeos e progresso. Consumido por `/aulas`. |

@@ -28,6 +28,9 @@ const PASTA_BACKUP   = PASTA_DADOS . '/backups';
 const PASTA_IMAGENS  = PASTA_DADOS . '/imagens';
 const URL_IMAGENS    = '/dados/imagens';  // como a página enxerga a pasta
 
+/** Nome do cookie do tema. Não é segredo: só diz se a pessoa quer claro ou escuro. */
+const COOKIE_TEMA    = 'painel_tema';
+
 const MAX_TENTATIVAS = 5;
 const BLOQUEIO_SEG   = 900;  // 15 min
 const SENHA_MIN      = 8;   // com o bloqueio por login, 8 já segura tentativa às cegas
@@ -444,6 +447,57 @@ function limpar_falhas(string $usuario): void
 }
 
 /* ===================== sessão ===================== */
+
+/**
+ * Um caminho de volta que o navegador mandou, se for mesmo de dentro do painel.
+ *
+ * Vale para o `volta` do login e para o do seletor de tema. Sem esta trava, um
+ * link cuidadosamente montado leva a pessoa a um domínio de fora depois de uma
+ * ação que ela confiou — que é exatamente o que redirecionamento aberto é.
+ */
+function caminho_interno_seguro($bruto, string $padrao = '/painel/'): string
+{
+    $c = is_string($bruto) ? $bruto : '';
+    return preg_match('#^/painel/[a-z0-9._/?&=-]*$#i', $c) === 1 ? $c : $padrao;
+}
+
+/* ===================== tema (claro / escuro / sistema) ===================== */
+
+/** Os três estados. 'sistema' não estampa nada e deixa o CSS decidir.
+    TEMAS_PAINEL, e não TEMAS: o agenda.php já usa TEMAS para as cores do cartão. */
+const TEMAS_PAINEL = ['claro', 'escuro', 'sistema'];
+
+/**
+ * O tema escolhido, vindo do cookie.
+ *
+ * Lido antes de a página ser desenhada, para o <html> já sair com data-tema — é
+ * isso que impede a piscada de tema errado no carregamento. Cookie, e não
+ * sessão, porque a escolha é do aparelho: a mesma pessoa pode querer claro no
+ * computador do trabalho e escuro no celular.
+ */
+function tema_atual(): string
+{
+    $t = (string) ($_COOKIE[COOKIE_TEMA] ?? 'sistema');
+    return in_array($t, TEMAS_PAINEL, true) ? $t : 'sistema';
+}
+
+function gravar_tema(string $tema): void
+{
+    if (!in_array($tema, TEMAS_PAINEL, true)) {
+        return;
+    }
+    $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
+
+    setcookie(COOKIE_TEMA, $tema, [
+        'expires'  => time() + 31536000,   // um ano
+        'path'     => '/painel',
+        'httponly' => false,               // o botão troca na hora pelo JS também
+        'secure'   => $https,
+        'samesite' => 'Lax',
+    ]);
+    $_COOKIE[COOKIE_TEMA] = $tema;
+}
 
 function token(): string
 {

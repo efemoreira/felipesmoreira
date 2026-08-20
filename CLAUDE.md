@@ -160,9 +160,9 @@ link de WhatsApp. O que já está resolvido e não deve regredir:
 
 ## Visual do painel
 
-O painel usa a **mesma linguagem do site público**: ouro sobre noite, bordas
-grossas, sombra dura deslocada, nada arredondado. Militante entra nos dois, e
-não pode parecer que trocou de produto.
+O painel usa a **mesma linguagem do site público**: bordas grossas, sombra dura
+deslocada, nada arredondado. Militante entra nos dois, e não pode parecer que
+trocou de produto.
 
 - **Fontes:** Alfa Slab One (títulos), Special Elite (rótulos, botões, navegação)
   e Bitter (texto). Ficam em `public/painel/fontes/`, servidas do próprio
@@ -171,13 +171,49 @@ não pode parecer que trocou de produto.
   vai para fora.
 - **Ícones:** `public/painel/icones.php`, com os mesmos traçados de
   `src/components/icons.tsx`. Ícone novo entra nos dois para não divergir.
-- **Tokens** ficam no `:root` do `painel.css` (`--ouro`, `--ink`, `--display`,
-  `--etiqueta`, `--corpo`…). Use-os em vez de repetir cor ou família na regra.
+- **Tokens** ficam no `:root` do `painel.css`. Use-os em vez de repetir cor ou
+  família na regra — e leia a regra dos temas, logo abaixo, antes de criar um.
 
-**Cuidado com especificidade em cartão:** uma regra como `.area-cartao span`
-(0,1,1) vence `.area-icone` (0,1,0) e repinta o ícone. Ao estilizar filhos de um
-cartão, escreva o seletor com a classe junto (`.area-cartao .area-icone`) ou
-mire o filho direto (`.area-texto > span`).
+### Os três temas
+
+O painel tem **claro, escuro e sistema**. A escolha vive num cookie que o
+`layout.php` lê e estampa como `data-tema` no `<html>` **antes** de mandar a
+página — é isso, e não JavaScript, que impede a piscada de tema errado. Em
+`sistema` não estampa nada e quem decide é o `@media (prefers-color-scheme)`.
+O seletor fica no pé da lateral e posta em `public/painel/tema.php`; funciona
+sem JavaScript, e com ele troca sem recarregar.
+
+> **Cor nova entra como token definido nos dois temas** (`:root`, o bloco da
+> media query e o `[data-tema="escuro"]`). Cor literal dentro de uma regra
+> quebra um dos dois lados e ninguém percebe até alguém reclamar.
+
+**O ouro não é cor de texto no tema claro.** `#FFCB05` sobre o papel `#F3ECDA`
+dá 1,29:1 de contraste, e a WCAG pede 4,5:1. No claro o ouro é **preenchimento e
+borda**; quem escreve é a tinta. Por isso existem tokens separados: `--titulo`,
+`--elo` e `--acento` são o ouro no escuro e o ouro escurecido (ou a tinta) no
+claro. Escrever `color:var(--ouro)` faz o texto sumir no papel — `--ouro` só
+entra em `background` e `border`.
+
+### A navegação
+
+**Mora no `layout.php`, e só lá.** Antes as áreas apareciam numa fileira no topo
+*e* repetidas como grade dentro do hub: quem entrava lia o mesmo menu duas vezes
+sem saber qual era o menu. Hoje o corpo de cada tela só tem trabalho.
+
+- No computador é uma **lateral fixa**, agrupada por `GRUPOS_NAV`
+  (Comunicação · Encontros · Coordenação, o organograma do manual). Início e
+  Formação ficam soltos no topo, porque são de todo mundo.
+- No celular vira uma **barra fixa no rodapé** com Início, três áreas e "Mais".
+  As três saem de uma ordem fixa por pessoa, nunca do contador: barra que se
+  reordena sozinha faz errar o alvo já decorado.
+- **Área nova precisa entrar em um grupo de `GRUPOS_NAV`**, senão não aparece no
+  menu — a permissão sozinha não basta.
+- Grupo sem nenhuma área liberada não é renderizado.
+
+**Cuidado com especificidade em cartão:** uma regra como `.mesa span` (0,1,1)
+vence `.mesa-icone` (0,1,0) e repinta o ícone. Ao estilizar filhos de um cartão,
+escreva o seletor com a classe junto (`.mesa .mesa-icone`) ou mire o filho
+direto (`.encontro-texto > span`).
 
 **Fila grande pede recolher:** listas de decisão (como as inscrições) mostram só
 o resumo, com o formulário dentro de um `<details class="decidir">`. Com 20
@@ -190,7 +226,8 @@ Uma funcionalidade nova para usuários que já têm conta no painel é **mais um
 área**, não um sistema de auth novo. Adicionar área = 1) chave em `AREAS`,
 2) entrada em `DESTINO_AREA` apontando pra página de gestão em PHP, 3) `RewriteRule`
 no `publish.yml`, 4) ícone em `icones.php`, 5) endpoint(s) JSON se o Next
-precisar consumir os dados, 6) se a área tem fila, um bloco em `agora.php`.
+precisar consumir os dados, 6) se a área tem fila, um bloco em `agora.php`,
+7) entrada em `GRUPOS_NAV` (`layout.php`), senão ela não aparece no menu.
 
 **O que está pendente se declara em `agora.php`, e só lá.** `tarefas_de()` monta a
 fila do hub e `contagens_por_area()` alimenta o número ao lado do nome no menu —

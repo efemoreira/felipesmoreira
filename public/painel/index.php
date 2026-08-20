@@ -7,9 +7,11 @@ declare(strict_types=1);
  * Três telas em um arquivo, na ordem em que a vida acontece:
  *   1. não existe nenhum usuário  → criar o primeiro administrador;
  *   2. existe usuário, ninguém logado → login;
- *   3. logado → hub com as áreas que essa pessoa pode abrir.
+ *   3. logado → hub com o trabalho desta pessoa.
  *
- * As áreas em si moram em agenda.php e estudio.php. Aqui só se decide quem entra.
+ * O hub NÃO lista as áreas: para onde ir é a lateral do layout.php, e repetir
+ * a lista aqui embaixo era ler o mesmo menu duas vezes. Aqui só entra o que é
+ * trabalho — a mesa da função, a fila, os encontros e a formação.
  */
 
 require_once __DIR__ . '/layout.php';  // puxa o sessao.php junto
@@ -22,8 +24,7 @@ $primeiroAcesso = ler_usuarios() === [];
 /** Só aceita voltar para dentro do painel — nada de redirecionar para fora. */
 function destino_pos_login(): string
 {
-    $volta = (string) ($_GET['volta'] ?? '');
-    return preg_match('#^/painel/[a-z0-9._/-]*$#i', $volta) ? $volta : '/painel/';
+    return caminho_interno_seguro($_GET['volta'] ?? '');
 }
 
 if ($acao === 'criar_admin' && $primeiroAcesso) {
@@ -369,35 +370,8 @@ abrir_pagina('Início');
       </section>
     <?php endif; ?>
 
-    <?php /* ============ 5. o índice das áreas ============ */ ?>
-    <h2 class="secao">Suas áreas</h2>
-    <div class="areas-hub">
-      <?php foreach ($areas as $area): ?>
-        <a class="area-cartao" href="<?= h(DESTINO_AREA[$area]['url']) ?>">
-          <span class="area-icone"><?= icone(ICONE_AREA[$area] ?? 'star') ?></span>
-          <span class="area-texto">
-            <strong><?= h(AREAS[$area]) ?></strong>
-            <span><?= h(DESTINO_AREA[$area]['resumo']) ?></span>
-          </span>
-        </a>
-      <?php endforeach; ?>
-
-      <?php if (e_admin()): ?>
-        <a class="area-cartao" href="/painel/usuarios.php">
-          <span class="area-icone"><?= icone('users') ?></span>
-          <span class="area-texto">
-            <strong>Usuários</strong>
-            <span>Quem entra no painel e o que cada um pode abrir</span>
-          </span>
-        </a>
-      <?php endif; ?>
-    </div>
   <?php endif; ?>
 
-  <div class="acoes">
-    <a class="btn btn-mini" href="/programacao" target="_blank" rel="noopener">Ver a página pública</a>
-    <a class="btn btn-mini" href="/painel/conta.php">Trocar minha senha</a>
-  </div>
 </div>
 <?php
 fechar_pagina();
