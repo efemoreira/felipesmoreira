@@ -190,7 +190,13 @@ Uma funcionalidade nova para usuários que já têm conta no painel é **mais um
 área**, não um sistema de auth novo. Adicionar área = 1) chave em `AREAS`,
 2) entrada em `DESTINO_AREA` apontando pra página de gestão em PHP, 3) `RewriteRule`
 no `publish.yml`, 4) ícone em `icones.php`, 5) endpoint(s) JSON se o Next
-precisar consumir os dados.
+precisar consumir os dados, 6) se a área tem fila, um bloco em `agora.php`.
+
+**O que está pendente se declara em `agora.php`, e só lá.** `tarefas_de()` monta a
+fila do hub e `contagens_por_area()` alimenta o número ao lado do nome no menu —
+os dois saem do mesmo lugar. Não espalhe contador pelo `index.php`: era assim
+antes, e o resultado era um painel que sabia dizer onde a pessoa podia ir sem
+saber dizer o que estava esperando por ela.
 
 As áreas se dividem em duas naturezas — a distinção não é técnica (a permissão é
 a mesma caixa marcada no usuário), é sobre o que vem marcado por padrão:
@@ -232,10 +238,17 @@ libc e o mesmo texto vira `ha` no Linux da Hostinger e `h` no macOS.
 
 ### A formação (área `aulas`)
 
-O manual da militância virou curso: 6 Dias, 30 aulas, cada Dia abrindo com uma
+O manual da militância virou curso: 6 Dias, 32 aulas, cada Dia abrindo com uma
 🚗 **Pista Rápida** (o caminho macro) seguida das **Pistas Lentas**
 (aprofundamento). Aula nova de reforço entra como `lenta` no Dia certo sem mexer
 no caminho principal — foi para isso que a divisão existe.
+
+**A exceção é o Dia 0, que tem duas rápidas:** `como-funciona-a-formacao` explica
+a própria divisão em pistas antes de `regras-de-todos` cobrar as regras. Quem cai
+ali pela primeira vez precisa saber ler a tela antes de receber a primeira ordem.
+E essa explicação é **aula, não rodapé**: o cabeçalho de `/aulas` e o topo do
+`aulas.php` só apontam para ela, porque texto repetido em dois lugares é texto que
+diverge na terceira alteração — a mesma razão do `checklists.php`.
 
 **O conteúdo mora em `public/painel/aulas-conteudo.php`, não em `src/data/`.**
 Esta é a diferença em relação ao `funcoes.json`: aquele é texto de recrutamento,

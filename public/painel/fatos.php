@@ -195,11 +195,13 @@ $quando = function (string $iso): string {
 abrir_pagina('Fatos do dia');
 ?>
 <div class="capa">
-  <h1>Fatos do dia</h1>
-  <p class="sub">
-    O Olheiro traz o fato com a prova; a Checagem abre o link e decide. Nada segue
-    para roteiro ou arte sem passar por aqui.
-  </p>
+  <?php cabecalho_pagina(
+      'Fatos do dia',
+      'O Olheiro traz o fato com a prova; a Checagem abre o link e decide. '
+      . 'Nada segue para roteiro ou arte sem passar por aqui.',
+      null,
+      '/painel/fatos'
+  ); ?>
 
   <?php recado($erro, $ok); ?>
 
@@ -261,6 +263,9 @@ abrir_pagina('Fatos do dia');
             <p class="dica">
               Abra o link acima. A página existe? A data confere? O número confere?
               Se a afirmação for forte, procure uma segunda fonte independente.
+              <?php if (pode('aulas')): ?>
+                <a href="/aulas#checagem" target="_blank">Rever a aula da Checagem</a>.
+              <?php endif; ?>
             </p>
 
             <form method="post">

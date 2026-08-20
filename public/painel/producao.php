@@ -195,31 +195,37 @@ $hoje = date('Y-m-d');
 abrir_pagina('Produção');
 ?>
 <div class="capa">
-  <h1>Produção</h1>
-  <p class="sub">
-    Do fato checado ao post publicado. O card nasce quando a Checagem aprova —
-    com a fonte e o responsável já colados nele.
-  </p>
+  <?php cabecalho_pagina(
+      'Produção',
+      'Do fato checado ao post publicado. O card nasce quando a Checagem aprova — '
+      . 'com a fonte e o responsável já colados nele.',
+      null,
+      '/painel/producao'
+  ); ?>
 
   <?php recado($erro, $ok); ?>
+
+  <?php /* No celular o quadro vira uma pilha de quatro colunas: sem esta faixa,
+           chegar em "Revisão" é rolar às cegas. */ ?>
+  <nav class="atalho-colunas" aria-label="Colunas do quadro">
+    <?php foreach (COLUNAS as $chave => $nome): ?>
+      <a href="#coluna-<?= h($chave) ?>"><?= h($nome) ?> <span><?= count(cards_da_coluna($chave)) ?></span></a>
+    <?php endforeach; ?>
+  </nav>
 
   <div class="quadro">
     <?php foreach (COLUNAS as $chave => $nome): ?>
       <?php $daColuna = cards_da_coluna($chave); ?>
-      <section class="coluna">
+      <section class="coluna" id="coluna-<?= h($chave) ?>">
         <h2 class="coluna-topo">
           <?= h($nome) ?>
           <span class="coluna-conta"><?= count($daColuna) ?></span>
         </h2>
 
         <?php if ($daColuna === []): ?>
-          <p class="dica coluna-vazia">
-            <?php if ($chave === 'a-fazer'): ?>
-              Nada aqui. Cards aparecem sozinhos quando a Checagem aprova um fato.
-            <?php else: ?>
-              Vazio.
-            <?php endif; ?>
-          </p>
+          <?php /* Tela vazia é onboarding: dizer o que vai cair aqui e quem põe
+                   ensina o fluxo do manual sem obrigar ninguém a decorá-lo. */ ?>
+          <p class="dica coluna-vazia"><?= h(COLUNA_VAZIA[$chave] ?? 'Vazio.') ?></p>
         <?php endif; ?>
 
         <?php foreach ($daColuna as $c): ?>
@@ -299,6 +305,12 @@ abrir_pagina('Produção');
                     <input type="hidden" name="csrf" value="<?= h(token()) ?>">
                     <input type="hidden" name="id" value="<?= h($c['id']) ?>">
                     <input type="hidden" name="acao" value="publicar">
+                    <?php if (pode('aulas')): ?>
+                      <p class="dica" style="margin:0 0 10px">
+                        Antes de publicar, passe o checklist de conformidade:
+                        <a href="/aulas#roteirista" target="_blank">a aula do Roteirista</a>.
+                      </p>
+                    <?php endif; ?>
                     <div class="campo">
                       <label for="link-<?= h($c['id']) ?>">Link do post publicado</label>
                       <input id="link-<?= h($c['id']) ?>" type="url" name="linkPost" maxlength="500"

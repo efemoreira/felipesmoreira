@@ -60,6 +60,12 @@ export default function AulasClient() {
           requestAnimationFrame(() => {
             document.getElementById(alvo)?.scrollIntoView({ block: "start" });
           });
+        } else if (r.concluidas.length === 0) {
+          /* Primeira visita: abre a aula de boas-vindas, que é a primeira do
+             Dia 0 e explica as pistas. Sem ela, quem chega recebe uma lista de
+             32 títulos fechados e nenhuma pista de por onde começar. Não rola a
+             página — a aula já está no topo. */
+          setAbertaId(r.dias[0]?.aulas[0]?.id ?? null);
         }
       })
       .catch(() => {
@@ -178,12 +184,20 @@ export default function AulasClient() {
           >
             Formação da militância
           </h1>
+          {/* O conceito das pistas é explicado na primeira aula, não aqui: texto
+              repetido em dois lugares é texto que diverge na terceira alteração
+              (mesmo motivo do checklists.php). */}
           <p style={{ margin: "0 0 18px", lineHeight: 1.75, maxWidth: "60ch" }}>
             Olá, {estado.nome.split(" ")[0]}. Cada Dia começa com uma{" "}
-            <strong style={{ color: C.gold }}>🚗 Pista Rápida</strong> — é o caminho principal, e
-            quem só fizer as rápidas já sabe trabalhar. As{" "}
-            <strong>Pistas Lentas</strong> vêm em seguida para aprofundar quando você precisar,
-            sem segurar o resto do time.
+            <strong style={{ color: C.gold }}>🚗 Pista Rápida</strong> e segue nas Pistas Lentas.{" "}
+            <a
+              href="#como-funciona-a-formacao"
+              onClick={() => aoAbrir("como-funciona-a-formacao", true)}
+              style={{ color: C.gold }}
+            >
+              A primeira aula explica a diferença
+            </a>{" "}
+            em três minutos.
           </p>
 
           {resumo && (

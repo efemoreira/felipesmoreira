@@ -165,66 +165,22 @@ if ($u === null) {
 }
 
 /* ---------- hub ---------- */
-$areas = areas_do_usuario();
-
-/* Quantas inscrições esperam decisão — vira o contador no cartão da área.
-   Sem isso o Felipe só descobre que tem gente na fila entrando na tela. */
-$inscricoes_esperando = 0;
-if (in_array('inscricoes', $areas, true)) {
-    require_once __DIR__ . '/inscricoes-comum.php';
-    foreach (ler_inscricoes() as $i) {
-        if ($i['status'] === 'nova') {
-            $inscricoes_esperando++;
-        }
-    }
-}
-
-/* Mesma ideia para os fatos parados na Checagem: fila invisível é fila que dorme. */
-$fatos_esperando = 0;
-if (in_array('fatos', $areas, true)) {
-    require_once __DIR__ . '/fatos-comum.php';
-    $fatos_esperando = fatos_esperando();
-}
-
-/* Quantos cards estão com esta pessoa no quadro de Produção. */
-$meus_cards = 0;
-if (in_array('producao', $areas, true)) {
-    require_once __DIR__ . '/producao-comum.php';
-    $meus_cards = count(cards_de($u['id']));
-}
 
 /**
- * Acesso rápido: o atalho da função que a pessoa escolheu no /quero-ajudar.
+ * O hub responde, de cima para baixo, as quatro perguntas de quem abre o
+ * painel: onde eu trabalho, o que está esperando por mim, o que vem aí e
+ * quanto eu já aprendi. A grade de áreas fica por último de propósito — ela é
+ * o índice do painel, não a pauta do dia.
  *
- * A função NÃO limita o acesso — quem abre a área abre a ferramenta inteira.
- * Isto aqui só evita que o Olheiro precise procurar onde fica a tela dele todo
- * dia, e some se a pessoa não tem função registrada ou não tem a permissão.
+ * Nenhum número aqui é calculado neste arquivo: tudo vem do agora.php, que é a
+ * fonte única do que está pendente. Área nova declara a fila lá, não aqui.
  */
-const FERRAMENTA_DA_FUNCAO = [
-    'olheiro'    => 'fatos',
-    'checagem'   => 'fatos',
-    'roteirista' => 'producao',
-    'design'     => 'producao',
-    'editor'     => 'producao',
-    'acervo'     => 'producao',
-    'local-hora' => 'eventos',
-    'logistica'  => 'eventos',
-    'divulgacao' => 'eventos',
-    'gravacao'   => 'eventos',
-    'recepcao'   => 'eventos',
-];
 
-$atalhos = [];
-foreach ($u['funcoes'] as $funcao) {
-    $area = FERRAMENTA_DA_FUNCAO[$funcao] ?? null;
-    if ($area !== null && in_array($area, $areas, true) && !isset($atalhos[$area])) {
-        $atalhos[$area] = $funcao;
-    }
-}
-if ($atalhos !== []) {
-    // nome_funcao() mora no inscricoes-comum.php, que é quem lê o funcoes.json
-    require_once __DIR__ . '/inscricoes-comum.php';
-}
+$areas = areas_do_usuario();
+$mesas = mesas_de($u);
+$tarefas = tarefas_de($u);
+$formacao = formacao_de($u);
+
 $negado = (string) ($_GET['negado'] ?? '');
 if ($negado !== '') {
     $aviso = $negado === 'usuarios'
@@ -232,61 +188,196 @@ if ($negado !== '') {
         : 'Você não tem acesso a “' . (AREAS[$negado] ?? $negado) . '”. Peça a um administrador.';
 }
 
+/* Os encontros que vêm aí, e a peça das cinco que cabe a esta pessoa. */
+$proximos = [];
+$minhaPeca = null;
+if (in_array('eventos', $areas, true)) {
+    require_once __DIR__ . '/eventos-comum.php';
+    $proximos = array_slice(eventos_proximos(), 0, 2);
+    $minhaPeca = peca_da_pessoa($u);
+}
+
+$naFila = count($tarefas);
+$mostradas = array_slice($tarefas, 0, TETO_FILA);
+$sobrando = $naFila - count($mostradas);
+
 abrir_pagina('Início');
 ?>
 <div class="capa">
   <h1>Olá, <?= h(explode(' ', $u['nome'])[0]) ?></h1>
-  <p class="sub">O que você vai fazer agora?</p>
+  <p class="sub">
+    <?php if ($areas === []): ?>
+      Seu acesso está ativo, mas nenhuma área foi liberada ainda.
+    <?php elseif ($naFila === 0): ?>
+      Nada esperando por você agora.
+    <?php elseif ($naFila === 1): ?>
+      Uma coisa está esperando por você.
+    <?php else: ?>
+      <?= $naFila ?> coisas estão esperando por você.
+    <?php endif; ?>
+  </p>
 
   <?php recado($aviso, $sucesso); ?>
 
   <?php if ($areas === []): ?>
     <p class="msg msg-erro">
-      Seu acesso está ativo, mas nenhuma área foi liberada ainda. Peça a um administrador.
+      Nenhuma área foi liberada para a sua conta ainda. Fale com a coordenação no
+      <a href="https://wa.me/5585981872972" target="_blank" rel="noopener">WhatsApp</a>
+      para liberarem o seu acesso.
     </p>
   <?php else: ?>
-    <?php if ($atalhos !== []): ?>
-      <div class="atalhos">
-        <p class="atalhos-rotulo">Seu lugar no time</p>
-        <?php foreach ($atalhos as $area => $funcao): ?>
-          <a class="atalho" href="<?= h(DESTINO_AREA[$area]['url']) ?>">
-            <span class="atalho-icone"><?= icone(ICONE_AREA[$area] ?? 'star') ?></span>
-            <span class="atalho-texto">
-              <strong><?= h(nome_funcao($funcao)) ?></strong>
-              <span><?= h(AREAS[$area]) ?></span>
-            </span>
-            <span class="atalho-seta" aria-hidden="true"><?= icone('chevronRight', 20) ?></span>
-          </a>
+
+    <?php /* ============ 1. a mesa de trabalho da função ============ */ ?>
+    <?php if ($mesas !== []): ?>
+      <?php require_once __DIR__ . '/inscricoes-comum.php';  // nome_funcao() ?>
+      <div class="mesas">
+        <?php foreach ($mesas as $mesa): ?>
+          <section class="mesa">
+            <span class="mesa-icone"><?= icone(ICONE_AREA[$mesa['area']] ?? 'star') ?></span>
+            <p class="mesa-funcao"><?= h(nome_funcao($mesa['funcao'])) ?></p>
+            <h2 class="mesa-area"><?= h(AREAS[$mesa['area']]) ?></h2>
+            <?php if ($mesa['estado'] !== ''): ?>
+              <p class="mesa-estado"><?= h($mesa['estado']) ?></p>
+            <?php endif; ?>
+            <div class="acoes">
+              <a class="btn btn-ouro" href="<?= h($mesa['url']) ?>"><?= h($mesa['acao']) ?></a>
+              <?php if ($mesa['url'] !== DESTINO_AREA[$mesa['area']]['url']): ?>
+                <?php /* a ação primária cai numa âncora; este abre a tela inteira */ ?>
+                <a class="btn btn-mini" href="<?= h(DESTINO_AREA[$mesa['area']]['url']) ?>">Ver tudo</a>
+              <?php endif; ?>
+            </div>
+          </section>
         <?php endforeach; ?>
       </div>
     <?php endif; ?>
 
+    <?php /* ============ 2. a fila do dia ============ */ ?>
+    <h2 class="secao">Esperando você</h2>
+    <?php if ($mostradas === []): ?>
+      <p class="vazio-bom">
+        Tudo em dia. É esse o objetivo: nada dorme sem status.
+        <?php if ($formacao !== null && $formacao['proxima'] !== null): ?>
+          Sobrou tempo? A próxima aula é
+          <a href="/aulas#<?= h($formacao['proxima']['aula']['id']) ?>">🚗 <?= h($formacao['proxima']['aula']['titulo']) ?></a>.
+        <?php endif; ?>
+      </p>
+    <?php else: ?>
+      <ul class="fila">
+        <?php foreach ($mostradas as $t): ?>
+          <li>
+            <a class="fila-item<?= $t['urgente'] ? ' fila-urgente' : '' ?>" href="<?= h($t['url']) ?>">
+              <span class="fila-icone"><?= icone($t['icone'], 20) ?></span>
+              <span class="fila-texto">
+                <strong><?= h($t['texto']) ?></strong>
+                <?php if ($t['porque'] !== ''): ?>
+                  <span><?= h($t['porque']) ?></span>
+                <?php endif; ?>
+              </span>
+              <span class="fila-seta" aria-hidden="true"><?= icone('chevronRight', 20) ?></span>
+            </a>
+          </li>
+        <?php endforeach; ?>
+      </ul>
+      <?php if ($sobrando > 0): ?>
+        <p class="dica">E mais <?= $sobrando ?> <?= $sobrando === 1 ? 'coisa' : 'coisas' ?> nas áreas abaixo.</p>
+      <?php endif; ?>
+    <?php endif; ?>
+
+    <?php /* ============ 3. os encontros marcados ============ */ ?>
+    <?php if (in_array('eventos', $areas, true)): ?>
+      <h2 class="secao">Próximos encontros</h2>
+      <?php if ($proximos === []): ?>
+        <p class="dica">
+          Nenhum encontro marcado. O primeiro passo é Local &amp; Hora: três opções avaliadas
+          antes de fechar qualquer coisa. <a href="/painel/eventos.php">Marcar um encontro</a>.
+        </p>
+      <?php else: ?>
+        <div class="encontros">
+          <?php foreach ($proximos as $e): ?>
+            <?php
+              $preparo = preparo_do_evento($e);
+              $feitosMinha = $minhaPeca !== null ? count($e['feitos'][$minhaPeca] ?? []) : 0;
+              $totalMinha = 0;
+              if ($minhaPeca !== null) {
+                  $c = checklist(PECAS[$minhaPeca]['checklist']);
+                  $totalMinha = $c !== null ? count($c['itens']) : 0;
+              }
+            ?>
+            <a class="encontro" href="/painel/eventos.php?e=<?= h(rawurlencode($e['id'])) ?>">
+              <span class="encontro-data">
+                <?php if ($e['data'] !== ''): ?>
+                  <strong><?= h(data_curta($e['data'])) ?></strong>
+                  <span><?= $e['hora'] !== '' ? h($e['hora']) : 'sem hora' ?></span>
+                <?php else: ?>
+                  <strong>SEM DATA</strong>
+                <?php endif; ?>
+              </span>
+              <span class="encontro-texto">
+                <strong><?= h($e['titulo']) ?></strong>
+                <span>
+                  <?= h(FAMILIAS[$e['familia']]['nome']) ?>
+                  <?= $e['local'] !== '' ? ' · ' . h($e['local']) : '' ?>
+                  · preparo <?= $preparo['feito'] ?>/<?= $preparo['total'] ?>
+                </span>
+                <?php if ($minhaPeca !== null && $totalMinha > 0): ?>
+                  <span class="encontro-peca">
+                    Sua peça: <?= h(PECAS[$minhaPeca]['nome']) ?> · <?= $feitosMinha ?> de <?= $totalMinha ?> conferidos
+                  </span>
+                <?php endif; ?>
+              </span>
+            </a>
+          <?php endforeach; ?>
+        </div>
+      <?php endif; ?>
+    <?php endif; ?>
+
+    <?php /* ============ 4. a formação ============ */ ?>
+    <?php if ($formacao !== null): ?>
+      <h2 class="secao">Sua formação</h2>
+      <section class="formacao">
+        <div class="barra-progresso"
+             role="progressbar"
+             aria-valuenow="<?= $formacao['feitas'] ?>"
+             aria-valuemin="0"
+             aria-valuemax="<?= $formacao['total'] ?>"
+             aria-label="Aulas concluídas">
+          <span style="width:<?= $formacao['total'] > 0 ? (int) round($formacao['feitas'] / $formacao['total'] * 100) : 0 ?>%"></span>
+        </div>
+        <p class="formacao-conta">
+          <?= $formacao['feitas'] ?> de <?= $formacao['total'] ?> aulas ·
+          Pistas Rápidas <?= $formacao['rapidasFeitas'] ?> de <?= $formacao['rapidas'] ?>
+        </p>
+
+        <?php if ($formacao['aprendidas'] !== []): ?>
+          <?php /* Os títulos, e não só o percentual: "26%" não diz nada, "você
+                   já sabe fazer a Ficha de Fato" diz. */ ?>
+          <p class="formacao-feitas">
+            Você já aprendeu: <strong><?= h(implode(' · ', $formacao['aprendidas'])) ?></strong>
+          </p>
+        <?php endif; ?>
+
+        <?php if ($formacao['proxima'] !== null): ?>
+          <a class="btn btn-mini" href="/aulas#<?= h($formacao['proxima']['aula']['id']) ?>">
+            Próxima 🚗 Dia <?= (int) $formacao['proxima']['dia']['numero'] ?> — <?= h($formacao['proxima']['aula']['titulo']) ?>
+          </a>
+        <?php else: ?>
+          <p class="dica" style="margin:0">
+            Você fez todas as Pistas Rápidas. As Pistas Lentas continuam em
+            <a href="/aulas">/aulas</a> para quando precisar de um ponto específico.
+          </p>
+        <?php endif; ?>
+      </section>
+    <?php endif; ?>
+
+    <?php /* ============ 5. o índice das áreas ============ */ ?>
+    <h2 class="secao">Suas áreas</h2>
     <div class="areas-hub">
       <?php foreach ($areas as $area): ?>
-        <?php
-        /* O contador só existe onde há fila de verdade. Área sem fila mostra o
-           resumo do que ela faz, e não um zero que não quer dizer nada. */
-        $pend = 0;
-        $recado_fila = null;
-        if ($area === 'inscricoes' && $inscricoes_esperando > 0) {
-            $pend = $inscricoes_esperando;
-            $recado_fila = $pend === 1 ? '1 pessoa esperando decisão' : $pend . ' pessoas esperando decisão';
-        } elseif ($area === 'fatos' && $fatos_esperando > 0) {
-            $pend = $fatos_esperando;
-            $recado_fila = $pend === 1 ? '1 fato esperando checagem' : $pend . ' fatos esperando checagem';
-        } elseif ($area === 'producao' && $meus_cards > 0) {
-            $pend = $meus_cards;
-            $recado_fila = $pend === 1 ? '1 card com você' : $pend . ' cards com você';
-        }
-        ?>
-        <a class="area-cartao<?= $pend > 0 ? ' tem-aviso' : '' ?>" href="<?= h(DESTINO_AREA[$area]['url']) ?>">
-          <?php if ($pend > 0): ?>
-            <span class="area-aviso" aria-hidden="true"><?= $pend ?></span>
-          <?php endif; ?>
+        <a class="area-cartao" href="<?= h(DESTINO_AREA[$area]['url']) ?>">
           <span class="area-icone"><?= icone(ICONE_AREA[$area] ?? 'star') ?></span>
           <span class="area-texto">
             <strong><?= h(AREAS[$area]) ?></strong>
-            <span><?= h($recado_fila ?? DESTINO_AREA[$area]['resumo']) ?></span>
+            <span><?= h(DESTINO_AREA[$area]['resumo']) ?></span>
           </span>
         </a>
       <?php endforeach; ?>

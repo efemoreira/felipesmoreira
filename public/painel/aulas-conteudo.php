@@ -16,6 +16,12 @@ declare(strict_types=1);
  *   Aula nova de aprofundamento entra como 'lenta' no Dia certo e pronto: o
  *   caminho principal não muda.
  *
+ *   A EXCEÇÃO é o Dia 0, que tem duas rápidas: 'como-funciona-a-formacao'
+ *   explica a própria divisão em pistas antes de 'regras-de-todos' cobrar as
+ *   regras. Quem cai aqui pela primeira vez precisa saber ler a tela antes de
+ *   receber a primeira ordem — e essa explicação é aula, não rodapé, para não
+ *   viver repetida no cabeçalho de /aulas e no topo do aulas.php.
+ *
  * POR QUE ISTO É PHP, E NÃO JSON EM src/data:
  *   O site é export estático — tudo que entra no bundle do Next é público.
  *   O manual é documento interno, então o conteúdo sai daqui pelo
@@ -58,6 +64,33 @@ const CURRICULO = [
     'titulo' => 'Comece por aqui',
     'resumo' => 'As regras que valem para todo mundo, de todas as funções. Nenhuma tarefa vence uma regra daqui.',
     'aulas'  => [
+
+    [
+        'id'      => 'como-funciona-a-formacao',
+        'pista'   => 'rapida',
+        'titulo'  => 'Como esta formação funciona',
+        'resumo'  => 'Por que algumas aulas têm 🚗 e outras não — e quais delas você precisa fazer.',
+        'minutos' => 3,
+        'funcoes' => [],
+        'blocos'  => [
+            ['tipo' => 'texto', 'texto' => 'Cada Dia desta formação abre com uma Pista Rápida, marcada com 🚗. É o caminho principal: quem fizer só as Pistas Rápidas atravessa a formação inteira e já consegue trabalhar.'],
+            ['tipo' => 'texto', 'texto' => 'Tudo o que vem depois da 🚗, dentro do mesmo Dia, é Pista Lenta. Cada uma aprofunda ou reforça UM ponto, para quem precisar daquele ponto. Não é aula extra nem aula menor — é a mesma matéria em passo mais lento.'],
+            ['tipo' => 'lista', 'titulo' => 'Como reconhecer na tela', 'itens' => [
+                'O 🚗 aparece antes do título da aula. Sem 🚗, é Pista Lenta.',
+                'Embaixo do título, a etiqueta diz PISTA RÁPIDA ou PISTA LENTA e quantos minutos a aula leva.',
+                'A barra lá em cima conta as duas coisas separadas: todas as aulas, e só as Pistas Rápidas.',
+                'A aula que ensina a SUA função vem marcada com "sua função", e o atalho para ela fica no começo da página.',
+            ]],
+            ['tipo' => 'lista', 'titulo' => 'Por que a formação é dividida assim', 'itens' => [
+                'O time tem gente que já fez campanha ao lado de gente que chegou ontem. Um ritmo único ou entedia uma metade ou perde a outra.',
+                'Quem já sabe não precisa esperar ninguém: faz as 🚗 e vai trabalhar.',
+                'Quem está começando não fica para trás: desce para a Pista Lenta do ponto que não entrou, e só daquele ponto.',
+                'A coordenação pode acrescentar reforço depois sem mexer no caminho de quem já está andando — dúvida que aparece duas vezes no grupo vira uma Pista Lenta nova.',
+            ]],
+            ['tipo' => 'aviso', 'texto' => 'Marque a aula como feita ao terminar. É por aí que a coordenação sabe quem já pode assumir a função — e não por quem falou mais no grupo.'],
+            ['tipo' => 'texto', 'texto' => 'Você não precisa decidir agora qual pista seguir. Comece pela próxima 🚗 aqui embaixo, que traz as seis regras que valem para todo mundo, e desça para a Pista Lenta quando alguma coisa não ficar clara.'],
+        ],
+    ],
 
     [
         'id'      => 'regras-de-todos',

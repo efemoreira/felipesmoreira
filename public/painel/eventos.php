@@ -286,16 +286,26 @@ if ($aberto === null) {
     abrir_pagina('Encontros');
     ?>
     <div class="capa">
-      <h1>Encontros</h1>
-      <p class="sub">
-        As cinco peças de cada encontro, a lista de presença e o follow-up de quem veio.
-      </p>
+      <?php cabecalho_pagina(
+          'Encontros',
+          'As cinco peças de cada encontro, a lista de presença e o follow-up de quem veio.',
+          null,
+          '/painel/eventos'
+      ); ?>
 
       <?php recado($erro, $ok); ?>
 
       <?php foreach ([['Próximos', eventos_proximos()], ['Já aconteceram', eventos_passados()]] as [$titulo, $lista]): ?>
         <fieldset>
           <legend><?= h($titulo) ?> (<?= count($lista) ?>)</legend>
+          <?php if ($lista === [] && $titulo === 'Próximos'): ?>
+            <p class="dica" style="margin:0 0 8px">
+              Nenhum encontro marcado. O primeiro passo é <strong>Local &amp; Hora</strong>: três
+              opções avaliadas (capacidade, custo, acesso, energia, som) antes de fechar qualquer
+              coisa — e a reserva confirmada por escrito. Use o formulário abaixo para abrir o
+              encontro e as cinco peças aparecem prontas para dividir.
+            </p>
+          <?php endif; ?>
           <?php if ($lista === []): ?>
             <p class="dica" style="margin:0">Nada por aqui.</p>
           <?php endif; ?>
@@ -372,13 +382,14 @@ $time      = array_values(array_filter(ler_usuarios(), fn ($u) => $u['ativo']));
 abrir_pagina($aberto['titulo']);
 ?>
 <div class="capa">
-  <p class="sub"><a href="/painel/eventos.php">← todos os encontros</a></p>
-  <h1><?= h($aberto['titulo']) ?></h1>
-  <p class="sub">
-    <?= h($familia['nome']) ?> · <?= h($dataBonita($aberto)) ?>
-    <?= $aberto['local'] !== '' ? ' · ' . h($aberto['local']) : '' ?>
-    · <?= h(STATUS_EVENTO[$aberto['status']]) ?>
-  </p>
+  <?php cabecalho_pagina(
+      $aberto['titulo'],
+      $familia['nome'] . ' · ' . $dataBonita($aberto)
+      . ($aberto['local'] !== '' ? ' · ' . $aberto['local'] : '')
+      . ' · ' . STATUS_EVENTO[$aberto['status']],
+      ['url' => '/painel/eventos.php', 'texto' => 'Todos os encontros'],
+      '/painel/eventos'
+  ); ?>
 
   <?php recado($erro, $ok); ?>
 

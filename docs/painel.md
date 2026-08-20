@@ -19,7 +19,8 @@ completo entre o site estático e este painel.
 |---|---|
 | `public/painel/sessao.php` | Núcleo: sessão, usuários, permissões. Todos os outros começam por aqui. |
 | `public/painel/layout.php` | Cabeçalho, menu e rodapé compartilhados. |
-| `public/painel/index.php` | Login, criação do primeiro admin e hub das áreas. |
+| `public/painel/index.php` | Login, criação do primeiro admin e o hub: mesa da função, fila do dia, encontros e formação. |
+| `public/painel/agora.php` | Fonte única do que está pendente — a fila do hub e o contador do menu saem daqui. |
 | `public/painel/agenda.php` | Editor da programação da semana. |
 | `public/painel/estudio.php` | Porteiro do estúdio (serve o `estudio.html` do build). |
 | `public/painel/aulas.php` | Gestão da formação: pendura o vídeo de cada aula e mostra quem estudou. |
@@ -107,9 +108,14 @@ marcar caixa:
   ao ar, quem entra no movimento e a lista de contatos com telefone. Libere para
   quem coordena.
 
-**A função da pessoa não limita nada.** Ela define só o *atalho* que aparece no
-topo do painel (o bloco "Seu lugar no time"), montado a partir do `funcoes` do
-usuário — ver `FERRAMENTA_DA_FUNCAO` em `index.php`.
+**A função da pessoa não limita nada.** Ela define só a *mesa* que aparece no topo
+do painel — o cartão com a ferramenta daquela função, o estado do trabalho nela e
+o botão com o verbo certo ("Trazer um fato", "Checar a fila"). Montada a partir do
+`funcoes` do usuário; ver `MESA_DA_FUNCAO` e `mesas_de()` em `agora.php`.
+
+A função também decide qual das cinco peças de um encontro o painel destaca para
+a pessoa: os ids das funções do grupo Eventos no `funcoes.json` são exatamente as
+chaves de `PECAS` (`peca_da_pessoa()`).
 
 Tirar uma permissão vale na hora: a sessão é conferida contra o disco a cada
 requisição, não fica presa ao que valia no login.

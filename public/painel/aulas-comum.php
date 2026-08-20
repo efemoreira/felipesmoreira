@@ -113,6 +113,34 @@ function gravar_videos(array $videos): bool
     return true;
 }
 
+/**
+ * As aulas que ensinam a usar esta ferramenta, na ordem do currículo.
+ *
+ * A ligação já existia num sentido só: a aula sabe apontar para a ferramenta
+ * ("Fazer isto agora"). Esta é a volta — quem travou dentro da ferramenta acha
+ * a aula sem precisar caçar na lista de 32.
+ *
+ * Compara pelo nome sem pasta nem extensão porque o currículo grava
+ * "/painel/fatos" e a página é "fatos.php": quem casa os dois em produção é a
+ * RewriteRule do publish.yml, que não existe aqui dentro.
+ */
+function aulas_da_ferramenta(string $caminho): array
+{
+    $alvo = pathinfo(trim($caminho, '/'), PATHINFO_FILENAME);
+    if ($alvo === '') {
+        return [];
+    }
+
+    $achadas = [];
+    foreach (todas_as_aulas() as $aula) {
+        $dela = (string) ($aula['ferramenta'] ?? '');
+        if ($dela !== '' && pathinfo(trim($dela, '/'), PATHINFO_FILENAME) === $alvo) {
+            $achadas[] = $aula;
+        }
+    }
+    return $achadas;
+}
+
 /* ===================== progresso de cada pessoa ===================== */
 
 /** Descarta usuário e aula que não existem mais — o arquivo se limpa sozinho. */

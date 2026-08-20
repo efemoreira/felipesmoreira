@@ -50,6 +50,23 @@ h2 { font:400 20px/1.2 var(--display); color:var(--ouro); margin:0 0 12px; lette
 .sub { color:var(--texto-fraco); font-size:15px; margin:0 0 26px; max-width:70ch; }
 a { color:var(--ouro); text-underline-offset:3px; }
 
+/* caminho de volta, acima do título de uma tela de detalhe */
+.voltar { margin:0 0 10px; }
+.voltar a {
+  display:inline-flex; align-items:center; gap:7px; min-height:44px;
+  font:400 12px/1 var(--etiqueta); letter-spacing:1.6px; text-transform:uppercase;
+  color:var(--texto-min); text-decoration:none;
+}
+.voltar a:hover { color:var(--ouro); }
+/* a aula que ensina esta ferramenta — discreta, ao lado da linha de resumo */
+.sub-aula {
+  display:inline-flex; align-items:center; gap:4px; white-space:nowrap;
+  font:400 11px/1 var(--etiqueta); letter-spacing:1.5px; text-transform:uppercase;
+  border:2px solid rgba(255,203,5,.35); padding:7px 10px; margin-left:6px;
+  text-decoration:none;
+}
+.sub-aula:hover { border-color:var(--ouro); background:rgba(255,203,5,.1); }
+
 /* ---- barra de navegação entre as áreas ---- */
 /* Dois níveis: em cima quem sou eu e a saída; embaixo as áreas de trabalho.
    Numa linha só, com 6 áreas, isso virava três fileiras embaralhadas. */
@@ -75,7 +92,7 @@ a { color:var(--ouro); text-underline-offset:3px; }
   font:400 13px/1 var(--etiqueta); letter-spacing:1.2px; cursor:pointer;
   padding:0 13px; border:2px solid transparent; background:transparent;
   color:var(--texto-fraco); text-decoration:none;
-  display:inline-flex; align-items:center; min-height:44px;
+  display:inline-flex; align-items:center; gap:7px; min-height:44px;
   transition:color .12s ease, border-color .12s ease, background .12s ease;
 }
 .nav a:hover, .nav button:hover { border-color:var(--linha); color:var(--creme); }
@@ -83,6 +100,16 @@ a { color:var(--ouro); text-underline-offset:3px; }
   border-color:var(--ink); background:var(--ouro); color:var(--ink);
   box-shadow:3px 3px 0 rgba(0,0,0,.45);
 }
+.nav a .nav-icone { flex:0 0 auto; display:grid; place-items:center; opacity:.75; }
+.nav a[aria-current="page"] .nav-icone { opacity:1; }
+/* Quantas coisas esperam naquela área. Fica no menu, e não só no hub, porque
+   fila que só se vê voltando para a home é fila que dorme. */
+.nav a .nav-conta-pend {
+  flex:0 0 auto; min-width:19px; height:19px; padding:0 5px;
+  display:grid; place-items:center; background:#C2543F; color:#fff;
+  font:700 11px/1 var(--corpo); border:1px solid rgba(0,0,0,.5);
+}
+.nav a[aria-current="page"] .nav-conta-pend { border-color:var(--ink); }
 /* conta e sair ficam na fileira de cima, à direita, longe das áreas */
 .nav-conta {
   flex:0 0 auto; order:3; display:flex; gap:4px; align-items:center;
@@ -222,7 +249,11 @@ input:focus, select:focus, textarea:focus {
 .acoes { display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
 .barra { position:sticky; bottom:0; background:linear-gradient(180deg,rgba(20,17,12,0),var(--noite) 40%); padding:20px 0 6px; }
 
-/* ---- recados ---- */
+/* ---- recados ----
+   Toda ação do painel termina em POST-redirect-GET com âncora: o navegador
+   salta para o item mexido, e um recado estático ficaria acima da dobra sem
+   ninguém ver. Por isso ele gruda no topo até a próxima rolagem. */
+.recado-zona { position:sticky; top:0; z-index:5; padding-top:8px; }
 .msg {
   padding:14px 16px; border:3px solid; margin:0 0 20px; font-size:15px; line-height:1.55;
   box-shadow:4px 4px 0 rgba(0,0,0,.35);
@@ -302,14 +333,6 @@ input[type=file]::file-selector-button {
   color:var(--ouro); margin:0 0 5px;
 }
 .area-cartao .area-texto > span { font-size:14px; line-height:1.5; color:var(--texto-fraco); display:block; }
-/* contador de pendência (ex.: inscrições esperando) */
-.area-aviso {
-  position:absolute; top:-11px; right:-11px; min-width:30px; height:30px; padding:0 8px;
-  display:grid; place-items:center; background:#C2543F; color:#fff;
-  border:3px solid var(--noite); font:400 14px/1 var(--corpo); font-weight:700;
-  box-shadow:2px 2px 0 rgba(0,0,0,.5);
-}
-.area-cartao.tem-aviso { border-color:rgba(194,84,63,.55); }
 
 /* ---- ficha de inscrição ---- */
 .ficha {
@@ -374,7 +397,12 @@ input[type=file]::file-selector-button {
 
 /* ---- celular ---- */
 @media (max-width:700px) {
-  .item-resumo span { display:none; }
+  /* A linha de baixo do item ("Pista Rápida · 8 min", o horário da agenda)
+     quebra para a segunda linha em vez de sumir: ela é metade da informação, e
+     o celular é de onde a maioria entra. */
+  .item-resumo { flex-wrap:wrap; }
+  .item-resumo strong { flex:1 1 100%; white-space:normal; }
+  .item-resumo span { flex:0 0 100%; white-space:normal; }
   .item-topo { flex-wrap:wrap; }
   .cartao-thumb { width:84px; }
   .cartao-titulo { font-size:14px; }
@@ -387,16 +415,25 @@ input[type=file]::file-selector-button {
   .nav {
     flex-wrap:nowrap; overflow-x:auto; width:100%; order:9;
     -webkit-overflow-scrolling:touch; scrollbar-width:none;
+    /* apaga as pontas para dizer, sem escrever, que a faixa continua */
+    -webkit-mask-image:linear-gradient(90deg,transparent,#000 14px,#000 calc(100% - 14px),transparent);
+    mask-image:linear-gradient(90deg,transparent,#000 14px,#000 calc(100% - 14px),transparent);
   }
   .nav::-webkit-scrollbar { display:none; }
   .nav a, .nav button { flex:0 0 auto; }
   /* duas fileiras no celular: em cima a saída, embaixo as áreas rolando.
      O nome sai (a home já diz "Olá, Felipe") para não empurrar uma 3ª fileira. */
   .nav-conta { order:3; margin-left:auto; border-left:0; padding-left:0; }
+  .nav-conta { -webkit-mask-image:none; mask-image:none; }
   .quem { display:none; }
   .caixa { margin:3vh auto; padding:22px 18px; box-shadow:6px 6px 0 rgba(0,0,0,.5); }
   .acoes .btn { flex:1 1 auto; }
   .areas-hub { gap:14px; }
+
+  /* o cartão de data do encontro em cima do texto, não ao lado */
+  .encontro { flex-direction:column; gap:10px; }
+  .encontro .encontro-data { min-width:0; align-self:flex-start; }
+  .mesa-area { padding-right:46px; }
 }
 
 /* Em telas de toque o :hover fica "grudado" depois do toque */
@@ -414,37 +451,127 @@ input[type=file]::file-selector-button {
   * { transition:none !important; }
 }
 
-/* ---- acesso rápido: o atalho da função da pessoa ----
-   Fica acima da grade de áreas. Não substitui a grade: a função diz onde a
-   pessoa trabalha todo dia, não o que ela pode abrir. */
-.atalhos {
-  display:grid; gap:10px; margin:0 0 26px; padding:16px 18px;
-  border:3px solid var(--ouro); background:rgba(255,203,5,.08);
-  box-shadow:5px 5px 0 rgba(0,0,0,.4);
+/* ======================================================================
+   O HUB
+   Quatro blocos, na ordem das perguntas de quem abre o painel: onde eu
+   trabalho · o que está esperando · o que vem aí · quanto eu já aprendi.
+   A grade de áreas veio para o fim: ela é o índice, não a pauta do dia.
+   ====================================================================== */
+
+/* ---- título de bloco ---- */
+.secao {
+  font:400 12px/1 var(--etiqueta); letter-spacing:2.4px; text-transform:uppercase;
+  color:var(--texto-min); margin:34px 0 14px; padding:0 0 8px;
+  border-bottom:2px solid var(--linha);
 }
-.atalhos-rotulo {
-  margin:0; font:400 11px/1.3 var(--etiqueta); letter-spacing:2px;
+
+/* ---- 1. a mesa: a ferramenta da função da pessoa ----
+   É o cartão maior da tela de propósito. O militante tem UMA mesa; o resto do
+   painel ele abre quando precisa. */
+.mesas { display:grid; gap:16px; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); }
+.mesa {
+  position:relative; padding:20px 20px 18px; border:3px solid var(--ouro);
+  background:rgba(255,203,5,.08); box-shadow:6px 6px 0 rgba(0,0,0,.45);
+}
+.mesa .mesa-icone {
+  position:absolute; top:-3px; right:16px; width:44px; height:44px;
+  display:grid; place-items:center;
+  background:var(--ouro); color:var(--ink); border:3px solid var(--ink);
+}
+.mesa .mesa-icone svg { width:24px; height:24px; }
+.mesa-funcao {
+  margin:0 0 4px; font:400 11px/1 var(--etiqueta); letter-spacing:2.2px;
   text-transform:uppercase; color:var(--ouro);
 }
-.atalho {
+.mesa-area {
+  margin:0 0 10px; font:400 22px/1.15 var(--display); color:var(--creme);
+  letter-spacing:.3px; padding-right:52px;
+}
+.mesa-estado { margin:0 0 16px; font-size:14.5px; line-height:1.6; color:var(--texto-fraco); }
+
+/* ---- 2. a fila do dia ---- */
+.fila { list-style:none; margin:0; padding:0; display:grid; gap:10px; }
+.fila-item {
   display:flex; align-items:center; gap:14px; text-decoration:none; color:var(--creme);
-  padding:12px 14px; min-height:44px; border:2px solid rgba(255,203,5,.35);
-  background:rgba(0,0,0,.25);
+  padding:14px 16px; min-height:44px; border:3px solid var(--linha);
+  background:rgba(255,203,5,.04);
+  transition:border-color .12s ease, background .12s ease, transform .12s ease;
+}
+.fila-item:hover { border-color:var(--ouro); background:rgba(255,203,5,.1); transform:translateX(3px); }
+.fila-item:focus-visible { outline:3px solid var(--ouro2); outline-offset:3px; }
+/* vermelho só quando um prazo do manual já venceu — o mesmo vermelho do card
+   atrasado no quadro, que o time já lê como atraso */
+.fila-urgente { border-color:var(--erro-borda); background:rgba(194,84,63,.1); }
+.fila-urgente:hover { border-color:var(--erro); background:rgba(194,84,63,.16); }
+.fila-item .fila-icone { flex:0 0 auto; color:var(--ouro); display:grid; place-items:center; }
+.fila-urgente .fila-icone { color:var(--erro); }
+.fila-item .fila-texto { flex:1 1 auto; min-width:0; }
+.fila-item .fila-texto strong { display:block; font-size:16px; line-height:1.35; font-weight:700; }
+.fila-item .fila-texto > span {
+  display:block; margin-top:3px; font-size:13.5px; line-height:1.5; color:var(--texto-min);
+}
+.fila-item .fila-seta { flex:0 0 auto; color:var(--texto-min); display:grid; place-items:center; }
+
+/* fila zerada não é tela vazia: é a meta do manual batida */
+.vazio-bom {
+  margin:0; padding:16px 18px; border:3px solid var(--ok-borda);
+  background:rgba(78,155,69,.1); color:var(--ok); font-size:15px; line-height:1.65;
+}
+.vazio-bom a { color:var(--ok); }
+
+/* ---- 3. os encontros marcados ---- */
+.encontros { display:grid; gap:12px; }
+.encontro {
+  display:flex; align-items:flex-start; gap:16px; text-decoration:none; color:var(--creme);
+  padding:14px 16px; border:3px solid var(--linha); background:rgba(255,203,5,.04);
   transition:border-color .12s ease, background .12s ease;
 }
-.atalho:hover { border-color:var(--ouro); background:rgba(255,203,5,.12); }
-.atalho:focus-visible { outline:3px solid var(--ouro2); outline-offset:3px; }
-.atalho .atalho-icone {
-  flex:0 0 auto; width:38px; height:38px; display:grid; place-items:center;
-  background:var(--ouro); color:var(--ink); border:2px solid var(--ink);
+.encontro:hover { border-color:var(--ouro); background:rgba(255,203,5,.1); }
+.encontro:focus-visible { outline:3px solid var(--ouro2); outline-offset:3px; }
+.encontro .encontro-data {
+  flex:0 0 auto; text-align:center; padding:6px 12px; border:2px solid var(--ouro);
+  background:rgba(0,0,0,.3); min-width:92px;
 }
-.atalho .atalho-icone svg { width:21px; height:21px; }
-.atalho .atalho-texto { flex:1 1 auto; min-width:0; }
-.atalho .atalho-texto strong {
-  display:block; font:400 17px/1.2 var(--display); color:var(--ouro); margin:0 0 3px;
+.encontro .encontro-data strong {
+  display:block; font:400 15px/1.2 var(--etiqueta); letter-spacing:1.2px; color:var(--ouro);
 }
-.atalho .atalho-texto > span { display:block; font-size:13.5px; color:var(--texto-fraco); }
-.atalho .atalho-seta { flex:0 0 auto; color:var(--texto-min); display:grid; place-items:center; }
+.encontro .encontro-data > span { display:block; margin-top:2px; font-size:12.5px; color:var(--texto-min); }
+.encontro .encontro-texto { flex:1 1 auto; min-width:0; }
+.encontro .encontro-texto > strong {
+  display:block; font:400 17px/1.25 var(--display); color:var(--creme); margin:0 0 5px;
+}
+.encontro .encontro-texto > span { display:block; font-size:13.5px; line-height:1.55; color:var(--texto-fraco); }
+/* a peça das cinco que cabe a esta pessoa — é o que transforma "tem evento" em
+   "tem evento e a parte é sua" */
+.encontro .encontro-peca { margin-top:5px; color:var(--ouro); }
+
+/* ---- 4. a formação ---- */
+.formacao {
+  padding:18px; border:3px solid var(--linha); background:rgba(0,0,0,.28);
+}
+.barra-progresso { height:14px; border:2px solid var(--ouro); background:rgba(0,0,0,.4); }
+.barra-progresso span { display:block; height:100%; background:var(--ouro); transition:width .25s ease; }
+.formacao-conta {
+  margin:10px 0 0; font:400 12px/1.4 var(--etiqueta); letter-spacing:1.3px; color:var(--texto-min);
+}
+/* o nome do que já foi aprendido, e não só o percentual: "26%" não diz nada,
+   "você já sabe fazer a Ficha de Fato" diz */
+.formacao-feitas { margin:12px 0 16px; font-size:14.5px; line-height:1.6; color:var(--texto-fraco); }
+.formacao-feitas strong { color:var(--creme); font-weight:400; }
+
+/* atalho para as colunas do quadro: no celular elas viram uma pilha, e sem
+   isto chegar em "Revisão" é rolar às cegas */
+.atalho-colunas { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 16px; }
+.atalho-colunas a {
+  display:inline-flex; align-items:center; gap:7px; min-height:44px; padding:8px 13px;
+  font:400 12px/1 var(--etiqueta); letter-spacing:1.3px; text-transform:uppercase;
+  border:2px solid var(--linha); color:var(--texto-fraco); text-decoration:none;
+}
+.atalho-colunas a:hover { border-color:var(--ouro); color:var(--creme); }
+.atalho-colunas a span {
+  min-width:20px; padding:0 5px; background:rgba(255,203,5,.16); color:var(--ouro);
+  font-family:var(--corpo); font-size:12px;
+}
 
 /* ---- quadro de produção ----
    Quatro colunas no desktop; no celular vira uma pilha, porque rolar de lado
@@ -453,10 +580,11 @@ input[type=file]::file-selector-button {
   display:grid; gap:14px; grid-template-columns:repeat(4,minmax(0,1fr)); margin:0 0 28px;
   align-items:start;
 }
+@media (min-width:1101px){ .atalho-colunas { display:none; } }
 @media (max-width:1100px){ .quadro { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 @media (max-width:700px){ .quadro { grid-template-columns:1fr; } }
 
-.coluna { border:3px solid var(--linha); background:rgba(0,0,0,.22); padding:12px; min-width:0; }
+.coluna { border:3px solid var(--linha); background:rgba(0,0,0,.22); padding:12px; min-width:0; scroll-margin-top:16px; }
 .coluna-topo {
   display:flex; align-items:center; justify-content:space-between; gap:8px;
   margin:0 0 12px; font:400 13px/1.2 var(--etiqueta); letter-spacing:1.6px;
