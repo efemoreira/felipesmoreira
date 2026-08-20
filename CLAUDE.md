@@ -127,6 +127,30 @@ extensão e elas não são `.php` nem `.json`.
 Ao precisar de um arquivo novo em `/dados` legível pela web, acrescente um
 `<Files>` liberando **aquele nome**, nunca afrouxe o bloqueio por extensão.
 
+## A candidatura e as propostas
+
+Felipe é **candidato a Vice-Governador do Ceará**, na chapa do **Delegado Huggo
+Leonardo**, pelo **Partido Missão**. Como vice, ele **não tem número de urna
+próprio** — o voto vai no número do candidato a governador, e a página
+`/a-missao` diz isso com todas as letras, porque é a dúvida mais comum.
+
+`/propostas` (`src/features/propostas/`) traz o plano de governo da chapa,
+**"Retomar para Reconstruir"**, organizado como o próprio documento: por
+compromisso, não por secretaria, cada um respondendo às mesmas seis perguntas
+(o que está em jogo · onde queremos chegar · o que vamos fazer · de onde vem o
+recurso · quando entrega · como você cobra).
+
+**Todo número traz a página do plano.** Não é capricho de nota de rodapé: a
+carta de abertura pede "leiam este plano, guardem este plano e me cobrem este
+plano" (p. 2), e é a mesma regra da Parte 0 do manual — fato sem fonte não
+entra. Número sem página aqui é o bug.
+
+> ⚠️ **A fonte do conteúdo é uma wiki interna de estratégia**, não um documento
+> público. Além das propostas, ela tem seções de *vulnerabilidades*, *ganchos de
+> debate*, *silêncios* e *confrontos*, com as respostas prontas para os ataques
+> que virão. **Nada disso vai para o site.** Ao atualizar `/propostas`, copie
+> apenas proposta, meta, custeio e prazo.
+
 ## Funções da militância
 
 `src/data/funcoes.json` é a lista canônica dos papéis do movimento (Olheiro,
@@ -161,6 +185,24 @@ sugestão de áreas seguem sozinhos.
 O consentimento fica registrado no cadastro (`consentimentoEm`,
 `consentimentoVersao`). Ao mudar o texto de LGPD do formulário, suba
 `VERSAO_CONSENTIMENTO` em `public/painel/inscricoes-comum.php`.
+
+### De onde a pessoa veio (`origem`)
+
+`/quero-ajudar?de=<slug>` grava a origem na inscrição, e ela aparece na ficha
+da fila. Um campo só para as duas perguntas, porque na prática são a mesma:
+`?de=joao-silva` diz **quem trouxe**, `?de=live-domingo` diz **por qual canal**.
+Sem isso não dá para saber qual militante recruta nem qual link converte.
+
+- **É opcional.** Inscrição sem origem é inscrição válida — recusar por causa
+  disso trocaria um militante novo por uma linha de relatório.
+- **Vira slug na entrada** (`normalizar_origem()`), senão "João Silva",
+  "joao silva" e "JOÃO" viram três origens diferentes no mesmo relatório.
+- O formulário guarda o valor em `sessionStorage` enquanto os três passos
+  rolam: sem isso, um F5 no passo 2 apagaria o crédito de quem trouxe.
+
+**A origem não é dado de terceiro nem vem de rastreador.** É o que a própria
+pessoa trouxe no link que abriu — por isso não há cookie, pixel ou referrer
+envolvido, e a Política de Privacidade continua valendo como está.
 
 ## Responsividade
 
@@ -290,11 +332,12 @@ manual para dentro do código:
   separados) e o funil D+0/D+3/D+7. Executar pede `eventos`; decidir e ver
   telefone pede `agenda`.
 
-**Ao mexer em slug ou nome de arquivo:** use `sem_acento()` de
-`producao-comum.php`, não `iconv('ASCII//TRANSLIT')` — o TRANSLIT depende da
-libc e o mesmo texto vira `ha` no Linux da Hostinger e `h` no macOS. No lado
-JavaScript o equivalente correto é `normalize("NFD")`, que o Unicode define e
-que dá o mesmo resultado em qualquer máquina.
+**Ao mexer em slug ou nome de arquivo:** use `sem_acento()` de `sessao.php`
+(nasceu no `producao-comum.php`, mudou de casa quando as inscrições passaram a
+precisar dela para o slug de origem), não `iconv('ASCII//TRANSLIT')` — o
+TRANSLIT depende da libc e o mesmo texto vira `ha` no Linux da Hostinger e `h`
+no macOS. No lado JavaScript o equivalente correto é `normalize("NFD")`, que o
+Unicode define e que dá o mesmo resultado em qualquer máquina.
 
 **O nome `AAAA-MM-DD_tipo_assunto` é gerado em dois lugares** e os dois têm de
 concordar: `nome_de_arquivo()`/`apelido()` em `producao-comum.php` (o card do
@@ -355,6 +398,25 @@ eleitoral.
 
 - `next.config.ts` (`output: "export"`) e `.github/workflows/publish.yml` —
   mudar isso muda o modelo de hospedagem inteiro.
-- `conceito.html` (protótipo solto na raiz) e a pasta `out/` versionada —
-  parecem artefatos que valeria limpar, mas não foram removidos nesta
-  reorganização; confirme com o Felipe antes.
+- `conceito.html` (protótipo solto na raiz) — parece artefato que valeria
+  limpar, mas não foi removido; confirme com o Felipe antes. (A pasta `out/`
+  estava listada aqui como versionada: não está, e nunca esteve — é build
+  local, ignorado pelo `.gitignore`.)
+
+## Imagens
+
+`public/` inteiro vai para o build sem passar por otimizador: o export estático
+obriga `images.unoptimized`, então **o Next não redimensiona nem converte
+nada**. O arquivo que você põe ali é o arquivo que o visitante baixa.
+
+Original em resolução cheia mora em `originais/`, que não é publicado. Os
+recortes servidos ficam em `public/image/`, e o `originais/LEIA-ME.md` tem os
+comandos exatos para refazer cada um.
+
+> O retrato da home já foi um PNG de 4,4 MB desenhando um círculo de 152 px.
+> Antes de acrescentar imagem em `public/`, confira o peso — a maioria chega de
+> celular, por link de WhatsApp.
+
+Os ícones do PWA **não saem da foto**: saem da marca das onças em
+`src/app/icon.png`. O `maskable` precisa do conteúdo em ~78% da moldura, senão
+o Android corta as orelhas ao aplicar a máscara redonda.

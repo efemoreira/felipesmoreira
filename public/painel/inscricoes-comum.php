@@ -91,6 +91,30 @@ function areas_sugeridas(array $funcoes): array
 
 /* ===================== inscrições ===================== */
 
+/**
+ * De onde veio a inscrição — o `?de=` da URL de /quero-ajudar.
+ *
+ * Carrega duas perguntas no mesmo campo, porque na prática são a mesma:
+ * `?de=joao-silva` diz **quem trouxe**, `?de=live-domingo` diz **de onde veio**.
+ * Sem isso não há como saber qual militante recruta e qual canal converte, que
+ * são as duas contas que governam o crescimento.
+ *
+ * Vira slug na entrada de propósito: o valor chega de link colado por qualquer
+ * pessoa, e um rótulo livre viraria "João Silva", "joao silva" e "JOÃO" como
+ * três origens diferentes no relatório. Nunca use `iconv('ASCII//TRANSLIT')`
+ * aqui — o resultado muda entre o Linux da Hostinger e o macOS.
+ */
+function normalizar_origem($bruto): string
+{
+    $texto = limpar_texto($bruto ?? '', 60);
+    if ($texto === '') {
+        return '';
+    }
+    $slug = strtolower(sem_acento($texto));
+    $slug = preg_replace('/[^a-z0-9]+/', '-', $slug) ?? '';
+    return trim($slug, '-');
+}
+
 function normalizar_inscricao($i): ?array
 {
     if (!is_array($i) || empty($i['id']) || empty($i['nome'])) {
@@ -109,6 +133,7 @@ function normalizar_inscricao($i): ?array
         'cidade'    => limpar_texto($i['cidade'] ?? '', 60),
         'bairro'    => limpar_texto($i['bairro'] ?? '', 60),
         'funcoes'   => funcoes_validas(is_array($i['funcoes'] ?? null) ? $i['funcoes'] : []),
+        'origem'    => normalizar_origem($i['origem'] ?? ''),
         'status'    => $status,
         'criadoEm'  => limpar_texto($i['criadoEm'] ?? '', 40),
         'consentimentoEm'     => limpar_texto($i['consentimentoEm'] ?? '', 40),

@@ -27,18 +27,32 @@ export const semana: { dia: string; oq: string }[] = [
   { dia: "DOM", oq: "A live principal: balanço e convocação" },
 ];
 
-export const fases: { quando: string; titulo: string; itens: string[] }[] = [
+/**
+ * O caminho até a votação.
+ *
+ * `estado` existe porque uma linha do tempo sem ele mente: quem abre a página
+ * hoje precisa ver onde o movimento **está**, não uma lista de etapas todas
+ * com a mesma cara. Ao virar de fase, mova o `agora` para a linha seguinte —
+ * é a única manutenção que este array pede.
+ *
+ * A fase da campanha se escreve pelo nome ("campanha aberta"), nunca pela data
+ * da virada: ela muda a cada eleição e o texto datado envelhece sozinho dentro
+ * de uma página que ninguém relê. Mesma regra do currículo da formação.
+ */
+export const fases: { estado: "feito" | "agora" | "vem"; quando: string; titulo: string; itens: string[] }[] = [
   {
-    quando: "Agora",
+    estado: "feito",
+    quando: "Concluído",
     titulo: "Reativação",
     itens: [
-      "Live de abertura no domingo — o plano inteiro, ao vivo",
-      "Reunião da estrutura na quarta, 19h30 — quem aparece, sai com função",
+      "Live de abertura — o plano inteiro, ao vivo",
+      "Reunião da estrutura: quem apareceu, saiu com função",
       "Times criados e coordenadores definidos",
     ],
   },
   {
-    quando: "Julho → Agosto",
+    estado: "feito",
+    quando: "Concluído",
     titulo: "Consolidação",
     itens: [
       "Convenção estadual — a maior mobilização do período",
@@ -47,16 +61,19 @@ export const fases: { quando: string; titulo: string; itens: string[] }[] = [
     ],
   },
   {
-    quando: "16 de agosto",
-    titulo: "Vira a chave",
+    estado: "agora",
+    quando: "Agora · campanha aberta",
+    titulo: "A rua, com material oficial",
     itens: [
-      "Começa a campanha de rua com material oficial",
-      "Kit diário de conteúdo até as 10h",
+      "Campanha de rua liberada — material oficial, nome e número",
+      "Kit diário de conteúdo no grupo até as 10h",
       "Lives sobem de frequência — por escada, com rodízio",
+      "Todo encontro capta contato: sem lista, o evento rende metade",
     ],
   },
   {
-    quando: "Setembro",
+    estado: "vem",
+    quando: "Próximas semanas",
     titulo: "O grande encontro",
     itens: [
       "Congresso estadual com as principais lideranças do movimento no palco",
@@ -66,20 +83,22 @@ export const fases: { quando: string; titulo: string; itens: string[] }[] = [
     ],
   },
   {
-    quando: "Reta final",
-    titulo: "Até 4 de outubro",
+    estado: "vem",
+    quando: "Reta final · até 4 de outubro",
+    titulo: "Ritmo máximo",
     itens: [
-      "Ritmo máximo: live diária e rua todo dia",
+      "Live diária e rua todo dia",
       "Todo mundo com escala, ninguém sem saber o que fazer",
     ],
   },
   {
-    quando: "Novembro",
+    estado: "vem",
+    quando: "Depois da urna",
     titulo: "Não acaba na eleição",
     itens: [
       "Confraternização ganhe-ou-perca — quem construiu, celebra junto",
       "Times viram estrutura permanente",
-      "Abre o ciclo de 2028 — e ele começa aqui",
+      "Abre o ciclo seguinte — e ele começa aqui",
     ],
   },
 ];

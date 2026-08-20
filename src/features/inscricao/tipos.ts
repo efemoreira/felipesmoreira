@@ -38,6 +38,12 @@ export interface DadosInscricao {
   cidade: string;
   bairro: string;
   funcoes: string[];
+  /**
+   * De onde veio — o `?de=` da URL. `?de=joao-silva` diz quem trouxe,
+   * `?de=live-domingo` diz por qual canal. Vai vazio quando a pessoa chegou
+   * pela URL limpa, e o painel aceita assim.
+   */
+  de: string;
   consentimento: boolean;
   /** honeypot: precisa chegar vazio */
   site: string;

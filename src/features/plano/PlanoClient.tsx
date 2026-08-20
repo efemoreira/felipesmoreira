@@ -463,13 +463,29 @@ const PlanoClient: React.FC = () => {
             <span aria-hidden="true" style={{ position: "absolute", left: 7, top: 6, bottom: 6, width: 4, background: C.goldDim, boxShadow: `0 0 0 2px ${C.ink}` }} />
             {fases.map((f, i) => (
               <div key={f.titulo} className="p-stagger" style={{ position: "relative", marginBottom: i === fases.length - 1 ? 0 : 26, transitionDelay: `${i * 0.1}s` }}>
+                {/* A bolinha carrega o estado: cheia no que já foi, cheia e maior
+                    na fase corrente, vazada no que ainda vem. Etapa cumprida com
+                    a mesma marca da que está rolando não informa nada. */}
                 <span
                   aria-hidden="true"
-                  style={{ position: "absolute", left: -26, top: 4, width: 18, height: 18, borderRadius: "50%", background: C.gold, border: `3px solid ${C.ink}`, boxShadow: `0 0 0 2px ${C.gold}` }}
+                  style={{
+                    position: "absolute",
+                    left: f.estado === "agora" ? -29 : -26,
+                    top: f.estado === "agora" ? 1 : 4,
+                    width: f.estado === "agora" ? 24 : 18,
+                    height: f.estado === "agora" ? 24 : 18,
+                    borderRadius: "50%",
+                    background: f.estado === "vem" ? C.night : C.gold,
+                    border: `3px solid ${f.estado === "vem" ? C.goldDim : C.ink}`,
+                    boxShadow: `0 0 0 2px ${f.estado === "vem" ? C.goldDim : C.gold}`,
+                  }}
                 />
-                <p style={{ fontFamily: FONT_ELITE, fontSize: 11, letterSpacing: 2.5, textTransform: "uppercase", color: C.gold2, margin: "0 0 4px" }}>{f.quando}</p>
-                <p style={{ fontFamily: FONT_ALFA, fontSize: 19, letterSpacing: 0.4, margin: "0 0 8px" }}>{f.titulo}</p>
-                <ul style={{ margin: 0, paddingLeft: 18, display: "flex", flexDirection: "column", gap: 4 }}>
+                <p style={{ fontFamily: FONT_ELITE, fontSize: 11, letterSpacing: 2.5, textTransform: "uppercase", color: C.gold2, margin: "0 0 4px", opacity: f.estado === "feito" ? 0.75 : 1 }}>
+                  {f.estado === "feito" && <span aria-hidden="true">✓ </span>}
+                  {f.quando}
+                </p>
+                <p style={{ fontFamily: FONT_ALFA, fontSize: f.estado === "agora" ? 22 : 19, letterSpacing: 0.4, margin: "0 0 8px", opacity: f.estado === "feito" ? 0.72 : 1 }}>{f.titulo}</p>
+                <ul style={{ margin: 0, paddingLeft: 18, display: "flex", flexDirection: "column", gap: 4, opacity: f.estado === "feito" ? 0.62 : 1 }}>
                   {f.itens.map(item => (
                     <li key={item} style={{ fontSize: 14, lineHeight: 1.55, opacity: 0.92 }}>{item}</li>
                   ))}

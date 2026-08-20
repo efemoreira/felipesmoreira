@@ -43,11 +43,11 @@ const bitter = Bitter({
 export const metadata: Metadata = {
   metadataBase: new URL("https://felipesmoreira.com"),
   title: {
-    default: "Felipe Moreira — Missão Ceará (MBL CE) | O Futuro é Glorioso",
+    default: "Felipe Moreira — Candidato a Vice-Governador do Ceará | Missão Ceará",
     template: "%s | Felipe Moreira",
   },
   description:
-    "Felipe Moreira: Militante do MBL Ceará, afiliado à Missão Ceará. Conheça a história.",
+    "Felipe Moreira, candidato a Vice-Governador do Ceará pela Missão Ceará. De militante de internet no MBL Ceará a militante de rua: a história, o projeto e como entrar na militância.",
   applicationName: "Felipe Moreira",
   keywords: [
     "Felipe Moreira",
@@ -58,9 +58,10 @@ export const metadata: Metadata = {
     "MBL",
     "MBL CE",
     "MBL Ceará",
-    "Pré-candidato deputado federal",
+    "candidato a vice-governador do Ceará",
     "vice-governador do Ceará",
-    "deputado federal Ceará",
+    "eleições 2026 Ceará",
+    "segurança pública Ceará",
     "sertão",
     "heróis do Ceará",
     "cordel",
@@ -76,18 +77,18 @@ export const metadata: Metadata = {
     locale: "pt_BR",
     url: "https://felipesmoreira.com",
     siteName: "Felipe Moreira",
-    title: "Felipe Moreira — Missão Ceará (MBL CE)",
+    title: "Felipe Moreira — Candidato a Vice-Governador do Ceará",
     description:
-      "Militante do MBL Ceará, filiado à Missão Ceará.",
+      "Missão Ceará: devolver aos nossos jovens a liberdade que o crime organizado roubou.",
     // imagem OG (1200×630) gerada automaticamente por app/opengraph-image.tsx
   },
   twitter: {
     card: "summary_large_image",
     site: "@moreiramissao",
     creator: "@moreiramissao",
-    title: "Felipe Moreira — Missão Ceará (MBL CE)",
+    title: "Felipe Moreira — Candidato a Vice-Governador do Ceará",
     description:
-      "Militante do MBL Ceará, filiado à Missão Ceará.",
+      "Missão Ceará: devolver aos nossos jovens a liberdade que o crime organizado roubou.",
   },
   robots: {
     index: true,
@@ -126,9 +127,10 @@ export default function RootLayout({
     name: "Felipe Moreira",
     alternateName: ["Missão", "Missão Ceará", "Missão CE", "MBL Ceará", "MBL CE"],
     url: "https://felipesmoreira.com",
+    /* A dimensão declarada tem que bater com o arquivo — ver originais/LEIA-ME.md. */
     image: {
       "@type": "ImageObject",
-      url: "https://felipesmoreira.com/image/me.png",
+      url: "https://felipesmoreira.com/image/me-512.jpg",
       width: 512,
       height: 512,
     },
@@ -140,10 +142,9 @@ export default function RootLayout({
       "https://twitch.tv/moreiramissao",
       "https://kick.com/moreiramissao",
     ],
-    jobTitle:
-      "Ativista Político · Avaliando pré-candidatura a Deputado Federal ou Vice-Governador do Ceará",
+    jobTitle: "Candidato a Vice-Governador do Ceará",
     description:
-      "De militante de internet no MBL Ceará a militante de rua. Ex-líder de jovens que abraçou a Missão Ceará para devolver aos jovens a liberdade tomada pelo crime organizado.",
+      "De militante de internet no MBL Ceará a militante de rua. Ex-líder de jovens que abraçou a Missão Ceará para devolver aos jovens a liberdade tomada pelo crime organizado. Candidato a Vice-Governador do Ceará.",
     email: "contato@felipesmoreira.com",
     telephone: "+55 85 99722-3863",
     areaServed: "BR",

@@ -1,15 +1,16 @@
 'use client';
 import React from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { Icon, IconName } from "@/components/icons";
 import { C, FONT_ALFA, FONT_ELITE, FONT_BITTER } from "@/lib/theme";
 
 const profile = {
   name: "Felipe Moreira",
-  kicker: "Missão Ceará · O Futuro é Glorioso",
+  kicker: "Candidato a Vice-Governador do Ceará",
   bio: "De militante de internet no MBL Ceará a militante de rua. Larguei o conforto de só reclamar pela tela pra abraçar a Missão Ceará de devolver aos nossos jovens a liberdade que o crime organizado roubou.",
-  photo: "/image/me.png",
+  /* 320 px cobre a tela 2x do círculo de 152. Ver originais/LEIA-ME.md. */
+  photo: "/image/me-320.webp",
+  photoReserva: "/image/me-320.jpg",
 };
 
 type LinkCard = {
@@ -22,16 +23,61 @@ type LinkCard = {
   accent?: boolean;
 };
 
+/**
+ * O primeiro degrau da escada: uma palavra no privado, sem formulário nenhum.
+ *
+ * É o mesmo destino do passo 2 do /plano — a conversa de três minutos com a
+ * coordenação. Provisório de propósito: assim que a Comunidade do WhatsApp
+ * tiver link de convite, **troque só esta constante** por ele. O degrau de
+ * entrada não deve depender de uma pessoa estar disponível pra responder.
+ */
+const PRIMEIRO_DEGRAU = "https://wa.me/5585981872972?text=EQUIPE";
+
+/**
+ * Um cartão em destaque, não três.
+ *
+ * Antes, "Quero ajudar", "Programação" e "Heróis" eram todos `accent` e
+ * disputavam o mesmo clique — o efeito de destacar tudo é não destacar nada.
+ * Agora o ouro é só do degrau de entrada, e a ordem desce por compromisso:
+ * entrar no grupo (10 segundos) → saber quem sou → ler o plano → assumir
+ * função → o resto.
+ */
 const links: LinkCard[] = [
+  {
+    icon: "bolt",
+    title: "Entrar pro grupo",
+    subtitle: "Manda a palavra EQUIPE e a gente te chama",
+    description:
+      "O primeiro passo é uma palavra no WhatsApp da coordenação. Sem formulário, sem link, sem burocracia",
+    href: PRIMEIRO_DEGRAU,
+    accent: true,
+  },
+  {
+    icon: "star",
+    title: "A Missão",
+    subtitle: "Quem eu sou e por que me candidatei",
+    description:
+      "De militante de internet no MBL a candidato a Vice-Governador do Ceará: a trajetória e o motivo",
+    href: "/a-missao",
+    internal: true,
+  },
+  {
+    icon: "book",
+    title: "Propostas",
+    subtitle: "O plano de governo, com meta e prazo",
+    description:
+      "Retomar para Reconstruir: sete compromissos com meta, prazo, de onde vem o recurso e como você cobra",
+    href: "/propostas",
+    internal: true,
+  },
   {
     icon: "flag",
     title: "Quero ajudar",
-    subtitle: "Entre pra militância da Missão Ceará",
+    subtitle: "Escolha sua função na militância",
     description:
       "Escolha como quer ajudar o movimento no Ceará — comunicação, eventos ou onde precisar — e a coordenação entra em contato",
     href: "/quero-ajudar",
     internal: true,
-    accent: true,
   },
   {
     icon: "calendar",
@@ -41,7 +87,6 @@ const links: LinkCard[] = [
       "Agenda da semana: lives, conversas e conteúdos com dia, horário e plataforma",
     href: "/programacao",
     internal: true,
-    accent: true,
   },
   {
     icon: "mountain",
@@ -51,14 +96,6 @@ const links: LinkCard[] = [
       "Conheça os heróis históricos do Ceará, suas histórias, legados e impactos na formação cultural do estado",
     href: "/herois-do-ceara",
     internal: true,
-    accent: true,
-  },
-  {
-    icon: "whatsapp",
-    title: "WhatsApp",
-    subtitle: "Fala direto comigo",
-    description: "Entre em contato via WhatsApp para conversar sobre a missão e as ideias",
-    href: "https://wa.me/5585997223863",
   },
   {
     icon: "mail",
@@ -136,14 +173,22 @@ const Home: React.FC = () => {
               boxShadow: `0 0 0 4px ${C.ink}, 0 0 0 8px ${C.gold}, 0 0 0 12px ${C.ink}, 8px 8px 0 rgba(24,18,3,.35)`,
             }}
           >
-            <Image
-              src={profile.photo}
-              alt={`${profile.name} — ativista político e porta-voz da missão do sertão do Ceará`}
-              width={152}
-              height={152}
-              priority
-              style={{ objectFit: "cover", width: "100%", height: "100%" }}
-            />
+            {/* No export estático o Next não redimensiona nem negocia formato
+                (`images.unoptimized`), então o <picture> faz o trabalho que o
+                next/image faria: WebP para quem aceita, JPEG para o resto.
+                `fetchPriority` repõe o que o `priority` do next/image dava. */}
+            <picture>
+              <source srcSet={profile.photo} type="image/webp" />
+              <img
+                src={profile.photoReserva}
+                alt={`${profile.name} — ativista político e porta-voz da missão do sertão do Ceará`}
+                width={152}
+                height={152}
+                fetchPriority="high"
+                decoding="async"
+                style={{ objectFit: "cover", width: "100%", height: "100%" }}
+              />
+            </picture>
           </div>
 
           <p
@@ -266,21 +311,40 @@ const Home: React.FC = () => {
             }}
           >
             <p style={{ margin: 0 }}>
-              Sou <strong>Felipe Moreira</strong>. Durante muito tempo sou militante de internet
-              pelo <strong>MBL Ceará</strong> (Movimento Brasil Livre), ajudando no que acreditava
-              que podia ajudar.
+              Sou <strong>Felipe Moreira</strong>, candidato a{" "}
+              <strong>Vice-Governador do Ceará</strong> pelo Partido Missão, na chapa do{" "}
+              <strong>Delegado Huggo Leonardo</strong>. Durante muito tempo fui militante de
+              internet pelo <strong>MBL Ceará</strong>, ajudando no que acreditava que podia
+              ajudar.
             </p>
             <p style={{ margin: 0 }}>
               Foi servindo como <strong>líder de jovens na igreja</strong> que enxerguei de perto
               um problema que nenhum post resolve: jovens que não conseguem ir de um lugar a outro
               por medo do <strong>crime organizado</strong> e das disputas entre facções. O medo
-              decidindo por onde eles podem ou não andar.
+              decidindo por onde eles podem ou não andar. Ali entendi que não bastava reclamar
+              pela tela.
             </p>
-            <p style={{ margin: 0 }}>
-              Ali entendi que não bastava reclamar, nem agir só pela internet — era preciso fazer
-              algo mais. Por isso hoje estou junto da <strong>Missão Ceará</strong>: para devolver
-              a esses jovens a liberdade de ir e vir e um futuro que valha a pena.
-            </p>
+            {/* O resto da história mora em /a-missao, e só lá. Texto repetido em
+                dois lugares é texto que diverge na terceira alteração. */}
+            <Link
+              href="/a-missao"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 7,
+                minHeight: 44,
+                fontFamily: FONT_ELITE,
+                fontSize: 12.5,
+                letterSpacing: 1.4,
+                textTransform: "uppercase",
+                color: C.gold,
+                textDecoration: "none",
+                alignSelf: "flex-start",
+              }}
+            >
+              Ler a história inteira
+              <Icon name="chevronRight" size={16} />
+            </Link>
           </div>
         </section>
 

@@ -77,6 +77,11 @@ $cidade   = limpar_texto($bruto['cidade'] ?? '', 60);
 $bairro   = limpar_texto($bruto['bairro'] ?? '', 60);
 $funcoes  = funcoes_validas(is_array($bruto['funcoes'] ?? null) ? $bruto['funcoes'] : []);
 
+/* De onde veio: o `?de=` da URL. Opcional de propósito — inscrição sem origem
+   é inscrição válida, e recusar por causa disso trocaria um militante novo por
+   uma linha de relatório. */
+$origem   = normalizar_origem($bruto['de'] ?? '');
+
 $nome = preg_replace('/\s+/u', ' ', $nome) ?? $nome;
 
 if (mb_strlen($nome) < 5 || mb_strpos($nome, ' ') === false) {
@@ -116,6 +121,7 @@ $inscricoes[] = [
     'cidade'   => $cidade,
     'bairro'   => $bairro,
     'funcoes'  => $funcoes,
+    'origem'   => $origem,
     'status'   => 'nova',
     'criadoEm' => date('c'),
     'consentimentoEm'     => date('c'),

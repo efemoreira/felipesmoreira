@@ -54,6 +54,28 @@ export default function InscricaoClient() {
   const [envio, setEnvio] = useState<Envio>("parado");
   const honeypot = useRef<HTMLInputElement>(null);
 
+  /**
+   * De onde a pessoa veio — o `?de=` do link que ela abriu.
+   *
+   * Fica num ref, e não no estado, porque nada na tela depende dele: é carga
+   * que viaja junto com o envio. Só é lido no navegador porque a página é
+   * pré-renderizada no build, quando não existe URL de visitante.
+   *
+   * O `sessionStorage` guarda para o caso de recarregar no meio dos três
+   * passos: sem isso, um F5 no passo 2 apagaria o crédito de quem trouxe a
+   * pessoa. Fica na sessão da aba, não no domínio inteiro — some ao fechar.
+   */
+  const origem = useRef("");
+  useEffect(() => {
+    const daUrl = new URLSearchParams(window.location.search).get("de") ?? "";
+    if (daUrl) {
+      origem.current = daUrl;
+      try { sessionStorage.setItem("de", daUrl); } catch { /* aba anônima */ }
+      return;
+    }
+    try { origem.current = sessionStorage.getItem("de") ?? ""; } catch { /* idem */ }
+  }, []);
+
   const tituloRef = useRef<HTMLHeadingElement>(null);
   const refs = useRef<Partial<Record<CampoTexto, HTMLInputElement | null>>>({});
   const consentRef = useRef<HTMLInputElement>(null);
@@ -162,6 +184,7 @@ export default function InscricaoClient() {
           cidade: campos.cidade.trim(),
           bairro: campos.bairro.trim(),
           funcoes,
+          de: origem.current,
           consentimento: true,
           site: honeypot.current?.value ?? "",
         }),

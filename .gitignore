@@ -20,6 +20,11 @@
 # production
 /build
 
+# Dado do painel. Na Hostinger isto vive fora do build, mas quem roda o PHP
+# local cria a pasta aqui dentro — e ela guarda telefone, e-mail e hash de
+# senha. Versionar por engano é vazamento, não bagunça.
+/public/dados/
+
 # misc
 .DS_Store
 *.pem

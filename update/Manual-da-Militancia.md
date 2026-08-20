@@ -3,8 +3,30 @@
 **Como cada pessoa sabe exatamente o que fazer**
 
 > **MÓDULO: Felipe (coordenação-geral)** · Documento interno · v1 · Agosto/2026
+
+---
+
+> ## 🛑 ESTE DOCUMENTO É UM RETRATO DA PRÉ-CAMPANHA
 >
-> ⚠️ **PRÉ-CAMPANHA: nenhum pedido de voto, explícito ou implícito, antes de 16/08/2026.**
+> **A campanha já começou.** O v1 foi escrito quando ainda não se podia pedir
+> voto, e o texto inteiro fala desse período. Ele fica aqui como registro — a
+> linha de produção, as fichas de função e os playbooks continuam valendo. **O
+> que mudou foi só a trava eleitoral**, e mudou nestes três pontos:
+>
+> | O manual diz | Vale agora |
+> |---|---|
+> | "Nenhum pedido de voto" | **Pedir voto é o esperado.** É para isso que a campanha existe |
+> | "Sem número de urna, sem santinho, sem adesivo com número" | **Nome e número liberados** em ato, impresso e arte |
+> | Última linha do roteiro: *"…pré-candidato pelo Partido MISSÃO"* | **Candidato a Vice-Governador do Ceará pelo Partido MISSÃO** |
+>
+> **A fonte viva é a formação, não este arquivo.** O currículo em `/aulas`
+> cobre as duas fases e é atualizado; a aula `fases-da-campanha` (Dia 0) tem a
+> tabela completa do que muda. Onde os dois discordarem, **quem manda é a
+> aula**.
+>
+> Tudo o mais da Parte 0 continua inegociável: fato sem fonte não entra, a
+> vivência é de quem viveu, crítica à gestão e nunca ofensa pessoal, nunca pelo
+> ódio, o contexto da segurança, e o teste do espelho.
 
 ---
 
