@@ -22,7 +22,7 @@ completo entre o site estático e este painel.
 | `public/painel/index.php` | Login, criação do primeiro admin e o hub: mesa da função, fila do dia, encontros e formação. |
 | `public/painel/agora.php` | Fonte única do que está pendente — a fila do hub e o contador do menu saem daqui. |
 | `public/painel/agenda.php` | Editor da programação da semana. |
-| `public/painel/estudio.php` | Porteiro do estúdio (serve o `estudio.html` do build). |
+| `public/painel/estudio.php` | Porteiro do estúdio: serve o `estudio.html` do build e carimba nele o tema e quem está logado. |
 | `public/painel/aulas.php` | Gestão da formação: pendura o vídeo de cada aula e mostra quem estudou. |
 | `public/painel/aulas-conteudo.php` | O currículo (6 Dias, 30 aulas), traduzido do manual da militância. |
 | `public/painel/aulas-comum.php` | Vídeo e progresso das aulas — lê e grava `dados/aulas*.php`. |

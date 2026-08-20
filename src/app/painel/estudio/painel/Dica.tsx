@@ -132,7 +132,7 @@ function Balao({ id, texto, caixa }: { id: string; texto: string; caixa: DOMRect
         top: pos?.top ?? 0,
         visibility: pos ? "visible" : "hidden",
       }}
-      className="pointer-events-none fixed z-[60] max-w-[17rem] rounded-md border border-[#FFCB05]/35 bg-[#1B1710] px-3 py-2 text-[11px] leading-relaxed text-white/85 shadow-xl"
+      className="pointer-events-none fixed z-[60] max-w-[17rem] rounded-md border border-[#FFCB05]/35 bg-[color:var(--e-superficie)] px-3 py-2 text-[11px] leading-relaxed text-[color:var(--e-t1)] shadow-xl"
     >
       {texto}
     </div>,

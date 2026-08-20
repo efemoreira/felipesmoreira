@@ -81,10 +81,10 @@ export default function ListaCamadas({
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between px-4 py-3">
-        <h2 className="text-[11px] font-semibold uppercase tracking-[.14em] text-white/40">
+        <h2 className="text-[11px] font-semibold uppercase tracking-[.14em] text-[color:var(--e-t3)]">
           Camadas
         </h2>
-        <span className="text-[11px] text-white/25">
+        <span className="text-[11px] text-[color:var(--e-t4)]">
           {selecionados.length > 1 ? `${selecionados.length} de ${camadas.length}` : camadas.length}
         </span>
       </div>
@@ -120,8 +120,8 @@ export default function ListaCamadas({
               }}
               className={`group relative mb-1 flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition ${
                 ativa
-                  ? "bg-[#FFCB05]/15 text-white ring-1 ring-[#FFCB05]/50"
-                  : "text-white/60 hover:bg-white/5 hover:text-white"
+                  ? "bg-[#FFCB05]/15 text-[color:var(--e-t1)] ring-1 ring-[#FFCB05]/50"
+                  : "text-[color:var(--e-t2)] hover:bg-[color:var(--e-fill)] hover:text-[color:var(--e-t1)]"
               } ${arrastando === c.id ? "opacity-40" : ""} ${c.visivel ? "" : "opacity-45"}`}
             >
               {marcaAcima && (
@@ -132,7 +132,7 @@ export default function ListaCamadas({
               )}
 
               <span
-                className="cursor-grab select-none text-white/25"
+                className="cursor-grab select-none text-[color:var(--e-t4)]"
                 title="Arraste para reordenar"
               >
                 ⠿
@@ -152,7 +152,7 @@ export default function ListaCamadas({
                     if (e.key === "Enter") e.currentTarget.blur();
                     if (e.key === "Escape") setRenomeando(null);
                   }}
-                  className="min-w-0 flex-1 rounded border border-[#FFCB05]/60 bg-black/50 px-1.5 py-0.5 text-sm text-white outline-none"
+                  className="min-w-0 flex-1 rounded border border-[#FFCB05]/60 bg-[color:var(--e-campo)] px-1.5 py-0.5 text-sm text-[color:var(--e-t1)] outline-none"
                 />
               ) : (
                 <button
@@ -164,7 +164,7 @@ export default function ListaCamadas({
                 >
                   <span className="min-w-0">
                     <span className="block truncate">{c.nome}</span>
-                    <span className="block truncate text-[10px] uppercase tracking-wider text-white/25">
+                    <span className="block truncate text-[10px] uppercase tracking-wider text-[color:var(--e-t4)]">
                       {ROTULO_TIPO[c.tipo]}
                       {fora && <span className="ml-1 text-amber-400">· fora do quadro</span>}
                     </span>
@@ -206,9 +206,9 @@ export default function ListaCamadas({
         })}
       </ul>
 
-      <div className="relative border-t border-white/10 p-3">
+      <div className="relative border-t border-[color:var(--e-b1)] p-3">
         {menuAberto && (
-          <div className="absolute bottom-full left-3 right-3 mb-1 overflow-hidden rounded-md border border-white/12 bg-[#14110C] shadow-xl">
+          <div className="absolute bottom-full left-3 right-3 mb-1 overflow-hidden rounded-md border border-[color:var(--e-b1)] bg-[color:var(--e-superficie)] shadow-xl">
             {TIPOS_NOVOS.map((t) => (
               <button
                 key={t}
@@ -217,9 +217,9 @@ export default function ListaCamadas({
                   onAdicionar(t);
                   setMenuAberto(false);
                 }}
-                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-white/70 transition hover:bg-[#FFCB05]/15 hover:text-white"
+                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-[color:var(--e-t2)] transition hover:bg-[#FFCB05]/15 hover:text-[color:var(--e-t1)]"
               >
-                <span className="w-4 text-center text-[#FFCB05]/70">{ICONE[t]}</span>
+                <span className="w-4 text-center text-[color:var(--e-acento)]">{ICONE[t]}</span>
                 {ROTULO_TIPO[t]}
               </button>
             ))}
@@ -228,7 +228,7 @@ export default function ListaCamadas({
         <button
           type="button"
           onClick={() => setMenuAberto((v) => !v)}
-          className="w-full rounded-md border border-dashed border-white/20 px-3 py-2 text-sm text-white/55 transition hover:border-[#FFCB05]/60 hover:text-[#FFCB05]"
+          className="w-full rounded-md border border-dashed border-[color:var(--e-b1)] px-3 py-2 text-sm text-[color:var(--e-t2)] transition hover:border-[#FFCB05]/60 hover:text-[color:var(--e-acento)]"
         >
           + Adicionar camada
         </button>
@@ -260,7 +260,7 @@ function Miniatura({ camada }: { camada: Camada }) {
   }, [ativoId]);
 
   const caixa =
-    "grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded border border-white/12 bg-black/40 text-[13px] text-[#FFCB05]/70";
+    "grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded border border-[color:var(--e-b1)] bg-[color:var(--e-vazio)] text-[13px] text-[color:var(--e-acento)]";
 
   if (url) {
     return (
@@ -329,8 +329,8 @@ function Acao({
         {...props}
         aria-label={titulo}
         onClick={onClick}
-        className={`grid h-6 w-6 place-items-center rounded text-[11px] transition hover:bg-white/15 ${
-          ativa ? "text-[#FFCB05]" : "text-white/45"
+        className={`grid h-6 w-6 place-items-center rounded text-[11px] transition hover:bg-[color:var(--e-fill)] ${
+          ativa ? "text-[color:var(--e-acento)]" : "text-[color:var(--e-t3)]"
         } ${sempre ? "" : "opacity-0 group-hover:opacity-100 focus:opacity-100 max-lg:opacity-100"}`}
       >
         {children}

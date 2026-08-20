@@ -56,13 +56,13 @@ export default function Assistente({ formato: formatoInicial, onMontar, onFechar
       onClick={onFechar}
     >
       <div
-        className="flex max-h-[88vh] w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-white/12 bg-[#14110C] shadow-2xl"
+        className="flex max-h-[88vh] w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-[color:var(--e-b1)] bg-[color:var(--e-superficie)] shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <header className="flex items-start justify-between gap-4 border-b border-white/10 px-5 py-4">
+        <header className="flex items-start justify-between gap-4 border-b border-[color:var(--e-b1)] px-5 py-4">
           <div className="min-w-0">
-            <h2 className="text-sm font-semibold text-white">Montar uma arte</h2>
-            <p className="mt-0.5 text-xs text-white/40">
+            <h2 className="text-sm font-semibold text-[color:var(--e-t1)]">Montar uma arte</h2>
+            <p className="mt-0.5 text-xs text-[color:var(--e-t3)]">
               Substitui as camadas atuais — dá para desfazer com ⌘Z.
             </p>
           </div>
@@ -70,13 +70,13 @@ export default function Assistente({ formato: formatoInicial, onMontar, onFechar
             type="button"
             onClick={onFechar}
             aria-label="Fechar"
-            className="grid h-8 w-8 shrink-0 place-items-center rounded-md text-white/50 transition hover:bg-white/10 hover:text-white"
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-md text-[color:var(--e-t3)] transition hover:bg-[color:var(--e-fill)] hover:text-[color:var(--e-t1)]"
           >
             ✕
           </button>
         </header>
 
-        <ol className="flex shrink-0 gap-1 border-b border-white/10 px-5 py-3">
+        <ol className="flex shrink-0 gap-1 border-b border-[color:var(--e-b1)] px-5 py-3">
           {PASSOS.map((rotulo, i) => (
             <li key={rotulo} className="flex-1">
               <button
@@ -85,8 +85,8 @@ export default function Assistente({ formato: formatoInicial, onMontar, onFechar
                 aria-current={i === passo ? "step" : undefined}
                 className={`w-full rounded-md px-2 py-1.5 text-left text-[11px] uppercase tracking-[.12em] transition ${
                   i === passo
-                    ? "bg-[#FFCB05]/15 text-[#FFCB05]"
-                    : "text-white/35 hover:bg-white/5 hover:text-white/60"
+                    ? "bg-[#FFCB05]/15 text-[color:var(--e-acento)]"
+                    : "text-[color:var(--e-t4)] hover:bg-[color:var(--e-fill)] hover:text-[color:var(--e-t2)]"
                 }`}
               >
                 {i + 1}. {rotulo}
@@ -126,8 +126,8 @@ export default function Assistente({ formato: formatoInicial, onMontar, onFechar
           )}
         </div>
 
-        <footer className="flex shrink-0 items-center justify-between gap-3 border-t border-white/10 px-5 py-3">
-          <span className="truncate text-xs text-white/35">
+        <footer className="flex shrink-0 items-center justify-between gap-3 border-t border-[color:var(--e-b1)] px-5 py-3">
+          <span className="truncate text-xs text-[color:var(--e-t4)]">
             {modelo.nome} · {FORMATOS[formato].rotulo}
             {pessoas.length > 0 && ` · ${pessoas.length} pessoa${pessoas.length > 1 ? "s" : ""}`}
             {fundos.length > 0 && ` · ${fundos.length} fundo${fundos.length > 1 ? "s" : ""}`}
@@ -137,7 +137,7 @@ export default function Assistente({ formato: formatoInicial, onMontar, onFechar
               <button
                 type="button"
                 onClick={() => setPasso((p) => (p - 1) as Passo)}
-                className="rounded-md border border-white/15 px-3 py-2 text-sm text-white/70 transition hover:border-white/35 hover:text-white"
+                className="rounded-md border border-[color:var(--e-b1)] px-3 py-2 text-sm text-[color:var(--e-t2)] transition hover:border-[color:var(--e-b2)] hover:text-[color:var(--e-t1)]"
               >
                 Voltar
               </button>
@@ -146,7 +146,7 @@ export default function Assistente({ formato: formatoInicial, onMontar, onFechar
               <button
                 type="button"
                 onClick={() => setPasso((p) => (p + 1) as Passo)}
-                className="rounded-md border border-white/15 px-4 py-2 text-sm text-white/80 transition hover:border-[#FFCB05] hover:text-white"
+                className="rounded-md border border-[color:var(--e-b1)] px-4 py-2 text-sm text-[color:var(--e-t1)] transition hover:border-[#FFCB05] hover:text-[color:var(--e-t1)]"
               >
                 Continuar
               </button>
@@ -154,7 +154,7 @@ export default function Assistente({ formato: formatoInicial, onMontar, onFechar
             <button
               type="button"
               onClick={montar}
-              className="rounded-md bg-[#FFCB05] px-4 py-2 text-sm font-semibold text-[#14110C] transition hover:bg-[#ffd63a]"
+              className="rounded-md bg-[#FFCB05] px-4 py-2 text-sm font-semibold text-[color:var(--e-tinta)] transition hover:bg-[#ffd63a]"
             >
               Montar a arte
             </button>
@@ -180,11 +180,11 @@ function PassoModelo({
 }) {
   return (
     <>
-      <h3 className="mb-2 text-[11px] uppercase tracking-[.14em] text-white/30">Formato</h3>
+      <h3 className="mb-2 text-[11px] uppercase tracking-[.14em] text-[color:var(--e-t4)]">Formato</h3>
       <div className="mb-6 flex flex-col gap-3">
         {GRUPOS_FORMATO.map((grupo) => (
           <div key={grupo.rotulo} className="flex flex-wrap items-center gap-2">
-            <span className="w-16 shrink-0 text-[10px] uppercase tracking-[.14em] text-white/25">
+            <span className="w-16 shrink-0 text-[10px] uppercase tracking-[.14em] text-[color:var(--e-t4)]">
               {grupo.rotulo}
             </span>
             {grupo.formatos.map((f) => {
@@ -197,8 +197,8 @@ function PassoModelo({
                   aria-pressed={f === formato}
                   className={`flex items-center gap-2.5 rounded-lg border px-3 py-2 text-sm transition ${
                     f === formato
-                      ? "border-[#FFCB05] bg-[#FFCB05]/10 text-white"
-                      : "border-white/12 text-white/60 hover:border-white/30"
+                      ? "border-[#FFCB05] bg-[#FFCB05]/10 text-[color:var(--e-t1)]"
+                      : "border-[color:var(--e-b1)] text-[color:var(--e-t2)] hover:border-[color:var(--e-b2)]"
                   }`}
                 >
                   {/* a proporção desenhada diz mais que o rótulo */}
@@ -206,12 +206,12 @@ function PassoModelo({
                     aria-hidden
                     style={{ aspectRatio: `${largura} / ${altura}` }}
                     className={`block w-6 shrink-0 rounded-[2px] border ${
-                      f === formato ? "border-[#FFCB05] bg-[#FFCB05]/25" : "border-white/30"
+                      f === formato ? "border-[#FFCB05] bg-[#FFCB05]/25" : "border-[color:var(--e-b2)]"
                     }`}
                   />
                   <span className="text-left leading-tight">
                     {rotulo}
-                    <span className="block text-[10px] text-white/30">
+                    <span className="block text-[10px] text-[color:var(--e-t4)]">
                       {largura}×{altura}
                     </span>
                   </span>
@@ -222,7 +222,7 @@ function PassoModelo({
         ))}
       </div>
 
-      <h3 className="mb-2 text-[11px] uppercase tracking-[.14em] text-white/30">Modelo</h3>
+      <h3 className="mb-2 text-[11px] uppercase tracking-[.14em] text-[color:var(--e-t4)]">Modelo</h3>
       <ul className="grid gap-2 sm:grid-cols-2">
         {MODELOS.map((m) => (
           <li key={m.chave}>
@@ -233,11 +233,11 @@ function PassoModelo({
               className={`h-full w-full rounded-lg border p-4 text-left transition ${
                 m.chave === modelo.chave
                   ? "border-[#FFCB05] bg-[#FFCB05]/10"
-                  : "border-white/12 hover:border-white/30"
+                  : "border-[color:var(--e-b1)] hover:border-[color:var(--e-b2)]"
               }`}
             >
-              <span className="block text-sm font-semibold text-white">{m.nome}</span>
-              <span className="mt-1 block text-xs leading-relaxed text-white/45">{m.resumo}</span>
+              <span className="block text-sm font-semibold text-[color:var(--e-t1)]">{m.nome}</span>
+              <span className="mt-1 block text-xs leading-relaxed text-[color:var(--e-t3)]">{m.resumo}</span>
             </button>
           </li>
         ))}
@@ -363,10 +363,10 @@ function Escolha({
   return (
     <section>
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-[11px] uppercase tracking-[.14em] text-white/30">
+        <h3 className="text-[11px] uppercase tracking-[.14em] text-[color:var(--e-t4)]">
           {titulo}
           {escolhidos.length > 0 && (
-            <span className="ml-2 text-[#FFCB05]">{escolhidos.length} escolhida(s)</span>
+            <span className="ml-2 text-[color:var(--e-acento)]">{escolhidos.length} escolhida(s)</span>
           )}
         </h3>
         <div className="flex items-center gap-2">
@@ -374,7 +374,7 @@ function Escolha({
             <button
               type="button"
               onClick={() => onEscolhidos([])}
-              className="rounded-md px-2 py-1 text-xs text-white/45 transition hover:text-white"
+              className="rounded-md px-2 py-1 text-xs text-[color:var(--e-t3)] transition hover:text-[color:var(--e-t1)]"
             >
               limpar
             </button>
@@ -382,13 +382,13 @@ function Escolha({
           <button
             type="button"
             onClick={() => entrada.current?.click()}
-            className="rounded-md border border-white/15 px-3 py-1.5 text-xs text-white/80 transition hover:border-[#FFCB05] hover:text-white"
+            className="rounded-md border border-[color:var(--e-b1)] px-3 py-1.5 text-xs text-[color:var(--e-t1)] transition hover:border-[#FFCB05] hover:text-[color:var(--e-t1)]"
           >
             Subir imagens
           </button>
         </div>
       </div>
-      <p className="mb-3 text-xs leading-relaxed text-white/35">{ajuda}</p>
+      <p className="mb-3 text-xs leading-relaxed text-[color:var(--e-t4)]">{ajuda}</p>
 
       <input
         ref={entrada}
@@ -409,12 +409,12 @@ function Escolha({
           e.preventDefault();
           void subir(e.dataTransfer.files);
         }}
-        className="rounded-lg border border-dashed border-white/12 p-3"
+        className="rounded-lg border border-dashed border-[color:var(--e-b1)] p-3"
       >
         {carregando ? (
-          <p className="py-6 text-center text-sm text-white/35">Abrindo a biblioteca…</p>
+          <p className="py-6 text-center text-sm text-[color:var(--e-t4)]">Abrindo a biblioteca…</p>
         ) : daFamilia.length === 0 ? (
-          <p className="py-6 text-center text-sm leading-relaxed text-white/35">
+          <p className="py-6 text-center text-sm leading-relaxed text-[color:var(--e-t4)]">
             Nada guardado ainda.
             <br />
             Arraste imagens para cá ou use “Subir imagens”.
@@ -430,18 +430,18 @@ function Escolha({
                     onClick={() => alternar(a)}
                     aria-pressed={posicao !== -1}
                     className={`block w-full overflow-hidden rounded-lg border bg-[repeating-conic-gradient(#222_0_25%,#2c2c2c_0_50%)] bg-[length:16px_16px] transition ${
-                      posicao !== -1 ? "border-[#FFCB05]" : "border-white/12 hover:border-white/35"
+                      posicao !== -1 ? "border-[#FFCB05]" : "border-[color:var(--e-b1)] hover:border-[color:var(--e-b2)]"
                     }`}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={urls[a.id]} alt={a.nome} className="h-24 w-full object-contain" loading="lazy" />
-                    <span className="block truncate px-2 py-1 text-left text-[11px] text-white/55">
+                    <span className="block truncate px-2 py-1 text-left text-[11px] text-[color:var(--e-t2)]">
                       {a.nome}
                     </span>
                   </button>
 
                   {posicao !== -1 && (
-                    <span className="pointer-events-none absolute left-1.5 top-1.5 grid h-6 w-6 place-items-center rounded-full bg-[#FFCB05] text-xs font-bold text-[#14110C]">
+                    <span className="pointer-events-none absolute left-1.5 top-1.5 grid h-6 w-6 place-items-center rounded-full bg-[#FFCB05] text-xs font-bold text-[color:var(--e-tinta)]">
                       {posicao + 1}
                     </span>
                   )}
@@ -451,7 +451,7 @@ function Escolha({
                     title="Remover o fundo desta imagem"
                     aria-label={`Remover o fundo de ${a.nome}`}
                     onClick={() => setRecortando(a)}
-                    className="absolute right-1.5 top-1.5 grid h-6 w-6 place-items-center rounded bg-black/70 text-xs text-white/70 opacity-0 transition group-hover:opacity-100 focus:opacity-100 hover:bg-[#FFCB05] hover:text-[#14110C]"
+                    className="absolute right-1.5 top-1.5 grid h-6 w-6 place-items-center rounded bg-black/70 text-xs text-[color:var(--e-t2)] opacity-0 transition group-hover:opacity-100 focus:opacity-100 hover:bg-[#FFCB05] hover:text-[color:var(--e-tinta)]"
                   >
                     ✂
                   </button>
@@ -499,18 +499,18 @@ function PassoTextos({
   onMoldura: (v: boolean) => void;
 }) {
   const campo =
-    "w-full rounded-lg border border-white/12 bg-black/30 px-3 py-2 text-sm text-white placeholder:text-white/25 focus:border-[#FFCB05] focus:outline-none";
+    "w-full rounded-lg border border-[color:var(--e-b1)] bg-[color:var(--e-campo)] px-3 py-2 text-sm text-[color:var(--e-t1)] placeholder:text-[color:var(--e-t4)] focus:border-[#FFCB05] focus:outline-none";
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-xs leading-relaxed text-white/40">
+      <p className="text-xs leading-relaxed text-[color:var(--e-t3)]">
         O que ficar em branco não entra na arte — o texto de exemplo do modelo some junto.
-        Dentro do texto, <code className="text-[#FFCB05]">*palavra*</code> sai na cor de destaque e{" "}
-        <code className="text-[#FFCB05]">==palavra==</code> sai em tarja.
+        Dentro do texto, <code className="text-[color:var(--e-acento)]">*palavra*</code> sai na cor de destaque e{" "}
+        <code className="text-[color:var(--e-acento)]">==palavra==</code> sai em tarja.
       </p>
 
       <label className="flex flex-col gap-1.5">
-        <span className="text-[11px] uppercase tracking-[.14em] text-white/30">Chapéu (opcional)</span>
+        <span className="text-[11px] uppercase tracking-[.14em] text-[color:var(--e-t4)]">Chapéu (opcional)</span>
         <input
           type="text"
           value={chapeu}
@@ -521,7 +521,7 @@ function PassoTextos({
       </label>
 
       <label className="flex flex-col gap-1.5">
-        <span className="text-[11px] uppercase tracking-[.14em] text-white/30">Título</span>
+        <span className="text-[11px] uppercase tracking-[.14em] text-[color:var(--e-t4)]">Título</span>
         <input
           type="text"
           value={titulo}
@@ -532,7 +532,7 @@ function PassoTextos({
       </label>
 
       <label className="flex flex-col gap-1.5">
-        <span className="text-[11px] uppercase tracking-[.14em] text-white/30">
+        <span className="text-[11px] uppercase tracking-[.14em] text-[color:var(--e-t4)]">
           Subtítulo (Enter quebra a linha)
         </span>
         <textarea
@@ -544,16 +544,16 @@ function PassoTextos({
         />
       </label>
 
-      <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-white/12 p-3">
+      <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-[color:var(--e-b1)] p-3">
         <input
           type="checkbox"
           checked={moldura}
           onChange={(e) => onMoldura(e.target.checked)}
           className="h-4 w-4 accent-[#FFCB05]"
         />
-        <span className="text-sm text-white/80">
+        <span className="text-sm text-[color:var(--e-t1)]">
           Moldura dourada em volta da arte
-          <span className="mt-0.5 block text-xs text-white/35">
+          <span className="mt-0.5 block text-xs text-[color:var(--e-t4)]">
             Desmarcado, tira a moldura mesmo dos modelos que já vêm com ela.
           </span>
         </span>

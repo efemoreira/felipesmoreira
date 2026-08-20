@@ -726,7 +726,7 @@ export default function Estudio() {
        dele e precisam ler a mesma altura para não nascerem por baixo da barra */
     <div
       style={{ ["--barra" as string]: "3.25rem" }}
-      className="flex h-dvh flex-col bg-[#0D0B08] text-white"
+      className="flex h-dvh flex-col bg-[color:var(--e-fundo)] text-[color:var(--e-t1)]"
     >
       <BarraSuperior
         nome={projeto.nome}
@@ -758,7 +758,7 @@ export default function Estudio() {
       <div className="flex min-h-0 flex-1">
         {/* colunas viram gavetas no celular */}
         <aside
-          className={`w-60 shrink-0 border-r border-white/10 bg-[#14110C] lg:block ${
+          className={`w-60 shrink-0 border-r border-[color:var(--e-b1)] bg-[color:var(--e-superficie)] lg:block ${
             gavetas === "camadas"
               ? "fixed bottom-0 left-0 top-[var(--barra)] z-40 block"
               : "hidden"
@@ -779,16 +779,16 @@ export default function Estudio() {
 
         <main
           ref={areaRef}
-          className="grid min-w-0 flex-1 place-items-center overflow-auto bg-[#0D0B08] p-8"
+          className="grid min-w-0 flex-1 place-items-center overflow-auto bg-[color:var(--e-fundo)] p-8"
           style={{
             backgroundImage:
-              "radial-gradient(circle at 1px 1px, rgba(255,255,255,.055) 1px, transparent 0)",
+              "radial-gradient(circle at 1px 1px, var(--e-grade) 1px, transparent 0)",
             backgroundSize: "22px 22px",
           }}
           onDragOver={(e) => e.preventDefault()}
           onDrop={soltarNoPalco}
         >
-          <div className="shadow-[0_20px_60px_rgba(0,0,0,.6)]">
+          <div className="shadow-[0_20px_60px_var(--e-sombra-palco)]">
             <Palco
               projeto={projeto}
               selecionados={selecionados}
@@ -807,7 +807,7 @@ export default function Estudio() {
         </main>
 
         <aside
-          className={`w-72 shrink-0 overflow-y-auto border-l border-white/10 bg-[#14110C] lg:block ${
+          className={`w-72 shrink-0 overflow-y-auto border-l border-[color:var(--e-b1)] bg-[color:var(--e-superficie)] lg:block ${
             gavetas === "inspetor"
               ? "fixed bottom-0 right-0 top-[var(--barra)] z-40 block"
               : "hidden"
@@ -835,15 +835,19 @@ export default function Estudio() {
         </aside>
       </div>
 
-      {/* barra de gavetas: só aparece em tela estreita */}
-      <nav className="flex border-t border-white/10 bg-[#14110C] lg:hidden">
+      {/* Barra de gavetas: só em tela estreita. Mesma língua da barra inferior
+          do painel — borda grossa em cima, Special Elite, alvo de 44px. */}
+      <nav className="flex border-t-[3px] border-[color:var(--e-b2)] bg-[color:var(--e-superficie)] lg:hidden">
         {(["camadas", "inspetor"] as const).map((g) => (
           <button
             key={g}
             type="button"
             onClick={() => setGavetas((atual) => (atual === g ? null : g))}
-            className={`flex-1 py-3 text-xs uppercase tracking-wider transition ${
-              gavetas === g ? "bg-[#FFCB05] text-[#14110C]" : "text-white/50"
+            aria-pressed={gavetas === g}
+            className={`min-h-[48px] flex-1 py-3 font-[family-name:var(--font-elite)] text-[11px] uppercase tracking-[.12em] transition ${
+              gavetas === g
+                ? "bg-[#FFCB05] text-[color:var(--e-tinta)]"
+                : "text-[color:var(--e-t3)] hover:bg-[color:var(--e-fill)]"
             }`}
           >
             {g === "camadas" ? "Camadas" : "Propriedades"}
@@ -854,7 +858,7 @@ export default function Estudio() {
       {recado && (
         <p
           role="status"
-          className="pointer-events-none fixed bottom-20 left-1/2 z-50 -translate-x-1/2 rounded-md border border-[#FFCB05]/40 bg-[#14110C] px-4 py-2 text-sm text-white shadow-xl lg:bottom-6"
+          className="pointer-events-none fixed bottom-20 left-1/2 z-50 -translate-x-1/2 rounded-md border border-[#FFCB05]/40 bg-[color:var(--e-superficie)] px-4 py-2 text-sm text-[color:var(--e-t1)] shadow-xl lg:bottom-6"
         >
           {recado}
         </p>

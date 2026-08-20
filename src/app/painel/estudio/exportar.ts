@@ -72,21 +72,53 @@ export async function copiarPng(
   await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
 }
 
-export function nomeArquivo(nome: string, escala: number): string {
-  const limpo =
-    nome
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-zA-Z0-9]+/g, "-")
-      .replace(/^-|-$/g, "")
-      .toLowerCase() || "arte";
+/* As palavras que não ajudam a achar o arquivo depois. Mesma lista do
+   apelido() em public/painel/producao-comum.php. */
+const SEM_SERVENTIA = ["de", "da", "do", "das", "dos", "e", "a", "o", "em", "no", "na", "para"];
 
+/**
+ * O assunto, do jeito que o Acervo indexa: minúsculas, sem acento, no máximo
+ * quatro palavras que digam alguma coisa.
+ *
+ * Porte fiel do apelido() do PHP — os dois lados precisam gerar o MESMO nome
+ * para o mesmo título, senão o card da Produção e o PNG do Estúdio chegam ao
+ * Acervo com nomes diferentes para a mesma peça.
+ */
+function apelido(texto: string, palavras = 4): string {
+  /* normalize("NFD") e não iconv/TRANSLIT: o CLAUDE.md registra que o TRANSLIT
+     depende da libc e devolve "ha" no Linux da Hostinger e "h" no macOS. O NFD
+     do JavaScript é definido pelo Unicode e dá o mesmo resultado em todo lugar. */
+  const ascii = texto
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9]+/g, " ")
+    .toLowerCase();
+
+  const partes = ascii
+    .split(" ")
+    .filter((p) => p !== "" && !SEM_SERVENTIA.includes(p))
+    .slice(0, palavras);
+
+  return partes.join("-") || "sem-assunto";
+}
+
+/**
+ * O nome padrão do manual: AAAA-MM-DD_tipo_assunto.
+ *
+ * O tipo é sempre `card` — o Estúdio faz arte. É o mesmo formato que a Produção
+ * gera em nome_de_arquivo() (producao-comum.php), para o Acervo receber os dois
+ * lados no mesmo padrão e ninguém renomear nada à mão.
+ *
+ * A escala 2× fica como sufixo do assunto: o manual não fala de escala, e assim
+ * ela não atrapalha a ordenação por data.
+ */
+export function nomeArquivo(nome: string, escala: number): string {
   const hoje = new Date();
   const data = [
     hoje.getFullYear(),
     String(hoje.getMonth() + 1).padStart(2, "0"),
     String(hoje.getDate()).padStart(2, "0"),
-  ].join("");
+  ].join("-");
 
-  return `${limpo}-${data}${escala > 1 ? `-${escala}x` : ""}.png`;
+  return `${data}_card_${apelido(nome)}${escala > 1 ? `-${escala}x` : ""}.png`;
 }

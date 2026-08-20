@@ -4,6 +4,26 @@ import { useEffect, useRef, useState } from "react";
 import { FORMATOS, GRUPOS_FORMATO, LIVRE_MAX, LIVRE_MIN, type Formato } from "../tipos";
 import { useDica } from "./Dica";
 
+/**
+ * O que o public/painel/estudio.php carimba no HTML antes de servi-lo.
+ *
+ * Vem por aqui, e não por uma chamada à API, porque o PHP já tem a sessão
+ * aberta no momento em que entrega a página: uma ida ao servidor a mais só
+ * adiaria o nome aparecer na barra.
+ */
+declare global {
+  interface Window {
+    __PAINEL__?: { nome: string; papel: string; tema: Tema; csrf: string };
+  }
+}
+
+type Tema = "claro" | "escuro" | "sistema";
+
+/* A mesma linguagem do painel: etiqueta em Special Elite, caixa alta, canto
+   reto e borda grossa. É o que faz o Estúdio não parecer outro produto. */
+const ETIQUETA =
+  "font-[family-name:var(--font-elite)] uppercase tracking-[.12em]";
+
 interface Props {
   nome: string;
   formato: Formato;
@@ -67,18 +87,20 @@ export default function BarraSuperior({
   const [maisAberto, setMaisAberto] = useState(false);
 
   return (
-    <header className="relative flex h-[var(--barra)] shrink-0 items-center gap-2 border-b border-white/10 bg-[#14110C] px-2 sm:gap-3 sm:px-4">
+    <header className="relative flex h-[var(--barra)] shrink-0 items-center gap-2 border-b border-[color:var(--e-b1)] bg-[color:var(--e-superficie)] px-2 sm:gap-3 sm:px-4">
+      {/* É a única saída da tela — não pode ser a coisa mais apagada dela. */}
       <a
         href="/painel/"
         title="Voltar ao painel"
-        className="shrink-0 rounded-md px-2 py-1.5 text-sm text-white/50 transition hover:bg-white/10 hover:text-white"
+        className={`flex min-h-[38px] shrink-0 items-center gap-1.5 border-2 border-[color:var(--e-b2)] px-2.5 text-[11px] text-[color:var(--e-t1)] shadow-[3px_3px_0_var(--e-sombra)] transition hover:bg-[color:var(--e-fill)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none sm:px-3 ${ETIQUETA}`}
       >
-        ←<span className="ml-1 hidden sm:inline">Painel</span>
+        <span aria-hidden="true">←</span>
+        <span className="hidden sm:inline">Painel</span>
       </a>
 
       <Nomeador nome={nome} onNome={onNome} />
 
-      <span className="hidden shrink-0 text-[11px] text-white/25 xl:inline">
+      <span className="hidden shrink-0 text-[11px] text-[color:var(--e-t4)] xl:inline">
         {salvando ? "salvando…" : "salvo no navegador"}
       </span>
 
@@ -112,7 +134,7 @@ export default function BarraSuperior({
         />
       </div>
 
-      <div className="hidden items-center gap-1 rounded-md border border-white/12 px-1 py-0.5 lg:flex">
+      <div className="hidden items-center gap-1 border-2 border-[color:var(--e-b1)] px-1 py-0.5 lg:flex">
         <Botao titulo="Diminuir" onClick={() => onZoom(Math.max(0.08, zoom * 0.9))}>
           −
         </Botao>
@@ -159,6 +181,8 @@ export default function BarraSuperior({
         />
       </div>
 
+      <Conta />
+
       {/* o que não coube: menu só em tela estreita */}
       <div className="relative shrink-0 lg:hidden">
         <Botao titulo="Mais opções" onClick={() => setMaisAberto((v) => !v)}>
@@ -175,7 +199,7 @@ export default function BarraSuperior({
             <button type="button" onClick={onAbrirModelos} className={itemMenu}>
               Modelos
             </button>
-            <div className="border-t border-white/10 px-3 py-2">
+            <div className="border-t border-[color:var(--e-b1)] px-3 py-2">
               <SeletorFormato
                 formato={formato}
                 tamanho={tamanho}
@@ -183,7 +207,7 @@ export default function BarraSuperior({
                 onTamanhoLivre={onTamanhoLivre}
               />
             </div>
-            <div className="flex border-t border-white/10">
+            <div className="flex border-t border-[color:var(--e-b1)]">
               <button type="button" onClick={onDesfazer} disabled={!podeDesfazer} className={`${itemMenu} disabled:opacity-30`}>
                 ↶ Desfazer
               </button>
@@ -191,13 +215,13 @@ export default function BarraSuperior({
                 ↷ Refazer
               </button>
             </div>
-            <button type="button" onClick={onPrevia} className={`${itemMenu} border-t border-white/10`}>
+            <button type="button" onClick={onPrevia} className={`${itemMenu} border-t border-[color:var(--e-b1)]`}>
               {previa ? "Mostrar guias" : "Ver sem guias"}
             </button>
             <button type="button" onClick={onAjustarZoom} className={itemMenu}>
               Ajustar à janela ({Math.round(zoom * 100)}%)
             </button>
-            <button type="button" onClick={() => onExportar(2)} className={`${itemMenu} border-t border-white/10`}>
+            <button type="button" onClick={() => onExportar(2)} className={`${itemMenu} border-t border-[color:var(--e-b1)]`}>
               Baixar PNG 2×
             </button>
             <button type="button" onClick={onCopiar} className={itemMenu}>
@@ -211,7 +235,7 @@ export default function BarraSuperior({
 }
 
 const itemMenu =
-  "w-full flex-1 px-3 py-2 text-left text-sm text-white/70 transition hover:bg-[#FFCB05]/15 hover:text-white";
+  "block w-full flex-1 px-3 py-2.5 text-left text-sm text-[color:var(--e-t2)] no-underline transition hover:bg-[#FFCB05]/15 hover:text-[color:var(--e-t1)]";
 
 /** O nome da arte — é ele que batiza o PNG na hora de baixar. */
 function Nomeador({ nome, onNome }: { nome: string; onNome: (v: string) => void }) {
@@ -225,7 +249,7 @@ function Nomeador({ nome, onNome }: { nome: string; onNome: (v: string) => void 
         value={nome}
         onChange={(e) => onNome(e.target.value)}
         aria-label="Nome da arte"
-        className="min-w-0 flex-1 rounded-md border border-transparent bg-transparent px-2 py-1.5 text-sm font-medium text-white outline-none transition hover:border-white/12 focus:border-[#FFCB05]/60"
+        className="min-w-0 flex-1 border-2 border-transparent bg-transparent px-2 py-1.5 text-sm font-medium text-[color:var(--e-t1)] outline-none transition hover:border-[color:var(--e-b1)] focus:border-[#FFCB05]"
       />
       {balao}
     </>
@@ -240,7 +264,7 @@ function Zoom({ valor, onAjustar }: { valor: number; onAjustar: () => void }) {
         type="button"
         {...props}
         onClick={onAjustar}
-        className="min-w-[3.2rem] px-1 font-mono text-xs text-white/60 transition hover:text-white"
+        className="min-w-[3.2rem] px-1 font-mono text-xs text-[color:var(--e-t2)] transition hover:text-[color:var(--e-t1)]"
       >
         {Math.round(valor * 100)}%
       </button>
@@ -265,7 +289,7 @@ function BotaoTexto({
         type="button"
         {...props}
         onClick={onClick}
-        className="hidden shrink-0 rounded-md border border-white/12 px-3 py-1.5 text-sm text-white/70 transition hover:border-white/30 hover:text-white lg:block"
+        className={`hidden min-h-[38px] shrink-0 border-2 border-[color:var(--e-b1)] px-3 text-[11px] text-[color:var(--e-t2)] transition hover:border-[color:var(--e-b2)] hover:text-[color:var(--e-t1)] lg:block ${ETIQUETA}`}
       >
         {children}
       </button>
@@ -298,14 +322,116 @@ function Exportador({
         aria-label={dica}
         className={
           destaque
-            ? "rounded-md bg-[#FFCB05] px-3 py-1.5 text-sm font-semibold text-[#14110C] transition hover:bg-[#ffd63a] disabled:opacity-50 sm:px-4"
-            : "hidden rounded-md border border-white/12 px-2 py-1.5 text-xs text-white/60 transition hover:border-white/30 hover:text-white disabled:opacity-50 sm:block"
+            ? `flex min-h-[38px] items-center border-2 border-[color:var(--e-tinta)] bg-[#FFCB05] px-3 text-[11px] text-[color:var(--e-tinta)] shadow-[3px_3px_0_var(--e-sombra)] transition hover:bg-[#ffd63a] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none disabled:opacity-50 sm:px-4 ${ETIQUETA}`
+            : `hidden min-h-[38px] items-center border-2 border-[color:var(--e-b1)] px-2.5 text-[11px] text-[color:var(--e-t2)] transition hover:border-[color:var(--e-b2)] hover:text-[color:var(--e-t1)] disabled:opacity-50 sm:flex ${ETIQUETA}`
         }
       >
         {rotulo}
       </button>
       {balao}
     </>
+  );
+}
+
+/**
+ * Quem está usando o Estúdio, e como sair dele.
+ *
+ * Era a única tela do painel que não dizia nem uma coisa nem outra — e ela roda
+ * no computador compartilhado da coordenação. O seletor de tema vem junto
+ * porque é aqui que a pessoa está quando percebe que quer trocar.
+ */
+function Conta() {
+  const [aberto, setAberto] = useState(false);
+  const [tema, setTema] = useState<Tema>("sistema");
+  const [eu, setEu] = useState<{ nome: string; papel: string; csrf: string } | null>(null);
+
+  useEffect(() => {
+    const d = window.__PAINEL__;
+    if (!d) return;
+    setEu({ nome: d.nome, papel: d.papel, csrf: d.csrf });
+    setTema(d.tema);
+  }, []);
+
+  if (!eu) return null;
+
+  /* O mesmo cookie que o layout.php lê: trocar aqui vale para o painel inteiro,
+     e o data-tema muda na hora, sem recarregar o editor e perder o que está
+     na tela. */
+  const trocarTema = (novo: Tema) => {
+    const seguro = location.protocol === "https:" ? ";secure" : "";
+    document.cookie = `painel_tema=${novo};path=/painel;max-age=31536000;samesite=lax${seguro}`;
+    if (novo === "sistema") delete document.documentElement.dataset.tema;
+    else document.documentElement.dataset.tema = novo;
+    setTema(novo);
+  };
+
+  return (
+    <div className="relative shrink-0">
+      <button
+        type="button"
+        onClick={() => setAberto((v) => !v)}
+        title={`${eu.nome} · ${eu.papel}`}
+        className={`flex min-h-[38px] items-center gap-2 border-2 border-[color:var(--e-b1)] px-2.5 text-[11px] text-[color:var(--e-t2)] transition hover:border-[color:var(--e-b2)] hover:text-[color:var(--e-t1)] ${ETIQUETA}`}
+      >
+        <span
+          aria-hidden="true"
+          className="grid h-5 w-5 place-items-center bg-[#FFCB05] text-[10px] text-[color:var(--e-tinta)]"
+        >
+          {eu.nome.slice(0, 1).toUpperCase()}
+        </span>
+        <span className="hidden md:inline">{eu.nome.split(" ")[0]}</span>
+      </button>
+
+      {aberto && (
+        <Mais aoFechar={() => setAberto(false)}>
+          <p className="border-b border-[color:var(--e-b1)] px-3 py-2.5 text-[13px] text-[color:var(--e-t1)]">
+            {eu.nome}
+            <span className={`mt-0.5 block text-[10px] text-[color:var(--e-t3)] ${ETIQUETA}`}>
+              {eu.papel}
+            </span>
+          </p>
+
+          <div className="flex border-b border-[color:var(--e-b1)]">
+            {(
+              [
+                ["claro", "Claro"],
+                ["escuro", "Escuro"],
+                ["sistema", "Sistema"],
+              ] as const
+            ).map(([chave, rotulo]) => (
+              <button
+                key={chave}
+                type="button"
+                onClick={() => trocarTema(chave)}
+                aria-pressed={tema === chave}
+                className={`flex-1 py-2.5 text-[10px] transition ${ETIQUETA} ${
+                  tema === chave
+                    ? "bg-[#FFCB05] text-[color:var(--e-tinta)]"
+                    : "text-[color:var(--e-t3)] hover:bg-[color:var(--e-fill)]"
+                }`}
+              >
+                {rotulo}
+              </button>
+            ))}
+          </div>
+
+          <a href="/painel/conta.php" className={itemMenu}>
+            Minha senha
+          </a>
+          <a href="/painel/" className={itemMenu}>
+            Voltar ao painel
+          </a>
+          {/* logout é POST em toda tela do painel; aqui não vira link GET */}
+          <form method="post" action="/painel/" className="border-t border-[color:var(--e-b1)]">
+            <input type="hidden" name="acao" value="sair" />
+            <input type="hidden" name="csrf" value={eu.csrf} />
+            <button type="submit" className={itemMenu}>
+              Sair
+            </button>
+          </form>
+        </Mais>
+      )}
+    </div>
   );
 }
 
@@ -327,7 +453,7 @@ function Mais({ children, aoFechar }: { children: React.ReactNode; aoFechar: () 
   return (
     <div
       ref={caixa}
-      className="absolute right-0 top-full z-50 mt-1 w-60 overflow-hidden rounded-md border border-white/12 bg-[#14110C] shadow-xl"
+      className="absolute right-0 top-full z-50 mt-1 w-60 overflow-hidden border-2 border-[color:var(--e-b2)] bg-[color:var(--e-superficie)] shadow-[5px_5px_0_var(--e-sombra)]"
     >
       {children}
     </div>
@@ -352,19 +478,19 @@ function SeletorFormato({
         value={formato}
         onChange={(e) => onFormato(e.target.value as Formato)}
         aria-label="Formato da arte"
-        className="min-w-0 rounded-md border border-white/12 bg-black/40 px-2 py-1.5 text-sm text-white outline-none focus:border-[#FFCB05]/60"
+        className="min-w-0 rounded-md border border-[color:var(--e-b1)] bg-[color:var(--e-campo)] px-2 py-1.5 text-sm text-[color:var(--e-t1)] outline-none focus:border-[#FFCB05]/60"
       >
         {GRUPOS_FORMATO.map((g) => (
           <optgroup key={g.rotulo} label={g.rotulo}>
             {g.formatos.map((f) => (
-              <option key={f} value={f} className="bg-[#14110C]">
+              <option key={f} value={f} className="bg-[color:var(--e-superficie)]">
                 {FORMATOS[f].rotulo} · {FORMATOS[f].largura}×{FORMATOS[f].altura}
               </option>
             ))}
           </optgroup>
         ))}
         <optgroup label="Livre">
-          <option value="livre" className="bg-[#14110C]">
+          <option value="livre" className="bg-[color:var(--e-superficie)]">
             Personalizado…
           </option>
         </optgroup>
@@ -377,7 +503,7 @@ function SeletorFormato({
             valor={tamanho.largura}
             onMudar={(v) => onTamanhoLivre(v, tamanho.altura)}
           />
-          <span className="text-xs text-white/30">×</span>
+          <span className="text-xs text-[color:var(--e-t4)]">×</span>
           <Medida
             rotulo="Altura"
             valor={tamanho.altura}
@@ -418,7 +544,7 @@ function Medida({
       onChange={(e) => setRascunho(e.target.value)}
       onBlur={aplicar}
       onKeyDown={(e) => e.key === "Enter" && aplicar()}
-      className="w-16 rounded-md border border-white/12 bg-black/40 px-1.5 py-1.5 text-center font-mono text-xs text-white outline-none focus:border-[#FFCB05]/60"
+      className="w-16 rounded-md border border-[color:var(--e-b1)] bg-[color:var(--e-campo)] px-1.5 py-1.5 text-center font-mono text-xs text-[color:var(--e-t1)] outline-none focus:border-[#FFCB05]/60"
     />
   );
 }
@@ -452,8 +578,8 @@ function Botao({
         aria-pressed={ativo}
         onClick={onClick}
         disabled={desabilitado}
-        className={`grid h-7 w-7 shrink-0 place-items-center rounded text-sm transition hover:bg-white/10 hover:text-white disabled:opacity-25 disabled:hover:bg-transparent ${
-          ativo ? "bg-[#FFCB05]/20 text-[#FFCB05]" : "text-white/60"
+        className={`grid h-7 w-7 shrink-0 place-items-center rounded text-sm transition hover:bg-[color:var(--e-fill)] hover:text-[color:var(--e-t1)] disabled:opacity-25 disabled:hover:bg-transparent ${
+          ativo ? "bg-[#FFCB05]/20 text-[color:var(--e-acento)]" : "text-[color:var(--e-t2)]"
         }`}
       >
         {children}

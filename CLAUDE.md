@@ -53,6 +53,27 @@ internamente (`camadas/`, `painel/`, tipos próprios). Por ser essencialmente
 um produto à parte, ele **não segue** o padrão `features/` — fica onde está.
 Não o use como referência para organizar novas páginas simples.
 
+Ele usa **Tailwind**, ao contrário do resto do site. As cores, porém, saem de
+tokens em `src/app/painel/estudio/estudio.css`, escopados em `#estudio-raiz` e
+definidos nos três estados de tema. **Cor cravada na classe**
+(`bg-[#14110C]`, `text-white/35`) **quebra um dos temas** — foi o que existia
+antes e é o que os tokens resolvem. Exceções de propósito: o ouro em `background`,
+`border` e `ring` (funciona nos dois) e o `bg-black/70` dos véus de modal.
+
+**O Estúdio segue o tema do painel, mas o entorno do palco é cinza neutro, não
+o papel do cordel.** A percepção de cor muda com o brilho e a temperatura do que
+está em volta: sobre o creme quente do painel, a arte pareceria mais fria do que
+vai parecer no feed. É por isso que Figma e Canva usam cinza atrás da prancheta.
+Ali a identidade é carregada pela **forma** — canto reto, borda grossa, sombra
+dura, Special Elite nos rótulos — e não pela cor do papel.
+
+Quem carimba o tema é o `estudio.php`, no `<html>`, antes de servir o HTML do
+build — o mesmo truque do `layout.php`, e pelo mesmo motivo: não piscar. Ele
+carimba junto um `window.__PAINEL__` com nome, papel e CSRF, que é o que a barra
+usa para mostrar quem está logado e ter um Sair que funcione. **As flags
+`JSON_HEX_*` do `json_encode` ali não são decoração:** o nome vem do cadastro, e
+um `</script>` dentro dele escaparia do bloco.
+
 ## O contrato Next.js ↔ PHP
 
 O painel expõe endpoints JSON em `public/painel/api/*.php`, além das páginas
@@ -271,7 +292,15 @@ manual para dentro do código:
 
 **Ao mexer em slug ou nome de arquivo:** use `sem_acento()` de
 `producao-comum.php`, não `iconv('ASCII//TRANSLIT')` — o TRANSLIT depende da
-libc e o mesmo texto vira `ha` no Linux da Hostinger e `h` no macOS.
+libc e o mesmo texto vira `ha` no Linux da Hostinger e `h` no macOS. No lado
+JavaScript o equivalente correto é `normalize("NFD")`, que o Unicode define e
+que dá o mesmo resultado em qualquer máquina.
+
+**O nome `AAAA-MM-DD_tipo_assunto` é gerado em dois lugares** e os dois têm de
+concordar: `nome_de_arquivo()`/`apelido()` em `producao-comum.php` (o card do
+quadro) e `nomeArquivo()`/`apelido()` em `src/app/painel/estudio/exportar.ts`
+(o PNG que sai do Estúdio). Mexeu num, mexa no outro — senão o Acervo recebe
+dois nomes diferentes para a mesma peça.
 
 ### A formação (área `aulas`)
 

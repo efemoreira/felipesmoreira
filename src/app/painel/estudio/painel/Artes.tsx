@@ -84,44 +84,44 @@ export default function Artes({ atual, onAbrir, onNova, onFechar }: Props) {
       onClick={onFechar}
     >
       <div
-        className="flex max-h-[85vh] w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-white/12 bg-[#14110C] shadow-2xl"
+        className="flex max-h-[85vh] w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-[color:var(--e-b1)] bg-[color:var(--e-superficie)] shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <header className="flex items-center justify-between border-b border-white/10 px-5 py-4">
+        <header className="flex items-center justify-between border-b border-[color:var(--e-b1)] px-5 py-4">
           <div>
-            <h2 className="text-sm font-semibold text-white">Minhas artes</h2>
-            <p className="mt-0.5 text-xs text-white/40">
+            <h2 className="text-sm font-semibold text-[color:var(--e-t1)]">Minhas artes</h2>
+            <p className="mt-0.5 text-xs text-[color:var(--e-t3)]">
               Guardadas neste navegador. Nada sobe para o servidor.
             </p>
           </div>
           <button
             type="button"
             onClick={onFechar}
-            className="grid h-8 w-8 place-items-center rounded-md text-white/50 transition hover:bg-white/10 hover:text-white"
+            className="grid h-8 w-8 place-items-center rounded-md text-[color:var(--e-t3)] transition hover:bg-[color:var(--e-fill)] hover:text-[color:var(--e-t1)]"
             aria-label="Fechar"
           >
             ✕
           </button>
         </header>
 
-        <div className="flex items-center gap-3 border-b border-white/10 px-5 py-3">
+        <div className="flex items-center gap-3 border-b border-[color:var(--e-b1)] px-5 py-3">
           <button
             type="button"
             onClick={onNova}
-            className="rounded-md bg-[#FFCB05] px-4 py-2 text-sm font-semibold text-[#14110C] transition hover:bg-[#ffd63a]"
+            className="rounded-md bg-[#FFCB05] px-4 py-2 text-sm font-semibold text-[color:var(--e-tinta)] transition hover:bg-[#ffd63a]"
           >
             + Nova arte
           </button>
-          <span className="text-xs text-white/35">
+          <span className="text-xs text-[color:var(--e-t4)]">
             Começa em branco, no formato de agora. A arte aberta continua salva.
           </span>
         </div>
 
         <div className="flex-1 overflow-y-auto p-5">
           {carregando ? (
-            <p className="py-10 text-center text-sm text-white/35">Abrindo as artes…</p>
+            <p className="py-10 text-center text-sm text-[color:var(--e-t4)]">Abrindo as artes…</p>
           ) : artes.length === 0 ? (
-            <p className="py-10 text-center text-sm leading-relaxed text-white/35">
+            <p className="py-10 text-center text-sm leading-relaxed text-[color:var(--e-t4)]">
               Nenhuma arte guardada ainda.
               <br />
               A que você está montando aparece aqui assim que for salva.
@@ -136,7 +136,7 @@ export default function Artes({ atual, onAbrir, onNova, onFechar }: Props) {
                     className={`group flex items-center gap-3 rounded-lg border px-3 py-2.5 transition ${
                       aberta
                         ? "border-[#FFCB05]/60 bg-[#FFCB05]/5"
-                        : "border-white/12 hover:border-white/30"
+                        : "border-[color:var(--e-b1)] hover:border-[color:var(--e-b2)]"
                     }`}
                   >
                     <button
@@ -146,21 +146,21 @@ export default function Artes({ atual, onAbrir, onNova, onFechar }: Props) {
                       className="min-w-0 flex-1 text-left"
                     >
                       <span className="flex items-center gap-2">
-                        <span className="truncate text-sm font-medium text-white">{p.nome}</span>
+                        <span className="truncate text-sm font-medium text-[color:var(--e-t1)]">{p.nome}</span>
                         {aberta && (
-                          <span className="shrink-0 rounded bg-[#FFCB05] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#14110C]">
+                          <span className="shrink-0 rounded bg-[#FFCB05] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[color:var(--e-tinta)]">
                             aberta
                           </span>
                         )}
                       </span>
-                      <span className="mt-0.5 block truncate text-[11px] text-white/40">
+                      <span className="mt-0.5 block truncate text-[11px] text-[color:var(--e-t3)]">
                         {rotuloFormato(p)} · {p.camadas.length} camadas · {quando(p.atualizadoEm)}
                       </span>
                     </button>
 
                     {confirmando === p.id ? (
                       <div className="flex shrink-0 items-center gap-1.5">
-                        <span className="text-[11px] text-white/50">Apagar?</span>
+                        <span className="text-[11px] text-[color:var(--e-t3)]">Apagar?</span>
                         <button
                           type="button"
                           onClick={() => void apagar(p.id)}
@@ -171,7 +171,7 @@ export default function Artes({ atual, onAbrir, onNova, onFechar }: Props) {
                         <button
                           type="button"
                           onClick={() => setConfirmando(null)}
-                          className="rounded border border-white/15 px-2 py-1 text-[11px] text-white/60 transition hover:text-white"
+                          className="rounded border border-[color:var(--e-b1)] px-2 py-1 text-[11px] text-[color:var(--e-t2)] transition hover:text-[color:var(--e-t1)]"
                         >
                           Não
                         </button>
@@ -227,8 +227,8 @@ function Acao({
       title={rotulo}
       aria-label={rotulo}
       onClick={onClick}
-      className={`grid h-7 w-7 place-items-center rounded text-xs text-white/60 transition ${
-        risco ? "hover:bg-red-600 hover:text-white" : "hover:bg-white/10 hover:text-white"
+      className={`grid h-7 w-7 place-items-center rounded text-xs text-[color:var(--e-t2)] transition ${
+        risco ? "hover:bg-red-600 hover:text-[color:var(--e-t1)]" : "hover:bg-[color:var(--e-fill)] hover:text-[color:var(--e-t1)]"
       }`}
     >
       {children}

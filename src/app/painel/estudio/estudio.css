@@ -1,0 +1,115 @@
+/* ======================================================================
+   OS TEMAS DO ESTÚDIO
+
+   Mesma estrutura de três estados do painel.css, e pelo mesmo motivo: o
+   estudio.php carimba data-tema no <html> a partir do cookie ANTES de mandar a
+   página, então o tema já chega certo e não pisca. Em "sistema" ele não carimba
+   nada e quem decide é a media query.
+
+   POR QUE ISTO NÃO É O CORDEL:
+   O entorno do palco é CINZA NEUTRO no tema claro, e não o papel creme do
+   painel. Não é descuido — a percepção de cor muda com o brilho e a temperatura
+   do que está em volta: sobre creme (um tom quente) a arte parece mais fria do
+   que vai parecer no feed. É por isso que Figma e Canva usam cinza neutro atrás
+   da prancheta, e é por isso que o lugar onde se olha cor não pode ter opinião
+   sobre cor.
+
+   A identidade aqui é carregada pela FORMA — canto reto, borda grossa, sombra
+   dura, Special Elite nos rótulos, ouro em bloco — e não pela cor do papel.
+
+   COR NOVA entra como token aqui, definida nos dois lados. Cor cravada na
+   classe Tailwind (bg-[#14110C], text-white/35) quebra um dos temas, que é
+   exatamente o que existia antes deste arquivo.
+
+   Escopado em #estudio-raiz (o id que o page.tsx põe na raiz) para não vazar
+   para nenhuma outra página.
+   ====================================================================== */
+
+#estudio-raiz {
+  /* ---- claro ---- */
+  color-scheme: light;
+
+  --e-fundo: #E6E6E6;       /* o entorno do palco: cinza neutro, de propósito */
+  --e-superficie: #F5F5F4;  /* barras, colunas, menus */
+
+  /* texto, do forte ao mínimo. No claro os valores são mais altos que no
+     escuro: sobre fundo claro é preciso mais tinta para o mesmo contraste. */
+  --e-t1: rgba(24, 18, 3, 0.92);
+  --e-t2: rgba(24, 18, 3, 0.72);
+  --e-t3: rgba(24, 18, 3, 0.62);
+  --e-t4: rgba(24, 18, 3, 0.52);
+
+  --e-b1: rgba(24, 18, 3, 0.16);   /* borda discreta */
+  --e-b2: rgba(24, 18, 3, 0.32);   /* borda de destaque */
+  --e-fill: rgba(24, 18, 3, 0.07); /* preenchimento de hover e de estado */
+
+  /* o ouro como TEXTO precisa escurecer: #FFCB05 sobre cinza claro some.
+     Como bloco (background, border, ring) ele continua sendo o ouro. */
+  --e-acento: #8A6508;
+  --e-tinta: #14110C;              /* texto sobre o ouro — igual nos dois temas */
+
+  /* fundo de campo. NÃO pode ser preto translúcido como no escuro: campo
+     escuro com texto tinta em cima é campo ilegível. */
+  --e-campo: #FFFFFF;
+  --e-vazio: #DDDCD8;                     /* miniatura sem imagem */
+
+  --e-grade: rgba(24, 18, 3, 0.07);       /* a trama de pontos atrás do palco */
+  --e-sombra-palco: rgba(24, 18, 3, 0.25);
+  --e-sombra: rgba(24, 18, 3, 0.22);      /* a sombra dura das barras, igual à do painel */
+}
+
+/* ---- escuro, para quem não escolheu e usa o sistema no escuro ---- */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-tema="claro"]) #estudio-raiz {
+    color-scheme: dark;
+
+    --e-fundo: #0D0B08;
+    --e-superficie: #14110C;
+
+    --e-t1: rgba(255, 255, 255, 0.85);
+    --e-t2: rgba(255, 255, 255, 0.68);
+    --e-t3: rgba(255, 255, 255, 0.48);
+    --e-t4: rgba(255, 255, 255, 0.34);
+
+    --e-b1: rgba(255, 255, 255, 0.12);
+    --e-b2: rgba(255, 255, 255, 0.3);
+    --e-fill: rgba(255, 255, 255, 0.1);
+
+    --e-acento: #FFCB05;
+    --e-tinta: #14110C;
+
+    --e-campo: rgba(0, 0, 0, 0.4);
+    --e-vazio: rgba(0, 0, 0, 0.4);
+
+    --e-grade: rgba(255, 255, 255, 0.055);
+    --e-sombra-palco: rgba(0, 0, 0, 0.6);
+    --e-sombra: rgba(0, 0, 0, 0.45);
+  }
+}
+
+/* ---- o mesmo escuro, para quem apertou o botão ---- */
+:root[data-tema="escuro"] #estudio-raiz {
+  color-scheme: dark;
+
+  --e-fundo: #0D0B08;
+  --e-superficie: #14110C;
+
+  --e-t1: rgba(255, 255, 255, 0.85);
+  --e-t2: rgba(255, 255, 255, 0.68);
+  --e-t3: rgba(255, 255, 255, 0.48);
+  --e-t4: rgba(255, 255, 255, 0.34);
+
+  --e-b1: rgba(255, 255, 255, 0.12);
+  --e-b2: rgba(255, 255, 255, 0.3);
+  --e-fill: rgba(255, 255, 255, 0.1);
+
+  --e-acento: #FFCB05;
+  --e-tinta: #14110C;
+
+  --e-campo: rgba(0, 0, 0, 0.4);
+  --e-vazio: rgba(0, 0, 0, 0.4);
+
+  --e-grade: rgba(255, 255, 255, 0.055);
+  --e-sombra-palco: rgba(0, 0, 0, 0.6);
+  --e-sombra: rgba(0, 0, 0, 0.45);
+}

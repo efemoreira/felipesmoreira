@@ -226,11 +226,11 @@ export default function Recorte({ ativo, onPronto, onFechar }: Props) {
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4">
-      <div className="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-xl border border-white/12 bg-[#14110C] shadow-2xl">
-        <header className="flex items-center justify-between border-b border-white/10 px-5 py-4">
+      <div className="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-xl border border-[color:var(--e-b1)] bg-[color:var(--e-superficie)] shadow-2xl">
+        <header className="flex items-center justify-between border-b border-[color:var(--e-b1)] px-5 py-4">
           <div>
-            <h2 className="text-sm font-semibold text-white">Remover o fundo</h2>
-            <p className="mt-0.5 text-xs text-white/40">
+            <h2 className="text-sm font-semibold text-[color:var(--e-t1)]">Remover o fundo</h2>
+            <p className="mt-0.5 text-xs text-[color:var(--e-t3)]">
               Roda no seu navegador — a foto não sai daqui.
             </p>
           </div>
@@ -238,7 +238,7 @@ export default function Recorte({ ativo, onPronto, onFechar }: Props) {
             type="button"
             onClick={onFechar}
             aria-label="Fechar"
-            className="grid h-8 w-8 place-items-center rounded-md text-white/50 transition hover:bg-white/10 hover:text-white"
+            className="grid h-8 w-8 place-items-center rounded-md text-[color:var(--e-t3)] transition hover:bg-[color:var(--e-fill)] hover:text-[color:var(--e-t1)]"
           >
             ✕
           </button>
@@ -253,7 +253,7 @@ export default function Recorte({ ativo, onPronto, onFechar }: Props) {
             } bg-[length:22px_22px]`}
           >
             {fase === "carregando" || fase === "erro" ? (
-              <p className="max-w-sm px-6 text-center text-sm leading-relaxed text-white/60">
+              <p className="max-w-sm px-6 text-center text-sm leading-relaxed text-[color:var(--e-t2)]">
                 {recado || "Preparando…"}
               </p>
             ) : (
@@ -270,7 +270,7 @@ export default function Recorte({ ativo, onPronto, onFechar }: Props) {
           </div>
 
           {fase !== "erro" && (
-            <aside className="w-full shrink-0 overflow-y-auto border-t border-white/10 md:w-72 md:border-l md:border-t-0">
+            <aside className="w-full shrink-0 overflow-y-auto border-t border-[color:var(--e-b1)] md:w-72 md:border-l md:border-t-0">
               <div className="flex flex-col gap-3 px-4 py-4">
                 <Deslizante
                   rotulo="Limiar"
@@ -297,7 +297,7 @@ export default function Recorte({ ativo, onPronto, onFechar }: Props) {
                   onMudar={(ajusteBorda) => setAjustes((a) => ({ ...a, ajusteBorda }))}
                 />
 
-                <hr className="border-white/10" />
+                <hr className="border-[color:var(--e-b1)]" />
 
                 <Botoes
                   rotulo="Retoque"
@@ -321,7 +321,7 @@ export default function Recorte({ ativo, onPronto, onFechar }: Props) {
                     <button
                       type="button"
                       onClick={limparRetoque}
-                      className="rounded-md border border-white/12 px-3 py-2 text-xs text-white/70 transition hover:border-white/30 hover:text-white"
+                      className="rounded-md border border-[color:var(--e-b1)] px-3 py-2 text-xs text-[color:var(--e-t2)] transition hover:border-[color:var(--e-b2)] hover:text-[color:var(--e-t1)]"
                     >
                       Desfazer todo o retoque
                     </button>
@@ -331,7 +331,7 @@ export default function Recorte({ ativo, onPronto, onFechar }: Props) {
                 <button
                   type="button"
                   onClick={() => setFundoClaro((v) => !v)}
-                  className="rounded-md border border-white/12 px-3 py-2 text-xs text-white/70 transition hover:border-white/30 hover:text-white"
+                  className="rounded-md border border-[color:var(--e-b1)] px-3 py-2 text-xs text-[color:var(--e-t2)] transition hover:border-[color:var(--e-b2)] hover:text-[color:var(--e-t1)]"
                 >
                   Conferir sobre fundo {fundoClaro ? "escuro" : "claro"}
                 </button>
@@ -340,15 +340,15 @@ export default function Recorte({ ativo, onPronto, onFechar }: Props) {
           )}
         </div>
 
-        <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-white/10 px-5 py-3">
-          <span className="text-xs text-white/40">
+        <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-[color:var(--e-b1)] px-5 py-3">
+          <span className="text-xs text-[color:var(--e-t3)]">
             {recado && fase !== "carregando" ? recado : "O original continua na biblioteca."}
           </span>
           <div className="flex gap-2">
             <button
               type="button"
               onClick={onFechar}
-              className="rounded-md border border-white/12 px-4 py-2 text-sm text-white/70 transition hover:border-white/30 hover:text-white"
+              className="rounded-md border border-[color:var(--e-b1)] px-4 py-2 text-sm text-[color:var(--e-t2)] transition hover:border-[color:var(--e-b2)] hover:text-[color:var(--e-t1)]"
             >
               Cancelar
             </button>
@@ -356,7 +356,7 @@ export default function Recorte({ ativo, onPronto, onFechar }: Props) {
               type="button"
               onClick={aplicar}
               disabled={fase !== "pronto"}
-              className="rounded-md bg-[#FFCB05] px-4 py-2 text-sm font-semibold text-[#14110C] transition hover:bg-[#ffd63a] disabled:opacity-40"
+              className="rounded-md bg-[#FFCB05] px-4 py-2 text-sm font-semibold text-[color:var(--e-tinta)] transition hover:bg-[#ffd63a] disabled:opacity-40"
             >
               {fase === "salvando" ? "Salvando…" : "Usar este recorte"}
             </button>

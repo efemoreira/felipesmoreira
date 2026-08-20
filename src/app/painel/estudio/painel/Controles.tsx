@@ -25,10 +25,10 @@ export function Secao({
 }) {
   const { props, balao } = useDica(dica, titulo);
   return (
-    <details open={aberta} className="border-b border-white/10 last:border-0">
+    <details open={aberta} className="border-b border-[color:var(--e-b1)] last:border-0">
       <summary
         {...props}
-        className="cursor-pointer list-none px-4 py-3 text-[11px] font-semibold uppercase tracking-[.14em] text-[#FFCB05]/80 hover:text-[#FFCB05] [&::-webkit-details-marker]:hidden"
+        className="cursor-pointer list-none px-4 py-3 text-[11px] font-semibold uppercase tracking-[.14em] text-[color:var(--e-acento)] hover:text-[color:var(--e-t1)] [&::-webkit-details-marker]:hidden"
       >
         {titulo}
       </summary>
@@ -50,7 +50,7 @@ export function Campo({
   const { props, balao } = useDica(dica, rotulo);
   return (
     <label {...props} className="flex flex-col gap-1.5">
-      <span className="text-[11px] uppercase tracking-wider text-white/45">{rotulo}</span>
+      <span className="text-[11px] uppercase tracking-wider text-[color:var(--e-t3)]">{rotulo}</span>
       {children}
       {balao}
     </label>
@@ -58,7 +58,7 @@ export function Campo({
 }
 
 const entradaCss =
-  "w-full rounded-md border border-white/12 bg-black/40 px-2.5 py-1.5 text-sm text-white outline-none transition focus:border-[#FFCB05]/70 focus:ring-1 focus:ring-[#FFCB05]/30";
+  "w-full rounded-md border border-[color:var(--e-b1)] bg-[color:var(--e-campo)] px-2.5 py-1.5 text-sm text-[color:var(--e-t1)] outline-none transition focus:border-[#FFCB05]/70 focus:ring-1 focus:ring-[#FFCB05]/30";
 
 export function Deslizante({
   rotulo,
@@ -83,8 +83,8 @@ export function Deslizante({
   return (
     <div {...props} className="flex flex-col gap-1.5">
       <div className="flex items-baseline justify-between">
-        <span className="text-[11px] uppercase tracking-wider text-white/45">{rotulo}</span>
-        <span className="font-mono text-[11px] text-white/70">
+        <span className="text-[11px] uppercase tracking-wider text-[color:var(--e-t3)]">{rotulo}</span>
+        <span className="font-mono text-[11px] text-[color:var(--e-t2)]">
           {Number.isInteger(passo) ? Math.round(valor) : valor.toFixed(2)}
           {sufixo}
         </span>
@@ -96,7 +96,7 @@ export function Deslizante({
         step={passo}
         value={valor}
         onChange={(e) => onMudar(Number(e.target.value))}
-        className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-white/15 accent-[#FFCB05]"
+        className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-[color:var(--e-fill)] accent-[#FFCB05]"
       />
       {balao}
     </div>
@@ -170,7 +170,7 @@ export function AreaTexto({
         onChange={(e) => onMudar(e.target.value)}
         className={`${entradaCss} resize-y font-mono text-[13px] leading-relaxed`}
       />
-      {legenda && <span className="text-[11px] leading-snug text-white/35">{legenda}</span>}
+      {legenda && <span className="text-[11px] leading-snug text-[color:var(--e-t4)]">{legenda}</span>}
     </Campo>
   );
 }
@@ -196,7 +196,7 @@ export function Escolha<T extends string>({
         className={entradaCss}
       >
         {opcoes.map((o) => (
-          <option key={o.valor} value={o.valor} className="bg-[#14110C]">
+          <option key={o.valor} value={o.valor} className="bg-[color:var(--e-superficie)]">
             {o.rotulo}
           </option>
         ))}
@@ -220,7 +220,7 @@ export function Botoes<T extends string>({
 }) {
   return (
     <Campo rotulo={rotulo} dica={dica}>
-      <div className="flex gap-1 rounded-md bg-black/40 p-1">
+      <div className="flex gap-1 rounded-md bg-[color:var(--e-campo)] p-1">
         {opcoes.map((o) => (
           <button
             key={o.valor}
@@ -228,8 +228,8 @@ export function Botoes<T extends string>({
             onClick={() => onMudar(o.valor)}
             className={`flex-1 rounded px-2 py-1 text-xs transition ${
               valor === o.valor
-                ? "bg-[#FFCB05] font-semibold text-[#14110C]"
-                : "text-white/60 hover:bg-white/10 hover:text-white"
+                ? "bg-[#FFCB05] font-semibold text-[color:var(--e-tinta)]"
+                : "text-[color:var(--e-t2)] hover:bg-[color:var(--e-fill)] hover:text-[color:var(--e-t1)]"
             }`}
           >
             {o.rotulo}
@@ -257,7 +257,7 @@ export function Chave({
       {...props}
       className="flex cursor-pointer items-center justify-between gap-3 py-0.5"
     >
-      <span className="text-[11px] uppercase tracking-wider text-white/45">{rotulo}</span>
+      <span className="text-[11px] uppercase tracking-wider text-[color:var(--e-t3)]">{rotulo}</span>
       <button
         type="button"
         role="switch"
@@ -265,11 +265,11 @@ export function Chave({
         aria-label={rotulo}
         onClick={() => onMudar(!ligada)}
         className={`relative h-5 w-9 shrink-0 rounded-full transition ${
-          ligada ? "bg-[#FFCB05]" : "bg-white/20"
+          ligada ? "bg-[#FFCB05]" : "bg-[color:var(--e-b2)]"
         }`}
       >
         <span
-          className={`absolute top-0.5 h-4 w-4 rounded-full bg-[#14110C] transition-all ${
+          className={`absolute top-0.5 h-4 w-4 rounded-full bg-[color:var(--e-superficie)] transition-all ${
             ligada ? "left-4.5" : "left-0.5"
           }`}
         />
@@ -325,7 +325,7 @@ export function Presets<T>({
             key={o.nome}
             type="button"
             onClick={() => onAplicar(o.valor)}
-            className="rounded border border-white/15 px-2 py-1 text-[11px] text-white/70 transition hover:border-[#FFCB05] hover:text-white"
+            className="rounded border border-[color:var(--e-b1)] px-2 py-1 text-[11px] text-[color:var(--e-t2)] transition hover:border-[#FFCB05] hover:text-[color:var(--e-t1)]"
           >
             {o.nome}
           </button>
@@ -363,7 +363,7 @@ export function Lados({
   return (
     <div {...props} className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
-        <span className="text-[11px] uppercase tracking-wider text-white/45">Lados</span>
+        <span className="text-[11px] uppercase tracking-wider text-[color:var(--e-t3)]">Lados</span>
         <button
           type="button"
           onClick={() => onLigados(!ligados)}
@@ -371,8 +371,8 @@ export function Lados({
           title={ligados ? "Separar os lados" : "Mover os quatro juntos"}
           className={`rounded border px-2 py-0.5 text-[11px] transition ${
             ligados
-              ? "border-[#FFCB05] text-[#FFCB05]"
-              : "border-white/15 text-white/45 hover:text-white"
+              ? "border-[#FFCB05] text-[color:var(--e-acento)]"
+              : "border-[color:var(--e-b1)] text-[color:var(--e-t3)] hover:text-[color:var(--e-t1)]"
           }`}
         >
           {ligados ? "🔗 juntos" : "⛓ separados"}
@@ -420,14 +420,14 @@ export function Cor({
 
   return (
     <div {...props} className="flex flex-col gap-1.5">
-      <span className="text-[11px] uppercase tracking-wider text-white/45">{rotulo}</span>
+      <span className="text-[11px] uppercase tracking-wider text-[color:var(--e-t3)]">{rotulo}</span>
       <div className="flex items-center gap-2">
         <input
           id={id}
           type="color"
           value={hex}
           onChange={(e) => onMudar(e.target.value)}
-          className="h-8 w-9 shrink-0 cursor-pointer rounded border border-white/15 bg-transparent"
+          className="h-8 w-9 shrink-0 cursor-pointer rounded border border-[color:var(--e-b1)] bg-transparent"
         />
         <div className="flex flex-wrap gap-1">
           {ATALHOS_COR.map((a) => (
@@ -441,7 +441,7 @@ export function Cor({
               className={`h-6 w-6 rounded border transition hover:scale-110 ${
                 valor.toLowerCase() === a.cor.toLowerCase()
                   ? "border-[#FFCB05] ring-1 ring-[#FFCB05]"
-                  : "border-white/20"
+                  : "border-[color:var(--e-b1)]"
               }`}
             />
           ))}

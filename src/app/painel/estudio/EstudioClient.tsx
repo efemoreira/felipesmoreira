@@ -9,7 +9,7 @@ import dynamic from "next/dynamic";
 const Estudio = dynamic(() => import("./Estudio"), {
   ssr: false,
   loading: () => (
-    <div className="grid h-dvh place-items-center bg-[#0D0B08] text-sm text-white/40">
+    <div className="grid h-dvh place-items-center bg-[color:var(--e-fundo)] text-sm text-[color:var(--e-t3)]">
       Abrindo o estúdio…
     </div>
   ),

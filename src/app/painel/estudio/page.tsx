@@ -8,6 +8,8 @@ import {
   UnifrakturMaguntia,
 } from "next/font/google";
 import EstudioClient from "./EstudioClient";
+// os tokens dos três temas; fora do globals.css para não pesar no site público
+import "./estudio.css";
 
 /**
  * Estúdio de Artes do painel.

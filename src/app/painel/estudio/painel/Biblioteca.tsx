@@ -74,13 +74,13 @@ export default function Biblioteca({ familia, onEscolher, onFechar }: Props) {
       onClick={onFechar}
     >
       <div
-        className="flex max-h-[85vh] w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-white/12 bg-[#14110C] shadow-2xl"
+        className="flex max-h-[85vh] w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-[color:var(--e-b1)] bg-[color:var(--e-superficie)] shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <header className="flex items-center justify-between border-b border-white/10 px-5 py-4">
+        <header className="flex items-center justify-between border-b border-[color:var(--e-b1)] px-5 py-4">
           <div>
-            <h2 className="text-sm font-semibold text-white">Biblioteca de imagens</h2>
-            <p className="mt-0.5 text-xs text-white/40">
+            <h2 className="text-sm font-semibold text-[color:var(--e-t1)]">Biblioteca de imagens</h2>
+            <p className="mt-0.5 text-xs text-[color:var(--e-t3)]">
               {familia === "pessoa"
                 ? "Suba o PNG já sem fundo — ele fica guardado para as próximas artes."
                 : "Fotos de contexto e fundos."}
@@ -89,18 +89,18 @@ export default function Biblioteca({ familia, onEscolher, onFechar }: Props) {
           <button
             type="button"
             onClick={onFechar}
-            className="grid h-8 w-8 place-items-center rounded-md text-white/50 transition hover:bg-white/10 hover:text-white"
+            className="grid h-8 w-8 place-items-center rounded-md text-[color:var(--e-t3)] transition hover:bg-[color:var(--e-fill)] hover:text-[color:var(--e-t1)]"
             aria-label="Fechar"
           >
             ✕
           </button>
         </header>
 
-        <div className="flex items-center gap-3 border-b border-white/10 px-5 py-3">
+        <div className="flex items-center gap-3 border-b border-[color:var(--e-b1)] px-5 py-3">
           <button
             type="button"
             onClick={() => entrada.current?.click()}
-            className="rounded-md bg-[#FFCB05] px-4 py-2 text-sm font-semibold text-[#14110C] transition hover:bg-[#ffd63a]"
+            className="rounded-md bg-[#FFCB05] px-4 py-2 text-sm font-semibold text-[color:var(--e-tinta)] transition hover:bg-[#ffd63a]"
           >
             Subir imagem
           </button>
@@ -127,9 +127,9 @@ export default function Biblioteca({ familia, onEscolher, onFechar }: Props) {
           }}
         >
           {carregando ? (
-            <p className="py-10 text-center text-sm text-white/35">Abrindo a biblioteca…</p>
+            <p className="py-10 text-center text-sm text-[color:var(--e-t4)]">Abrindo a biblioteca…</p>
           ) : ativos.length === 0 ? (
-            <p className="py-10 text-center text-sm leading-relaxed text-white/35">
+            <p className="py-10 text-center text-sm leading-relaxed text-[color:var(--e-t4)]">
               Nada guardado ainda.
               <br />
               Arraste imagens para cá ou use o botão acima.
@@ -145,7 +145,7 @@ export default function Biblioteca({ familia, onEscolher, onFechar }: Props) {
               />
               {resto.length > 0 && (
                 <>
-                  <h3 className="mb-2 mt-6 text-[11px] uppercase tracking-[.14em] text-white/30">
+                  <h3 className="mb-2 mt-6 text-[11px] uppercase tracking-[.14em] text-[color:var(--e-t4)]">
                     Outras imagens
                   </h3>
                   <Grade
@@ -197,7 +197,7 @@ function Grade({
           <button
             type="button"
             onClick={() => onEscolher(a.id)}
-            className="block w-full overflow-hidden rounded-lg border border-white/12 bg-[repeating-conic-gradient(#222_0_25%,#2c2c2c_0_50%)] bg-[length:16px_16px] transition hover:border-[#FFCB05]"
+            className="block w-full overflow-hidden rounded-lg border border-[color:var(--e-b1)] bg-[repeating-conic-gradient(#222_0_25%,#2c2c2c_0_50%)] bg-[length:16px_16px] transition hover:border-[#FFCB05]"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -206,7 +206,7 @@ function Grade({
               className="h-28 w-full object-contain"
               loading="lazy"
             />
-            <span className="block truncate px-2 py-1.5 text-left text-[11px] text-white/55">
+            <span className="block truncate px-2 py-1.5 text-left text-[11px] text-[color:var(--e-t2)]">
               {a.nome}
             </span>
           </button>
@@ -216,7 +216,7 @@ function Grade({
               title="Remover o fundo desta imagem"
               aria-label={`Remover o fundo de ${a.nome}`}
               onClick={() => onRecortar(a)}
-              className="grid h-6 w-6 place-items-center rounded bg-black/70 text-xs text-white/70 transition hover:bg-[#FFCB05] hover:text-[#14110C]"
+              className="grid h-6 w-6 place-items-center rounded bg-black/70 text-xs text-[color:var(--e-t2)] transition hover:bg-[#FFCB05] hover:text-[color:var(--e-tinta)]"
             >
               ✂
             </button>
@@ -225,7 +225,7 @@ function Grade({
               title="Apagar da biblioteca"
               aria-label={`Apagar ${a.nome}`}
               onClick={() => onExcluir(a.id)}
-              className="grid h-6 w-6 place-items-center rounded bg-black/70 text-xs text-white/70 transition hover:bg-red-600 hover:text-white"
+              className="grid h-6 w-6 place-items-center rounded bg-black/70 text-xs text-[color:var(--e-t2)] transition hover:bg-red-600 hover:text-[color:var(--e-t1)]"
             >
               ✕
             </button>
