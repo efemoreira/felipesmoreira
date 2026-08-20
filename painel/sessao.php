@@ -152,6 +152,38 @@ function so_digitos($v): string
 }
 
 /**
+ * "Fila do Hospital Geral" -> "Fila do Hospital Geral" sem acento nenhum.
+ *
+ * Mapa escrito à mão em vez de iconv('ASCII//TRANSLIT'): o resultado do
+ * TRANSLIT depende da libc, e o mesmo texto vira "ha" no Linux da Hostinger e
+ * "h" no macOS de quem desenvolve. Nome de arquivo é contrato com o Acervo, e
+ * slug de origem é contrato com o relatório — nenhum dos dois pode mudar
+ * conforme a máquina que gerou.
+ *
+ * Mora aqui, e não no producao-comum.php onde nasceu, porque as inscrições
+ * também precisam e não têm por que arrastar junto o quadro de produção
+ * inteiro. O equivalente no JavaScript é `normalize("NFD")`, que o Unicode
+ * define e que dá o mesmo resultado em qualquer máquina.
+ */
+function sem_acento(string $texto): string
+{
+    return strtr($texto, [
+        'á' => 'a', 'à' => 'a', 'ã' => 'a', 'â' => 'a', 'ä' => 'a',
+        'é' => 'e', 'è' => 'e', 'ê' => 'e', 'ë' => 'e',
+        'í' => 'i', 'ì' => 'i', 'î' => 'i', 'ï' => 'i',
+        'ó' => 'o', 'ò' => 'o', 'õ' => 'o', 'ô' => 'o', 'ö' => 'o',
+        'ú' => 'u', 'ù' => 'u', 'û' => 'u', 'ü' => 'u',
+        'ç' => 'c', 'ñ' => 'n',
+        'Á' => 'A', 'À' => 'A', 'Ã' => 'A', 'Â' => 'A', 'Ä' => 'A',
+        'É' => 'E', 'È' => 'E', 'Ê' => 'E', 'Ë' => 'E',
+        'Í' => 'I', 'Ì' => 'I', 'Î' => 'I', 'Ï' => 'I',
+        'Ó' => 'O', 'Ò' => 'O', 'Õ' => 'O', 'Ô' => 'O', 'Ö' => 'O',
+        'Ú' => 'U', 'Ù' => 'U', 'Û' => 'U', 'Ü' => 'U',
+        'Ç' => 'C', 'Ñ' => 'N',
+    ]);
+}
+
+/**
  * 85997223863 -> (85) 99722-3863. Guardamos só dígitos; ler assim é humano.
  *
  * Mora aqui, e não no inscricoes-comum.php onde nasceu, porque a lista de

@@ -233,31 +233,8 @@ function alvo_repetido(string $responsavel, string $ignorarCardId = ''): ?array
 
 /* ===================== nome de arquivo do Acervo ===================== */
 
-/**
- * "Fila do Hospital Geral" -> "fila-hospital-geral"
- *
- * Mapa de acentos escrito à mão em vez de iconv('ASCII//TRANSLIT'): o
- * resultado do TRANSLIT depende da libc, e o mesmo texto vira "ha" no Linux da
- * Hostinger e "h" no macOS de quem desenvolve. Nome de arquivo é contrato com
- * o Acervo — não pode mudar conforme a máquina que gerou.
- */
-function sem_acento(string $texto): string
-{
-    return strtr($texto, [
-        'á' => 'a', 'à' => 'a', 'ã' => 'a', 'â' => 'a', 'ä' => 'a',
-        'é' => 'e', 'è' => 'e', 'ê' => 'e', 'ë' => 'e',
-        'í' => 'i', 'ì' => 'i', 'î' => 'i', 'ï' => 'i',
-        'ó' => 'o', 'ò' => 'o', 'õ' => 'o', 'ô' => 'o', 'ö' => 'o',
-        'ú' => 'u', 'ù' => 'u', 'û' => 'u', 'ü' => 'u',
-        'ç' => 'c', 'ñ' => 'n',
-        'Á' => 'A', 'À' => 'A', 'Ã' => 'A', 'Â' => 'A', 'Ä' => 'A',
-        'É' => 'E', 'È' => 'E', 'Ê' => 'E', 'Ë' => 'E',
-        'Í' => 'I', 'Ì' => 'I', 'Î' => 'I', 'Ï' => 'I',
-        'Ó' => 'O', 'Ò' => 'O', 'Õ' => 'O', 'Ô' => 'O', 'Ö' => 'O',
-        'Ú' => 'U', 'Ù' => 'U', 'Û' => 'U', 'Ü' => 'U',
-        'Ç' => 'C', 'Ñ' => 'N',
-    ]);
-}
+/* sem_acento() mora no sessao.php: as inscrições também precisam dela para o
+   slug de origem, e não têm por que incluir este arquivo inteiro. */
 
 function apelido(string $texto, int $palavras = 4): string
 {

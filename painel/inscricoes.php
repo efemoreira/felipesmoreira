@@ -283,6 +283,15 @@ abrir_pagina('Inscrições');
               <dd><?= h($i['email']) ?></dd>
             </div>
           <?php endif; ?>
+          <?php if ($i['origem'] !== ''): ?>
+            <?php /* Quem trouxe, ou por qual canal. Fica junto do contato, e não
+                      no fim da ficha, porque muda a conversa: quem chega indicado
+                      por alguém do time se recebe pelo nome de quem indicou. */ ?>
+            <div>
+              <dt>Veio por</dt>
+              <dd><span class="selo"><?= h($i['origem']) ?></span></dd>
+            </div>
+          <?php endif; ?>
           <div class="ficha-funcoes">
             <dt>Quer ajudar em</dt>
             <dd>
