@@ -32,6 +32,20 @@ const COLUNAS = [
     'publicado' => 'Publicado',
 ];
 
+/**
+ * O que cai em cada coluna vazia, e quem põe.
+ *
+ * Coluna vazia dizendo só "Vazio." desperdiça o melhor momento de ensinar o
+ * fluxo: quem chega no quadro pela primeira vez aprende a linha de produção
+ * lendo as quatro colunas, sem abrir o manual.
+ */
+const COLUNA_VAZIA = [
+    'a-fazer'   => 'Nada aqui. O card nasce sozinho quando a Checagem aprova um fato — ninguém cria à mão.',
+    'fazendo'   => 'Nada em andamento. Puxe um card de "A fazer" e assuma: card sem dono é card que dorme.',
+    'revisao'   => 'Nada esperando revisão. Aqui chega o que o Roteirista, o Design ou o Editor terminou.',
+    'publicado' => 'Nada publicado ainda. Publicar exige o link do post — é ele que o Acervo indexa depois.',
+];
+
 /** A trava do manual: o mesmo responsável não é alvo principal 2 dias seguidos. */
 const LEDGER_HORAS = 48;
 

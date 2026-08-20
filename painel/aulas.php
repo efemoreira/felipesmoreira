@@ -104,13 +104,15 @@ abrir_pagina('Aulas em vídeo');
 <div class="capa">
   <h1>Aulas em vídeo</h1>
   <p class="sub">
-    A formação que o time vê em <a href="/aulas" target="_blank">/aulas</a>. Cada Dia abre com uma
-    <strong>🚗 Pista Rápida</strong> — o caminho macro, que todo mundo faz — seguida das
-    <strong>Pistas Lentas</strong>, que aprofundam para quem precisar.
+    A formação que o time vê em <a href="/aulas" target="_blank">/aulas</a>. A divisão em
+    <strong>🚗 Pista Rápida</strong> e <strong>Pista Lenta</strong> é explicada na primeira aula,
+    <a href="/aulas#como-funciona-a-formacao" target="_blank">Como esta formação funciona</a> —
+    aqui não se repete, para os dois textos não divergirem.
   </p>
   <p class="dica">
     O texto de cada aula já está escrito e vem do manual da militância. Aqui você só pendura o vídeo:
-    enquanto ele não existir, a aula funciona pelo texto.
+    enquanto ele não existir, a aula funciona pelo texto. Aula nova de reforço entra como Pista
+    Lenta no Dia certo, sem mexer no caminho de quem já está andando.
   </p>
 
   <?php recado($erro, $ok); ?>
@@ -120,8 +122,19 @@ abrir_pagina('Aulas em vídeo');
   </p>
 
 <?php foreach (CURRICULO as $dia): ?>
+  <?php
+    /* Quanto deste Dia já tem vídeo — sem isso, achar o Dia incompleto exige
+       abrir os seis <details> um por um. */
+    $comVideoNoDia = count(array_filter(
+        $dia['aulas'],
+        fn ($a) => isset($videos[$a['id']])
+    ));
+  ?>
   <fieldset>
-    <legend>Dia <?= (int) $dia['numero'] ?> — <?= h($dia['titulo']) ?></legend>
+    <legend>
+      Dia <?= (int) $dia['numero'] ?> — <?= h($dia['titulo']) ?>
+      · <?= $comVideoNoDia ?>/<?= count($dia['aulas']) ?> com vídeo
+    </legend>
     <p class="dica" style="margin:0 0 14px"><?= h($dia['resumo']) ?></p>
 
     <?php foreach ($dia['aulas'] as $aula): ?>
