@@ -13,7 +13,7 @@ require_once __DIR__ . '/sessao.php';
 require_once __DIR__ . '/icones.php';
 
 /** Versão do CSS — muda junto com o painel.css para furar o cache do navegador. */
-const VERSAO_ESTILO = '4';
+const VERSAO_ESTILO = '7';
 
 function abrir_pagina(string $titulo, bool $comNav = true): void
 {

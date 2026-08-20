@@ -413,3 +413,126 @@ input[type=file]::file-selector-button {
 @media (prefers-reduced-motion: reduce) {
   * { transition:none !important; }
 }
+
+/* ---- acesso rápido: o atalho da função da pessoa ----
+   Fica acima da grade de áreas. Não substitui a grade: a função diz onde a
+   pessoa trabalha todo dia, não o que ela pode abrir. */
+.atalhos {
+  display:grid; gap:10px; margin:0 0 26px; padding:16px 18px;
+  border:3px solid var(--ouro); background:rgba(255,203,5,.08);
+  box-shadow:5px 5px 0 rgba(0,0,0,.4);
+}
+.atalhos-rotulo {
+  margin:0; font:400 11px/1.3 var(--etiqueta); letter-spacing:2px;
+  text-transform:uppercase; color:var(--ouro);
+}
+.atalho {
+  display:flex; align-items:center; gap:14px; text-decoration:none; color:var(--creme);
+  padding:12px 14px; min-height:44px; border:2px solid rgba(255,203,5,.35);
+  background:rgba(0,0,0,.25);
+  transition:border-color .12s ease, background .12s ease;
+}
+.atalho:hover { border-color:var(--ouro); background:rgba(255,203,5,.12); }
+.atalho:focus-visible { outline:3px solid var(--ouro2); outline-offset:3px; }
+.atalho .atalho-icone {
+  flex:0 0 auto; width:38px; height:38px; display:grid; place-items:center;
+  background:var(--ouro); color:var(--ink); border:2px solid var(--ink);
+}
+.atalho .atalho-icone svg { width:21px; height:21px; }
+.atalho .atalho-texto { flex:1 1 auto; min-width:0; }
+.atalho .atalho-texto strong {
+  display:block; font:400 17px/1.2 var(--display); color:var(--ouro); margin:0 0 3px;
+}
+.atalho .atalho-texto > span { display:block; font-size:13.5px; color:var(--texto-fraco); }
+.atalho .atalho-seta { flex:0 0 auto; color:var(--texto-min); display:grid; place-items:center; }
+
+/* ---- quadro de produção ----
+   Quatro colunas no desktop; no celular vira uma pilha, porque rolar de lado
+   entre colunas briga com a rolagem da página no dedo. */
+.quadro {
+  display:grid; gap:14px; grid-template-columns:repeat(4,minmax(0,1fr)); margin:0 0 28px;
+  align-items:start;
+}
+@media (max-width:1100px){ .quadro { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media (max-width:700px){ .quadro { grid-template-columns:1fr; } }
+
+.coluna { border:3px solid var(--linha); background:rgba(0,0,0,.22); padding:12px; min-width:0; }
+.coluna-topo {
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+  margin:0 0 12px; font:400 13px/1.2 var(--etiqueta); letter-spacing:1.6px;
+  text-transform:uppercase; color:var(--ouro);
+}
+.coluna-conta {
+  flex:0 0 auto; min-width:24px; padding:2px 7px; text-align:center;
+  border:2px solid var(--linha); color:var(--texto-fraco); font-size:12px;
+}
+.coluna-vazia { margin:0; }
+
+.card {
+  border:2px solid rgba(255,203,5,.3); background:rgba(255,203,5,.05);
+  padding:12px; margin:0 0 10px; min-width:0;
+}
+.card-atrasado { border-color:var(--erro-borda); background:rgba(194,84,63,.1); }
+.card-topo { display:flex; flex-wrap:wrap; gap:4px; margin:0 0 8px; }
+.card-titulo {
+  margin:0 0 8px; font-weight:700; line-height:1.4; font-size:15px;
+  overflow-wrap:anywhere;
+}
+.card-meta { margin:0 0 10px; font-size:13px; line-height:1.55; color:var(--texto-fraco); }
+.card .card-mais > summary { display:inline-flex; }
+/* o nome de arquivo é longo e não pode estourar a coluna estreita */
+.card-arquivo { font-size:13px; letter-spacing:1px; overflow-wrap:anywhere; padding:8px 10px; }
+
+.historico { margin:6px 0 0; padding:0 0 0 16px; font-size:13px; color:var(--texto-fraco); }
+.historico li { margin:0 0 6px; line-height:1.5; }
+.historico li span { display:block; color:var(--texto-min); font-size:12px; }
+
+/* ---- checklist marcável (encontros) ----
+   Cada item é um form próprio: um POST por clique, sem JavaScript. O botão
+   ocupa a linha inteira para o alvo de toque valer o texto todo. */
+.risco-linha { margin:0 0 2px; }
+.risco {
+  display:flex; align-items:flex-start; gap:11px; width:100%; text-align:left;
+  min-height:44px; padding:9px 10px; cursor:pointer;
+  background:none; border:0; color:var(--creme);
+  font:400 15px/1.5 var(--corpo); letter-spacing:0; text-transform:none;
+  box-shadow:none;
+}
+.risco:hover { background:rgba(255,203,5,.07); }
+.risco:focus-visible { outline:3px solid var(--ouro2); outline-offset:-3px; }
+.risco .risco-caixa {
+  flex:0 0 auto; width:22px; height:22px; margin-top:1px;
+  display:grid; place-items:center;
+  border:2px solid rgba(255,203,5,.5); color:var(--ink); font-size:14px; line-height:1;
+}
+.risco-feito { color:var(--texto-min); }
+.risco-feito .risco-caixa { background:var(--ouro); border-color:var(--ouro); }
+.risco-feito > span:last-child { text-decoration:line-through; }
+
+.lista-travas { margin:8px 0 0; padding:0 0 0 18px; }
+.lista-travas li { margin:0 0 6px; line-height:1.55; }
+
+/* ---- QR da mesa da Recepção ----
+   O código precisa de fundo claro para a câmera ler, então ele ganha um papel
+   branco no meio do painel escuro — e é assim que ele sai na impressão. */
+.qr-bloco {
+  display:flex; flex-wrap:wrap; gap:18px; align-items:flex-start; margin:0 0 20px;
+}
+.qr-papel {
+  flex:0 0 auto; background:#fff; padding:14px 14px 10px;
+  border:3px solid var(--ink); box-shadow:5px 5px 0 rgba(0,0,0,.45);
+}
+.qr-arte { width:168px; height:168px; }
+.qr-arte svg { display:block; width:100%; height:100%; }
+.qr-chamada {
+  margin:8px 0 0; text-align:center; color:var(--ink);
+  font:400 10px/1.3 var(--etiqueta); letter-spacing:1.6px; text-transform:uppercase;
+}
+.qr-texto { flex:1 1 250px; min-width:0; }
+
+/* Na hora de imprimir, só o papel do QR interessa. */
+@media print {
+  .topo-painel, .acoes, fieldset:not(:has(.qr-bloco)), form { display:none; }
+  body { background:#fff; color:#000; }
+  .qr-papel { box-shadow:none; }
+}
