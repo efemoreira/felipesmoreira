@@ -23,6 +23,9 @@ const ICONE_TRACOS = [
     'clock'         => ['M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0', 'M12 7v5l3 3'],
     'pin'           => ['M9 11a3 3 0 1 0 6 0a3 3 0 0 0 -6 0', 'M17.657 16.657l-4.243 4.243a2 2 0 0 1 -2.827 0l-4.244 -4.243a8 8 0 1 1 11.314 0z'],
     'mail'          => ['M3 7a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-10', 'M3 7l9 6l9 -6'],
+    'search'        => ['M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 0 0 -14 0', 'M21 21l-6 -6'],
+    'bolt'          => ['M13 3l0 7l6 0l-8 11l0 -7l-6 0l8 -11'],
+    'ticket'        => ['M15 5l0 2', 'M15 11l0 2', 'M15 17l0 2', 'M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-3a2 2 0 0 0 0 -4v-3a2 2 0 0 1 2 -2'],
 ];
 
 /** As áreas do painel e o ícone de cada uma. */
@@ -30,6 +33,9 @@ const ICONE_AREA = [
     'agenda'     => 'calendar',
     'estudio'    => 'star',
     'aulas'      => 'play',
+    'fatos'      => 'search',
+    'producao'   => 'bolt',
+    'eventos'    => 'ticket',
     'inscricoes' => 'flag',
     'usuarios'   => 'users',
 ];

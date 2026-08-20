@@ -34,11 +34,25 @@ const SENHA_MIN      = 8;   // com o bloqueio por login, 8 já segura tentativa 
 
 /** As funcionalidades do painel. A chave entra no usuarios.php. */
 const AREAS = [
-    'agenda'     => 'Agenda da semana',
+    'agenda'     => 'Agenda e eventos',
     'estudio'    => 'Estúdio de artes',
-    'aulas'      => 'Aulas em vídeo',
+    'aulas'      => 'Formação da militância',
+    'fatos'      => 'Fatos do dia',
+    'producao'   => 'Produção',
+    'eventos'    => 'Encontros',
     'inscricoes' => 'Inscrições da militância',
 ];
+
+/**
+ * As ferramentas do trabalho de todo dia, por oposição às áreas de decisão
+ * (agenda, estudio, inscricoes) e à de administração (usuários).
+ *
+ * A diferença não é técnica — a permissão continua sendo a mesma caixa marcada
+ * no usuário. É só a sugestão do que vem marcado ao criar alguém: ferramenta
+ * não pertence a uma função, e o Olheiro que quiser entender o quadro de
+ * Produção deve conseguir abrir. Quem cria o usuário desmarca o que não quiser.
+ */
+const AREAS_FERRAMENTA = ['aulas', 'fatos', 'producao', 'eventos'];
 
 const PAPEIS = [
     'admin'  => 'Administrador',
@@ -49,7 +63,10 @@ const PAPEIS = [
 const DESTINO_AREA = [
     'agenda'     => ['url' => '/painel/agenda.php', 'resumo' => 'Editar a programação que aparece em /programacao'],
     'estudio'    => ['url' => '/painel/estudio.php', 'resumo' => 'Montar as artes dos posts a partir de um modelo'],
-    'aulas'      => ['url' => '/painel/aulas.php', 'resumo' => 'Gerenciar as aulas em vídeo (em construção)'],
+    'aulas'      => ['url' => '/painel/aulas.php', 'resumo' => 'Pendurar o vídeo de cada aula e ver quem já estudou'],
+    'fatos'      => ['url' => '/painel/fatos.php', 'resumo' => 'Trazer o fato do dia com fonte e conferir o que chegou'],
+    'producao'   => ['url' => '/painel/producao.php', 'resumo' => 'O quadro do roteiro à publicação: quem faz o quê, e onde travou'],
+    'eventos'    => ['url' => '/painel/eventos.php', 'resumo' => 'Preparar o encontro, confirmar presença e receber quem chega'],
     'inscricoes' => ['url' => '/painel/inscricoes.php', 'resumo' => 'Aprovar quem se inscreveu em /quero-ajudar e mandar o acesso'],
 ];
 
@@ -85,7 +102,32 @@ function gravar_atomico(string $destino, string $conteudo): bool
         return false;
     }
     @chmod($tmp, 0644);
-    return @rename($tmp, $destino);
+    if (!@rename($tmp, $destino)) {
+        return false;
+    }
+
+    /* Todo /dados é .php lido com include, e o OPcache guarda a versão
+       compilada. Como ele só reconfere o disco de tempos em tempos
+       (opcache.revalidate_freq, 2s por padrão), duas gravações dentro da mesma
+       janela podem fazer a leitura seguinte devolver o conteúdo ANTIGO — e a
+       alteração some sem erro nenhum.
+
+       Isto é precaução, não conserto de bug observado: no servidor embutido do
+       PHP (php -S) o OPcache nem executa, então o teste local não alcança o
+       caso. Na Hostinger, que roda Apache com OPcache ligado, ele é real — e as
+       aulas trouxeram o primeiro arquivo do painel que grava várias vezes por
+       minuto (o progresso de cada pessoa), bem dentro dessa janela.
+
+       Fica aqui, e não no aulas-comum.php, porque toda gravação do painel passa
+       por esta função. */
+    if (function_exists('opcache_invalidate')) {
+        @opcache_invalidate($destino, true);
+    }
+
+    // o stat cache do PHP também precisa esquecer o inode que acabou de trocar
+    clearstatcache(true, $destino);
+
+    return true;
 }
 
 /**
@@ -104,6 +146,25 @@ function limpar_texto($v, int $max): string
 function so_digitos($v): string
 {
     return preg_replace('/\D/', '', is_scalar($v) ? (string) $v : '') ?? '';
+}
+
+/**
+ * 85997223863 -> (85) 99722-3863. Guardamos só dígitos; ler assim é humano.
+ *
+ * Mora aqui, e não no inscricoes-comum.php onde nasceu, porque a lista de
+ * presença dos encontros também precisa e não tem por que arrastar junto toda
+ * a maquinaria das inscrições.
+ */
+function telefone_bonito(string $telefone): string
+{
+    $d = so_digitos($telefone);
+    if (strlen($d) === 11) {
+        return sprintf('(%s) %s-%s', substr($d, 0, 2), substr($d, 2, 5), substr($d, 7));
+    }
+    if (strlen($d) === 10) {
+        return sprintf('(%s) %s-%s', substr($d, 0, 2), substr($d, 2, 4), substr($d, 6));
+    }
+    return $d;
 }
 
 /** Escreve a regra só quando ela mudou — assim uma versão nova se conserta sozinha. */

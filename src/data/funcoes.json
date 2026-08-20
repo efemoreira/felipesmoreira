@@ -30,7 +30,12 @@
         "Cole o link da fonte e a data — print não vale como fonte.",
         "Poste no canal do time para a Checagem conferir."
       ],
-      "areas": ["aulas"]
+      "areas": [
+        "fatos",
+        "aulas",
+        "producao",
+        "eventos"
+      ]
     },
     {
       "id": "checagem",
@@ -47,7 +52,12 @@
         "Aprovado, segue para o Roteirista. Duvidoso, vai para a lista de pendentes.",
         "Nada dorme sem resposta."
       ],
-      "areas": ["aulas"]
+      "areas": [
+        "fatos",
+        "aulas",
+        "producao",
+        "eventos"
+      ]
     },
     {
       "id": "roteirista",
@@ -63,7 +73,12 @@
         "Toda crítica traz junto uma alternativa possível — nunca termina na denúncia.",
         "Revise pelas regras do movimento antes de entregar."
       ],
-      "areas": ["aulas"]
+      "areas": [
+        "producao",
+        "aulas",
+        "fatos",
+        "eventos"
+      ]
     },
     {
       "id": "design",
@@ -80,7 +95,13 @@
         "Exporte nos formatos de feed e de stories.",
         "Você vai usar o Estúdio de Artes, a ferramenta que já existe aqui no site."
       ],
-      "areas": ["aulas", "estudio"]
+      "areas": [
+        "producao",
+        "aulas",
+        "fatos",
+        "eventos",
+        "estudio"
+      ]
     },
     {
       "id": "editor",
@@ -97,7 +118,12 @@
         "Confira o áudio e o fechamento antes de exportar.",
         "Guarde o projeto para ajustes depois."
       ],
-      "areas": ["aulas"]
+      "areas": [
+        "producao",
+        "aulas",
+        "fatos",
+        "eventos"
+      ]
     },
     {
       "id": "acervo",
@@ -113,7 +139,12 @@
         "Mantenha uma planilha do que já saiu, com data e link.",
         "A meta é simples: qualquer peça achável em 1 minuto."
       ],
-      "areas": ["aulas"]
+      "areas": [
+        "producao",
+        "aulas",
+        "fatos",
+        "eventos"
+      ]
     },
     {
       "id": "local-hora",
@@ -130,7 +161,12 @@
         "Avise Logística, Divulgação, Gravação e Recepção.",
         "Se for ao ar livre, defina o plano B de chuva."
       ],
-      "areas": ["aulas"]
+      "areas": [
+        "eventos",
+        "aulas",
+        "fatos",
+        "producao"
+      ]
     },
     {
       "id": "logistica",
@@ -147,7 +183,12 @@
         "Teste o som e o microfone antes do horário de início.",
         "No fim, desmonte e devolva o que foi emprestado."
       ],
-      "areas": ["aulas"]
+      "areas": [
+        "eventos",
+        "aulas",
+        "fatos",
+        "producao"
+      ]
     },
     {
       "id": "divulgacao",
@@ -164,7 +205,12 @@
         "Peça confirmação de presença e anote quem confirmou.",
         "Mande lembrete na véspera e no dia, com local e como chegar."
       ],
-      "areas": ["aulas"]
+      "areas": [
+        "eventos",
+        "aulas",
+        "fatos",
+        "producao"
+      ]
     },
     {
       "id": "gravacao",
@@ -181,7 +227,12 @@
         "Priorize o áudio de quem está falando: chegue perto.",
         "No fim, salve tudo e faça backup."
       ],
-      "areas": ["aulas"]
+      "areas": [
+        "eventos",
+        "aulas",
+        "fatos",
+        "producao"
+      ]
     },
     {
       "id": "recepcao",
@@ -198,7 +249,12 @@
         "Fique de olho em novos rostos e lideranças que valem um contato depois.",
         "No fim, entregue os contatos organizados para a coordenação."
       ],
-      "areas": ["aulas"]
+      "areas": [
+        "eventos",
+        "aulas",
+        "fatos",
+        "producao"
+      ]
     },
     {
       "id": "onde-precisar",
@@ -213,7 +269,12 @@
         "A coordenação vai conversar com você sobre tempo disponível e o que você gosta de fazer.",
         "Ninguém precisa chegar sabendo: o movimento forma quem entra."
       ],
-      "areas": ["aulas"]
+      "areas": [
+        "aulas",
+        "fatos",
+        "producao",
+        "eventos"
+      ]
     }
   ]
 }

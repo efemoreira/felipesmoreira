@@ -1,0 +1,715 @@
+<?php
+declare(strict_types=1);
+
+/**
+ * Encontros — felipesmoreira.com/painel/eventos
+ *
+ * Duas telas: a lista dos encontros e, com ?e=<id>, o encontro aberto — as
+ * cinco peças com seus checklists, a lista de presença e o funil.
+ *
+ * A permissão é dividida por natureza da ação, não por cargo:
+ *   quem tem 'eventos' executa (marca checklist, confirma presença, cadastra
+ *   quem chegou);
+ *   quem tem 'agenda' decide (cria, cancela) e vê a lista inteira com telefone.
+ *
+ * Toda ação termina em redirecionamento (POST-redirect-GET).
+ */
+
+require_once __DIR__ . '/layout.php';
+require_once __DIR__ . '/eventos-comum.php';
+exigir_area('eventos');
+
+$eu = usuario_atual();
+$coordena = pode('agenda');
+
+function avisar(string $tipo, string $texto): void
+{
+    $_SESSION['recado'] = ['tipo' => $tipo, 'texto' => $texto];
+}
+
+function voltar(string $eventoId = '', string $ancora = ''): void
+{
+    $url = '/painel/eventos.php' . ($eventoId !== '' ? '?e=' . urlencode($eventoId) : '');
+    header('Location: ' . $url . ($ancora !== '' ? '#' . $ancora : ''), true, 302);
+    exit;
+}
+
+/** Barra quem não coordena antes de qualquer ação de decisão. */
+function exigir_coordenacao(bool $coordena, string $eventoId = ''): void
+{
+    if (!$coordena) {
+        avisar('erro', 'Só a coordenação decide sobre encontro. Você pode executar e cadastrar presença.');
+        voltar($eventoId);
+    }
+}
+
+/* ===================== ações ===================== */
+
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
+    if (!token_valido()) {
+        avisar('erro', 'Sessão expirada. Entre de novo.');
+        derrubar_sessao();
+        header('Location: /painel/', true, 302);
+        exit;
+    }
+
+    $acao = (string) ($_POST['acao'] ?? '');
+
+    /* ---------- criar o encontro (coordenação) ---------- */
+    if ($acao === 'criar') {
+        exigir_coordenacao($coordena);
+
+        $titulo  = limpar_texto($_POST['titulo'] ?? '', 120);
+        $familia = limpar_texto($_POST['familia'] ?? '', 20);
+        $data    = limpar_texto($_POST['data'] ?? '', 20);
+
+        if ($titulo === '') {
+            avisar('erro', 'Dê um nome ao encontro.');
+            voltar();
+        }
+        if (!isset(FAMILIAS[$familia])) {
+            avisar('erro', 'Escolha a família do evento — é ela que traz o playbook e as travas.');
+            voltar();
+        }
+        if ($data === '' || strtotime($data) === false) {
+            avisar('erro', 'Informe a data do encontro.');
+            voltar();
+        }
+
+        $eventos = ler_eventos();
+        $novo = [
+            'id'      => novo_id_evento(),
+            'titulo'  => $titulo,
+            'familia' => $familia,
+            'data'    => $data,
+            'hora'    => limpar_texto($_POST['hora'] ?? '', 10),
+            'local'   => limpar_texto($_POST['local'] ?? '', 120),
+            'endereco' => limpar_texto($_POST['endereco'] ?? '', 200),
+            'publicoEsperado' => (int) ($_POST['publicoEsperado'] ?? 0),
+            'token'   => bin2hex(random_bytes(10)),
+            'status'  => 'planejado',
+            'criadoEm'  => date('c'),
+            'criadoPor' => $eu['nome'],
+        ];
+        $eventos[] = $novo;
+
+        if (!gravar_eventos($eventos)) {
+            avisar('erro', 'Não consegui gravar em /dados.');
+            voltar();
+        }
+        avisar('ok', 'Encontro criado. Agora escale as cinco peças.');
+        voltar($novo['id']);
+    }
+
+    /* ---------- daqui para baixo tudo é sobre um encontro ---------- */
+    $alvo = achar_evento(limpar_texto($_POST['id'] ?? '', 40));
+    if ($alvo === null) {
+        avisar('erro', 'Encontro não encontrado.');
+        voltar();
+    }
+
+    /* ---------- editar e mudar status (coordenação) ---------- */
+    if ($acao === 'salvar' || $acao === 'status') {
+        exigir_coordenacao($coordena, $alvo['id']);
+
+        $eventos = ler_eventos();
+        foreach ($eventos as &$e) {
+            if ($e['id'] !== $alvo['id']) {
+                continue;
+            }
+            if ($acao === 'status') {
+                $novoStatus = limpar_texto($_POST['status'] ?? '', 20);
+                if (isset(STATUS_EVENTO[$novoStatus])) {
+                    $e['status'] = $novoStatus;
+                }
+            } else {
+                $e['titulo']   = limpar_texto($_POST['titulo'] ?? $e['titulo'], 120);
+                $e['data']     = limpar_texto($_POST['data'] ?? '', 20);
+                $e['hora']     = limpar_texto($_POST['hora'] ?? '', 10);
+                $e['local']    = limpar_texto($_POST['local'] ?? '', 120);
+                $e['endereco'] = limpar_texto($_POST['endereco'] ?? '', 200);
+                $e['publicoEsperado'] = (int) ($_POST['publicoEsperado'] ?? 0);
+                $e['orcamento']   = limpar_texto($_POST['orcamento'] ?? '', 60);
+                $e['observacoes'] = limpar_texto($_POST['observacoes'] ?? '', 600);
+                foreach (array_keys(PECAS) as $peca) {
+                    $e['responsaveis'][$peca] = limpar_texto($_POST['resp'][$peca] ?? '', 40);
+                }
+            }
+        }
+        unset($e);
+
+        if (!gravar_eventos($eventos)) {
+            avisar('erro', 'Não consegui gravar em /dados.');
+        }
+        voltar($alvo['id']);
+    }
+
+    /* ---------- marcar item do checklist (qualquer um da área) ---------- */
+    if ($acao === 'marcar') {
+        $peca  = limpar_texto($_POST['peca'] ?? '', 20);
+        $item  = (int) ($_POST['item'] ?? -1);
+        $lista = checklist(PECAS[$peca]['checklist'] ?? '');
+
+        if (!isset(PECAS[$peca]) || $lista === null || $item < 0 || $item >= count($lista['itens'])) {
+            avisar('erro', 'Item de checklist desconhecido.');
+            voltar($alvo['id']);
+        }
+
+        $eventos = ler_eventos();
+        foreach ($eventos as &$e) {
+            if ($e['id'] === $alvo['id']) {
+                $marcados = $e['feitos'][$peca] ?? [];
+                $e['feitos'][$peca] = in_array($item, $marcados, true)
+                    ? array_values(array_diff($marcados, [$item]))
+                    : array_merge($marcados, [$item]);
+            }
+        }
+        unset($e);
+
+        if (!gravar_eventos($eventos)) {
+            avisar('erro', 'Não consegui gravar em /dados.');
+        }
+        voltar($alvo['id'], 'peca-' . $peca);
+    }
+
+    /* ---------- cadastrar quem vem ou quem chegou ---------- */
+    if ($acao === 'add-pessoa') {
+        $nome     = limpar_texto($_POST['nome'] ?? '', 80);
+        $telefone = so_digitos($_POST['telefone'] ?? '');
+
+        if ($nome === '') {
+            avisar('erro', 'Diga o nome da pessoa.');
+            voltar($alvo['id'], 'pessoas');
+        }
+        if ($telefone !== '' && (strlen($telefone) < 10 || strlen($telefone) > 11)) {
+            avisar('erro', 'Confira o WhatsApp: use DDD + número.');
+            voltar($alvo['id'], 'pessoas');
+        }
+        if ($telefone !== '' && lead_por_telefone($alvo['id'], $telefone) !== null) {
+            avisar('erro', 'Esse número já está na lista deste encontro.');
+            voltar($alvo['id'], 'pessoas');
+        }
+
+        $leads = ler_leads();
+        $leads[] = [
+            'id'       => novo_id_lead(),
+            'eventoId' => $alvo['id'],
+            'nome'     => $nome,
+            'telefone' => $telefone,
+            'bairro'   => limpar_texto($_POST['bairro'] ?? '', 60),
+            'convidadoPor' => limpar_texto($_POST['convidadoPor'] ?? '', 60),
+            'classe'     => limpar_texto($_POST['classe'] ?? 'curioso', 20),
+            'confirmou'  => !empty($_POST['confirmou']),
+            'compareceu' => !empty($_POST['compareceu']),
+            'origem'     => 'painel',
+            'criadoPorId' => $eu['id'],
+            'criadoEm'    => date('c'),
+        ];
+
+        if (!gravar_leads($leads)) {
+            avisar('erro', 'Não consegui gravar em /dados.');
+            voltar($alvo['id'], 'pessoas');
+        }
+        avisar('ok', $nome . ' entrou na lista.');
+        voltar($alvo['id'], 'pessoas');
+    }
+
+    /* ---------- confirmar presença, classificar, andar no funil ---------- */
+    if (in_array($acao, ['confirmou', 'compareceu', 'classificar', 'funil'], true)) {
+        $leadId = limpar_texto($_POST['lead'] ?? '', 40);
+        $leads  = ler_leads();
+        $achou  = false;
+
+        foreach ($leads as &$l) {
+            if ($l['id'] !== $leadId || $l['eventoId'] !== $alvo['id']) {
+                continue;
+            }
+            $achou = true;
+
+            if ($acao === 'confirmou') {
+                $l['confirmou'] = !$l['confirmou'];
+            } elseif ($acao === 'compareceu') {
+                $l['compareceu'] = !$l['compareceu'];
+            } elseif ($acao === 'classificar') {
+                $classe = limpar_texto($_POST['classe'] ?? '', 20);
+                if (isset(CLASSES_LEAD[$classe])) {
+                    $l['classe'] = $classe;
+                }
+                $l['observacao'] = limpar_texto($_POST['observacao'] ?? '', 300);
+            } else {
+                // o funil é cobrança da coordenação
+                if (!$coordena) {
+                    avisar('erro', 'O follow-up é da coordenação.');
+                    voltar($alvo['id'], 'funil');
+                }
+                $etapa = limpar_texto($_POST['etapa'] ?? '', 5);
+                if (isset(ROTULO_FUNIL[$etapa])) {
+                    $l['funil'][$etapa] = $l['funil'][$etapa] === '' ? date('c') : '';
+                }
+            }
+        }
+        unset($l);
+
+        if (!$achou) {
+            avisar('erro', 'Pessoa não encontrada neste encontro.');
+            voltar($alvo['id'], 'pessoas');
+        }
+        if (!gravar_leads($leads)) {
+            avisar('erro', 'Não consegui gravar em /dados.');
+        }
+        voltar($alvo['id'], $acao === 'funil' ? 'funil' : 'pessoas');
+    }
+
+    avisar('erro', 'Ação desconhecida.');
+    voltar();
+}
+
+/* ===================== a tela ===================== */
+
+$recado = $_SESSION['recado'] ?? null;
+unset($_SESSION['recado']);
+$erro = ($recado['tipo'] ?? '') === 'erro' ? $recado['texto'] : null;
+$ok   = ($recado['tipo'] ?? '') === 'ok'   ? $recado['texto'] : null;
+
+$aberto = achar_evento(limpar_texto($_GET['e'] ?? '', 40));
+
+$dataBonita = function (array $e): string {
+    if ($e['data'] === '') {
+        return 'sem data';
+    }
+    $t = strtotime($e['data']);
+    return ($t ? date('d/m/Y', $t) : $e['data']) . ($e['hora'] !== '' ? ' às ' . $e['hora'] : '');
+};
+
+/* ---------------- lista ---------------- */
+if ($aberto === null) {
+    abrir_pagina('Encontros');
+    ?>
+    <div class="capa">
+      <h1>Encontros</h1>
+      <p class="sub">
+        As cinco peças de cada encontro, a lista de presença e o follow-up de quem veio.
+      </p>
+
+      <?php recado($erro, $ok); ?>
+
+      <?php foreach ([['Próximos', eventos_proximos()], ['Já aconteceram', eventos_passados()]] as [$titulo, $lista]): ?>
+        <fieldset>
+          <legend><?= h($titulo) ?> (<?= count($lista) ?>)</legend>
+          <?php if ($lista === []): ?>
+            <p class="dica" style="margin:0">Nada por aqui.</p>
+          <?php endif; ?>
+          <?php foreach ($lista as $e): ?>
+            <?php $p = preparo_do_evento($e); $presentes = count(array_filter(leads_do_evento($e['id']), fn ($l) => $l['compareceu'])); ?>
+            <a class="area-cartao" href="?e=<?= h($e['id']) ?>">
+              <span class="area-icone"><?= icone('ticket') ?></span>
+              <span class="area-texto">
+                <strong><?= h($e['titulo']) ?></strong>
+                <span>
+                  <?= h(FAMILIAS[$e['familia']]['nome']) ?> ·
+                  <?= h($dataBonita($e)) ?>
+                  <?= $e['local'] !== '' ? ' · ' . h($e['local']) : '' ?><br>
+                  Preparo <?= $p['feito'] ?>/<?= $p['total'] ?>
+                  <?= $presentes > 0 ? ' · ' . $presentes . ' presentes' : '' ?>
+                  <?= $e['status'] === 'cancelado' ? ' · CANCELADO' : '' ?>
+                </span>
+              </span>
+            </a>
+          <?php endforeach; ?>
+        </fieldset>
+      <?php endforeach; ?>
+
+      <?php if ($coordena): ?>
+        <fieldset>
+          <legend>Novo encontro</legend>
+          <form method="post">
+            <input type="hidden" name="csrf" value="<?= h(token()) ?>">
+            <input type="hidden" name="acao" value="criar">
+            <div class="campo">
+              <label for="titulo">Nome do encontro</label>
+              <input id="titulo" type="text" name="titulo" maxlength="120" required>
+            </div>
+            <div class="campo">
+              <label for="familia">Família</label>
+              <select id="familia" name="familia" required>
+                <?php foreach (FAMILIAS as $chave => $f): ?>
+                  <option value="<?= h($chave) ?>"><?= h($f['nome']) ?> — <?= h($f['serve']) ?></option>
+                <?php endforeach; ?>
+              </select>
+              <p class="dica">A família traz o playbook, as travas e o material específico.</p>
+            </div>
+            <div class="linha g2">
+              <div class="campo">
+                <label for="data">Data</label>
+                <input id="data" type="date" name="data" required>
+              </div>
+              <div class="campo">
+                <label for="hora">Hora</label>
+                <input id="hora" type="time" name="hora">
+              </div>
+            </div>
+            <div class="acoes">
+              <button type="submit" class="btn btn-ouro">Criar encontro</button>
+            </div>
+          </form>
+        </fieldset>
+      <?php else: ?>
+        <p class="dica">Só a coordenação cria encontro. Você executa e cadastra presença.</p>
+      <?php endif; ?>
+    </div>
+    <?php
+    fechar_pagina();
+    exit;
+}
+
+/* ---------------- um encontro ---------------- */
+
+$familia   = FAMILIAS[$aberto['familia']];
+$pessoas   = leads_do_evento($aberto['id']);
+$preparo   = preparo_do_evento($aberto);
+$time      = array_values(array_filter(ler_usuarios(), fn ($u) => $u['ativo']));
+
+abrir_pagina($aberto['titulo']);
+?>
+<div class="capa">
+  <p class="sub"><a href="/painel/eventos.php">← todos os encontros</a></p>
+  <h1><?= h($aberto['titulo']) ?></h1>
+  <p class="sub">
+    <?= h($familia['nome']) ?> · <?= h($dataBonita($aberto)) ?>
+    <?= $aberto['local'] !== '' ? ' · ' . h($aberto['local']) : '' ?>
+    · <?= h(STATUS_EVENTO[$aberto['status']]) ?>
+  </p>
+
+  <?php recado($erro, $ok); ?>
+
+  <!-- playbook da família -->
+  <fieldset>
+    <legend>Playbook — <?= h($familia['nome']) ?></legend>
+    <p class="dica" style="margin:0 0 12px"><strong>Serve para:</strong> <?= h($familia['serve']) ?></p>
+    <p class="dica" style="margin:0 0 12px"><strong>Métrica de sucesso:</strong> <?= h($familia['metrica']) ?></p>
+
+    <div class="msg msg-erro">
+      <strong>Travas desta família</strong>
+      <ul class="lista-travas">
+        <?php foreach ($familia['travas'] as $t): ?>
+          <li><?= h($t) ?></li>
+        <?php endforeach; ?>
+      </ul>
+    </div>
+
+    <p class="dica"><strong>Material específico:</strong> <?= h(implode(' · ', $familia['material'])) ?></p>
+  </fieldset>
+
+  <!-- as cinco peças -->
+  <fieldset>
+    <legend>As cinco peças — preparo <?= $preparo['feito'] ?>/<?= $preparo['total'] ?></legend>
+
+    <?php foreach (PECAS as $chave => $peca): ?>
+      <?php
+        $lista = checklist($peca['checklist']);
+        $marcados = $aberto['feitos'][$chave] ?? [];
+        $responsavel = achar_usuario_por_id($aberto['responsaveis'][$chave]);
+      ?>
+      <details class="item" id="peca-<?= h($chave) ?>" <?= count($marcados) < count($lista['itens']) ? 'open' : '' ?>>
+        <summary class="item-topo">
+          <span class="item-num" aria-hidden="true"><?= count($marcados) === count($lista['itens']) ? '✓' : '·' ?></span>
+          <span class="item-resumo">
+            <strong><?= h($peca['nome']) ?></strong>
+            <span><?= count($marcados) ?>/<?= count($lista['itens']) ?><?= $responsavel ? ' · ' . h($responsavel['nome']) : ' · sem dono' ?></span>
+          </span>
+        </summary>
+        <div class="item-corpo">
+          <?php foreach ($lista['itens'] as $i => $texto): ?>
+            <form method="post" class="risco-linha">
+              <input type="hidden" name="csrf" value="<?= h(token()) ?>">
+              <input type="hidden" name="id" value="<?= h($aberto['id']) ?>">
+              <input type="hidden" name="acao" value="marcar">
+              <input type="hidden" name="peca" value="<?= h($chave) ?>">
+              <input type="hidden" name="item" value="<?= $i ?>">
+              <button type="submit" class="risco<?= in_array($i, $marcados, true) ? ' risco-feito' : '' ?>">
+                <span class="risco-caixa" aria-hidden="true"><?= in_array($i, $marcados, true) ? '✓' : '' ?></span>
+                <span><?= h($texto) ?></span>
+              </button>
+            </form>
+          <?php endforeach; ?>
+        </div>
+      </details>
+    <?php endforeach; ?>
+  </fieldset>
+
+  <!-- lista de presença -->
+  <fieldset id="pessoas">
+    <legend>Quem vem e quem veio (<?= count($pessoas) ?>)</legend>
+
+    <?php if ($aberto['token'] !== ''): ?>
+      <?php $urlPresenca = url_presenca($aberto); ?>
+      <div class="qr-bloco">
+        <div class="qr-papel">
+          <!-- o desenho entra aqui pelo /painel/vendor/qrcode.js -->
+          <div class="qr-arte" data-qr="<?= h($urlPresenca) ?>"></div>
+          <p class="qr-chamada">Aponte a câmera</p>
+        </div>
+        <div class="qr-texto">
+          <p class="dica" style="margin:0 0 10px">
+            <strong>QR da mesa da Recepção.</strong> Imprima e cole na entrada: quem
+            chega se cadastra no próprio celular, e a lista já sai organizada — sem
+            fila para alguém digitar depois.
+          </p>
+          <p class="provisoria card-arquivo"><?= h($urlPresenca) ?></p>
+          <p class="dica">
+            Quem não tiver celular à mão, a Recepção cadastra aqui embaixo. Ninguém
+            entra sem passar pelo cadastro — quem entra sem se cadastrar é contato
+            perdido.
+          </p>
+        </div>
+      </div>
+    <?php endif; ?>
+
+    <?php if ($pessoas !== []): ?>
+      <div class="rolagem">
+        <table class="tabela">
+          <thead>
+            <tr><th>Quem</th><th>Confirmou</th><th>Compareceu</th><th>Classe</th></tr>
+          </thead>
+          <tbody>
+            <?php foreach ($pessoas as $l): ?>
+              <tr>
+                <td>
+                  <strong><?= h($l['nome']) ?></strong><br>
+                  <span class="dica">
+                    <?= $l['bairro'] !== '' ? h($l['bairro']) . ' · ' : '' ?>
+                    <?php if ($l['telefone'] === ''): ?>
+                      sem telefone
+                    <?php elseif (pode_ver_telefone($l, $eu)): ?>
+                      <a href="https://wa.me/55<?= h($l['telefone']) ?>" target="_blank" rel="noopener">
+                        <?= h(telefone_bonito($l['telefone'])) ?>
+                      </a>
+                    <?php else: ?>
+                      <?= h(telefone_encoberto($l['telefone'])) ?>
+                    <?php endif; ?>
+                    <?= $l['origem'] === 'qr' ? ' · cadastro no celular' : '' ?>
+                  </span>
+                </td>
+                <?php foreach (['confirmou', 'compareceu'] as $campo): ?>
+                  <td>
+                    <form method="post">
+                      <input type="hidden" name="csrf" value="<?= h(token()) ?>">
+                      <input type="hidden" name="id" value="<?= h($aberto['id']) ?>">
+                      <input type="hidden" name="lead" value="<?= h($l['id']) ?>">
+                      <button type="submit" class="btn btn-mini" name="acao" value="<?= h($campo) ?>">
+                        <?= $l[$campo] ? 'sim' : '—' ?>
+                      </button>
+                    </form>
+                  </td>
+                <?php endforeach; ?>
+                <td>
+                  <form method="post">
+                    <input type="hidden" name="csrf" value="<?= h(token()) ?>">
+                    <input type="hidden" name="id" value="<?= h($aberto['id']) ?>">
+                    <input type="hidden" name="lead" value="<?= h($l['id']) ?>">
+                    <input type="hidden" name="acao" value="classificar">
+                    <select name="classe" onchange="this.form.submit()">
+                      <?php foreach (CLASSES_LEAD as $chave => $nome): ?>
+                        <option value="<?= h($chave) ?>" <?= $l['classe'] === $chave ? 'selected' : '' ?>><?= h($nome) ?></option>
+                      <?php endforeach; ?>
+                    </select>
+                    <noscript><button type="submit" class="btn btn-mini">ok</button></noscript>
+                  </form>
+                </td>
+              </tr>
+            <?php endforeach; ?>
+          </tbody>
+        </table>
+      </div>
+    <?php endif; ?>
+
+    <details class="decidir">
+      <summary class="btn btn-ouro">Cadastrar alguém</summary>
+      <div class="decidir-corpo">
+        <form method="post">
+          <input type="hidden" name="csrf" value="<?= h(token()) ?>">
+          <input type="hidden" name="id" value="<?= h($aberto['id']) ?>">
+          <input type="hidden" name="acao" value="add-pessoa">
+          <div class="campo">
+            <label for="p-nome">Nome</label>
+            <input id="p-nome" type="text" name="nome" maxlength="80" required>
+          </div>
+          <div class="linha g2">
+            <div class="campo">
+              <label for="p-tel">WhatsApp</label>
+              <input id="p-tel" type="tel" name="telefone" maxlength="20" inputmode="numeric" placeholder="85 99999-9999">
+            </div>
+            <div class="campo">
+              <label for="p-bairro">Bairro</label>
+              <input id="p-bairro" type="text" name="bairro" maxlength="60">
+            </div>
+          </div>
+          <div class="campo">
+            <label for="p-conv">Convidado por</label>
+            <input id="p-conv" type="text" name="convidadoPor" maxlength="60">
+          </div>
+          <label class="check"><input type="checkbox" name="confirmou" value="1"> Já confirmou presença</label>
+          <label class="check"><input type="checkbox" name="compareceu" value="1"> Já está aqui</label>
+          <div class="acoes">
+            <button type="submit" class="btn btn-ouro">Cadastrar</button>
+          </div>
+        </form>
+      </div>
+    </details>
+  </fieldset>
+
+  <!-- funil -->
+  <?php if ($coordena): ?>
+    <?php
+      $vencidos = [];
+      foreach ($pessoas as $l) {
+          if (($etapa = etapa_vencida($l, $aberto)) !== null) {
+              $vencidos[] = [$l, $etapa];
+          }
+      }
+    ?>
+    <fieldset id="funil">
+      <legend>Follow-up vencido (<?= count($vencidos) ?>)</legend>
+      <p class="dica">
+        Lead sem segunda mensagem é lead perdido. D+0 agradecer · D+3 conteúdo · D+7 convite.
+      </p>
+      <?php if ($vencidos === []): ?>
+        <p class="dica" style="margin:0">Nada vencido. Ou ninguém compareceu ainda.</p>
+      <?php else: ?>
+        <?php foreach ($vencidos as [$l, $etapa]): ?>
+          <article class="ficha">
+            <header class="ficha-topo">
+              <span class="ficha-quem">
+                <strong><?= h($l['nome']) ?></strong>
+                <span><?= h(CLASSES_LEAD[$l['classe']]) ?> · <?= h(ROTULO_FUNIL[$etapa]) ?></span>
+              </span>
+              <span class="selo selo-off"><?= h(strtoupper($etapa)) ?></span>
+            </header>
+            <div class="acoes">
+              <?php if ($l['telefone'] !== '' && pode_ver_telefone($l, $eu)): ?>
+                <a class="btn btn-mini" target="_blank" rel="noopener"
+                   href="https://wa.me/55<?= h($l['telefone']) ?>">Abrir WhatsApp</a>
+              <?php endif; ?>
+              <form method="post" style="display:inline">
+                <input type="hidden" name="csrf" value="<?= h(token()) ?>">
+                <input type="hidden" name="id" value="<?= h($aberto['id']) ?>">
+                <input type="hidden" name="lead" value="<?= h($l['id']) ?>">
+                <input type="hidden" name="acao" value="funil">
+                <input type="hidden" name="etapa" value="<?= h($etapa) ?>">
+                <button type="submit" class="btn btn-ouro">Marcar como feito</button>
+              </form>
+            </div>
+          </article>
+        <?php endforeach; ?>
+      <?php endif; ?>
+    </fieldset>
+  <?php endif; ?>
+
+  <!-- dados do encontro -->
+  <?php if ($coordena): ?>
+    <fieldset>
+      <legend>Dados do encontro</legend>
+      <form method="post">
+        <input type="hidden" name="csrf" value="<?= h(token()) ?>">
+        <input type="hidden" name="id" value="<?= h($aberto['id']) ?>">
+        <input type="hidden" name="acao" value="salvar">
+
+        <div class="campo">
+          <label for="e-titulo">Nome</label>
+          <input id="e-titulo" type="text" name="titulo" maxlength="120" value="<?= h($aberto['titulo']) ?>">
+        </div>
+        <div class="linha g2">
+          <div class="campo">
+            <label for="e-data">Data</label>
+            <input id="e-data" type="date" name="data" value="<?= h($aberto['data']) ?>">
+          </div>
+          <div class="campo">
+            <label for="e-hora">Hora</label>
+            <input id="e-hora" type="time" name="hora" value="<?= h($aberto['hora']) ?>">
+          </div>
+        </div>
+        <div class="campo">
+          <label for="e-local">Local</label>
+          <input id="e-local" type="text" name="local" maxlength="120" value="<?= h($aberto['local']) ?>">
+        </div>
+        <div class="campo">
+          <label for="e-end">Endereço</label>
+          <input id="e-end" type="text" name="endereco" maxlength="200" value="<?= h($aberto['endereco']) ?>">
+        </div>
+        <div class="linha g2">
+          <div class="campo">
+            <label for="e-pub">Público esperado</label>
+            <input id="e-pub" type="number" name="publicoEsperado" min="0" max="100000" value="<?= (int) $aberto['publicoEsperado'] ?>">
+            <p class="dica">A Divulgação convida cerca de 3x isso e confirma um terço.</p>
+          </div>
+          <div class="campo">
+            <label for="e-orc">Orçamento aprovado</label>
+            <input id="e-orc" type="text" name="orcamento" maxlength="60" value="<?= h($aberto['orcamento']) ?>">
+          </div>
+        </div>
+
+        <p class="dica">Quem responde por cada peça:</p>
+        <div class="linha g2">
+          <?php foreach (PECAS as $chave => $peca): ?>
+            <div class="campo">
+              <label for="resp-<?= h($chave) ?>"><?= h($peca['nome']) ?></label>
+              <select id="resp-<?= h($chave) ?>" name="resp[<?= h($chave) ?>]">
+                <option value="">— ninguém ainda —</option>
+                <?php foreach ($time as $p): ?>
+                  <option value="<?= h($p['id']) ?>" <?= $aberto['responsaveis'][$chave] === $p['id'] ? 'selected' : '' ?>>
+                    <?= h($p['nome']) ?>
+                  </option>
+                <?php endforeach; ?>
+              </select>
+            </div>
+          <?php endforeach; ?>
+        </div>
+
+        <div class="campo">
+          <label for="e-obs">Observações</label>
+          <textarea id="e-obs" name="observacoes" rows="3" maxlength="600"><?= h($aberto['observacoes']) ?></textarea>
+        </div>
+
+        <div class="acoes">
+          <button type="submit" class="btn btn-ouro">Salvar</button>
+        </div>
+      </form>
+
+      <form method="post" class="decidir-recusa">
+        <input type="hidden" name="csrf" value="<?= h(token()) ?>">
+        <input type="hidden" name="id" value="<?= h($aberto['id']) ?>">
+        <input type="hidden" name="acao" value="status">
+        <div class="campo">
+          <label for="e-status">Situação</label>
+          <select id="e-status" name="status">
+            <?php foreach (STATUS_EVENTO as $chave => $nome): ?>
+              <option value="<?= h($chave) ?>" <?= $aberto['status'] === $chave ? 'selected' : '' ?>><?= h($nome) ?></option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+        <div class="acoes">
+          <button type="submit" class="btn btn-mini">Mudar situação</button>
+        </div>
+      </form>
+    </fieldset>
+  <?php endif; ?>
+</div>
+
+<?php if ($aberto['token'] !== ''): ?>
+  <script src="/painel/vendor/qrcode.js?v=<?= VERSAO_ESTILO ?>"></script>
+  <script>
+    /* Desenha o QR em SVG. Servido do próprio domínio (ver vendor/LEIA-ME.md):
+       nada do visitante vai para CDN de terceiro.
+
+       Correção de erro nível M: aguenta o papel sujo ou amassado da mesa de
+       recepção sem parar de ler, e ainda cabe numa folha pequena. */
+    document.querySelectorAll('.qr-arte').forEach(function (alvo) {
+      var qr = qrcode(0, 'M');
+      qr.addData(alvo.dataset.qr);
+      qr.make();
+      alvo.innerHTML = qr.createSvgTag({ cellSize: 6, margin: 2, scalable: true });
+    });
+  </script>
+<?php endif; ?>
+<?php
+fechar_pagina();

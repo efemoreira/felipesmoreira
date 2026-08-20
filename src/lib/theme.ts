@@ -12,6 +12,13 @@ export const C = {
   gold2: "#FFDE5A",
   goldDim: "#B8860B",
   night: "#14110C",
+
+  /* estados — mesmos tons do painel.css, para os dois lados combinarem
+     (blocos de "Nunca" e de checklist na formação) */
+  erro: "#F4A79D",
+  erroBorda: "#C2543F",
+  ok: "#A7DBA0",
+  okBorda: "#4E9B45",
 };
 
 /* Variáveis definidas em src/app/layout.tsx via next/font */

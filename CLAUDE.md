@@ -71,10 +71,12 @@ HTML administrativas que já existia. Regras para endpoint novo:
 Endpoint de referência: `public/painel/api/sessao.php` +
 `src/lib/api/sessao.ts`.
 
-### Endpoint público (sem login)
+### Endpoints públicos (sem login)
 
-`public/painel/api/inscricao.php` é o único aberto para a internet, e por isso
-segue regras próprias:
+`public/painel/api/inscricao.php` (formulário de `/quero-ajudar`) e
+`public/painel/api/presenca.php` (lista de presença dos encontros, o QR da mesa
+de recepção) são os **únicos dois** abertos para a internet, e por isso seguem
+regras próprias — as mesmas para os dois:
 
 - **CSRF não serve aqui.** O cookie de sessão tem `path=/painel` e
   `SameSite=Strict`, e visitante anônimo não tem sessão nenhuma. O que protege
@@ -183,19 +185,84 @@ pessoas na fila, formulário aberto para todas vira um paredão impossível de l
 
 ### Áreas e permissões
 
-O painel usa um único modelo de permissão por "área" (`AREAS` em
-`sessao.php`: hoje `agenda`, `estudio`, `aulas`). Uma funcionalidade nova para
-usuários que já têm conta no painel é **mais uma área**, não um sistema de
-auth novo. Adicionar área = 1) chave em `AREAS`, 2) entrada em
-`DESTINO_AREA` apontando pra página de gestão em PHP, 3) endpoint(s) JSON
-correspondentes se o Next precisar consumir os dados.
+O painel usa um único modelo de permissão por "área" (`AREAS` em `sessao.php`).
+Uma funcionalidade nova para usuários que já têm conta no painel é **mais uma
+área**, não um sistema de auth novo. Adicionar área = 1) chave em `AREAS`,
+2) entrada em `DESTINO_AREA` apontando pra página de gestão em PHP, 3) `RewriteRule`
+no `publish.yml`, 4) ícone em `icones.php`, 5) endpoint(s) JSON se o Next
+precisar consumir os dados.
 
-### Vídeo das aulas
+As áreas se dividem em duas naturezas — a distinção não é técnica (a permissão é
+a mesma caixa marcada no usuário), é sobre o que vem marcado por padrão:
 
-Aulas usam embed de YouTube não-listado (decisão: sem custo, sem problema o
-link circular). O tipo `FonteVideo` (`src/features/aulas/types.ts`) abstrai
-o provedor — se um dia trocar para um serviço de streaming dedicado, só esse
-tipo e o componente de player mudam.
+- **Ferramentas do dia** — `aulas`, `fatos`, `producao`, `eventos`. Listadas em
+  `AREAS_FERRAMENTA`. O padrão é liberar todas: ferramenta **não pertence a uma
+  função**, e o Olheiro que quiser entender o quadro de Produção deve conseguir
+  abrir.
+- **Decisão e dado pessoal** — `agenda`, `estudio`, `inscricoes`. O que vai ao
+  ar, quem entra no movimento, a lista de contatos com telefone.
+
+**A função da pessoa não limita acesso.** Ela define só o atalho no topo do hub
+(`FERRAMENTA_DA_FUNCAO` em `index.php`). O `areas` de cada função no
+`funcoes.json` é *sugestão* de marcação na hora de aprovar a inscrição — a
+primeira da lista é a que vira o atalho.
+
+### As ferramentas do manual
+
+Três telas que substituem WhatsApp, Trello e planilha. O que cada uma trouxe do
+manual para dentro do código:
+
+- **Fatos** (`fatos.php`) — Ficha de Fato e fila da Checagem. Recusa gravar sem
+  link de fonte primária, e sem declarar a exceção quando a publicação tem mais
+  de 48h. A fila é ordenada do mais antigo para o mais novo, porque a meta é
+  "nada dorme sem status".
+- **Produção** (`producao.php`) — o quadro. O card **nasce da aprovação do
+  fato**, já com fonte e responsável colados; é essa ligação que justifica não
+  usar Trello. Publicar exige o link do post e passa pela **regra do ledger**
+  (mesmo responsável duas vezes em 48h → avisa e pede ciência; não bloqueia).
+  O nome de arquivo `AAAA-MM-DD_tipo_assunto` é gerado, não digitado.
+- **Encontros** (`eventos.php`) — as cinco peças com os checklists de
+  `checklists.php`, uma lista de pessoas por encontro (e não RSVP + leads
+  separados) e o funil D+0/D+3/D+7. Executar pede `eventos`; decidir e ver
+  telefone pede `agenda`.
+
+**Ao mexer em slug ou nome de arquivo:** use `sem_acento()` de
+`producao-comum.php`, não `iconv('ASCII//TRANSLIT')` — o TRANSLIT depende da
+libc e o mesmo texto vira `ha` no Linux da Hostinger e `h` no macOS.
+
+### A formação (área `aulas`)
+
+O manual da militância virou curso: 6 Dias, 30 aulas, cada Dia abrindo com uma
+🚗 **Pista Rápida** (o caminho macro) seguida das **Pistas Lentas**
+(aprofundamento). Aula nova de reforço entra como `lenta` no Dia certo sem mexer
+no caminho principal — foi para isso que a divisão existe.
+
+**O conteúdo mora em `public/painel/aulas-conteudo.php`, não em `src/data/`.**
+Esta é a diferença em relação ao `funcoes.json`: aquele é texto de recrutamento,
+público por natureza; o manual é documento interno, e num export estático tudo
+que entra no bundle é público. O texto sai só pelo `api/aulas.php`, para quem tem
+a área. Pelo mesmo motivo `/aulas` **não** usa rota dinâmica por aula
+(`generateStaticParams` geraria um HTML público por aula) — o link direto é por
+âncora, `/aulas#olheiro`.
+
+**Checklist não se escreve duas vezes.** Os "Pronto quando" ficam em
+`public/painel/checklists.php` e são referenciados por id; a aula e a ferramenta
+que usa aquela conferência renderizam o mesmo array.
+
+Vídeo é embed de YouTube não-listado (sem custo, e não há problema em o link
+circular), pendurado pelo painel — o texto da aula funciona sem ele. O tipo
+`FonteVideo` (`src/features/aulas/tipos.ts`) abstrai o provedor: trocar para um
+serviço dedicado mexe nesse tipo e no `Player.tsx`, mais nada.
+
+**Fase eleitoral no conteúdo.** O manual em `update/` só descreve a
+pré-campanha; o currículo cobre as duas fases. A aula `fases-da-campanha`
+(Dia 0) tem a tabela do que muda, e Público, Relacional, Divulgação e Roteirista
+dizem o que vale em cada uma. **Escreva sempre "antes da campanha" e "durante a
+campanha", nunca a data de virada** — ela muda a cada eleição e o texto datado
+envelhece sozinho dentro de uma aula que ninguém relê. A regra fina (horário de
+ato, o que cabe num impresso, como uma doação é declarada) fica com a
+coordenação de propósito: muda com o calendário e com decisão do juízo
+eleitoral.
 
 ## Convenção de nomes
 

@@ -178,6 +178,53 @@ if (in_array('inscricoes', $areas, true)) {
         }
     }
 }
+
+/* Mesma ideia para os fatos parados na Checagem: fila invisível é fila que dorme. */
+$fatos_esperando = 0;
+if (in_array('fatos', $areas, true)) {
+    require_once __DIR__ . '/fatos-comum.php';
+    $fatos_esperando = fatos_esperando();
+}
+
+/* Quantos cards estão com esta pessoa no quadro de Produção. */
+$meus_cards = 0;
+if (in_array('producao', $areas, true)) {
+    require_once __DIR__ . '/producao-comum.php';
+    $meus_cards = count(cards_de($u['id']));
+}
+
+/**
+ * Acesso rápido: o atalho da função que a pessoa escolheu no /quero-ajudar.
+ *
+ * A função NÃO limita o acesso — quem abre a área abre a ferramenta inteira.
+ * Isto aqui só evita que o Olheiro precise procurar onde fica a tela dele todo
+ * dia, e some se a pessoa não tem função registrada ou não tem a permissão.
+ */
+const FERRAMENTA_DA_FUNCAO = [
+    'olheiro'    => 'fatos',
+    'checagem'   => 'fatos',
+    'roteirista' => 'producao',
+    'design'     => 'producao',
+    'editor'     => 'producao',
+    'acervo'     => 'producao',
+    'local-hora' => 'eventos',
+    'logistica'  => 'eventos',
+    'divulgacao' => 'eventos',
+    'gravacao'   => 'eventos',
+    'recepcao'   => 'eventos',
+];
+
+$atalhos = [];
+foreach ($u['funcoes'] as $funcao) {
+    $area = FERRAMENTA_DA_FUNCAO[$funcao] ?? null;
+    if ($area !== null && in_array($area, $areas, true) && !isset($atalhos[$area])) {
+        $atalhos[$area] = $funcao;
+    }
+}
+if ($atalhos !== []) {
+    // nome_funcao() mora no inscricoes-comum.php, que é quem lê o funcoes.json
+    require_once __DIR__ . '/inscricoes-comum.php';
+}
 $negado = (string) ($_GET['negado'] ?? '');
 if ($negado !== '') {
     $aviso = $negado === 'usuarios'
@@ -198,9 +245,40 @@ abrir_pagina('Início');
       Seu acesso está ativo, mas nenhuma área foi liberada ainda. Peça a um administrador.
     </p>
   <?php else: ?>
+    <?php if ($atalhos !== []): ?>
+      <div class="atalhos">
+        <p class="atalhos-rotulo">Seu lugar no time</p>
+        <?php foreach ($atalhos as $area => $funcao): ?>
+          <a class="atalho" href="<?= h(DESTINO_AREA[$area]['url']) ?>">
+            <span class="atalho-icone"><?= icone(ICONE_AREA[$area] ?? 'star') ?></span>
+            <span class="atalho-texto">
+              <strong><?= h(nome_funcao($funcao)) ?></strong>
+              <span><?= h(AREAS[$area]) ?></span>
+            </span>
+            <span class="atalho-seta" aria-hidden="true"><?= icone('chevronRight', 20) ?></span>
+          </a>
+        <?php endforeach; ?>
+      </div>
+    <?php endif; ?>
+
     <div class="areas-hub">
       <?php foreach ($areas as $area): ?>
-        <?php $pend = $area === 'inscricoes' ? $inscricoes_esperando : 0; ?>
+        <?php
+        /* O contador só existe onde há fila de verdade. Área sem fila mostra o
+           resumo do que ela faz, e não um zero que não quer dizer nada. */
+        $pend = 0;
+        $recado_fila = null;
+        if ($area === 'inscricoes' && $inscricoes_esperando > 0) {
+            $pend = $inscricoes_esperando;
+            $recado_fila = $pend === 1 ? '1 pessoa esperando decisão' : $pend . ' pessoas esperando decisão';
+        } elseif ($area === 'fatos' && $fatos_esperando > 0) {
+            $pend = $fatos_esperando;
+            $recado_fila = $pend === 1 ? '1 fato esperando checagem' : $pend . ' fatos esperando checagem';
+        } elseif ($area === 'producao' && $meus_cards > 0) {
+            $pend = $meus_cards;
+            $recado_fila = $pend === 1 ? '1 card com você' : $pend . ' cards com você';
+        }
+        ?>
         <a class="area-cartao<?= $pend > 0 ? ' tem-aviso' : '' ?>" href="<?= h(DESTINO_AREA[$area]['url']) ?>">
           <?php if ($pend > 0): ?>
             <span class="area-aviso" aria-hidden="true"><?= $pend ?></span>
@@ -208,13 +286,7 @@ abrir_pagina('Início');
           <span class="area-icone"><?= icone(ICONE_AREA[$area] ?? 'star') ?></span>
           <span class="area-texto">
             <strong><?= h(AREAS[$area]) ?></strong>
-            <span>
-              <?php if ($pend > 0): ?>
-                <?= $pend === 1 ? '1 pessoa esperando decisão' : $pend . ' pessoas esperando decisão' ?>
-              <?php else: ?>
-                <?= h(DESTINO_AREA[$area]['resumo']) ?>
-              <?php endif; ?>
-            </span>
+            <span><?= h($recado_fila ?? DESTINO_AREA[$area]['resumo']) ?></span>
           </span>
         </a>
       <?php endforeach; ?>
