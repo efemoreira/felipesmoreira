@@ -155,7 +155,7 @@ if ($u === null) {
       </form>
       <p class="dica" style="margin-top:20px">
         Esqueceu a senha ou ainda não tem acesso? Fale com a coordenação no
-        <a href="https://wa.me/5585997223863" target="_blank" rel="noopener">WhatsApp</a>.
+        <a href="https://wa.me/5585981872972" target="_blank" rel="noopener">WhatsApp</a>.
       </p>
     <?php endif; ?>
     </div>
