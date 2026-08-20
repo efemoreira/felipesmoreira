@@ -361,19 +361,20 @@ function validar_nome_usuario(string $usuario): string
     return '';
 }
 
-/** Senha provisória legível: o admin lê em voz alta sem errar. */
+/**
+ * Senha provisória legível: o admin lê em voz alta sem errar e a pessoa digita
+ * no celular sem trocar de teclado — só letra e número, sem hífen nem símbolo.
+ * SENHA_MIN caracteres do alfabeto sem ambíguos já dão ~40 bits, e quem entra
+ * com ela cai em conta.php obrigado a trocar.
+ */
 function senha_provisoria(): string
 {
     $alfabeto = 'abcdefghijkmnpqrstuvwxyz23456789';  // sem l/o/0/1, que se confundem
-    $partes = [];
-    for ($p = 0; $p < 3; $p++) {
-        $bloco = '';
-        for ($i = 0; $i < 4; $i++) {
-            $bloco .= $alfabeto[random_int(0, strlen($alfabeto) - 1)];
-        }
-        $partes[] = $bloco;
+    $senha = '';
+    for ($i = 0; $i < SENHA_MIN; $i++) {
+        $senha .= $alfabeto[random_int(0, strlen($alfabeto) - 1)];
     }
-    return implode('-', $partes);
+    return $senha;
 }
 
 function novo_id_usuario(): string

@@ -580,7 +580,7 @@ const PlanoClient: React.FC = () => {
           </div>
 
           <a
-            href="https://wa.me/5585997223863?text=EQUIPE"
+            href="https://wa.me/5585981872972?text=EQUIPE"
             target="_blank"
             rel="noopener noreferrer"
             className="p-cta"

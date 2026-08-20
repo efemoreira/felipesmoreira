@@ -62,7 +62,7 @@ const PaginaLegal: React.FC<{
           Dúvida sobre este texto? Fale com a gente:{" "}
           <a href="mailto:contato@felipesmoreira.com">contato@felipesmoreira.com</a>{" "}
           ou{" "}
-          <a href="https://wa.me/5585997223863" target="_blank" rel="noopener noreferrer">
+          <a href="https://wa.me/5585981872972" target="_blank" rel="noopener noreferrer">
             WhatsApp
           </a>
           .

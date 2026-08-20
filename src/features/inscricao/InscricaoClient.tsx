@@ -361,7 +361,7 @@ export default function InscricaoClient() {
                 <li>
                   <strong>Você manda neles:</strong> pode pedir pra ver, corrigir ou
                   apagar tudo, e pode desistir quando quiser — é só falar no{" "}
-                  <a href="https://wa.me/5585997223863" target="_blank" rel="noopener noreferrer">
+                  <a href="https://wa.me/5585981872972" target="_blank" rel="noopener noreferrer">
                     WhatsApp
                   </a>{" "}
                   ou mandar e-mail pra{" "}
@@ -590,7 +590,7 @@ const Sucesso: React.FC<{ nome: string }> = ({ nome }) => {
         <div className="in-acoes">
           <a
             className="in-btn in-btn-principal"
-            href="https://wa.me/5585997223863"
+            href="https://wa.me/5585981872972"
             target="_blank"
             rel="noopener noreferrer"
           >

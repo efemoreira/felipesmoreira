@@ -13,7 +13,7 @@ const secoes: Secao[] = [
     titulo: "Quem é o responsável pelos seus dados",
     blocos: [
       "Este site é de Felipe Moreira, e os dados coletados aqui são tratados pela coordenação da Missão Ceará. Somos nós que decidimos o que é guardado e para quê — em linguagem de lei, somos o controlador dos dados.",
-      "Para falar sobre seus dados, use contato@felipesmoreira.com ou o WhatsApp (85) 99722-3863. A mesma pessoa que cuida da coordenação responde por isso.",
+      "Para falar sobre seus dados, use contato@felipesmoreira.com ou o WhatsApp (85) 98187-2972. A mesma pessoa que cuida da coordenação responde por isso.",
     ],
   },
   {
