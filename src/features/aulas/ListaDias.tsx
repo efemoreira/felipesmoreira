@@ -18,6 +18,8 @@ interface Props {
   gravando: string | null;
   aoAbrir: (id: string, aberta: boolean) => void;
   aoAlternar: (id: string, concluida: boolean) => void;
+  /** convidado sem conta: mostra o conteúdo, esconde o que marca progresso */
+  semProgresso?: boolean;
 }
 
 export const ListaDias: React.FC<Props> = ({
@@ -28,6 +30,7 @@ export const ListaDias: React.FC<Props> = ({
   gravando,
   aoAbrir,
   aoAlternar,
+  semProgresso = false,
 }) => (
   <>
     {dias.map((dia) => {
@@ -51,7 +54,7 @@ export const ListaDias: React.FC<Props> = ({
                 margin: "0 0 10px",
               }}
             >
-              Dia {dia.numero} · {feitas} de {dia.aulas.length}
+              Dia {dia.numero}{semProgresso ? "" : ` · ${feitas} de ${dia.aulas.length}`}
             </p>
             <h2
               style={{
@@ -79,6 +82,7 @@ export const ListaDias: React.FC<Props> = ({
               gravando={gravando === aula.id}
               aoAbrir={aoAbrir}
               aoAlternar={aoAlternar}
+              semProgresso={semProgresso}
             />
           ))}
         </section>

@@ -31,6 +31,28 @@ function responder(array $corpo, int $status = 200): void
 }
 
 $u = usuario_atual();
+$metodo = (string) ($_SERVER['REQUEST_METHOD'] ?? 'GET');
+
+/* ---------------- convidado: só o Dia 0 ----------------
+   Quem se inscreveu e ainda não foi aprovado entra por link com o token e lê a
+   primeira parte da formação. É leitura e nada mais: sem conta não há progresso
+   para gravar, então o POST continua exigindo login. */
+if ($u === null && $metodo === 'GET' && convite_valido((string) ($_GET['convite'] ?? ''))) {
+    $dias = array_values(array_filter(
+        curriculo_publico(),
+        fn (array $d) => $d['id'] === DIA_ABERTO
+    ));
+
+    responder([
+        'autenticado' => false,
+        'convidado'   => true,
+        'pode'        => true,
+        'nome'        => '',
+        'funcoes'     => [],
+        'dias'        => $dias,
+        'concluidas'  => [],
+    ]);
+}
 
 if ($u === null) {
     responder(['autenticado' => false]);
@@ -39,21 +61,14 @@ if (!pode('aulas')) {
     responder(['autenticado' => true, 'pode' => false]);
 }
 
-$metodo = (string) ($_SERVER['REQUEST_METHOD'] ?? 'GET');
-
 /* ---------------- marcar aula ---------------- */
 
 if ($metodo === 'POST') {
     /* O cookie do painel é SameSite=Strict, então um site de fora não consegue
        mandar este POST autenticado. A conferência de Origin fecha o resto,
        igual ao api/inscricao.php. */
-    $origem = (string) ($_SERVER['HTTP_ORIGIN'] ?? '');
-    if ($origem !== '') {
-        $anfitriao = parse_url($origem, PHP_URL_HOST);
-        $meu = (string) ($_SERVER['HTTP_HOST'] ?? '');
-        if (!is_string($anfitriao) || strcasecmp($anfitriao, $meu) !== 0) {
-            responder(['ok' => false, 'erro' => 'Envio bloqueado.'], 403);
-        }
+    if (!origem_confere()) {
+        responder(['ok' => false, 'erro' => 'Envio bloqueado.'], 403);
     }
 
     $bruto = json_decode((string) file_get_contents('php://input'), true);

@@ -220,7 +220,7 @@ const BlocoCompromisso: React.FC<{ c: Compromisso }> = ({ c }) => {
         <div style={{ paddingTop: 16, display: "flex", flexDirection: "column", gap: 16 }}>
           <div>
             <p style={rotuloSecao}>De onde vem o recurso</p>
-            <ul style={{ margin: 0, paddingLeft: 18, display: "flex", flexDirection: "column", gap: 7 }}>
+            <ul style={{ margin: 0, paddingLeft: 18, listStyle: "disc", display: "flex", flexDirection: "column", gap: 7 }}>
               {c.recurso.map((r) => (
                 <li key={r} style={{ fontSize: 14.5, lineHeight: 1.55 }}>
                   {r}

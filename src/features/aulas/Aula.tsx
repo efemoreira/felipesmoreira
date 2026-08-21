@@ -22,6 +22,8 @@ interface Props {
   gravando: boolean;
   aoAbrir: (id: string, aberta: boolean) => void;
   aoAlternar: (id: string, concluida: boolean) => void;
+  /** convidado sem conta: não há onde gravar, então o botão não aparece */
+  semProgresso?: boolean;
 }
 
 export const Aula: React.FC<Props> = ({
@@ -32,6 +34,7 @@ export const Aula: React.FC<Props> = ({
   gravando,
   aoAbrir,
   aoAlternar,
+  semProgresso = false,
 }) => {
   const rapida = aula.pista === "rapida";
 
@@ -118,6 +121,7 @@ export const Aula: React.FC<Props> = ({
         <Blocos blocos={aula.blocos} />
 
         <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 22 }}>
+          {!semProgresso && (
           <button
             type="button"
             onClick={() => aoAlternar(aula.id, !concluida)}
@@ -141,6 +145,7 @@ export const Aula: React.FC<Props> = ({
           >
             {concluida ? "Desmarcar" : "Marcar como feita"}
           </button>
+          )}
 
           {aula.ferramenta && (
             <a

@@ -49,9 +49,22 @@ export interface Dia {
   aulas: Aula[];
 }
 
-/** A resposta do painel, nos três estados possíveis. */
+/** A resposta do painel, nos quatro estados possíveis. */
 export type RespostaAulas =
-  | { autenticado: false }
+  | { autenticado: false; convidado?: false }
+  /**
+   * Convidado: chegou por link com token e enxerga só o Dia 0. Não tem conta,
+   * então não há progresso para gravar — a tela some com as marcas de concluído.
+   */
+  | {
+      autenticado: false;
+      convidado: true;
+      pode: true;
+      nome: string;
+      funcoes: string[];
+      dias: Dia[];
+      concluidas: string[];
+    }
   | { autenticado: true; pode: false }
   | {
       autenticado: true;

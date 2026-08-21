@@ -26,6 +26,8 @@ type Estado =
       nome: string;
       dias: Dia[];
       funcoes: Set<string>;
+      /** entrou por link de convite: vê só o Dia 0 e não tem onde gravar progresso */
+      convidado: boolean;
     };
 
 export default function AulasClient() {
@@ -38,11 +40,14 @@ export default function AulasClient() {
   useEffect(() => {
     let ativo = true;
 
-    obterAulas()
+    const convite = new URLSearchParams(window.location.search).get("convite") ?? "";
+
+    obterAulas(convite)
       .then((r: RespostaAulas) => {
         if (!ativo) return;
-        if (!r.autenticado) return setEstado({ fase: "sem-login" });
-        if (!r.pode) return setEstado({ fase: "sem-acesso" });
+        const convidado = !r.autenticado && r.convidado === true;
+        if (!r.autenticado && !convidado) return setEstado({ fase: "sem-login" });
+        if (!("pode" in r) || !r.pode) return setEstado({ fase: "sem-acesso" });
 
         setConcluidas(new Set(r.concluidas));
         setEstado({
@@ -50,6 +55,7 @@ export default function AulasClient() {
           nome: r.nome,
           dias: r.dias,
           funcoes: new Set(r.funcoes),
+          convidado,
         });
 
         /* deep link: /aulas#olheiro abre e rola até a aula */
@@ -188,7 +194,8 @@ export default function AulasClient() {
               repetido em dois lugares é texto que diverge na terceira alteração
               (mesmo motivo do checklists.php). */}
           <p style={{ margin: "0 0 18px", lineHeight: 1.75, maxWidth: "60ch" }}>
-            Olá, {estado.nome.split(" ")[0]}. Cada Dia começa com uma{" "}
+            {estado.convidado ? "Bem-vindo. " : `Olá, ${estado.nome.split(" ")[0]}. `}
+            Cada Dia começa com uma{" "}
             <strong style={{ color: C.gold }}>🚗 Pista Rápida</strong> e segue nas Pistas Lentas.{" "}
             <a
               href="#como-funciona-a-formacao"
@@ -200,7 +207,7 @@ export default function AulasClient() {
             em três minutos.
           </p>
 
-          {resumo && (
+          {resumo && !estado.convidado && (
             <>
               <Barra feitas={resumo.feitas} total={resumo.total} />
               <p
@@ -219,13 +226,15 @@ export default function AulasClient() {
           )}
         </header>
 
-        {resumo && resumo.minhas.length > 0 && (
+        {resumo && !estado.convidado && resumo.minhas.length > 0 && (
           <MinhaTrilha
             aulas={resumo.minhas.map((a) => ({ id: a.id, titulo: a.titulo }))}
             concluidas={concluidas}
             aoIr={aoAbrir}
           />
         )}
+
+        {estado.convidado && <AvisoConvidado />}
 
         {falhaAoGravar && (
           <p
@@ -250,6 +259,7 @@ export default function AulasClient() {
           gravando={gravando}
           aoAbrir={aoAbrir}
           aoAlternar={aoAlternar}
+          semProgresso={estado.convidado}
         />
       </div>
     </div>
@@ -257,6 +267,46 @@ export default function AulasClient() {
 }
 
 /* ===================== peças ===================== */
+
+/**
+ * O recado de quem entrou por convite.
+ *
+ * Diz o que ele está vendo (o Dia 0) e o que falta para ver o resto — sem
+ * fingir que a formação inteira está ali e sem tratar a espera como problema
+ * dele. O botão é a única coisa que resolve: falar com a coordenação.
+ */
+const AvisoConvidado: React.FC = () => (
+  <section
+    style={{
+      border: `3px solid ${C.gold}`,
+      background: "rgba(255,203,5,.08)",
+      padding: "16px 16px",
+      margin: "0 0 22px",
+    }}
+  >
+    <p
+      style={{
+        fontFamily: FONT_ELITE,
+        fontSize: 11.5,
+        letterSpacing: 2,
+        textTransform: "uppercase",
+        color: C.gold2,
+        margin: "0 0 8px",
+      }}
+    >
+      Você está no Dia 0
+    </p>
+    <p style={{ margin: "0 0 12px", lineHeight: 1.7 }}>
+      Estas são as regras que valem para todo mundo — dá pra começar por elas
+      antes mesmo de ter acesso. A formação inteira são <strong>6 Dias e 32 aulas</strong>,
+      e o resto abre quando a coordenação aprovar sua inscrição.
+    </p>
+    <p style={{ margin: 0, fontSize: 14.5, lineHeight: 1.6, opacity: 0.85 }}>
+      Como você ainda não tem conta, aqui não dá pra marcar aula concluída — seu
+      progresso começa a contar quando você entrar com seu usuário.
+    </p>
+  </section>
+);
 
 const Barra: React.FC<{ feitas: number; total: number }> = ({ feitas, total }) => (
   <div

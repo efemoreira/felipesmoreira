@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useRef } from "react";
+import Link from "next/link";
 import { Icon, IconName } from "@/components/icons";
 import { C, FONT_ALFA, FONT_ELITE, FONT_BITTER } from "@/lib/theme";
 import { escada, times, semana, fases, regras } from "./data";
@@ -591,6 +592,19 @@ const PlanoClient: React.FC = () => {
               <span style={caminhoTxt}>
                 Fica tranquilo: <strong>ninguém sai, ninguém é removido</strong>. O
                 grupo continua sendo de todos — e a porta fica aberta pra quando der.
+              </span>
+            </div>
+            {/* O degrau que cabe em trinta minutos: postar. Fica junto dos outros
+                dois porque é o caminho de quem não pode ir à reunião e mesmo
+                assim quer servir. */}
+            <div style={caminho}>
+              <span style={caminhoTag}>✦ quem só tem o celular</span>
+              <span style={caminhoTxt}>
+                Pega a arte e o texto prontos no{" "}
+                <Link href="/kit" style={{ color: C.gold2, fontWeight: 700 }}>
+                  kit de compartilhamento
+                </Link>{" "}
+                e publica. Põe seu nome lá e a coordenação vê quem você trouxe.
               </span>
             </div>
           </div>

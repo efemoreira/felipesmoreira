@@ -17,7 +17,6 @@ require_once __DIR__ . '/sessao.php';
 
 const ARQ_INSCRICOES = PASTA_DADOS . '/inscricoes.php';
 const ARQ_LIMITE     = PASTA_DADOS . '/inscricoes-limite.php';
-const ARQ_SEGREDO    = PASTA_DADOS . '/segredo.php';
 const ARQ_FUNCOES    = __DIR__ . '/../funcoes.json';
 
 /** Versão do texto de consentimento aceito no formulário. */
@@ -113,6 +112,124 @@ function normalizar_origem($bruto): string
     $slug = strtolower(sem_acento($texto));
     $slug = preg_replace('/[^a-z0-9]+/', '-', $slug) ?? '';
     return trim($slug, '-');
+}
+
+/**
+ * Há quantas horas esta inscrição está esperando decisão.
+ *
+ * Espelha `horas_esperando()` dos fatos de propósito: a fila da Checagem e a
+ * fila da porta se cobram do mesmo jeito no `agora.php`.
+ */
+function horas_na_fila(array $i): int
+{
+    $t = strtotime((string) ($i['criadoEm'] ?? ''));
+    if ($t === false) {
+        return 0;
+    }
+    return (int) floor(max(0, time() - $t) / 3600);
+}
+
+/** Depois disto a inscrição parada vira recado urgente no hub. */
+const HORAS_LIMITE_INSCRICAO = 48;
+
+/**
+ * O placar de quem trouxe quem.
+ *
+ * Sai das inscrições que já estão gravadas — não há contador, cookie nem
+ * rastreador em lugar nenhum. A pergunta que interessa ("qual militante recruta
+ * e qual canal converte?") já tem resposta no `origem` de cada inscrição;
+ * faltava só somar.
+ *
+ * Devolve da maior para a menor, e **não inclui quem chegou sem origem**: essa
+ * conta vai separada, porque "veio sozinho" não é um recrutador.
+ *
+ * @return array{placar: list<array{origem: string, total: int, aprovadas: int}>, semOrigem: int}
+ */
+function placar_de_origens(?array $inscricoes = null): array
+{
+    $inscricoes ??= ler_inscricoes();
+
+    $soma = [];
+    $semOrigem = 0;
+    foreach ($inscricoes as $i) {
+        $o = $i['origem'] ?? '';
+        if ($o === '') {
+            $semOrigem++;
+            continue;
+        }
+        if (!isset($soma[$o])) {
+            $soma[$o] = ['origem' => $o, 'total' => 0, 'aprovadas' => 0];
+        }
+        $soma[$o]['total']++;
+        if (($i['status'] ?? '') === 'aprovada') {
+            $soma[$o]['aprovadas']++;
+        }
+    }
+
+    $placar = array_values($soma);
+    // do maior para o menor; empate desempata pelo nome, para a ordem não dançar
+    usort($placar, function (array $a, array $b): int {
+        return $b['total'] <=> $a['total'] ?: strcmp($a['origem'], $b['origem']);
+    });
+
+    return ['placar' => $placar, 'semOrigem' => $semOrigem];
+}
+
+/**
+ * Onde a militância mora — cidade, e dentro dela os bairros.
+ *
+ * O formulário coleta `bairro` e diz por quê ("é assim que a gente monta os
+ * times por região"), mas nada no sistema usava esse dado: a promessa ficava
+ * só no texto. Este agrupamento é o primeiro passo para cumpri-la — dá para
+ * ver onde já tem gente suficiente para um time próprio e onde a pessoa está
+ * sozinha na cidade dela.
+ *
+ * Conta só quem foi **aprovado**: fila de inscrição não é militância, e um
+ * mapa que soma quem ainda nem foi decidido promete time que não existe.
+ *
+ * @return list<array{cidade: string, total: int, bairros: list<array{nome: string, total: int}>}>
+ */
+function militancia_por_regiao(?array $inscricoes = null): array
+{
+    $inscricoes ??= ler_inscricoes();
+
+    $mapa = [];
+    foreach ($inscricoes as $i) {
+        if (($i['status'] ?? '') !== 'aprovada') {
+            continue;
+        }
+        $cidade = trim((string) ($i['cidade'] ?? ''));
+        if ($cidade === '') {
+            continue;
+        }
+        /* Agrupa por forma normalizada para "Fortaleza" e "fortaleza" não virarem
+           duas cidades, mas mostra a grafia que a primeira pessoa escreveu. */
+        $chaveC = strtolower(sem_acento($cidade));
+        $bairro = trim((string) ($i['bairro'] ?? ''));
+        $chaveB = $bairro === '' ? '' : strtolower(sem_acento($bairro));
+
+        if (!isset($mapa[$chaveC])) {
+            $mapa[$chaveC] = ['cidade' => $cidade, 'total' => 0, 'bairros' => []];
+        }
+        $mapa[$chaveC]['total']++;
+
+        if ($chaveB !== '') {
+            if (!isset($mapa[$chaveC]['bairros'][$chaveB])) {
+                $mapa[$chaveC]['bairros'][$chaveB] = ['nome' => $bairro, 'total' => 0];
+            }
+            $mapa[$chaveC]['bairros'][$chaveB]['total']++;
+        }
+    }
+
+    $saida = [];
+    foreach ($mapa as $c) {
+        $bairros = array_values($c['bairros']);
+        usort($bairros, fn ($a, $b) => $b['total'] <=> $a['total'] ?: strcmp($a['nome'], $b['nome']));
+        $saida[] = ['cidade' => $c['cidade'], 'total' => $c['total'], 'bairros' => $bairros];
+    }
+    usort($saida, fn ($a, $b) => $b['total'] <=> $a['total'] ?: strcmp($a['cidade'], $b['cidade']));
+
+    return $saida;
 }
 
 function normalizar_inscricao($i): ?array
@@ -228,31 +345,8 @@ function iniciais(string $nome): string
 
 /* ===================== limite por IP ===================== */
 
-/**
- * Segredo do site, criado sozinho na primeira vez. Serve para embaralhar o IP
- * antes de guardar: dá para contar quantas vezes alguém tentou sem manter
- * endereço de IP salvo, que é dado pessoal.
- */
-function segredo(): string
-{
-    static $memo = null;
-    if ($memo !== null) {
-        return $memo;
-    }
-    if (is_file(ARQ_SEGREDO)) {
-        $v = @include ARQ_SEGREDO;
-        if (is_string($v) && $v !== '') {
-            return $memo = $v;
-        }
-    }
-    preparar_pastas();
-    $memo = bin2hex(random_bytes(16));
-    gravar_atomico(ARQ_SEGREDO, "<?php\nreturn " . var_export($memo, true) . ";\n");
-    if (function_exists('opcache_invalidate')) {
-        @opcache_invalidate(ARQ_SEGREDO, true);
-    }
-    return $memo;
-}
+/* segredo() mora no sessao.php: é segredo do site inteiro, não das
+   inscrições — as aulas também derivam o token de convite dele. */
 
 function chave_visitante(): string
 {

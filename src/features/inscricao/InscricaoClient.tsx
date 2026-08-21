@@ -67,7 +67,17 @@ export default function InscricaoClient() {
    */
   const origem = useRef("");
   useEffect(() => {
-    const daUrl = new URLSearchParams(window.location.search).get("de") ?? "";
+    const busca = new URLSearchParams(window.location.search);
+
+    /* `?funcao=olheiro` vem de /funcoes: quem leu a ficha inteira e decidiu não
+       deve ter que procurar a mesma função de novo numa lista de doze. Só entra
+       id que existe no catálogo — parâmetro é texto de fora. */
+    const pedida = busca.get("funcao");
+    if (pedida && CATALOGO.funcoes.some((f) => f.id === pedida)) {
+      setFuncoes([pedida]);
+    }
+
+    const daUrl = busca.get("de") ?? "";
     if (daUrl) {
       origem.current = daUrl;
       try { sessionStorage.setItem("de", daUrl); } catch { /* aba anônima */ }
@@ -202,7 +212,7 @@ export default function InscricaoClient() {
     }
   };
 
-  if (envio === "pronto") return <Sucesso nome={campos.nome} />;
+  if (envio === "pronto") return <Sucesso nome={campos.nome} escolhidas={escolhidas} />;
 
   return (
     <div className="in-fundo">
@@ -572,7 +582,20 @@ const Campo: React.FC<{
   );
 };
 
-const Sucesso: React.FC<{ nome: string }> = ({ nome }) => {
+/**
+ * A tela depois do envio.
+ *
+ * Antes ela listava três passos que eram todos **ação de outra pessoa** ("a
+ * coordenação vai olhar", "costuma levar alguns dias") e terminava em espera. É
+ * o pior momento possível para não ter o que fazer: quem acabou de se inscrever
+ * está no pico de entusiasmo que vai ter, e se a aprovação demora três dias,
+ * esse pico passa sem virar nada.
+ *
+ * Agora o que vem primeiro é o que **não depende de aprovação nenhuma** — e o
+ * que a coordenação faz do lado dela vem depois, como informação, não como
+ * instrução de esperar.
+ */
+const Sucesso: React.FC<{ nome: string; escolhidas: Funcao[] }> = ({ nome, escolhidas }) => {
   const primeiro = nome.trim().split(" ")[0] || "companheiro";
   return (
     <div className="in-fundo">
@@ -580,45 +603,80 @@ const Sucesso: React.FC<{ nome: string }> = ({ nome }) => {
         <span className="in-sucesso-selo" aria-hidden="true">
           <Icon name="flag" size={40} />
         </span>
-        <h1 className="in-titulo">Inscrição enviada, {primeiro}!</h1>
+        <h1 className="in-titulo">Chegou, {primeiro}!</h1>
         <p className="in-linha">
-          Chegou pra coordenação. Agora é com a gente.
+          {escolhidas.length > 0 ? (
+            <>
+              Sua inscrição para{" "}
+              <strong>{escolhidas.map((f) => f.nome).join(" e ")}</strong> está com a
+              coordenação. Enquanto ela confere, tem três coisas que você já pode fazer.
+            </>
+          ) : (
+            <>
+              Sua inscrição está com a coordenação. Enquanto ela confere, tem três coisas que você
+              já pode fazer.
+            </>
+          )}
         </p>
 
+        <p className="in-agora-titulo">Agora, sem esperar ninguém</p>
         <ol className="in-proximos">
           <li>
             <b>1</b>
-            <span>A coordenação vai olhar sua inscrição.</span>
+            <span>
+              <strong>Entre no grupo.</strong> Manda a palavra <strong>EQUIPE</strong> no WhatsApp
+              da coordenação — é uma palavra, sem formulário. É ali que sai a convocação da semana.
+              <a
+                className="in-passo-link"
+                href="https://wa.me/5585981872972?text=EQUIPE"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Icon name="whatsapp" size={15} />
+                Mandar EQUIPE agora
+              </a>
+            </span>
           </li>
           <li>
             <b>2</b>
             <span>
-              Você recebe uma mensagem <strong>no seu WhatsApp</strong> com seu
-              usuário e uma senha provisória.
+              <strong>Leia o plano.</strong> São sete compromissos com meta, prazo e de onde vem o
+              dinheiro. Quem conhece o plano consegue defender o movimento em qualquer conversa.
+              <Link className="in-passo-link" href="/propostas">
+                <Icon name="book" size={15} />
+                Ver as propostas
+              </Link>
             </span>
           </li>
           <li>
             <b>3</b>
             <span>
-              No primeiro acesso você troca a senha e já entra na área da militância.
+              <strong>Comece a espalhar.</strong> No kit tem arte e texto prontos, cada um com a
+              página do plano. Põe seu nome lá e a coordenação vê quem você trouxe.
+              <Link className="in-passo-link" href="/kit">
+                <Icon name="broadcast" size={15} />
+                Abrir o kit
+              </Link>
             </span>
           </li>
         </ol>
 
-        <p className="in-aviso">
-          Costuma levar alguns dias. Se demorar, chama a gente no WhatsApp — sem
-          cerimônia.
+        <p className="in-agora-titulo">O que a coordenação faz do lado dela</p>
+        <p className="in-aviso" style={{ margin: "10px 0 0" }}>
+          Confere sua inscrição e te manda no WhatsApp o usuário e uma senha provisória para entrar
+          na área da militância, onde ficam a formação e as ferramentas. No primeiro acesso você
+          troca a senha. Se passar de alguns dias, chama sem cerimônia — não é incômodo.
         </p>
 
         <div className="in-acoes">
           <a
             className="in-btn in-btn-principal"
-            href="https://wa.me/5585981872972"
+            href="https://wa.me/5585981872972?text=EQUIPE"
             target="_blank"
             rel="noopener noreferrer"
           >
             <Icon name="whatsapp" size={18} />
-            <span>Falar com a coordenação</span>
+            <span>Entrar no grupo</span>
           </a>
           <Link className="in-btn in-btn-fantasma" href="/">
             <Icon name="arrowLeft" size={18} />
@@ -917,6 +975,22 @@ const css = `
     width: 32px; height: 32px; flex: 0 0 auto; display: grid; place-items: center;
     font-family: ${FONT_ALFA}; font-size: 15px;
     background: ${C.gold}; color: ${C.ink}; border: 2px solid ${C.ink};
+  }
+  .in-agora-titulo {
+    font-family: ${FONT_ELITE}; font-size: 11.5px; letter-spacing: 2.2px;
+    text-transform: uppercase; opacity: .7; text-align: left;
+    margin: 30px 0 0;
+  }
+  /* display:flex, e não inline-flex: o link tem que cair na própria linha,
+     depois do texto. Com inline-flex ele emendaria no fim do parágrafo — e
+     transformar o span em coluna de flex, que foi a primeira tentativa, jogava
+     cada palavra em negrito para uma linha só dela.
+     (Nada de crase neste bloco: ele mora dentro de um template literal.) */
+  .in-passo-link {
+    display: flex; width: fit-content; align-items: center; gap: 7px;
+    min-height: 44px; margin-top: 6px; font-family: ${FONT_ELITE}; font-size: 12px;
+    letter-spacing: 1.2px; text-transform: uppercase;
+    color: ${C.ink}; text-decoration: underline; text-underline-offset: 3px;
   }
   .in-aviso { font-size: 14px; line-height: 1.6; opacity: .8; margin: 20px 0 0; }
   .in-sucesso .in-acoes { justify-content: center; }

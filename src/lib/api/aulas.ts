@@ -9,8 +9,11 @@ import type { RespostaAulas } from "@/features/aulas/tipos";
  * O endpoint sempre responde 200 com o estado no corpo, então aqui só falha de
  * rede mesmo.
  */
-export function obterAulas(): Promise<RespostaAulas> {
-  return apiFetch<RespostaAulas>("/aulas.php");
+export function obterAulas(convite?: string): Promise<RespostaAulas> {
+  /* Com token, o painel devolve só o Dia 0 e `convidado: true`. É como quem se
+     inscreveu e ainda não foi aprovado começa a formação sem esperar. */
+  const q = convite ? `?convite=${encodeURIComponent(convite)}` : "";
+  return apiFetch<RespostaAulas>(`/aulas.php${q}`);
 }
 
 /** Marca ou desmarca uma aula. Devolve a lista de concluídas já atualizada. */

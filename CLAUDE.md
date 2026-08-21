@@ -151,6 +151,32 @@ entra. Número sem página aqui é o bug.
 > que virão. **Nada disso vai para o site.** Ao atualizar `/propostas`, copie
 > apenas proposta, meta, custeio e prazo.
 
+## O kit do mutirão (`/kit`)
+
+A ferramenta que o manual (§5.5) descreve como coordenação manual no WhatsApp.
+Cada peça é **um número do plano com a página**, mais o texto pronto pra colar,
+mais a arte gerada no canvas — e o botão usa a Web Share API, que no celular
+abre o WhatsApp direto com imagem e texto juntos.
+
+`noindex`: é ferramenta de militante, circula por link no grupo. Kit indexado só
+serviria pro adversário saber o que vem antes.
+
+**É aqui que a atribuição fecha o ciclo.** O militante digita o nome uma vez (fica
+no `localStorage`, não no servidor), e todo link das peças sai com o `?de=<slug>`
+— o mesmo campo que `api/inscricao.php` grava desde a inscrição. Sem isso o
+alcance existe e ninguém sabe de quem foi.
+
+> O `slugDe()` do `src/features/kit/data.ts` e o `normalizar_origem()` do
+> `inscricoes-comum.php` **têm de concordar**. Se um normalizar diferente do
+> outro, o mesmo militante vira duas origens no relatório.
+
+**Os traços do cordel no canvas moram em `src/lib/cordelCanvas.ts`** — `escrever`,
+`quebrar`, `bloco`, `pilula`, `icone`. Nasceram dentro do `poster.ts` da
+programação e mudaram de casa quando o kit passou a desenhar as mesmas peças:
+duas cópias do mesmo `bloco()` divergiriam na primeira vez que alguém mexesse na
+espessura da borda. O que é próprio de cada peça (fundo, layout, montagem)
+continua no arquivo dela.
+
 ## Funções da militância
 
 `src/data/funcoes.json` é a lista canônica dos papéis do movimento (Olheiro,
@@ -167,8 +193,21 @@ movimento; `areas` é permissão de tela no painel. O `areas` de cada função v
 no próprio `funcoes.json`.
 
 **Ao acrescentar função nova:** entre no `funcoes.json` (o `icone` precisa
-existir em `src/components/icons.tsx`) e pronto — formulário, validação e
-sugestão de áreas seguem sozinhos.
+existir em `src/components/icons.tsx`) e pronto — formulário, validação,
+sugestão de áreas e a página `/funcoes` seguem sozinhos.
+
+`/funcoes` é o mesmo catálogo em página pública e indexável, com âncora por
+função (`/funcoes#olheiro`) para mandar por link. Cada ficha leva para
+`/quero-ajudar?funcao=<id>`, que abre o formulário **com ela já marcada** — quem
+leu a descrição inteira e decidiu não deve ter que procurar de novo numa lista
+de doze. O id é conferido contra o catálogo antes de marcar: parâmetro é texto
+que vem de fora.
+
+> **Uma página só, com âncoras, e não uma rota por função.** `/funcoes/olheiro`
+> tem dois segmentos, e o `.htaccess` do `publish.yml` só reescreve um
+> (`^([^/]+)$ $1.html`) — a rota cairia no fallback e serviria a home. Para ter
+> rota aninhada seria preciso mexer no `publish.yml`, que é da lista do "não
+> mexer sem perguntar".
 
 ## Fluxo de entrada de militante
 
@@ -185,6 +224,45 @@ sugestão de áreas seguem sozinhos.
 O consentimento fica registrado no cadastro (`consentimentoEm`,
 `consentimentoVersao`). Ao mudar o texto de LGPD do formulário, suba
 `VERSAO_CONSENTIMENTO` em `public/painel/inscricoes-comum.php`.
+
+### O vão entre se inscrever e ser aprovado
+
+É onde mais se perde gente: a pessoa está no pico de entusiasmo que vai ter, e
+entre o passo 2 e o 4 ela depende de um humano decidir. Três coisas atacam isso,
+e nenhuma delas exige aprovação:
+
+- **A tela de confirmação lidera com o que ela pode fazer agora** — entrar no
+  grupo, ler o plano, pegar o kit. O que a coordenação faz vem depois, como
+  informação. Antes eram três passos que eram todos ação de outra pessoa.
+- **`agora.php` sobe o recado para urgente** quando a inscrição mais antiga
+  passa de `HORAS_LIMITE_INSCRICAO` (48h), com o mesmo desenho da fila da
+  Checagem.
+- **O Dia 0 abre por link de convite** (abaixo).
+
+### O convite do Dia 0
+
+`link_convite()` (em `aulas-comum.php`) monta `/aulas?convite=<token>`, que
+libera **só o Dia 0** para quem ainda não tem conta. A coordenação copia o link
+na tela `/painel/aulas`.
+
+O token é **derivado do segredo do site**, não guardado: `hash_hmac` de uma
+frase fixa com `segredo()`. Não cria arquivo, não some num deploy e não dá para
+adivinhar. Apagar `dados/segredo.php` invalida todos os convites de uma vez —
+e, de quebra, zera os contadores do teto de envios, o que é inofensivo.
+
+> **A regra de ouro continua valendo:** o conteúdo sai só pelo `api/aulas.php`,
+> e nenhuma linha do manual entra no bundle. O convidado recebe um **recorte**
+> do currículo pela rede, nunca uma cópia local. O POST de progresso continua
+> exigindo login — sem conta não há onde gravar.
+
+### Conferência de origem
+
+`origem_confere()` (em `sessao.php`) é a única cópia da checagem que a
+inscrição, a presença e as aulas faziam cada uma por si. **Ela tira a porta dos
+dois lados antes de comparar:** `parse_url` devolve host sem porta e
+`HTTP_HOST` a traz quando não é a padrão, então comparar cru reprova todo envio
+em porta não-padrão. Em produção isso nunca aparece (443 é implícita) — e é por
+isso que só seria descoberto tarde.
 
 ### De onde a pessoa veio (`origem`)
 

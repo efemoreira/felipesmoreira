@@ -71,6 +71,15 @@ const links: LinkCard[] = [
     internal: true,
   },
   {
+    icon: "users",
+    title: "O que dá pra fazer",
+    subtitle: "As 12 funções da militância",
+    description:
+      "O que cada função entrega e quanto tempo pede — de Olheiro a Recepção — antes de você decidir",
+    href: "/funcoes",
+    internal: true,
+  },
+  {
     icon: "flag",
     title: "Quero ajudar",
     subtitle: "Escolha sua função na militância",

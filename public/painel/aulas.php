@@ -117,6 +117,24 @@ abrir_pagina('Aulas em vídeo');
 
   <?php recado($erro, $ok); ?>
 
+  <details class="decidir" style="margin-bottom:20px">
+    <summary class="btn">Link do Dia 0 para quem ainda não tem acesso</summary>
+    <div class="decidir-corpo">
+      <p class="dica" style="margin:0 0 10px">
+        Mande para quem acabou de se inscrever. Abre <strong>só o Dia 0</strong> — as regras que
+        valem para todo mundo — sem conta e sem gravar progresso. O resto da formação continua
+        exigindo login, e o texto nunca sai do painel.
+      </p>
+      <p class="provisoria" style="word-break:break-all"><?= h(link_convite()) ?></p>
+      <p class="dica" style="margin:10px 0 0">
+        O link é o mesmo sempre e não vence. Se algum dia ele circular longe demais, apague
+        <code>dados/segredo.php</code> no hPanel: o painel gera outro sozinho e todos os convites
+        antigos param de valer de uma vez. Isso também zera a contagem do teto de envios do
+        formulário público — não quebra nada, só recomeça do zero.
+      </p>
+    </div>
+  </details>
+
   <p class="dica">
     <?= $total ?> aulas · <?= $comVideo ?> com vídeo · <?= $publicadas ?> publicadas.
   </p>

@@ -11,6 +11,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE}`, lastModified: now, changeFrequency: "weekly", priority: 1 },
     { url: `${BASE}/a-missao`, lastModified: now, changeFrequency: "monthly", priority: 0.95 },
     { url: `${BASE}/propostas`, lastModified: now, changeFrequency: "monthly", priority: 0.95 },
+    { url: `${BASE}/funcoes`, lastModified: now, changeFrequency: "monthly", priority: 0.85 },
     { url: `${BASE}/quero-ajudar`, lastModified: now, changeFrequency: "monthly", priority: 0.9 },
     { url: `${BASE}/programacao`, lastModified: now, changeFrequency: "weekly", priority: 0.9 },
     { url: `${BASE}/herois-do-ceara`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
