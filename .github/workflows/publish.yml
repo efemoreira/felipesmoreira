@@ -31,13 +31,21 @@ jobs:
       - name: Criar .htaccess (SPA + SEO headers)
         run: |
           cat > out/.htaccess <<'HTACCESS'
+          # Sem barra automática no fim: uma rota como /propostas tem o arquivo
+          # propostas.html E a pasta propostas/ (que guarda o opengraph-image). Com o
+          # DirectorySlash ligado, o mod_dir devolve 301 para /propostas/ antes de a
+          # página ser servida — e /propostas/ não tem índice, então dá 404.
+          # Listagem de pasta nunca é desejada aqui, então desligar é seguro; o
+          # -Indexes garante 403 em vez de listar se alguma escapar.
+          DirectorySlash Off
+          Options -Indexes
           RewriteEngine On
           RewriteBase /
           # Página 404 customizada
           ErrorDocument 404 /404.html
-          # Se o arquivo ou diretório existe, serve normalmente
-          RewriteCond %{REQUEST_FILENAME} -f [OR]
-          RewriteCond %{REQUEST_FILENAME} -d
+          # Arquivo que existe, serve direto. Pasta NÃO entra aqui de propósito —
+          # ver a regra do .html mais abaixo.
+          RewriteCond %{REQUEST_FILENAME} -f
           RewriteRule ^ - [L]
           # Painel: as URLs limpas caem no PHP, que confere a sessão. O estúdio é
           # o único cujo HTML existe no build — e ele nunca é servido cru.
@@ -50,8 +58,19 @@ jobs:
           RewriteRule ^painel/inscricoes/?$ /painel/inscricoes.php [L]
           RewriteRule ^painel/usuarios/?$ /painel/usuarios.php [L]
           RewriteRule ^painel/conta/?$ /painel/conta.php [L]
-          # Redireciona /rota para /rota.html
-          RewriteRule ^([^/]+)$ $1.html [L]
+          # /rota -> /rota.html, e o .html GANHA de uma pasta de mesmo nome.
+          #
+          # Isto não é detalhe: rota com imagem de compartilhamento própria
+          # (app/propostas/opengraph-image.tsx) faz o Next gerar TANTO o
+          # propostas.html QUANTO a pasta propostas/. Se a pasta ganhasse, o mod_dir
+          # redirecionaria /propostas para /propostas/ — que não tem índice — e a
+          # página caía em 404. Por isso a condição lá em cima só olha -f, e a de
+          # pasta vem depois desta regra.
+          RewriteCond %{REQUEST_FILENAME}.html -f
+          RewriteRule ^(.+?)/?$ $1.html [L]
+          # Pasta de verdade (ex: /modelos/wasm/) serve normalmente
+          RewriteCond %{REQUEST_FILENAME} -d
+          RewriteRule ^ - [L]
           # Redireciona tudo que não existir para index.html (SPA fallback)
           RewriteRule ^ index.html [QSA,L]
 
@@ -85,8 +104,9 @@ jobs:
             ExpiresActive On
             ExpiresByType image/png "access plus 1 year"
             ExpiresByType image/jpeg "access plus 1 year"
+            ExpiresByType image/webp "access plus 1 day"
             ExpiresByType image/svg+xml "access plus 1 year"
-            ExpiresByType image/x-icon "access plus 1 year"
+            ExpiresByType image/x-icon "access plus 1 day"
             ExpiresByType text/css "access plus 1 month"
             ExpiresByType application/javascript "access plus 1 month"
             ExpiresByType font/woff2 "access plus 1 year"
@@ -94,10 +114,53 @@ jobs:
             ExpiresByType text/plain "access plus 1 day"
           </IfModule>
 
-          # Assets versionados do Next (_next/static) — imutáveis
+          # ===== Cache: imutável só para quem tem hash no nome =====
+          # O <FilesMatch> casa pelo NOME do arquivo, em qualquer pasta. A regra
+          # antiga dizia "assets versionados do Next" no comentário mas valia
+          # para a raiz também — e /favicon.ico não tem hash. Resultado: quem
+          # visitou o site com o ícone antigo continuava vendo o antigo por um
+          # ANO, porque `immutable` proíbe o navegador de revalidar, inclusive
+          # na recarga forçada.
+          #
+          # Imutável agora é só onde o nome muda quando o conteúdo muda:
+          #   /_next/static/  — o Next põe hash em tudo
+          #   /modelos/       — wasm e modelo do recorte, 28 MB de terceiros
+          #                     que nunca mudam sozinhos
+          # O resto (favicon, ícones, /image) fica com um dia: troca aparece
+          # rápido e ainda assim não é baixado a cada visita.
+          <IfModule mod_setenvif.c>
+            SetEnvIf Request_URI "^/_next/static/" COM_HASH
+            SetEnvIf Request_URI "^/modelos/"      COM_HASH
+          </IfModule>
           <IfModule mod_headers.c>
-            <FilesMatch "\.(?:js|css|woff2|png|jpg|jpeg|svg|ico|wasm|tflite)$">
-              Header set Cache-Control "public, max-age=31536000, immutable"
+            <FilesMatch "\.(?:js|css|woff2|png|jpg|jpeg|webp|svg|ico|wasm|tflite)$">
+              Header set Cache-Control "public, max-age=31536000, immutable" env=COM_HASH
+              Header set Cache-Control "public, max-age=86400" env=!COM_HASH
+            </FilesMatch>
+          </IfModule>
+
+          # ===== HTML: guarda, mas confere sempre =====
+          # Sem isto o HTML sai SEM Cache-Control nenhum, e o navegador aplica cache
+          # heurístico por conta própria (costuma ser 10% do tempo desde o
+          # Last-Modified). Numa campanha que publica atualização, isso serve a
+          # versão de ontem sem que ninguém peça.
+          #
+          # `no-cache` NÃO é `no-store`: o navegador pode guardar a cópia, só é
+          # obrigado a conferir antes de usar. Como o Apache já manda ETag e
+          # Last-Modified, a conferência volta 304 sem corpo — barato e sempre atual.
+          #
+          # Os metadados sem extensão (opengraph-image e companhia) caíam no
+          # `ExpiresByType image/png` e ganhavam UM ANO. A URL no HTML leva hash, mas
+          # um acesso direto guardaria o cartão velho pelo mesmo ano do favicon.
+          <IfModule mod_headers.c>
+            <FilesMatch "\.html$">
+              Header set Cache-Control "no-cache"
+            </FilesMatch>
+            <FilesMatch "^(opengraph-image|twitter-image)$">
+              Header set Cache-Control "public, max-age=86400"
+            </FilesMatch>
+            <FilesMatch "\.webmanifest$">
+              Header set Cache-Control "public, max-age=86400"
             </FilesMatch>
           </IfModule>
           HTACCESS

@@ -4,7 +4,10 @@ import Link from "next/link";
 import { Icon } from "@/components/icons";
 import { C, FONT_ALFA, FONT_ELITE, FONT_BITTER } from "@/lib/theme";
 import { canvasParaBlob } from "@/lib/cordelCanvas";
-import { pecas, slugDe, type Peca } from "./data";
+import { faseEm } from "@/lib/eleicao";
+import { RECADOS } from "./calendario";
+import { comoPeca, obterPecasDoPainel } from "@/lib/api/kit";
+import { pecas as pecasFixas, slugDe, type Peca } from "./data";
 import { FORMATOS, gerarCartao, nomeArquivo, type Formato } from "./cartao";
 
 const SITE = "https://felipesmoreira.com";
@@ -28,6 +31,28 @@ export default function KitClient() {
   const [copiado, setCopiado] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
   const urlPreview = useRef<Map<string, string>>(new Map());
+
+  /* A fase da eleição é lida no navegador, nunca no build: num export estático
+     a data de compilação ficaria congelada, e no dia 4 de outubro o kit ainda
+     estaria dizendo o que dizia em agosto. Começa em null para o HTML gerado e
+     o primeiro render do cliente baterem. */
+  const [recado, setRecado] = useState<(typeof RECADOS)[keyof typeof RECADOS]>(null);
+  useEffect(() => {
+    setRecado(RECADOS[faseEm()]);
+  }, []);
+
+  /* As peças da semana, criadas pela coordenação na tela de Produção. Vêm
+     **antes** das fixas: o fato de hoje é o que rende agora, e as do plano
+     seguem valendo embaixo. Se a rede falhar, a página continua com as fixas —
+     o mutirão não pode parar por causa de um endpoint fora do ar. */
+  const [pecasDoPainel, setPecasDoPainel] = useState<Peca[]>([]);
+  useEffect(() => {
+    obterPecasDoPainel()
+      .then((lista) => setPecasDoPainel(lista.map(comoPeca)))
+      .catch(() => { /* segue com as peças fixas */ });
+  }, []);
+
+  const pecas = useMemo(() => [...pecasDoPainel, ...pecasFixas], [pecasDoPainel]);
 
   /* O nome fica no aparelho, não no servidor: é o próprio militante dizendo
      quem é para receber o crédito. Nada disso sai do navegador até ele
@@ -162,10 +187,55 @@ export default function KitClient() {
             Kit de compartilhamento
           </h1>
           <p style={{ fontSize: 16.5, lineHeight: 1.6, margin: 0, maxWidth: "58ch", opacity: 0.92 }}>
-            Escolha a peça, pegue a arte e o texto pronto, e publique. Toda peça leva o número com
-            a página do plano — a gente não espalha o que não dá pra conferir.
+            {recado?.bloqueiaPecas ? (
+              <>
+                As peças continuam aqui para consulta — cada número com a página do plano. O que
+                muda hoje está no aviso abaixo.
+              </>
+            ) : (
+              <>
+                Escolha a peça, pegue a arte e o texto pronto, e publique. Toda peça leva o número
+                com a página do plano — a gente não espalha o que não dá pra conferir.
+              </>
+            )}
           </p>
         </header>
+
+        {recado && (
+          <section
+            role={recado.trava ? "alert" : "status"}
+            style={{
+              border: `3px solid ${recado.trava ? C.erroBorda : C.gold}`,
+              background: recado.trava ? "rgba(194,84,63,.14)" : "rgba(255,203,5,.08)",
+              padding: "18px 18px",
+              marginBottom: 28,
+              display: "flex",
+              flexDirection: "column",
+              gap: 10,
+            }}
+          >
+            <p
+              style={{
+                ...kicker,
+                margin: 0,
+                color: recado.trava ? C.erro : C.gold2,
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                opacity: 1,
+              }}
+            >
+              <Icon name={recado.icone} size={15} />
+              {recado.fase}
+            </p>
+            <p style={{ margin: 0, fontFamily: FONT_ALFA, fontSize: 19, lineHeight: 1.2 }}>
+              {recado.titulo}
+            </p>
+            <p style={{ margin: 0, fontSize: 15.5, lineHeight: 1.6, opacity: 0.92 }}>
+              {recado.texto}
+            </p>
+          </section>
+        )}
 
         {/* ===== o link de indicação ===== */}
         <section
@@ -215,7 +285,12 @@ export default function KitClient() {
         </section>
 
         {/* ===== formato ===== */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 22, flexWrap: "wrap" }}>
+        <div
+          style={{
+            display: recado?.bloqueiaPecas ? "none" : "flex",
+            alignItems: "center", gap: 10, marginBottom: 22, flexWrap: "wrap",
+          }}
+        >
           <span style={{ ...kicker, margin: 0 }}>Formato</span>
           {(Object.keys(FORMATOS) as Formato[]).map((f) => (
             <button
@@ -357,16 +432,26 @@ export default function KitClient() {
                 </pre>
               </details>
 
-              <div style={{ display: "flex", gap: 9, flexWrap: "wrap" }}>
-                <button type="button" onClick={() => baixar(p)} disabled={gerando === p.id} style={botaoOuro}>
-                  <Icon name={gerando === p.id ? "clock" : "broadcast"} size={17} />
-                  {gerando === p.id ? "Montando…" : "Pegar a arte"}
-                </button>
-                <button type="button" onClick={() => copiar(p)} style={botaoVazado}>
-                  <Icon name={copiado === p.id ? "star" : "book"} size={17} />
-                  {copiado === p.id ? "Copiado!" : "Copiar o texto"}
-                </button>
-              </div>
+              {/* Na fase que bloqueia, some a arte E o texto. Deixar "copiar"
+                  ao lado de um aviso dizendo "hoje não se publica" é mensagem
+                  contraditória — e a peça continua legível acima, para quem só
+                  quer conferir o número. */}
+              {recado?.bloqueiaPecas ? (
+                <p style={{ margin: 0, fontFamily: FONT_ELITE, fontSize: 12, letterSpacing: 1.2, textTransform: "uppercase", color: C.gold2, opacity: 0.8 }}>
+                  Peça fechada hoje
+                </p>
+              ) : (
+                <div style={{ display: "flex", gap: 9, flexWrap: "wrap" }}>
+                  <button type="button" onClick={() => baixar(p)} disabled={gerando === p.id} style={botaoOuro}>
+                    <Icon name={gerando === p.id ? "clock" : "broadcast"} size={17} />
+                    {gerando === p.id ? "Montando…" : "Pegar a arte"}
+                  </button>
+                  <button type="button" onClick={() => copiar(p)} style={botaoVazado}>
+                    <Icon name={copiado === p.id ? "star" : "book"} size={17} />
+                    {copiado === p.id ? "Copiado!" : "Copiar o texto"}
+                  </button>
+                </div>
+              )}
             </article>
           ))}
         </div>

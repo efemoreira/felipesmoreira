@@ -1,8 +1,8 @@
-"use client";
 import React from "react";
 import Link from "next/link";
 import { Icon } from "@/components/icons";
 import { C, FONT_ALFA, FONT_ELITE, FONT_BITTER } from "@/lib/theme";
+import { FaixaEleicao } from "@/components/FaixaEleicao";
 import { CARGO, CHAMADA, CHAPA, capitulos, porQueSeguranca } from "./data";
 
 const HATCH =
@@ -18,7 +18,7 @@ const rotulo: React.CSSProperties = {
   margin: "0 0 8px",
 };
 
-export default function MissaoClient() {
+export default function Missao() {
   return (
     <div
       style={{
@@ -107,7 +107,10 @@ export default function MissaoClient() {
             A Missão
           </h1>
 
-          <p style={{ fontSize: 17.5, lineHeight: 1.55, margin: 0, maxWidth: "58ch" }}>{CHAMADA}</p>
+          <p style={{ fontSize: 17.5, lineHeight: 1.55, margin: "0 0 22px", maxWidth: "58ch" }}>
+            {CHAMADA}
+          </p>
+          <FaixaEleicao />
         </header>
 
         {/* ===== a trajetória ===== */}

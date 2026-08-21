@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import {
-  Geist,
   Geist_Mono,
   Alfa_Slab_One,
   Special_Elite,
@@ -8,11 +7,9 @@ import {
 } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
+/* Só a mono: o `font-mono` do Estúdio depende dela. A Geist Sans estava
+   declarada e nenhum componente a usava — não chegava a baixar, mas convidava
+   a usar uma família que não é a do site. */
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
@@ -175,7 +172,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${alfaSlab.variable} ${specialElite.variable} ${bitter.variable} antialiased`}
+        className={`${geistMono.variable} ${alfaSlab.variable} ${specialElite.variable} ${bitter.variable} antialiased`}
       >
         {children}
       </body>

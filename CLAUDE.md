@@ -170,6 +170,62 @@ alcance existe e ninguém sabe de quem foi.
 > `inscricoes-comum.php` **têm de concordar**. Se um normalizar diferente do
 > outro, o mesmo militante vira duas origens no relatório.
 
+### O calendário da eleição
+
+`src/lib/eleicao.ts` é a **fonte única** das datas: a contagem regressiva da
+faixa pública e as travas do kit saem dela. Data repetida em dois arquivos é
+data que diverge na terceira alteração.
+
+**Tudo é calculado no navegador, nunca no build.** Num export estático a data de
+compilação congelaria — no dia 4 de outubro o kit ainda estaria dizendo o que
+dizia em agosto, até alguém publicar de novo. Por isso os componentes nascem
+vazios no HTML e se preenchem depois; é também o que evita divergência entre o
+que o servidor gerou e o que o cliente desenha.
+
+As fases: `campanha` → `reta-final` (últimas 48h, acaba o impulsionamento pago)
+→ `votacao` (o kit **fecha as peças**: publicar conteúdo novo de propaganda na
+internet é proibido nesse dia) → `depois`. Quem escreve o recado de cada fase é
+`src/features/kit/calendario.ts`.
+
+> **A trava mora onde a ação acontece.** Não adianta a regra estar num documento
+> se quem vai publicar está no kit, com o botão na mão — é a mesma lógica da
+> Parte 0 do manual.
+
+### Em que número votar
+
+`CHAPA.numero` em `src/features/missao/data.ts` guarda o número do candidato a
+**governador** (hoje **14**), porque é nele que se vota. Enquanto estiver vazio,
+a faixa não fala de voto — é melhor não dizer nada do que deixar um buraco onde
+o eleitor espera o número.
+
+**O número é desenhado já no HTML; só a contagem de dias espera o navegador.**
+A distinção não é detalhe: o número é a conversão final da campanha, e se ele só
+aparecesse depois do JavaScript rodar, o buscador nunca o leria. Já a contagem
+*precisa* ser do navegador, senão congela na data em que o site foi publicado.
+O primeiro render (o que vira HTML) traz data e número; o efeito só acrescenta
+a linha da contagem — servidor e cliente desenham igual na primeira passada, que
+é o que evita erro de hidratação.
+
+**A faixa é tinta com ouro, não ouro cheio.** No site inteiro o ouro cheio
+significa "aperte aqui", e ela fica logo acima do cartão de entrar no grupo, que
+é ouro. Dois blocos dourados empilhados disputam o mesmo clique — e a faixa não
+é botão, é carimbo.
+
+### Peça nova sem deploy
+
+As oito peças fixas do kit vêm do plano e não envelhecem, mas o fato da semana
+não viraria peça sem um build. `public/painel/kit-comum.php` +
+`api/kit.php` resolvem: a coordenação cria a peça pela tela de **Produção**
+(dentro da permissão que ela já tem — nenhuma área nova, nenhum `RewriteRule`
+novo no `publish.yml`), e o site mescla as publicadas **antes** das fixas.
+
+- **Peça sem fonte não é aceita.** É a Parte 0 aplicada à ferramenta: peça
+  circula muito mais longe que um post.
+- **`destino` só aceita caminho interno.** URL externa vira `/propostas` — um
+  campo de link livre é convite a link colado errado.
+- Se a rede falhar, a página continua com as fixas: o mutirão não para por causa
+  de um endpoint fora do ar.
+
 **Os traços do cordel no canvas moram em `src/lib/cordelCanvas.ts`** — `escrever`,
 `quebrar`, `bloco`, `pilula`, `icone`. Nasceram dentro do `poster.ts` da
 programação e mudaram de casa quando o kit passou a desenhar as mesmas peças:
@@ -468,7 +524,10 @@ eleitoral.
 
 - Rotas e conteúdo: **português** (`/programacao`, `/herois-do-ceara`,
   `/aulas`), consistente com o público do site. Nos componentes, o sufixo
-  `Client` (`ProgramacaoClient.tsx`) marca onde `"use client"` começa.
+  `Client` (`ProgramacaoClient.tsx`) marca onde `"use client"` começa — e por
+  isso **página sem hook não leva o sufixo** (`Missao.tsx`, `Funcoes.tsx`): elas
+  são documentos e renderizam no servidor. Ao tirar o `"use client"` de um
+  arquivo, renomeie junto, senão o nome passa a mentir.
 - Identificadores de código (funções, tipos, arquivos utilitários): também em
   português, seguindo o que já existe (`sessao.ts`, `dados.ts`, `tipos.ts`).
 
@@ -476,6 +535,31 @@ eleitoral.
 
 - `next.config.ts` (`output: "export"`) e `.github/workflows/publish.yml` —
   mudar isso muda o modelo de hospedagem inteiro.
+
+  > **O `.htaccess` que o `publish.yml` gera tem duas regras que parecem
+  > detalhe e não são.** Ambas foram descobertas testando o build com Apache
+  > de verdade (`httpd -f`), não lendo o arquivo:
+  >
+  > 1. **`DirectorySlash Off` + a regra do `.html` antes da de pasta.** Rota
+  >    com imagem de compartilhamento própria (`app/propostas/opengraph-image.tsx`)
+  >    faz o Next gerar **o `propostas.html` E a pasta `propostas/`**. Sem isso o
+  >    mod_dir responde 301 para `/propostas/`, que não tem índice, e a página
+  >    cai em 404. Aconteceu com quatro rotas de uma vez.
+  > 2. **`immutable` só onde o nome carrega hash** (`/_next/static/`,
+  >    `/modelos/`). O `/favicon.ico` não tem hash: com cache de um ano e
+  >    `immutable`, quem visitou o site com o ícone antigo continuava vendo o
+  >    antigo por um ano — o navegador nem revalida, nem na recarga forçada.
+  >
+  > 3. **HTML com `no-cache`.** Sem isso ele saía sem `Cache-Control` nenhum e
+  >    o navegador aplicava cache heurístico próprio — servindo a versão de
+  >    ontem numa campanha que publica todo dia. `no-cache` não é `no-store`:
+  >    o navegador guarda a cópia e só é obrigado a conferir antes de usar, o
+  >    que devolve **304 sem corpo** quando nada mudou.
+  >
+  > Ao mexer no `.htaccess`, teste servindo o `out/` com Apache local
+  > (`httpd -f`). O `python -m http.server` e o `php -S` **ignoram
+  > `.htaccess`** e não pegam nada disso — foi por isso que a quebra das quatro
+  > rotas passou por todos os testes anteriores.
 - `conceito.html` (protótipo solto na raiz) — parece artefato que valeria
   limpar, mas não foi removido; confirme com o Felipe antes. (A pasta `out/`
   estava listada aqui como versionada: não está, e nunca esteve — é build
@@ -495,6 +579,11 @@ comandos exatos para refazer cada um.
 > Antes de acrescentar imagem em `public/`, confira o peso — a maioria chega de
 > celular, por link de WhatsApp.
 
-Os ícones do PWA **não saem da foto**: saem da marca das onças em
-`src/app/icon.png`. O `maskable` precisa do conteúdo em ~78% da moldura, senão
-o Android corta as orelhas ao aplicar a máscara redonda.
+**A foto é da home; a marca é dos ícones.** O retrato aparece só no cabeçalho
+da home, no `/a-missao` e no `Person.image` do schema. Todo ícone — favicon,
+ícone do Android (manifest), ícone do iOS (`apple-icon.png`) — sai da marca das
+onças em `src/app/icon.png`. Eram três desenhos diferentes antes: o iOS chegou a
+ter um monograma "FM" próprio, que já não existe.
+
+O `maskable` precisa do conteúdo em ~78% da moldura, senão o Android corta as
+orelhas ao aplicar a máscara redonda.

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import MissaoClient from "@/features/missao/MissaoClient";
+import Missao from "@/features/missao/Missao";
 
 export const metadata: Metadata = {
   title: "A Missão",
@@ -14,5 +14,5 @@ export const metadata: Metadata = {
 };
 
 export default function AMissaoPage() {
-  return <MissaoClient />;
+  return <Missao />;
 }

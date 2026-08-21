@@ -17,6 +17,18 @@ export const CHAPA = {
   vice: "Felipe Moreira",
   partido: "Missão",
   plano: "Retomar para Reconstruir",
+
+  /**
+   * O número de urna do candidato a **governador** — é nele que se vota, porque
+   * o vice não tem número próprio.
+   *
+   * ⚠️ **Preencha aqui e só aqui.** Enquanto estiver vazio, a faixa de votação
+   * não aparece em lugar nenhum do site: é melhor não dizer nada do que exibir
+   * um número errado ou um espaço em branco onde o eleitor espera o número.
+   * Confira contra o registro no TSE antes de escrever — número trocado é o
+   * erro mais caro que este site pode cometer.
+   */
+  numero: "14",
 };
 
 export const CHAMADA =

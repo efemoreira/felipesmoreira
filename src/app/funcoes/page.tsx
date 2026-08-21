@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import FuncoesClient from "@/features/funcoes/FuncoesClient";
+import Funcoes from "@/features/funcoes/Funcoes";
 
 export const metadata: Metadata = {
   title: "O que dá pra fazer na militância",
@@ -14,5 +14,5 @@ export const metadata: Metadata = {
 };
 
 export default function FuncoesPage() {
-  return <FuncoesClient />;
+  return <Funcoes />;
 }

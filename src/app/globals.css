@@ -1,23 +1,16 @@
 @import "tailwindcss";
 
+/* A paleta cinza do template do Next saiu daqui: nenhum componente a usava.
+   A identidade do site vem de `src/lib/theme.ts` (C, FONT_ALFA/ELITE/BITTER)
+   aplicada por inline style, e a do painel vem dos tokens do `painel.css`.
+   Manter uma segunda paleta declarada convidava a usá-la por engano. */
 :root {
   --background: #ffffff;
   --foreground: #171717;
-
-  --color-text-primary: #171717;
-  --color-text-secondary: #6b7280;
-  --color-text-tertiary: #9ca3af;
-  --color-background-primary: #ffffff;
-  --color-background-secondary: #f3f4f6;
-  --color-border-tertiary: #e5e7eb;
-  --border-radius-lg: 12px;
-  --border-radius-md: 6px;
 }
 
+/* `font-mono` é a única classe do Tailwind que o Estúdio usa daqui. */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
@@ -25,13 +18,6 @@
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
-
-    --color-text-primary: #ededed;
-    --color-text-secondary: #a0a0a0;
-    --color-text-tertiary: #6b7280;
-    --color-background-primary: #0a0a0a;
-    --color-background-secondary: #1a1a1a;
-    --color-border-tertiary: #2a2a2a;
   }
 }
 

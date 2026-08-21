@@ -3,6 +3,7 @@ import React from "react";
 import Link from "next/link";
 import { Icon, IconName } from "@/components/icons";
 import { C, FONT_ALFA, FONT_ELITE, FONT_BITTER } from "@/lib/theme";
+import { FaixaEleicao } from "@/components/FaixaEleicao";
 
 const profile = {
   name: "Felipe Moreira",
@@ -244,6 +245,12 @@ const Home: React.FC = () => {
           </p>
         </header>
 
+        {/* A data da eleição vem antes dos cartões: é a informação mais
+            perecível da página e a única com prazo. */}
+        <div style={{ marginBottom: 20 }}>
+          <FaixaEleicao />
+        </div>
+
         {/* Cartões de links */}
         <nav
           style={{ display: "flex", flexDirection: "column", gap: 14 }}
@@ -261,9 +268,16 @@ const Home: React.FC = () => {
               transition: "transform .12s ease, box-shadow .12s ease",
             };
             return l.internal ? (
+              /* `prefetch={false}`: por padrão o Next baixa o chunk e o payload
+                 de todo <Link> visível. Com sete cartões isso são ~239 KB de
+                 rotas que o visitante ainda não pediu — medido no 4G lento, mais
+                 de um segundo, e dado do bolso de quem está no pré-pago.
+                 Num link-in-bio a maioria abre uma página e sai; as rotas são
+                 HTML estático e carregam rápido quando alguém realmente clica. */
               <Link
                 key={l.title}
                 href={l.href}
+                prefetch={false}
                 className="cordel-card"
                 style={cardStyle}
                 title={l.description}

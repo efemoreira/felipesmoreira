@@ -1,4 +1,3 @@
-"use client";
 import React from "react";
 import Link from "next/link";
 import { Icon, type IconName } from "@/components/icons";
@@ -145,7 +144,7 @@ const Ficha: React.FC<{ f: Funcao }> = ({ f }) => (
   </article>
 );
 
-export default function FuncoesClient() {
+export default function Funcoes() {
   return (
     <div
       style={{

@@ -12,6 +12,7 @@ import {
   TESE,
   compromissos,
 } from "./data";
+import { FaixaEleicao } from "@/components/FaixaEleicao";
 import type { Compromisso } from "./tipos";
 
 /* Hachura de xilogravura sobre o papel — mesma textura de /plano e /herois. */
@@ -533,6 +534,10 @@ export default function PropostasClient() {
             ))}
           </div>
         </section>
+
+        <div style={{ marginTop: 34 }}>
+          <FaixaEleicao />
+        </div>
 
         {/* ===== chamada ===== */}
         <section
