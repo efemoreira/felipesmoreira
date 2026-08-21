@@ -250,6 +250,78 @@ abrir_pagina('Inscrições');
     </div>
   <?php endif; ?>
 
+  <?php
+    /* O placar da multiplicação. Fica recolhido porque não é trabalho a fazer:
+       a fila de decisão é que tem que estar aberta ao abrir a tela. */
+    ['placar' => $placar, 'semOrigem' => $semOrigem] = placar_de_origens($todas);
+  ?>
+  <?php if ($placar !== []): ?>
+    <details class="decidir" style="margin-bottom:22px">
+      <summary class="btn">Quem está trazendo gente (<?= count($placar) ?>)</summary>
+      <div class="decidir-corpo">
+        <p class="dica" style="margin:0 0 12px">
+          De onde vieram as inscrições, pelo <code>?de=</code> do link que a pessoa abriu.
+          Quem compartilha pelo <a href="/kit" target="_blank">kit</a> aparece aqui pelo nome.
+        </p>
+        <table class="tabela">
+          <thead>
+            <tr><th>Veio por</th><th>Inscrições</th><th>Já aprovadas</th></tr>
+          </thead>
+          <tbody>
+            <?php foreach ($placar as $linha): ?>
+              <tr>
+                <td><span class="selo"><?= h($linha['origem']) ?></span></td>
+                <td><?= (int) $linha['total'] ?></td>
+                <td><?= (int) $linha['aprovadas'] ?></td>
+              </tr>
+            <?php endforeach; ?>
+          </tbody>
+        </table>
+        <?php if ($semOrigem > 0): ?>
+          <p class="dica" style="margin:12px 0 0">
+            Outras <strong><?= (int) $semOrigem ?></strong> chegaram pela URL limpa, sem link de
+            ninguém.
+          </p>
+        <?php endif; ?>
+      </div>
+    </details>
+  <?php endif; ?>
+
+  <?php $regioes = militancia_por_regiao($todas); ?>
+  <?php if ($regioes !== []): ?>
+    <details class="decidir" style="margin-bottom:22px">
+      <summary class="btn">Onde a militância mora (<?= count($regioes) ?>)</summary>
+      <div class="decidir-corpo">
+        <p class="dica" style="margin:0 0 12px">
+          Só quem já foi aprovado. É por aqui que dá pra ver onde já tem gente para um time
+          próprio — e quem está sozinho na cidade dele.
+        </p>
+        <table class="tabela">
+          <thead>
+            <tr><th>Cidade</th><th>Gente</th><th>Bairros</th></tr>
+          </thead>
+          <tbody>
+            <?php foreach ($regioes as $r): ?>
+              <tr>
+                <td><strong><?= h($r['cidade']) ?></strong></td>
+                <td><?= (int) $r['total'] ?></td>
+                <td>
+                  <?php if ($r['bairros'] === []): ?>
+                    <span class="selo selo-cinza">sem bairro informado</span>
+                  <?php else: ?>
+                    <?php foreach ($r['bairros'] as $b): ?>
+                      <span class="selo"><?= h($b['nome']) ?> · <?= (int) $b['total'] ?></span>
+                    <?php endforeach; ?>
+                  <?php endif; ?>
+                </td>
+              </tr>
+            <?php endforeach; ?>
+          </tbody>
+        </table>
+      </div>
+    </details>
+  <?php endif; ?>
+
   <fieldset>
     <legend>Esperando decisão (<?= count($novas) ?>)</legend>
 

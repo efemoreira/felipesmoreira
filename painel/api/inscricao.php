@@ -39,13 +39,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
 }
 
 /* ---- só do nosso site ---- */
-$origem = (string) ($_SERVER['HTTP_ORIGIN'] ?? '');
-if ($origem !== '') {
-    $anfitriao = parse_url($origem, PHP_URL_HOST);
-    $meu = (string) ($_SERVER['HTTP_HOST'] ?? '');
-    if (!is_string($anfitriao) || strcasecmp($anfitriao, $meu) !== 0) {
-        recusar('Envio bloqueado.', 403);
-    }
+if (!origem_confere()) {
+    recusar('Envio bloqueado.', 403);
 }
 
 $bruto = json_decode((string) file_get_contents('php://input'), true);

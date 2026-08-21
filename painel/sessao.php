@@ -22,6 +22,7 @@ const ARQ_USUARIOS   = PASTA_DADOS . '/usuarios.php';
 // .php, e não .json: o arquivo tem os logins de quem errou senha, e em /dados
 // só arquivo .php fica fora do alcance da web.
 const ARQ_TENTATIVAS = PASTA_DADOS . '/tentativas.php';
+const ARQ_SEGREDO    = PASTA_DADOS . '/segredo.php';
 /** Versão antiga do arquivo acima, legível pela web — apagada ao passar por aqui. */
 const ARQ_TENTATIVAS_ANTIGO = PASTA_DADOS . '/tentativas.json';
 const PASTA_BACKUP   = PASTA_DADOS . '/backups';
@@ -149,6 +150,73 @@ function limpar_texto($v, int $max): string
 function so_digitos($v): string
 {
     return preg_replace('/\D/', '', is_scalar($v) ? (string) $v : '') ?? '';
+}
+
+/**
+ * O envio veio mesmo do nosso site?
+ *
+ * `Origin` ausente não reprova: navegador antigo e algumas requisições de mesma
+ * origem não mandam o cabeçalho, e recusar por ausência derrubaria gente de
+ * verdade. Quando ele vem, tem que bater com o nosso host.
+ *
+ * **A porta sai dos dois lados antes de comparar.** `parse_url` devolve o host
+ * sem porta, enquanto `HTTP_HOST` a traz quando não é a padrão — comparar os
+ * dois crus reprova todo envio em qualquer porta que não seja 80/443. Em
+ * produção isso nunca aparece (443 é implícita), e é justamente por isso que
+ * seria descoberto tarde: o formulário público pararia em silêncio no dia em
+ * que o site subisse atrás de outra porta.
+ *
+ * Mora aqui porque a inscrição, a presença e as aulas faziam a mesma
+ * conferência, cada uma com a sua cópia.
+ */
+function origem_confere(): bool
+{
+    $origem = (string) ($_SERVER['HTTP_ORIGIN'] ?? '');
+    if ($origem === '') {
+        return true;
+    }
+    $dele = parse_url($origem, PHP_URL_HOST);
+    if (!is_string($dele) || $dele === '') {
+        return false;
+    }
+    // tira a porta do nosso host; o IPv6 literal vem entre colchetes
+    $meu = (string) ($_SERVER['HTTP_HOST'] ?? '');
+    $meu = preg_replace('/:\d+$/', '', $meu) ?? $meu;
+    $meu = trim($meu, '[]');
+
+    return strcasecmp($dele, trim($meu, '[]')) === 0;
+}
+
+/**
+ * Segredo do site, criado sozinho na primeira vez.
+ *
+ * Serve para embaralhar o IP antes de guardar — dá para contar quantas vezes
+ * alguém tentou sem manter endereço salvo, que é dado pessoal — e para derivar
+ * o token de convite das aulas.
+ *
+ * Mora aqui, e não no inscricoes-comum.php onde nasceu, porque é segredo do
+ * site inteiro: as aulas precisam dele e não têm por que arrastar junto a
+ * maquinaria das inscrições.
+ */
+function segredo(): string
+{
+    static $memo = null;
+    if ($memo !== null) {
+        return $memo;
+    }
+    if (is_file(ARQ_SEGREDO)) {
+        $v = @include ARQ_SEGREDO;
+        if (is_string($v) && $v !== '') {
+            return $memo = $v;
+        }
+    }
+    preparar_pastas();
+    $memo = bin2hex(random_bytes(16));
+    gravar_atomico(ARQ_SEGREDO, "<?php\nreturn " . var_export($memo, true) . ";\n");
+    if (function_exists('opcache_invalidate')) {
+        @opcache_invalidate(ARQ_SEGREDO, true);
+    }
+    return $memo;
 }
 
 /**

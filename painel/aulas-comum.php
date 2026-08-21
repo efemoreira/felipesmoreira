@@ -23,6 +23,44 @@ require_once __DIR__ . '/aulas-conteudo.php';
 const ARQ_AULAS     = PASTA_DADOS . '/aulas.php';
 const ARQ_PROGRESSO = PASTA_DADOS . '/aulas-progresso.php';
 
+/* ===================== convite do Dia 0 ===================== */
+
+/**
+ * O Dia 0 aberto para quem ainda não tem conta.
+ *
+ * O vão entre se inscrever e ser aprovado é onde mais se perde gente: a pessoa
+ * está no pico de entusiasmo e não tem nada para fazer. O Dia 0 (as regras de
+ * todos, as fases da campanha, o fluxo da fonte) é justamente o que faz ela se
+ * sentir parte antes de a coordenação decidir.
+ *
+ * **Nada disso muda a regra de ouro:** o conteúdo continua saindo só por este
+ * endpoint, e nenhuma linha do manual entra no bundle do Next. O convidado
+ * recebe um recorte do currículo, não uma cópia local.
+ *
+ * O token é derivado do segredo do site, não guardado: não há arquivo novo, ele
+ * não some num deploy e não dá para adivinhar. Trocar o segredo invalida todos
+ * os convites de uma vez, que é o botão de pânico se um link vazar longe demais.
+ */
+const DIA_ABERTO = 'dia-0';
+
+function token_convite(): string
+{
+    return substr(hash_hmac('sha256', 'convite-aulas:' . DIA_ABERTO, segredo()), 0, 24);
+}
+
+/** `hash_equals` porque comparar segredo com `===` vaza tempo. */
+function convite_valido(string $recebido): bool
+{
+    $recebido = trim($recebido);
+    return $recebido !== '' && hash_equals(token_convite(), $recebido);
+}
+
+/** O link que a coordenação manda para quem acabou de se inscrever. */
+function link_convite(): string
+{
+    return 'https://felipesmoreira.com/aulas?convite=' . token_convite();
+}
+
 /* ===================== vídeo de cada aula ===================== */
 
 /**

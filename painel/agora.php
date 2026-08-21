@@ -183,20 +183,32 @@ function tarefas_de(array $u): array
         require_once __DIR__ . '/inscricoes-comum.php';
 
         $novas = 0;
+        $horas = 0;
         foreach (ler_inscricoes() as $i) {
             if ($i['status'] === 'nova') {
                 $novas++;
+                // a mais antiga manda no recado: é ela que está perdendo a pessoa
+                $horas = max($horas, horas_na_fila($i));
             }
         }
         if ($novas > 0) {
+            /* Passou de 48h, o recado sobe para urgente. Não é burocracia de
+               prazo: quem se inscreveu está no pico de entusiasmo no dia em que
+               se inscreveu, e uma fila parada três dias devolve gente fria. */
+            $parada = $horas >= HORAS_LIMITE_INSCRICAO;
+            $dias = (int) floor($horas / 24);
+
             $tarefas[] = [
                 'area'    => 'inscricoes',
                 'icone'   => 'flag',
-                'urgente' => false,
+                'urgente' => $parada,
                 'texto'   => $novas === 1
                     ? '1 pessoa esperando decisão'
                     : "{$novas} pessoas esperando decisão",
-                'porque'  => 'quem se inscreveu ainda não tem acesso nem resposta',
+                'porque'  => $parada
+                    ? "a mais antiga está parada há {$dias} " . ($dias === 1 ? 'dia' : 'dias')
+                        . ' — quem espera demais não volta'
+                    : 'quem se inscreveu ainda não tem acesso nem resposta',
                 'url'     => '/painel/inscricoes.php',
             ];
         }
