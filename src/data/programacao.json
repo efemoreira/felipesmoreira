@@ -3,11 +3,31 @@
   "periodo": "29/07 a 01/08",
   "chamada": "A semana inteira de conteúdo da Missão Ceará",
   "disponivelEm": [
-    { "nome": "YouTube", "icone": "youtube", "url": "https://youtube.com/@moreiramissao" },
-    { "nome": "Instagram", "icone": "instagram", "url": "https://instagram.com/moreiramissao" },
-    { "nome": "Twitch", "icone": "twitch", "url": "https://twitch.tv/moreiramissao" },
-    { "nome": "Kick", "icone": "kick", "url": "https://kick.com/moreiramissao" },
-    { "nome": "TikTok", "icone": "tiktok", "url": "https://tiktok.com/@moreiramissao" }
+    {
+      "nome": "YouTube",
+      "icone": "youtube",
+      "url": "https://youtube.com/@moreiramissao"
+    },
+    {
+      "nome": "Instagram",
+      "icone": "instagram",
+      "url": "https://instagram.com/moreiramissao"
+    },
+    {
+      "nome": "Twitch",
+      "icone": "twitch",
+      "url": "https://twitch.tv/moreiramissao"
+    },
+    {
+      "nome": "Kick",
+      "icone": "kick",
+      "url": "https://kick.com/moreiramissao"
+    },
+    {
+      "nome": "TikTok",
+      "icone": "tiktok",
+      "url": "https://tiktok.com/@moreiramissao"
+    }
   ],
   "programacao": [
     {
@@ -15,6 +35,7 @@
       "titulo": "Sabatina O Povo CBN",
       "subtitulo": "Sabatina com o Delegado Huggo",
       "dia": "Quarta",
+      "inicio": "2026-07-29T10:00-03:00",
       "data": "29/07",
       "hora": "10H",
       "aoVivo": true,
@@ -28,6 +49,7 @@
       "titulo": "Coletiva de Imprensa",
       "subtitulo": "Lançamento dos candidatos da Missão Ceará",
       "dia": "Quarta",
+      "inicio": "2026-07-29T15:00-03:00",
       "data": "29/07",
       "hora": "15H",
       "aoVivo": false,
@@ -41,6 +63,7 @@
       "titulo": "Os impactos das propostas da Missão no Ceará",
       "subtitulo": "Conversando sobre as propostas da Missão no Ceará",
       "dia": "Quarta",
+      "inicio": "2026-07-29T20:00-03:00",
       "data": "29/07",
       "hora": "20H",
       "aoVivo": true,
@@ -54,6 +77,7 @@
       "titulo": "Sem Arrudeio",
       "subtitulo": "Pedro Arthur fala das ações nacionais e locais da Missão",
       "dia": "Quinta",
+      "inicio": "2026-07-30T19:00-03:00",
       "data": "30/07",
       "hora": "19H",
       "aoVivo": true,
@@ -68,6 +92,7 @@
       "titulo": "Fala, Delegas!",
       "subtitulo": "Live semanal com o Delegado Huggo",
       "dia": "Sexta",
+      "inicio": "2026-07-31T18:00-03:00",
       "data": "31/07",
       "hora": "18H",
       "aoVivo": true,
@@ -81,6 +106,7 @@
       "titulo": "Convenção Nacional",
       "subtitulo": "Convenção Nacional da Missão",
       "dia": "Sábado",
+      "inicio": "2026-08-01T17:00-03:00",
       "data": "01/08",
       "hora": "17H",
       "aoVivo": false,

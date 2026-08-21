@@ -78,6 +78,77 @@ function agenda_atual(): array
    precisa dela e não pode incluir este arquivo (que exige área 'agenda'). */
 
 /** Só http(s), caminho interno ou mailto/tel — nada de javascript: no href. */
+/**
+ * O fuso do Ceará. Fixo de propósito: o estado não tem horário de verão, e
+ * gravar o deslocamento junto da data é o que faz o "está ao vivo agora?" dar
+ * a mesma resposta no celular de Fortaleza e no de quem abriu de outro estado.
+ */
+const FUSO_CEARA = '-03:00';
+
+/**
+ * O <input type="datetime-local"> devolve "2026-10-04T19:00" (sem fuso).
+ * Guardamos com o deslocamento para a data virar um instante sem ambiguidade.
+ *
+ * Devolve '' quando não reconhece — item sem horário continua válido, só não
+ * entra na ordenação nem pode ser marcado como ao vivo.
+ */
+function inicio_iso($bruto): string
+{
+    $v = limpar_texto($bruto, 25);
+    if ($v === '') {
+        return '';
+    }
+    if (preg_match('/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/', $v, $m) !== 1) {
+        return '';
+    }
+    if (!checkdate((int) $m[2], (int) $m[3], (int) $m[1])) {
+        return '';
+    }
+    if ((int) $m[4] > 23 || (int) $m[5] > 59) {
+        return '';
+    }
+    return "{$m[1]}-{$m[2]}-{$m[3]}T{$m[4]}:{$m[5]}:00" . FUSO_CEARA;
+}
+
+/** ISO -> o que o <input type="datetime-local"> sabe reler. */
+function inicio_para_campo(string $iso): string
+{
+    return $iso === '' ? '' : substr($iso, 0, 16);
+}
+
+/**
+ * Dia, data e hora para mostrar — **derivados** do início, nunca digitados.
+ *
+ * Eram três campos de texto livre, e era por isso que a página não conseguia
+ * ordenar nem saber o que já tinha passado: "29/07" não diz o ano e "19H" não
+ * é hora. Continuam no arquivo porque o cartão e o pôster leem eles, mas agora
+ * saem todos da mesma data — não há como divergirem.
+ */
+function partes_de_exibicao(string $iso): array
+{
+    if ($iso === '') {
+        return ['dia' => '', 'data' => '', 'hora' => ''];
+    }
+    /* Formatar no fuso do Ceará, e não no do servidor. A Hostinger roda em UTC:
+       com `date()` puro, um evento marcado para 19h aparecia como 22H no site.
+       O erro é silencioso — a hora está lá, só está errada. */
+    try {
+        $d = (new DateTimeImmutable($iso))->setTimezone(new DateTimeZone('America/Fortaleza'));
+    } catch (Exception $e) {
+        return ['dia' => '', 'data' => '', 'hora' => ''];
+    }
+
+    // format('w') devolve 0 para domingo; DIAS começa na segunda
+    $w = (int) $d->format('w');
+    $minuto = (int) $d->format('i');
+
+    return [
+        'dia'  => DIAS[($w + 6) % 7],
+        'data' => $d->format('d/m'),
+        'hora' => $minuto === 0 ? $d->format('G') . 'H' : $d->format('G:i'),
+    ];
+}
+
 function limpar_link($v): string
 {
     $s = limpar_texto($v, 300);
@@ -266,13 +337,29 @@ function montar_agenda_do_post(array $post, array &$recados): array
             $imagem = '';
         }
 
+        /* O início é a fonte; dia, data e hora saem dele. Item antigo (gravado
+           antes deste campo existir) fica sem início e mantém o texto que já
+           tinha — continua aparecendo, só não entra na ordem nem pode ser
+           marcado ao vivo, até alguém abrir e escolher a data. */
+        $inicio = inicio_iso($linha['inicio'] ?? '');
+        if ($inicio !== '') {
+            $exib = partes_de_exibicao($inicio);
+        } else {
+            $exib = [
+                'dia'  => limpar_texto($linha['dia'] ?? '', 20),
+                'data' => limpar_texto($linha['data'] ?? '', 20),
+                'hora' => limpar_texto($linha['hora'] ?? '', 20),
+            ];
+        }
+
         $itens[] = [
             'id'         => limpar_texto($linha['id'] ?? '', 60) ?: slug($titulo, $i),
             'titulo'     => $titulo,
             'subtitulo'  => limpar_texto($linha['subtitulo'] ?? '', 160),
-            'dia'        => limpar_texto($linha['dia'] ?? '', 20),
-            'data'       => limpar_texto($linha['data'] ?? '', 20),
-            'hora'       => limpar_texto($linha['hora'] ?? '', 20),
+            'inicio'     => $inicio,
+            'dia'        => $exib['dia'],
+            'data'       => $exib['data'],
+            'hora'       => $exib['hora'],
             'aoVivo'     => !empty($linha['aoVivo']),
             // isset() não funciona sobre constante — array_key_exists resolve
             'cor'        => array_key_exists($cor, CORES) ? $cor : 'ouro',
@@ -488,17 +575,22 @@ abrir_pagina('Agenda da semana');
               <input id="it<?= $n ?>-subtitulo" type="text" name="item[<?= $n ?>][subtitulo]" value="<?= h($it['subtitulo'] ?? '') ?>" maxlength="160">
             </div>
             <div class="linha g4">
-              <div class="campo">
-                <label for="it<?= $n ?>-dia">Dia</label>
-                <input id="it<?= $n ?>-dia" data-papel="dia" type="text" name="item[<?= $n ?>][dia]" value="<?= h($it['dia'] ?? '') ?>" list="dias" maxlength="20">
-              </div>
-              <div class="campo">
-                <label for="it<?= $n ?>-data">Data</label>
-                <input id="it<?= $n ?>-data" type="text" name="item[<?= $n ?>][data]" value="<?= h($it['data'] ?? '') ?>" maxlength="20" placeholder="29/07">
-              </div>
-              <div class="campo">
-                <label for="it<?= $n ?>-hora">Hora</label>
-                <input id="it<?= $n ?>-hora" data-papel="hora" type="text" name="item[<?= $n ?>][hora]" value="<?= h($it['hora'] ?? '') ?>" maxlength="20" placeholder="19H">
+              <div class="campo" style="grid-column:span 2">
+                <label for="it<?= $n ?>-inicio">Quando começa</label>
+                <input id="it<?= $n ?>-inicio" data-papel="inicio" type="datetime-local"
+                       name="item[<?= $n ?>][inicio]"
+                       value="<?= h(inicio_para_campo((string) ($it['inicio'] ?? ''))) ?>">
+                <?php if (($it['inicio'] ?? '') === '' && ($it['data'] ?? '') !== ''): ?>
+                  <p class="dica" style="margin:6px 0 0">
+                    Este evento é de antes deste campo existir — está gravado como
+                    <strong><?= h(trim(($it['dia'] ?? '') . ' ' . ($it['data'] ?? '') . ' ' . ($it['hora'] ?? ''))) ?></strong>.
+                    Escolha a data aqui e ele passa a saber se já aconteceu.
+                  </p>
+                <?php else: ?>
+                  <p class="dica" style="margin:6px 0 0">
+                    O dia da semana e a hora que aparecem no site saem daqui — não se digita mais separado.
+                  </p>
+                <?php endif; ?>
               </div>
               <div class="campo">
                 <label for="it<?= $n ?>-cor">Cor</label>
@@ -587,6 +679,22 @@ abrir_pagina('Agenda da semana');
 
   /* ---------- prévia do cartão ---------- */
 
+  const DIAS_JS = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+
+  /* Espelha o partes_de_exibicao() do PHP. Os dois precisam concordar: este
+     desenha a prévia enquanto se digita, aquele grava o que vai para o site. */
+  const exibicaoDe = (valor) => {
+    if (!valor) return { dia: '', data: '', hora: '' };
+    const d = new Date(valor);
+    if (isNaN(d)) return { dia: '', data: '', hora: '' };
+    const dois = (n) => String(n).padStart(2, '0');
+    return {
+      dia: DIAS_JS[d.getDay()],
+      data: dois(d.getDate()) + '/' + dois(d.getMonth() + 1),
+      hora: d.getMinutes() === 0 ? d.getHours() + 'H' : d.getHours() + ':' + dois(d.getMinutes()),
+    };
+  };
+
   const valorDe = (item, papel) => {
     const campo = item.querySelector('[data-papel="' + papel + '"]');
     return campo ? campo.value.trim() : '';
@@ -609,9 +717,8 @@ abrir_pagina('Agenda da semana');
     cartao.style.color = tema.fg;
     cartao.classList.toggle('claro', !!tema.claro);
 
-    const dia = valorDe(item, 'dia');
-    const hora = valorDe(item, 'hora');
-    const data = item.querySelector('[name*="[data]"]')?.value.trim() || '';
+    // mesma derivação do partes_de_exibicao() do PHP: uma data, três textos
+    const { dia, data, hora } = exibicaoDe(valorDe(item, 'inicio'));
     const subtitulo = item.querySelector('[name*="[subtitulo]"]')?.value.trim() || '';
 
     previa.querySelector('.cartao-titulo').textContent = valorDe(item, 'titulo') || 'Sem título';
@@ -658,7 +765,8 @@ abrir_pagina('Agenda da semana');
     prever(item);
     const val = (papel) => valorDe(item, papel);
     const titulo = val('titulo');
-    const partes = [val('dia'), val('hora')].filter(Boolean);
+    const e = exibicaoDe(val('inicio'));
+    const partes = [e.dia, e.hora].filter(Boolean);
     const plataforma = val('plataforma');
     if (plataforma && ROTULO_PLATAFORMA[plataforma]) partes.push(ROTULO_PLATAFORMA[plataforma]);
     if (item.querySelector('[data-papel="aoVivo"]')?.checked) partes.push('ao vivo');

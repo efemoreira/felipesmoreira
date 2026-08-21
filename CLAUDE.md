@@ -233,6 +233,46 @@ duas cópias do mesmo `bloco()` divergiriam na primeira vez que alguém mexesse 
 espessura da borda. O que é próprio de cada peça (fundo, layout, montagem)
 continua no arquivo dela.
 
+## A agenda (`/programacao`)
+
+A coordenação preenche em `/painel/agenda`, o build não sabe de nada e o
+visitante recebe `dados/agenda.json` pela rede — é a única página do site cujo
+conteúdo muda sem deploy.
+
+**O instante mora em `inicio`, e o resto é derivado dele.** Um campo só,
+`datetime-local`, gravado como ISO com fuso fixo do Ceará
+(`2026-10-04T19:00-03:00`); `dia`, `data` e `hora` saem dele na hora de gravar e
+continuam no JSON porque o pôster e o cartão os desenham. Antes eram três
+campos de texto digitados à mão — `"29/07"`, sem ano, e `"19H"` — e por isso a
+página não conseguia ordenar, não conseguia esconder o que passou, e o "AO VIVO"
+era uma caixa marcada à mão que ficava acesa para sempre. Havia uma no ar treze
+dias depois da live.
+
+> **Formate sempre com `DateTimeZone('America/Fortaleza')`,** nunca com `date()`
+> puro: o PHP da Hostinger roda em UTC e um evento das 19h aparecia como **22H**.
+> `partes_de_exibicao()` em `agenda.php` é a única cópia dessa conversão.
+
+**O relógio da página fica em `src/features/programacao/tempo.ts`** — `estadoDe`,
+`estaAoVivo`, `emOrdem`, `idEmDestaque`, `quantosPassaram`. Um evento "acontece"
+por `DURACAO_PADRAO_MIN` (120) minutos depois de começar, porque a coordenação
+marca quando começa e ninguém volta ao painel para dizer que acabou.
+
+- **`aoVivo` sozinho não acende nada.** O selo pede a marca manual **e** a janela
+  de tempo: só a marca é o que produziu o fantasma; só o relógio marcaria como
+  transmissão um jantar fechado.
+- **O que passou fica na lista, apagado.** Sumir com o evento faz quem chegou
+  atrasado achar que errou o link; o rodapé diz quantos foram.
+- **`agora` começa `null` e só é preenchido no efeito.** Num export estático o
+  HTML é gravado no dia do build — desenhar estado de tempo no servidor
+  congelaria "É o próximo" no evento errado e ainda quebraria a hidratação.
+- **O JSON-LD `Event` só sai para evento futuro** e também só no cliente, pela
+  mesma razão. Google recusa `Event` sem `startDate` — era essa falta, e não o
+  schema, que bloqueava.
+
+Item antigo, sem `inicio`, não some nem quebra: vira `sem-horario`, cai para o
+fim da lista e mostra o texto legado. O formulário exibe esse texto ao lado do
+campo vazio, para quem for preencher saber o que a linha era.
+
 ## Funções da militância
 
 `src/data/funcoes.json` é a lista canônica dos papéis do movimento (Olheiro,

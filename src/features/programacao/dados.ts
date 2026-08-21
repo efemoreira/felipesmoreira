@@ -33,6 +33,11 @@ export function normalizarAgenda(bruto: unknown): Agenda | null {
         id: texto(i.id) || `item-${indice}`,
         titulo: texto(i.titulo, 120),
         subtitulo: texto(i.subtitulo, 160) || undefined,
+        // só entra se o navegador conseguir ler como instante
+        inicio: (() => {
+          const v = texto(i.inicio, 30);
+          return v && !Number.isNaN(Date.parse(v)) ? v : undefined;
+        })(),
         dia: texto(i.dia, 20),
         data: texto(i.data, 20),
         hora: texto(i.hora, 20),

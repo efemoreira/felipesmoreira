@@ -1,11 +1,12 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Icon, IconName } from "@/components/icons";
 import CompartilharClient from "./CompartilharClient";
-import { C, temaDe, sigla, type Agenda, type ItemAgenda } from "./tipos";
+import { C, temaDe, type Agenda, type ItemAgenda } from "./tipos";
 import { CAMINHO_AGENDA_AO_VIVO, normalizarAgenda } from "./dados";
+import { emOrdem, estadoDe, estaAoVivo, idEmDestaque, quantosPassaram, type Estado } from "./tempo";
 
 const FONT_ALFA = "var(--font-alfa), serif";
 const FONT_ELITE = "var(--font-elite), monospace";
@@ -50,10 +51,73 @@ const ProgramacaoClient: React.FC<{ semente: Agenda }> = ({ semente }) => {
     };
   }, []);
 
-  const itens = agenda.programacao ?? [];
+  /* O relógio é lido no navegador, nunca no build: num export estático a hora
+     de compilar congelaria, e a página diria "é o próximo" sobre um evento de
+     três semanas atrás. Começa em null para o HTML gerado e o primeiro render
+     do cliente desenharem igual — depois o efeito acorda o relógio. */
+  const [agora, setAgora] = useState<Date | null>(null);
+  useEffect(() => {
+    setAgora(new Date());
+    /* Uma batida por minuto: é o que faz o selo "ao vivo" acender e apagar com
+       a página aberta, sem ninguém precisar recarregar. */
+    const t = window.setInterval(() => setAgora(new Date()), 60_000);
+    return () => window.clearInterval(t);
+  }, []);
+
+  const itens = useMemo(() => agenda.programacao ?? [], [agenda]);
+
+  /**
+   * O cartão de evento para o buscador.
+   *
+   * Esteve bloqueado desde o começo pela mesma falta que causava o "ao vivo"
+   * fantasma: sem data de verdade não há `startDate`, e emitir data adivinhada
+   * seria pior que não emitir. Agora que o painel guarda o instante, dá.
+   *
+   * Sai do lado do cliente porque **a agenda de verdade também sai**: o HTML do
+   * build carrega a semente, que envelhece. O Google executa o JavaScript ao
+   * indexar, então ele lê a agenda publicada — e só entram os eventos que têm
+   * horário e ainda não passaram.
+   */
+  const schemaEventos = useMemo(() => {
+    if (!agora) return null;
+    const futuros = itens.filter(
+      (i) => i.inicio && estadoDe(i, agora) !== "passado" && estadoDe(i, agora) !== "sem-horario",
+    );
+    if (futuros.length === 0) return null;
+
+    return JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      itemListElement: futuros.map((i, n) => ({
+        "@type": "ListItem",
+        position: n + 1,
+        item: {
+          "@type": "Event",
+          name: i.titulo,
+          description: i.subtitulo || undefined,
+          startDate: i.inicio,
+          eventStatus: "https://schema.org/EventScheduled",
+          eventAttendanceMode: "https://schema.org/OnlineEventAttendanceMode",
+          location: {
+            "@type": "VirtualLocation",
+            url: i.link || "https://felipesmoreira.com/programacao",
+          },
+          performer: { "@type": "Person", name: "Felipe Moreira" },
+          organizer: { "@type": "Organization", name: "Missão Ceará" },
+        },
+      })),
+    });
+  }, [itens, agora]);
+  const ordenados = useMemo(() => emOrdem(itens, agora ?? undefined), [itens, agora]);
+  const destaque = useMemo(() => (agora ? idEmDestaque(itens, agora) : null), [itens, agora]);
+  const passados = agora ? quantosPassaram(itens, agora) : 0;
 
   return (
     <div style={{ position: "relative", minHeight: "100dvh", background: C.night }}>
+      {schemaEventos && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: schemaEventos }} />
+      )}
+
       {/* ===== Fundo animado: cena do cordel ===== */}
       <iframe
         src="/cordel-bg.html#bg"
@@ -153,15 +217,27 @@ const ProgramacaoClient: React.FC<{ semente: Agenda }> = ({ semente }) => {
           </p>
         ) : (
           <ol className="ag-lista">
-            {itens.map((item, i) => (
+            {ordenados.map((item, i) => (
               <li key={item.id ?? i} className="ag-item" style={{ "--i": i } as React.CSSProperties}>
-                <Cartao item={item} />
+                <Cartao
+                  item={item}
+                  estado={agora ? estadoDe(item, agora) : "sem-horario"}
+                  destaque={item.id === destaque}
+                  aoVivoAgora={agora ? estaAoVivo(item, agora) : false}
+                />
               </li>
             ))}
           </ol>
         )}
 
         <footer className="ag-rodape">
+          {passados > 0 && (
+            <p>
+              {passados === 1
+                ? "1 evento desta semana já aconteceu e aparece mais apagado."
+                : `${passados} eventos desta semana já aconteceram e aparecem mais apagados.`}
+            </p>
+          )}
           <p>
             Horários de Brasília · sujeito a mudança de última hora — confirme nos
             perfis <strong>@moreiramissao</strong>.
@@ -175,9 +251,24 @@ const ProgramacaoClient: React.FC<{ semente: Agenda }> = ({ semente }) => {
 };
 
 /* ===== Cartão de um dia da programação ===== */
-const Cartao: React.FC<{ item: ItemAgenda }> = ({ item }) => {
+const Cartao: React.FC<{
+  item: ItemAgenda;
+  estado: Estado;
+  destaque: boolean;
+  aoVivoAgora: boolean;
+}> = ({ item, estado, destaque, aoVivoAgora }) => {
   const tema = temaDe(item.cor);
-  const etiqueta = item.etiqueta ?? (item.aoVivo ? "Ao vivo" : null);
+
+  /* A etiqueta obedece o relógio: "Ao vivo" só enquanto está acontecendo, e o
+     que já passou diz que passou em vez de fingir que ainda vem. */
+  const etiqueta =
+    aoVivoAgora ? "Ao vivo"
+      : estado === "passado" ? "Já passou"
+      /* Está na janela mas não é transmissão — um comício, uma reunião. Dizer
+         "é o próximo" sobre algo que já começou é pior que não dizer nada. */
+      : estado === "agora" ? "Acontecendo agora"
+      : destaque ? "É o próximo"
+      : item.etiqueta ?? null;
 
   const vars = {
     "--bg": tema.bg,
@@ -187,26 +278,29 @@ const Cartao: React.FC<{ item: ItemAgenda }> = ({ item }) => {
     "--badge-fg": tema.badgeFg,
   } as React.CSSProperties;
 
-  const classe = `ag-cartao${tema.claro ? " ag-cartao-claro" : ""}`;
+  const classe =
+    `ag-cartao${tema.claro ? " ag-cartao-claro" : ""}` +
+    `${estado === "passado" ? " ag-passou" : ""}` +
+    `${destaque ? " ag-destaque" : ""}`;
 
   const conteudo = (
     <>
-      {/* Miniatura */}
-      <div className="ag-thumb">
-        {item.imagem ? (
-          <img src={item.imagem} alt="" loading="lazy" decoding="async" />
-        ) : (
-          <div className="ag-thumb-fallback" aria-hidden="true">
-            <span>{sigla(item.dia)}</span>
-          </div>
-        )}
-        {etiqueta && (
-          <span className="ag-etiqueta">
-            {item.aoVivo && <span className="ag-ponto" aria-hidden="true" />}
-            {etiqueta}
-          </span>
-        )}
-      </div>
+      {/* Miniatura — só ocupa espaço se houver o que mostrar.
+          Antes, evento sem imagem (que é a maioria) rendia um bloco hachurado
+          com a sigla do dia dentro. A sigla já aparece mais duas vezes no mesmo
+          cartão, então o bloco custava metade da altura e não dizia nada:
+          cabia um evento e meio por tela de celular. */}
+      {(item.imagem || etiqueta) && (
+        <div className={`ag-thumb${item.imagem ? "" : " ag-thumb-vazia"}`}>
+          {item.imagem && <img src={item.imagem} alt="" loading="lazy" decoding="async" />}
+          {etiqueta && (
+            <span className="ag-etiqueta">
+              {aoVivoAgora && <span className="ag-ponto" aria-hidden="true" />}
+              {etiqueta}
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Título + subtítulo */}
       <div className="ag-texto">
@@ -361,6 +455,21 @@ const css = `
     font-family: ${FONT_ALFA}; font-size: 26px; letter-spacing: 2px;
     color: ${C.gold}; text-shadow: 2px 2px 0 rgba(0,0,0,.6);
   }
+  /* Sem imagem: a moldura some e sobra só a etiqueta, como um selo no topo do
+     cartão. Devolve boa parte da altura de cada evento no celular. */
+  .ag-thumb-vazia {
+    aspect-ratio: auto; background: transparent; border: 0;
+    display: flex; align-items: flex-start;
+  }
+  .ag-thumb-vazia .ag-etiqueta { position: static; }
+
+  /* Já passou: continua na lista, porque a semana se lê inteira, mas recua
+     para o que ainda vai acontecer ficar na frente do olho. */
+  .ag-passou { opacity: .55; box-shadow: 3px 3px 0 rgba(24,18,3,.35); }
+
+  /* O próximo (ou o que está rolando) ganha o anel de ouro. */
+  .ag-destaque { box-shadow: 6px 6px 0 rgba(24,18,3,.5), 0 0 0 3px ${C.gold}; }
+
   .ag-etiqueta {
     position: absolute; top: 6px; left: 6px;
     display: inline-flex; align-items: center; gap: 5px;
@@ -438,6 +547,11 @@ const css = `
     }
     /* miniatura vira faixa: mantém o ritmo da lista sem esticar o cartão */
     .ag-thumb { width: 100%; margin-bottom: 12px; aspect-ratio: 5 / 2; max-height: 150px; }
+    /* Precisa estar DENTRO da media query: a regra acima tem a mesma
+       especificidade e vem depois no arquivo, então venceria o aspect-ratio
+       auto declarado lá em cima. (E nada de crase aqui: isto mora dentro de
+       um template literal.) */
+    .ag-thumb-vazia { aspect-ratio: auto; max-height: none; margin-bottom: 10px; }
     .ag-texto { padding: 0 2px; }
     .ag-meta {
       flex-direction: row; align-items: baseline; justify-content: space-between;

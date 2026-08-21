@@ -9,6 +9,17 @@ export interface ItemAgenda {
   id: string;
   titulo: string;
   subtitulo?: string;
+  /**
+   * Quando começa, com o fuso junto: "2026-10-04T19:00:00-03:00".
+   *
+   * É o que permite ordenar, saber o que já passou e mostrar "ao vivo" só na
+   * hora certa. Vazio em item gravado antes deste campo existir — esse continua
+   * aparecendo, só fica fora da ordem e nunca é marcado ao vivo.
+   *
+   * `dia`, `data` e `hora` são **derivados** dele no painel; estão no arquivo
+   * porque o cartão e o pôster leem, mas não são digitados separadamente.
+   */
+  inicio?: string;
   dia: string;
   data: string;
   hora: string;
