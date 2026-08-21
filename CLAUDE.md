@@ -279,6 +279,26 @@ Item antigo, sem `inicio`, não some nem quebra: vira `sem-horario`, cai para o
 fim da lista e mostra o texto legado. O formulário exibe esse texto ao lado do
 campo vazio, para quem for preencher saber o que a linha era.
 
+**A miniatura é sempre desenhada, mesmo sem imagem.** O cartão é um grid de
+quatro colunas (`176px | 1fr | auto | auto`) e a primeira é dela. Quando o bloco
+deixava de ser renderizado para o evento sem imagem — que é a maioria —, os
+outros filhos escorregavam uma coluna: o título caía nos 176 px e quebrava em
+duas linhas, e a data, que se alinha à direita, herdava a coluna elástica de
+540 px e ia parar do outro lado do cartão. **Some tudo no celular**, onde o grid
+é de uma coluna só, e por isso o defeito passou por medição de celular.
+
+> Componente que é filho de um grid com colunas fixas não pode ser condicional
+> sem que o grid saiba. Ou desenhe sempre, ou troque o `grid-template-columns`
+> junto.
+
+Sem imagem, o que ocupa a coluna é a hachura do cordel com a sigla do dia — o
+mesmo desenho da linha do pôster, para quem vê os dois reconhecer a mesma peça.
+No celular ela é escondida (`display: none` na sigla, moldura zerada): lá não há
+coluna a preencher e a faixa custaria de volta a altura que o conserto devolveu.
+**A etiqueta continua visível nos dois**, virando selo no topo do cartão — é ela
+que carrega "Ao vivo" e "Já passou", e sumir com ela junto da moldura seria
+trocar um defeito por outro.
+
 ### O pôster do Compartilhar imagem
 
 `poster.ts` desenha um layout próprio (não é um print da página) para stories

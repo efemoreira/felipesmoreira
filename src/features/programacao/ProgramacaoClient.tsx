@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Icon, IconName } from "@/components/icons";
 import CompartilharClient from "./CompartilharClient";
-import { C, temaDe, type Agenda, type ItemAgenda } from "./tipos";
+import { C, sigla, temaDe, type Agenda, type ItemAgenda } from "./tipos";
 import { CAMINHO_AGENDA_AO_VIVO, normalizarAgenda } from "./dados";
 import { emOrdem, estadoDe, estaAoVivo, idEmDestaque, quantosPassaram, type Estado } from "./tempo";
 
@@ -285,22 +285,28 @@ const Cartao: React.FC<{
 
   const conteudo = (
     <>
-      {/* Miniatura — só ocupa espaço se houver o que mostrar.
-          Antes, evento sem imagem (que é a maioria) rendia um bloco hachurado
-          com a sigla do dia dentro. A sigla já aparece mais duas vezes no mesmo
-          cartão, então o bloco custava metade da altura e não dizia nada:
-          cabia um evento e meio por tela de celular. */}
-      {(item.imagem || etiqueta) && (
-        <div className={`ag-thumb${item.imagem ? "" : " ag-thumb-vazia"}`}>
-          {item.imagem && <img src={item.imagem} alt="" loading="lazy" decoding="async" />}
-          {etiqueta && (
-            <span className="ag-etiqueta">
-              {aoVivoAgora && <span className="ag-ponto" aria-hidden="true" />}
-              {etiqueta}
-            </span>
-          )}
-        </div>
-      )}
+      {/* Miniatura — a primeira coluna do grid é dela, sempre.
+          O cartão é `176px | 1fr | auto | auto` e a maioria dos eventos não tem
+          imagem. Quando este bloco deixava de ser desenhado, os outros filhos
+          escorregavam uma coluna: o título caía nos 176px (e quebrava em duas
+          linhas) e a data, que se alinha à direita do `1fr`, ia parar do outro
+          lado do cartão. Era esse o vão entre o título e a data — e some no
+          celular, onde o cartão é de uma coluna só. */}
+      <div className={`ag-thumb${item.imagem ? "" : " ag-thumb-reserva"}`}>
+        {item.imagem ? (
+          <img src={item.imagem} alt="" loading="lazy" decoding="async" />
+        ) : (
+          <span className="ag-reserva-sigla" aria-hidden="true">
+            {sigla(item.dia)}
+          </span>
+        )}
+        {etiqueta && (
+          <span className="ag-etiqueta">
+            {aoVivoAgora && <span className="ag-ponto" aria-hidden="true" />}
+            {etiqueta}
+          </span>
+        )}
+      </div>
 
       {/* Título + subtítulo */}
       <div className="ag-texto">
@@ -444,13 +450,20 @@ const css = `
     border: 2px solid ${C.ink};
   }
   .ag-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  /* Sem imagem: a moldura some e sobra só a etiqueta, como um selo no topo do
-     cartão. Devolve boa parte da altura de cada evento no celular. */
-  .ag-thumb-vazia {
-    aspect-ratio: auto; background: transparent; border: 0;
-    display: flex; align-items: flex-start;
+  /* Sem imagem — que é a maioria dos eventos: a hachura do cordel com a sigla
+     do dia, o mesmo desenho que o pôster usa na linha do evento, para quem vê
+     os dois reconhecer a mesma peça. Ela existe antes de tudo para **ocupar a
+     coluna reservada**: cartão com a coluna vazia desmonta o grid. */
+  .ag-thumb-reserva {
+    display: grid; place-items: center;
+    background:
+      repeating-linear-gradient(135deg, rgba(255,203,5,.16) 0 8px, transparent 8px 16px),
+      ${C.night};
   }
-  .ag-thumb-vazia .ag-etiqueta { position: static; }
+  .ag-reserva-sigla {
+    font-family: ${FONT_ALFA}; font-size: clamp(20px, 2.6vw, 30px);
+    letter-spacing: 2px; color: ${C.gold}; text-shadow: 2px 2px 0 rgba(0,0,0,.6);
+  }
 
   /* Já passou: continua na lista, porque a semana se lê inteira, mas recua
      para o que ainda vai acontecer ficar na frente do olho. */
@@ -536,11 +549,21 @@ const css = `
     }
     /* miniatura vira faixa: mantém o ritmo da lista sem esticar o cartão */
     .ag-thumb { width: 100%; margin-bottom: 12px; aspect-ratio: 5 / 2; max-height: 150px; }
-    /* Precisa estar DENTRO da media query: a regra acima tem a mesma
-       especificidade e vem depois no arquivo, então venceria o aspect-ratio
-       auto declarado lá em cima. (E nada de crase aqui: isto mora dentro de
-       um template literal.) */
-    .ag-thumb-vazia { aspect-ratio: auto; max-height: none; margin-bottom: 10px; }
+    /* No celular o cartão é de uma coluna só: não há coluna reservada para
+       preencher, e a faixa hachurada custaria de volta a altura que o conserto
+       da agenda devolveu — era um evento e meio por tela. Aqui sobra só a
+       etiqueta, como selo no topo do cartão.
+       Precisa estar DENTRO da media query: a regra do .ag-thumb acima tem a
+       mesma especificidade e vem depois no arquivo, então venceria o que está
+       declarado lá em cima. (E nada de crase aqui: isto mora dentro de um
+       template literal.) */
+    .ag-thumb-reserva {
+      aspect-ratio: auto; max-height: none; margin-bottom: 0;
+      background: none; border: 0;
+      display: flex; align-items: flex-start;
+    }
+    .ag-thumb-reserva .ag-reserva-sigla { display: none; }
+    .ag-thumb-reserva .ag-etiqueta { position: static; margin-bottom: 10px; }
     .ag-texto { padding: 0 2px; }
     .ag-meta {
       flex-direction: row; align-items: baseline; justify-content: space-between;
