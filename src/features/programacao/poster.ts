@@ -15,6 +15,8 @@ import {
   pilula,
   quebrar,
 } from "@/lib/cordelCanvas";
+import { CHAPA } from "@/features/missao/data";
+import { dataPorExtenso, faseEm } from "@/lib/eleicao";
 import { C, temaDe, sigla, type Agenda, type ItemAgenda } from "./tipos";
 
 export { canvasParaBlob };
@@ -34,6 +36,8 @@ const MOLDURA = 22; // recuo da moldura dourada
 const GAPS = [24, 18]; // aperta o respiro entre cartões antes de esticar o poster
 const LINHA_MIN = 108; // cabe título + linha fina com margem
 const LINHA_MAX = 214; // agenda curta cresce até aqui
+const GAP_MAX = 84; // teto do respiro entre cartões quando a semana é curta
+const SELO_H = 236; // altura do selo da eleição, quando ele cabe
 
 const ASSINATURA = "felipesmoreira.com/programacao";
 
@@ -157,10 +161,39 @@ export async function gerarPoster(agenda: Agenda, formato: Formato = "9:16"): Pr
     LINHA_H = n ? Math.round(Math.min(LINHA_MAX, Math.max(LINHA_MIN, bruta))) : 0;
     if (bruta >= LINHA_MIN) break;
   }
-  const alturaLista = n ? n * (LINHA_H + LINHA_GAP) - LINHA_GAP : 120;
+  let alturaLista = n ? n * (LINHA_H + LINHA_GAP) - LINHA_GAP : 120;
   const H = Math.round(Math.max(H_MIN, alturaCabecalho + alturaLista + alturaRodape));
-  // sobra vertical vira respiro extra antes da lista (mantém o bloco centrado)
-  const respiro = Math.max(0, Math.round((H - alturaCabecalho - alturaLista - alturaRodape) / 2));
+
+  /* ----- o que fazer com a sobra vertical -----
+
+     Uma semana de três eventos deixava um quarto do poster vazio: a sobra
+     inteira virava um respiro só, empilhado antes da lista, e o resultado era
+     um buraco entre a chamada e o primeiro cartão. Agora ela é gasta em três
+     frentes, nesta ordem:
+
+     1. o selo da eleição, que é conteúdo de verdade ocupando o lugar do vazio;
+     2. o respiro entre os cartões, até um teto — cartão espaçado parece
+        decisão de layout, buraco no meio parece defeito;
+     3. o que ainda restar, dividido igualmente entre as pontas.
+
+     Semana cheia não muda de aparência: lá não sobra nada para distribuir. */
+  const selo = textoDoSelo();
+  let sobra = H - alturaCabecalho - alturaLista - alturaRodape;
+
+  const alturaSelo = selo && sobra >= SELO_H + 80 ? SELO_H : 0;
+  sobra -= alturaSelo;
+
+  if (n > 1 && sobra > 0) {
+    const extra = Math.min(Math.floor(sobra / (n - 1)), Math.max(0, GAP_MAX - LINHA_GAP));
+    if (extra > 0) {
+      LINHA_GAP += extra;
+      alturaLista += extra * (n - 1);
+      sobra -= extra * (n - 1);
+    }
+  }
+
+  // as pontas ficam com o resto: duas quando não há selo, três quando há
+  const respiro = Math.max(0, Math.round(sobra / (alturaSelo ? 3 : 2)));
 
   const canvas = document.createElement("canvas");
   canvas.width = W;
@@ -254,6 +287,12 @@ export async function gerarPoster(agenda: Agenda, formato: Formato = "9:16"): Pr
     y += LINHA_H + LINHA_GAP;
   });
 
+  /* ----- selo da eleição ----- */
+  if (alturaSelo && selo) {
+    const fimDaLista = n ? y - LINHA_GAP : y + 120;
+    desenharSelo(ctx, selo, PAD, fimDaLista + respiro, W - PAD * 2, alturaSelo, { ALFA, ELITE });
+  }
+
   /* ----- rodapé ----- */
   const rodapeY = H - alturaRodape + 40;
   ctx.strokeStyle = "rgba(255,203,5,.45)";
@@ -274,6 +313,78 @@ export async function gerarPoster(agenda: Agenda, formato: Formato = "9:16"): Pr
 }
 
 /* ===== um cartão do poster ===== */
+/**
+ * O que o selo diz — ou `null` quando não há nada a dizer, e aí o poster volta
+ * a distribuir a sobra só entre os cartões.
+ *
+ * Só aparece **durante a campanha**: no dia da votação publicar propaganda
+ * nova na internet é proibido, e depois dela pedir voto não quer dizer mais
+ * nada. É a mesma trava que o kit já aplica às peças, aqui aplicada ao poster —
+ * e ela mora junto da ação, não num documento, porque quem vai publicar está
+ * com o botão de baixar na mão.
+ */
+function textoDoSelo(): { data: string; voto: string; cargos: string } | null {
+  const numero = CHAPA.numero.trim();
+  if (!numero) return null;
+
+  const fase = faseEm();
+  if (fase !== "campanha" && fase !== "reta-final") return null;
+
+  return {
+    data: `ELEIÇÃO · ${dataPorExtenso().toUpperCase()}`,
+    voto: `VOTE ${numero}`,
+    cargos: "PRESIDENTE E GOVERNADOR",
+  };
+}
+
+/**
+ * Tinta com borda de ouro, e não ouro cheio — os cartões da agenda são
+ * dourados, e um bloco dourado do mesmo tamanho logo abaixo deles brigaria pelo
+ * olho com o conteúdo que o poster existe para mostrar. O número fica em ouro,
+ * que é onde o destaque tem que estar. É a mesma decisão da faixa do site.
+ */
+function desenharSelo(
+  ctx: CanvasRenderingContext2D,
+  txt: { data: string; voto: string; cargos: string },
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  f: { ALFA: string; ELITE: string },
+) {
+  bloco(ctx, x, y, w, h, C.ink, { sombra: 11, borda: C.gold, espessura: 5 });
+
+  /* `escrever` desenha com `textBaseline = "top"`: o y é o topo da caixa do
+     texto, não a linha de base. As três linhas são empilhadas somando a altura
+     da anterior — foi somar como se fosse linha de base que fez "PRESIDENTE E
+     GOVERNADOR" subir para dentro do "VOTE 14". */
+  const cx = x + w / 2;
+  let ty = y + 34;
+
+  escrever(ctx, txt.data, cx, ty, {
+    font: `26px ${f.ELITE}`,
+    cor: C.gold2,
+    align: "center",
+    espaco: 5,
+  });
+  ty += 26 + 26;
+
+  escrever(ctx, txt.voto, cx, ty, {
+    font: `76px ${f.ALFA}`,
+    cor: C.gold,
+    align: "center",
+    espaco: 1,
+  });
+  ty += 76 + 16;
+
+  escrever(ctx, txt.cargos, cx, ty, {
+    font: `26px ${f.ELITE}`,
+    cor: C.cream,
+    align: "center",
+    espaco: 4,
+  });
+}
+
 function desenharCartao(
   ctx: CanvasRenderingContext2D,
   item: ItemAgenda,

@@ -86,7 +86,7 @@ export const FaixaEleicao: React.FC<{ compacta?: boolean }> = ({ compacta = fals
             color: C.gold,
           }}
         >
-          Vote <strong>{CHAPA.numero}</strong> para Governador
+          Vote <strong>{CHAPA.numero}</strong> presidente e governador
         </p>
       )}
 
@@ -101,12 +101,6 @@ export const FaixaEleicao: React.FC<{ compacta?: boolean }> = ({ compacta = fals
           }}
         >
           {chamada}
-        </p>
-      )}
-
-      {temNumero && !acabou && (
-        <p style={{ margin: 0, fontSize: 14, lineHeight: 1.5, opacity: 0.82 }}>
-          O vice não tem número próprio — quem vota no governador vota nos dois.
         </p>
       )}
     </aside>

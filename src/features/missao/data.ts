@@ -11,7 +11,7 @@ import type { IconName } from "@/components/icons";
 
 export const CARGO = "Vice-Governador do Ceará";
 
-/** Como vice não tem número próprio: o voto vai no número do governador. */
+/** O número da chapa: o mesmo 14 para presidente e para governador. */
 export const CHAPA = {
   governador: "Delegado Huggo Leonardo",
   vice: "Felipe Moreira",
@@ -19,8 +19,9 @@ export const CHAPA = {
   plano: "Retomar para Reconstruir",
 
   /**
-   * O número de urna do candidato a **governador** — é nele que se vota, porque
-   * o vice não tem número próprio.
+   * O número que se digita na urna — **o mesmo para presidente e para
+   * governador**. O vice não tem número próprio, e por isso não há um segundo
+   * campo aqui: quem escreve `14` escreve o voto inteiro da chapa.
    *
    * ⚠️ **Preencha aqui e só aqui.** Enquanto estiver vazio, a faixa de votação
    * não aparece em lugar nenhum do site: é melhor não dizer nada do que exibir

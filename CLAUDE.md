@@ -193,10 +193,16 @@ internet é proibido nesse dia) → `depois`. Quem escreve o recado de cada fase
 
 ### Em que número votar
 
-`CHAPA.numero` em `src/features/missao/data.ts` guarda o número do candidato a
-**governador** (hoje **14**), porque é nele que se vota. Enquanto estiver vazio,
-a faixa não fala de voto — é melhor não dizer nada do que deixar um buraco onde
-o eleitor espera o número.
+`CHAPA.numero` em `src/features/missao/data.ts` guarda o número que se digita na
+urna — **14, o mesmo para presidente e para governador**. Um campo só, porque é
+um número só: o vice não tem número próprio. Enquanto estiver vazio, a faixa não
+fala de voto — é melhor não dizer nada do que deixar um buraco onde o eleitor
+espera o número.
+
+**A faixa é carimbo, não explicação.** Ela diz o número e a data, e mais nada;
+quem explica que o vice não tem número de urna é `/a-missao`, que existe para
+isso. Texto de esclarecimento repetido dentro da faixa disputa espaço com o
+número, que é a única coisa que precisa ser lida de longe.
 
 **O número é desenhado já no HTML; só a contagem de dias espera o navegador.**
 A distinção não é detalhe: o número é a conversão final da campanha, e se ele só
@@ -272,6 +278,30 @@ marca quando começa e ninguém volta ao painel para dizer que acabou.
 Item antigo, sem `inicio`, não some nem quebra: vira `sem-horario`, cai para o
 fim da lista e mostra o texto legado. O formulário exibe esse texto ao lado do
 campo vazio, para quem for preencher saber o que a linha era.
+
+### O pôster do Compartilhar imagem
+
+`poster.ts` desenha um layout próprio (não é um print da página) para stories
+9:16 e feed 3:4. **A sobra vertical nunca vira um respiro só.** O layout foi
+desenhado para uma semana cheia, e uma semana de três eventos empilhava a sobra
+inteira antes da lista: um quarto do pôster era um buraco entre a chamada e o
+primeiro cartão. Hoje ela é gasta em três frentes, nesta ordem — o selo da
+eleição, o respiro entre os cartões (até `GAP_MAX`) e só então as duas pontas.
+
+**Esticar o cartão não resolveria.** A tipografia dele sobe por degrau
+(`h >= 180 ? 1.12 : 1`) e a miniatura trava em 118 px, então altura a mais vira
+margem interna vazia — é por isso que `LINHA_MAX` continua onde está e quem
+ocupa o vazio é conteúdo.
+
+**O selo só sai durante a campanha.** No dia da votação publicar propaganda nova
+na internet é proibido, e depois dela pedir voto não quer dizer mais nada — a
+mesma trava que o kit aplica às peças, aqui na função que monta o texto. Sem
+número cadastrado também não sai. Nos dois casos o pôster volta a distribuir a
+sobra entre os cartões, que já era o suficiente para não deixar buraco.
+
+> `escrever()` desenha com `textBaseline = "top"`: o `y` é o topo da caixa do
+> texto, não a linha de base. Empilhe somando a altura da linha anterior —
+> tratar como linha de base foi o que fez uma linha subir para dentro da outra.
 
 ## Funções da militância
 

@@ -444,17 +444,6 @@ const css = `
     border: 2px solid ${C.ink};
   }
   .ag-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .ag-thumb-fallback {
-    width: 100%; height: 100%;
-    display: grid; place-items: center;
-    background:
-      repeating-linear-gradient(135deg, rgba(255,203,5,.16) 0 8px, transparent 8px 16px),
-      ${C.night};
-  }
-  .ag-thumb-fallback span {
-    font-family: ${FONT_ALFA}; font-size: 26px; letter-spacing: 2px;
-    color: ${C.gold}; text-shadow: 2px 2px 0 rgba(0,0,0,.6);
-  }
   /* Sem imagem: a moldura some e sobra só a etiqueta, como um selo no topo do
      cartão. Devolve boa parte da altura de cada evento no celular. */
   .ag-thumb-vazia {
