@@ -433,7 +433,7 @@ if ($aberto === null) {
 
       <?php if ($coordena): ?>
         <div class="acoes" style="margin:0 0 22px">
-          <a class="btn btn-ouro" id="abrir-novo" href="?novo=1">Novo encontro</a>
+          <?php botao_modal('novo-encontro', 'Novo encontro', 'novo=1'); ?>
         </div>
       <?php endif; ?>
       <?php /* A lista de todo mundo do movimento mudou de casa: mora em
@@ -449,7 +449,21 @@ if ($aberto === null) {
         </p>
       <?php endif; ?>
 
-      <?php foreach ([['Próximos', eventos_proximos()], ['Já aconteceram', eventos_passados()]] as [$titulo, $lista]): ?>
+      <?php
+      /* Duas listas, uma de cada vez. Empilhadas, a de "já aconteceram" cresce
+         para sempre e empurra a que interessa — a dos próximos — para fora da
+         tela em duas semanas de campanha. A aba diz o número das duas sem
+         desenhar nenhuma das duas. */
+      $proximos = eventos_proximos();
+      $passados = eventos_passados();
+      $abaEv = ($_GET['aba'] ?? '') === 'passados' ? 'passados' : 'proximos';
+      barra_abas([
+          'proximos' => ['nome' => 'Próximos',       'conta' => count($proximos)],
+          'passados' => ['nome' => 'Já aconteceram', 'conta' => count($passados)],
+      ], $abaEv, 'aba', 'Encontros');
+      $titulo = $abaEv === 'passados' ? 'Já aconteceram' : 'Próximos';
+      $lista  = $abaEv === 'passados' ? $passados : $proximos;
+      ?>
         <fieldset>
           <legend><?= h($titulo) ?> (<?= count($lista) ?>)</legend>
           <?php if ($lista === [] && $titulo === 'Próximos'): ?>
@@ -481,7 +495,6 @@ if ($aberto === null) {
             </a>
           <?php endforeach; ?>
         </fieldset>
-      <?php endforeach; ?>
 
       <?php if ($coordena): ?>
         <?php /* O formulário vivia solto no fim da página, embaixo de duas listas
@@ -553,24 +566,6 @@ if ($aberto === null) {
         <p class="dica">Só a coordenação cria encontro. Você executa e cadastra presença.</p>
       <?php endif; ?>
     </div>
-    <?php if ($coordena): ?>
-    <script>
-      (function () {
-        var caixa = document.getElementById('novo-encontro');
-        var abrir = document.getElementById('abrir-novo');
-        if (!caixa || !abrir || typeof caixa.showModal !== 'function') return;
-        /* Com JS o link vira modal de verdade: foco preso, Esc fecha, véu por
-           cima. Sem JS ou sem <dialog>, o href continua levando a ?novo=1. */
-        var jaAberto = caixa.hasAttribute('open');
-        caixa.removeAttribute('open');
-        abrir.addEventListener('click', function (e) {
-          e.preventDefault();
-          caixa.showModal();
-        });
-        if (jaAberto) caixa.showModal();
-      })();
-    </script>
-    <?php endif; ?>
     <?php
     fechar_pagina();
     exit;
@@ -899,7 +894,7 @@ abrir_pagina($aberto['titulo']);
             </div>
             <div class="campo">
               <label for="p-cidade">Cidade</label>
-              <input id="p-cidade" type="text" name="cidade" maxlength="60">
+              <?php campo_cidade('p-cidade', 'cidade', ''); ?>
             </div>
           </div>
           <div class="campo">

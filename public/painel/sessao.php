@@ -125,6 +125,117 @@ const TIPOS_PESSOA = [
     'candidato'   => 'Candidato',
 ];
 
+/**
+ * Os cargos que existem numa cédula. Escolha de lista, e não campo de texto.
+ *
+ * "Dep. Federal", "Deputado federal" e "DEPUTADO FEDERAL" digitados por três
+ * pessoas viram três cargos diferentes no filtro e três grafias na colinha que
+ * o eleitor recebe. São doze cargos no Brasil inteiro — cabe numa lista.
+ *
+ * `digitos` é quantos números se digitam na urna para aquele cargo, e é o que
+ * a gravação confere: colinha com número errado é pior que colinha nenhuma.
+ *
+ * **Vice tem os dígitos do titular, e não zero.** O vice não tem número
+ * próprio — o voto vai no número de quem encabeça a chapa —, e é justamente
+ * por isso que o número dele na colinha é o do titular: é o que o eleitor
+ * digita. É a mesma coisa que a `/amissao` explica com todas as letras.
+ */
+const CARGOS = [
+    'presidente'        => ['nome' => 'Presidente',              'digitos' => 2],
+    'vice-presidente'   => ['nome' => 'Vice-Presidente',         'digitos' => 2],
+    'senador'           => ['nome' => 'Senador',                 'digitos' => 3],
+    'suplente-1'        => ['nome' => '1º Suplente de Senador',  'digitos' => 3],
+    'suplente-2'        => ['nome' => '2º Suplente de Senador',  'digitos' => 3],
+    'deputado-federal'  => ['nome' => 'Deputado Federal',        'digitos' => 4],
+    'governador'        => ['nome' => 'Governador',              'digitos' => 2],
+    'vice-governador'   => ['nome' => 'Vice-Governador',         'digitos' => 2],
+    'deputado-estadual' => ['nome' => 'Deputado Estadual',       'digitos' => 5],
+    'prefeito'          => ['nome' => 'Prefeito',                'digitos' => 2],
+    'vice-prefeito'     => ['nome' => 'Vice-Prefeito',           'digitos' => 2],
+    'vereador'          => ['nome' => 'Vereador',                'digitos' => 5],
+];
+
+/** Cargo de vice: o número que ele leva na colinha é o do titular. */
+function cargo_de_vice(string $chave): bool
+{
+    return str_starts_with($chave, 'vice-') || str_starts_with($chave, 'suplente-');
+}
+
+/** O nome do cargo como se escreve. Cargo em branco devolve string vazia. */
+function rotulo_cargo(string $chave): string
+{
+    return (string) (CARGOS[$chave]['nome'] ?? '');
+}
+
+/**
+ * Os 184 municípios do Ceará — a mesma mecânica do catálogo de funções.
+ *
+ * O arquivo é gerado do `src/data/municipios-ce.json` pelo `publish.yml`, e é
+ * fonte única para os dois lados: o formulário público desenha a lista a partir
+ * dele no build, e o servidor confere o que chega contra o mesmo arquivo. Duas
+ * listas seriam "Juazeiro do Norte" e "juazeiro do norte" no mesmo relatório.
+ *
+ * Fica aqui, e não no `inscricoes-comum.php` junto das funções, porque quem
+ * pergunta "essa cidade existe?" é a inscrição, a presença, o cadastro de
+ * pessoa e o de encontro — e o único arquivo que todos os quatro incluem é este.
+ */
+const ARQ_MUNICIPIOS = __DIR__ . '/../municipios-ce.json';
+
+function municipios_ce(): array
+{
+    static $memo = null;
+    if ($memo !== null) {
+        return $memo;
+    }
+    $memo = ['fora' => 'Fora do Ceará', 'municipios' => []];
+    if (is_file(ARQ_MUNICIPIOS)) {
+        $bruto = json_decode((string) @file_get_contents(ARQ_MUNICIPIOS), true);
+        if (is_array($bruto) && is_array($bruto['municipios'] ?? null)) {
+            $memo['municipios'] = array_values(array_filter(array_map('strval', $bruto['municipios'])));
+            $memo['fora'] = (string) ($bruto['fora'] ?? $memo['fora']);
+        }
+    }
+    return $memo;
+}
+
+/** O rótulo de quem não é do Ceará. É opção da lista, não município. */
+function cidade_de_fora(): string
+{
+    return municipios_ce()['fora'];
+}
+
+/**
+ * A cidade é do catálogo, ou é "Fora do Ceará", ou não é nada.
+ *
+ * Devolve a grafia do catálogo, e não a que chegou: quem digitou "fortaleza"
+ * numa importação antiga entra como "Fortaleza", e o agrupamento por cidade
+ * para de ter a mesma cidade duas vezes.
+ *
+ * **Vazio é resposta válida** — o campo é obrigatório no formulário público,
+ * e não no modelo: pessoa cadastrada pela coordenação às pressas, na porta do
+ * encontro, entra sem cidade e ganha uma depois.
+ */
+function cidade_valida($bruta): string
+{
+    $v = trim((string) $bruta);
+    if ($v === '') {
+        return '';
+    }
+    $lista = municipios_ce();
+    $alvo = mb_strtolower(sem_acento($v));
+    if ($alvo === mb_strtolower(sem_acento($lista['fora']))) {
+        return $lista['fora'];
+    }
+    foreach ($lista['municipios'] as $nome) {
+        if (mb_strtolower(sem_acento($nome)) === $alvo) {
+            return $nome;
+        }
+    }
+    /* Catálogo ausente (deploy sem o arquivo copiado) não pode apagar a cidade
+       de quem se inscreveu: sem lista para conferir, vale o que veio. */
+    return $lista['municipios'] === [] ? mb_substr($v, 0, 60) : '';
+}
+
 /** A fila de entrada. Vazio = cadastrada direto pela coordenação. */
 const STATUS_PESSOA = [
     ''         => 'Cadastrada',
@@ -485,7 +596,7 @@ function normalizar_pessoa($p): ?array
         /* ---- como falar com ela ---- */
         'telefone' => so_digitos($p['telefone'] ?? ''),
         'email'    => limpar_texto($p['email'] ?? '', 120),
-        'cidade'   => limpar_texto($p['cidade'] ?? '', 60),
+        'cidade'   => cidade_valida($p['cidade'] ?? ''),
         'bairro'   => limpar_texto($p['bairro'] ?? '', 60),
 
         /* ---- o que ela faz no movimento (Olheiro, Design…) ---- */
@@ -509,7 +620,7 @@ function normalizar_pessoa($p): ?array
 
         /* ---- candidatura: vazio para quem não é candidato ---- */
         'urna'      => limpar_texto($p['urna'] ?? '', 60),
-        'cargo'     => limpar_texto($p['cargo'] ?? '', 60),
+        'cargo'     => isset(CARGOS[(string) ($p['cargo'] ?? '')]) ? (string) $p['cargo'] : '',
         'numero'    => preg_replace('/\D/', '', (string) ($p['numero'] ?? '')) ?: '',
         'partido'   => limpar_texto($p['partido'] ?? '', 40),
         'instagram' => limpar_texto($p['instagram'] ?? '', 40),
@@ -545,16 +656,15 @@ function ler_pessoas(bool $recarregar = false): array
         return $cache;
     }
 
-    /* Converte os quatro cadastros antigos na primeira leitura, e só nela: o
-       migrar.php sai fora sozinho assim que pessoas.php existe. Fica aqui, e não
-       num botão, porque migração que depende de alguém lembrar de clicar é
-       migração que roda no meio do expediente errado. */
-    static $migrou = false;
-    if (!$migrou) {
-        $migrou = true;
-        require_once __DIR__ . '/migrar.php';
-        migrar_para_pessoas();
-    }
+    /* Aqui rodava a conversão dos quatro cadastros antigos — `usuarios.php`,
+       `inscricoes.php`, `leads.php` e `candidatos.php` — para o registro único
+       de pessoa. Ela cumpriu o papel e **saiu**: o que ficou foi um caminho de
+       código que ninguém exercita mais e que só sabia fazer uma coisa —
+       ressuscitar, na primeira leitura, exatamente os arquivos que a Manutenção
+       acabou de apagar. Zerar e ver tudo voltar não é um risco teórico.
+
+       Se um dia algum daqueles arquivos reaparecer numa hospedagem esquecida,
+       ele fica onde está: sem ninguém para lê-lo, é só um arquivo velho. */
 
     $cache = [];
     if (is_file(ARQ_PESSOAS)) {

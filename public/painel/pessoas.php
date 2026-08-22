@@ -247,9 +247,21 @@ $ok   = ($recado['tipo'] ?? '') === 'ok'   ? $recado['texto'] : null;
 $senhaNova = $_SESSION['senha_nova'] ?? null;
 unset($_SESSION['senha_nova']);
 
-$aberta = achar_pessoa(limpar_texto($_GET['p'] ?? '', 40));
-$busca  = limpar_texto($_GET['q'] ?? '', 60);
-$filtro = limpar_texto($_GET['tipo'] ?? '', 20);
+/* A ficha aberta (`?p=`) e o formulário aberto (`?editar=`) são coisas
+   diferentes: dá para ler a ficha de alguém sem estar editando, e é o normal.
+   Um parâmetro só faria toda visita à ficha abrir o modal por cima dela. */
+$aberta  = achar_pessoa(limpar_texto($_GET['p'] ?? '', 40));
+$editando = achar_pessoa(limpar_texto($_GET['editar'] ?? '', 40));
+$busca   = limpar_texto($_GET['q'] ?? '', 60);
+$filtro  = limpar_texto($_GET['tipo'] ?? '', 20);
+if (!isset(TIPOS_PESSOA[$filtro])) {
+    $filtro = '';
+}
+$cidadeF = cidade_valida($_GET['cidade'] ?? '');
+/* A-Z é o padrão: numa lista de gente a pergunta quase sempre é "cadê o
+   Fulano", e para isso a ordem alfabética é a única que não obriga a ler tudo.
+   "Mais recentes" existe para a outra pergunta — quem chegou esta semana. */
+$ordem = in_array($_GET['ordem'] ?? '', ['recente', 'cidade'], true) ? (string) $_GET['ordem'] : 'nome';
 
 $todas = ler_pessoas();
 if ($busca !== '') {
@@ -267,18 +279,166 @@ if ($busca !== '') {
         return $p['usuario'] !== '' && str_contains($p['usuario'], $alvoBusca);
     }));
 }
-if (isset(TIPOS_PESSOA[$filtro]) && $filtro !== '') {
+if ($filtro !== '') {
     $todas = array_values(array_filter($todas, fn ($p) => $p['tipo'] === $filtro));
 }
-usort($todas, fn ($a, $b) => strcmp(sem_acento($a['nome']), sem_acento($b['nome'])));
+if ($cidadeF !== '') {
+    $todas = array_values(array_filter($todas, fn ($p) => $p['cidade'] === $cidadeF));
+}
+usort($todas, fn ($a, $b) => match ($ordem) {
+    /* `criadoEm` é ISO, então comparar como texto já ordena por tempo — e quem
+       não tem data (ficha vinda de importação) cai para o fim, que é onde ela
+       de fato pertence numa lista de "quem chegou agora". */
+    'recente' => strcmp((string) $b['criadoEm'], (string) $a['criadoEm']),
+    'cidade'  => [sem_acento($a['cidade']), sem_acento($a['bairro']), sem_acento($a['nome'])]
+                 <=> [sem_acento($b['cidade']), sem_acento($b['bairro']), sem_acento($b['nome'])],
+    default   => strcmp(sem_acento($a['nome']), sem_acento($b['nome'])),
+});
 
 $duplicatas = duplicatas_de_pessoas();
 $porTipo = [];
+$cidadesUsadas = [];
 foreach (ler_pessoas() as $p) {
     $porTipo[$p['tipo']] = ($porTipo[$p['tipo']] ?? 0) + 1;
+    if ($p['cidade'] !== '') {
+        $cidadesUsadas[$p['cidade']] = ($cidadesUsadas[$p['cidade']] ?? 0) + 1;
+    }
 }
+/* O filtro de cidade lista só as cidades que TÊM gente. Oferecer os 184
+   municípios num filtro é oferecer 180 recortes que devolvem lista vazia. */
+uksort($cidadesUsadas, fn ($a, $b) => strcmp(sem_acento($a), sem_acento($b)));
 
-$catalogo = catalogo_funcoes()['lista'] ?? [];
+$catalogo = catalogo_funcoes()['funcoes'];   // 'lista' não existe: a chave é 'funcoes'
+
+/**
+ * A ficha de cadastro — uma só, desenhada em dois modais.
+ *
+ * Cadastrar e editar perguntam exatamente a mesma coisa. Duas cópias
+ * divergiriam na primeira vez que um campo entrasse só numa delas — e o defeito
+ * seria invisível até alguém reclamar que "some quando eu edito".
+ *
+ * O sufixo `-e` nos ids existe porque os dois formulários coexistem no mesmo
+ * documento: id repetido faz o `<label for>` apontar para o campo errado, e no
+ * celular o toque no rótulo passa a focar o outro modal.
+ */
+function formulario_pessoa(?array $aberta, array $catalogo): void
+{
+    $s = $aberta ? '-e' : '';
+    ?>
+    <form method="post">
+      <input type="hidden" name="csrf" value="<?= h(token()) ?>">
+      <input type="hidden" name="acao" value="salvar">
+      <?php if ($aberta): ?>
+        <input type="hidden" name="id" value="<?= h($aberta['id']) ?>">
+      <?php endif; ?>
+
+      <div class="linha g2">
+        <div class="campo">
+          <label for="f-nome<?= $s ?>">Nome completo</label>
+          <input id="f-nome<?= $s ?>" name="nome" type="text" maxlength="80" required value="<?= h($aberta['nome'] ?? '') ?>">
+        </div>
+        <div class="campo">
+          <label for="f-tipo<?= $s ?>">O que ela é para o movimento</label>
+          <select id="f-tipo<?= $s ?>" name="tipo">
+            <?php foreach (TIPOS_PESSOA as $chave => $rotulo): ?>
+              <option value="<?= h($chave) ?>" <?= ($aberta['tipo'] ?? 'eleitor') === $chave ? 'selected' : '' ?>><?= h($rotulo) ?></option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+      </div>
+
+      <div class="linha g3">
+        <div class="campo">
+          <label for="f-tel<?= $s ?>">WhatsApp</label>
+          <input id="f-tel<?= $s ?>" name="telefone" type="tel" inputmode="numeric" maxlength="20" value="<?= h($aberta['telefone'] ?? '') ?>">
+        </div>
+        <div class="campo">
+          <label for="f-cidade<?= $s ?>">Cidade</label>
+          <?php campo_cidade('f-cidade' . $s, 'cidade', $aberta['cidade'] ?? ''); ?>
+        </div>
+        <div class="campo">
+          <label for="f-bairro<?= $s ?>">Bairro</label>
+          <input id="f-bairro<?= $s ?>" name="bairro" type="text" maxlength="60" value="<?= h($aberta['bairro'] ?? '') ?>">
+        </div>
+      </div>
+
+      <div class="campo">
+        <label for="f-email<?= $s ?>">E-mail <span class="dica">— opcional</span></label>
+        <input id="f-email<?= $s ?>" name="email" type="email" maxlength="120" value="<?= h($aberta['email'] ?? '') ?>">
+      </div>
+
+      <p class="dica" style="margin:16px 0 6px"><strong>O que ela faz</strong> — as funções na militância:</p>
+      <div class="linha g2">
+        <?php foreach ($catalogo as $f): ?>
+          <label class="check">
+            <input type="checkbox" name="funcoes[]" value="<?= h($f['id']) ?>"
+                   <?= in_array($f['id'], $aberta['funcoes'] ?? [], true) ? 'checked' : '' ?>>
+            <?= h($f['nome']) ?>
+          </label>
+        <?php endforeach; ?>
+      </div>
+
+      <p class="dica" style="margin:18px 0 6px">
+        <strong>O que ela abre no painel</strong> — marque a capacidade; as áreas vêm junto:
+      </p>
+      <?php foreach (CAPACIDADES as $chave => $cap): ?>
+        <label class="check">
+          <input type="checkbox" name="capacidades[]" value="<?= h($chave) ?>"
+                 <?= in_array($chave, $aberta['capacidades'] ?? [], true) ? 'checked' : '' ?>>
+          <strong><?= h($cap['nome']) ?></strong>
+          <span class="dica"><?= h($cap['resumo']) ?></span>
+        </label>
+      <?php endforeach; ?>
+
+      <details class="decidir" style="margin-top:14px">
+        <summary class="btn">Ajuste fino por ferramenta</summary>
+        <div class="decidir-corpo">
+          <p class="dica" style="margin:0 0 10px">
+            Para a exceção: dar uma ferramenta solta a quem não tem a capacidade inteira.
+            O que a capacidade já libera aparece marcado depois de salvar, e desmarcar
+            aqui não tira o que ela concede.
+          </p>
+          <div class="linha g2">
+            <?php foreach (AREAS as $chave => $rotulo): ?>
+              <label class="check">
+                <input type="checkbox" name="areas[]" value="<?= h($chave) ?>"
+                       <?= in_array($chave, $aberta['areas'] ?? [], true) ? 'checked' : '' ?>>
+                <?= h($rotulo) ?>
+              </label>
+            <?php endforeach; ?>
+          </div>
+        </div>
+      </details>
+
+      <div class="campo" style="margin-top:14px">
+        <label for="f-obs<?= $s ?>">Anotação <span class="dica">— opcional</span></label>
+        <textarea id="f-obs<?= $s ?>" name="observacao" rows="2" maxlength="400"><?= h($aberta['observacao'] ?? '') ?></textarea>
+      </div>
+
+      <div class="acoes">
+        <button class="btn btn-ouro" type="submit"><?= $aberta ? 'Salvar' : 'Cadastrar' ?></button>
+        <?php if ($aberta): ?>
+          <a class="btn" href="/painel/pessoas.php">Cancelar</a>
+        <?php endif; ?>
+      </div>
+    </form>
+
+    <?php if ($aberta): ?>
+      <?php /* Apagar fica FORA do formulário de cima, num <form> próprio: botão
+               de risco dentro do formulário que se usa todo dia é o botão que se
+               aperta por engano. */ ?>
+      <form method="post" class="decidir-recusa"
+            onsubmit="return confirm('Apagar <?= h($aberta['nome']) ?> e as presenças dela?')">
+        <input type="hidden" name="csrf" value="<?= h(token()) ?>">
+        <input type="hidden" name="acao" value="apagar">
+        <input type="hidden" name="id" value="<?= h($aberta['id']) ?>">
+        <div class="acoes">
+          <button class="btn btn-risco" type="submit">Apagar esta pessoa</button>
+        </div>
+      </form>
+    <?php endif; ?>
+    <?php
+}
 
 abrir_pagina('Pessoas');
 ?>
@@ -311,6 +471,17 @@ abrir_pagina('Pessoas');
       </p>
     </div>
   <?php endif; ?>
+
+  <?php /* O recorte por tipo é ABA, e não um <select> no meio do filtro: é a
+           pergunta que se faz toda vez ("cadê os militantes?"), e pergunta que se
+           faz toda vez merece estar sempre visível, com o número do lado. */ ?>
+  <?php
+  $abasTipo = ['' => ['nome' => 'Todas', 'conta' => count(ler_pessoas())]];
+  foreach (TIPOS_PESSOA as $chave => $rotulo) {
+      $abasTipo[$chave] = ['nome' => $rotulo, 'conta' => $porTipo[$chave] ?? 0];
+  }
+  barra_abas($abasTipo, $filtro, 'tipo', 'Tipo de pessoa');
+  ?>
 
   <?php /* ============ duplicatas ============ */ ?>
   <?php if ($duplicatas !== []): ?>
@@ -454,146 +625,57 @@ abrir_pagina('Pessoas');
       <?php endif; ?>
     </fieldset>
   <?php endif; ?>
+  <?php /* ============ a lista ============ */ ?>
+  <fieldset id="lista">
+    <legend>
+      <?= $filtro === '' ? 'Todas' : h(TIPOS_PESSOA[$filtro]) ?>
+      (<?= count($todas) ?><?= $busca !== '' || $filtro !== '' || $cidadeF !== '' ? ' de ' . count(ler_pessoas()) : '' ?>)
+    </legend>
 
-  <?php /* ============ cadastrar / editar ============ */ ?>
-  <fieldset id="editar">
-    <legend><?= $aberta ? 'Editar ' . h($aberta['nome']) : 'Cadastrar pessoa' ?></legend>
-    <form method="post">
-      <input type="hidden" name="csrf" value="<?= h(token()) ?>">
-      <input type="hidden" name="acao" value="salvar">
-      <?php if ($aberta): ?>
-        <input type="hidden" name="id" value="<?= h($aberta['id']) ?>">
-      <?php endif; ?>
+    <div class="acoes" style="margin:0 0 18px">
+      <?php botao_modal('nova-pessoa', 'Cadastrar pessoa', 'novo=1' . ($filtro !== '' ? '&tipo=' . urlencode($filtro) : '')); ?>
+    </div>
 
-      <div class="linha g2">
+    <?php /* O recorte por TIPO é aba, lá em cima — é a pergunta que se faz toda
+             vez. Aqui ficam as três que se fazem de vez em quando; e elas só
+             aparecem quando a lista é grande o bastante para não caber na tela. */ ?>
+    <?php if (count(ler_pessoas()) > 8 || $busca !== '' || $cidadeF !== ''): ?>
+      <form method="get" class="filtros">
+        <?php if ($filtro !== ''): ?>
+          <input type="hidden" name="tipo" value="<?= h($filtro) ?>">
+        <?php endif; ?>
         <div class="campo">
-          <label for="f-nome">Nome completo</label>
-          <input id="f-nome" name="nome" type="text" maxlength="80" required value="<?= h($aberta['nome'] ?? '') ?>">
+          <label for="q">Procurar</label>
+          <input id="q" name="q" type="search" maxlength="60" value="<?= h($busca) ?>"
+                 placeholder="nome, telefone ou login">
         </div>
         <div class="campo">
-          <label for="f-tipo">O que ela é para o movimento</label>
-          <select id="f-tipo" name="tipo">
-            <?php foreach (TIPOS_PESSOA as $chave => $rotulo): ?>
-              <option value="<?= h($chave) ?>" <?= ($aberta['tipo'] ?? 'eleitor') === $chave ? 'selected' : '' ?>><?= h($rotulo) ?></option>
+          <label for="fcid">Cidade</label>
+          <select id="fcid" name="cidade">
+            <option value="">todas</option>
+            <?php foreach ($cidadesUsadas as $nome => $quantos): ?>
+              <option value="<?= h($nome) ?>" <?= $cidadeF === $nome ? 'selected' : '' ?>>
+                <?= h($nome) ?> (<?= (int) $quantos ?>)
+              </option>
             <?php endforeach; ?>
           </select>
         </div>
-      </div>
-
-      <div class="linha g3">
         <div class="campo">
-          <label for="f-tel">WhatsApp</label>
-          <input id="f-tel" name="telefone" type="tel" inputmode="numeric" maxlength="20" value="<?= h($aberta['telefone'] ?? '') ?>">
+          <label for="ford">Ordenar por</label>
+          <select id="ford" name="ordem">
+            <option value="nome"    <?= $ordem === 'nome'    ? 'selected' : '' ?>>nome (A–Z)</option>
+            <option value="recente" <?= $ordem === 'recente' ? 'selected' : '' ?>>quem chegou por último</option>
+            <option value="cidade"  <?= $ordem === 'cidade'  ? 'selected' : '' ?>>cidade e bairro</option>
+          </select>
         </div>
-        <div class="campo">
-          <label for="f-cidade">Cidade</label>
-          <input id="f-cidade" name="cidade" type="text" maxlength="60" value="<?= h($aberta['cidade'] ?? '') ?>">
-        </div>
-        <div class="campo">
-          <label for="f-bairro">Bairro</label>
-          <input id="f-bairro" name="bairro" type="text" maxlength="60" value="<?= h($aberta['bairro'] ?? '') ?>">
-        </div>
-      </div>
-
-      <div class="campo">
-        <label for="f-email">E-mail <span class="dica">— opcional</span></label>
-        <input id="f-email" name="email" type="email" maxlength="120" value="<?= h($aberta['email'] ?? '') ?>">
-      </div>
-
-      <p class="dica" style="margin:16px 0 6px"><strong>O que ela faz</strong> — as funções na militância:</p>
-      <div class="linha g3">
-        <?php foreach ($catalogo as $f): ?>
-          <label class="check">
-            <input type="checkbox" name="funcoes[]" value="<?= h($f['id']) ?>"
-                   <?= in_array($f['id'], $aberta['funcoes'] ?? [], true) ? 'checked' : '' ?>>
-            <?= h($f['nome']) ?>
-          </label>
-        <?php endforeach; ?>
-      </div>
-
-      <p class="dica" style="margin:18px 0 6px">
-        <strong>O que ela abre no painel</strong> — marque a capacidade; as áreas vêm junto:
-      </p>
-      <?php foreach (CAPACIDADES as $chave => $cap): ?>
-        <label class="check">
-          <input type="checkbox" name="capacidades[]" value="<?= h($chave) ?>"
-                 <?= in_array($chave, $aberta['capacidades'] ?? [], true) ? 'checked' : '' ?>>
-          <strong><?= h($cap['nome']) ?></strong>
-          <span class="dica"><?= h($cap['resumo']) ?></span>
-        </label>
-      <?php endforeach; ?>
-
-      <details class="decidir" style="margin-top:14px">
-        <summary class="btn">Ajuste fino por ferramenta</summary>
-        <div class="decidir-corpo">
-          <p class="dica" style="margin:0 0 10px">
-            Para a exceção: dar uma ferramenta solta a quem não tem a capacidade inteira.
-            O que a capacidade já libera aparece marcado depois de salvar, e desmarcar
-            aqui não tira o que ela concede.
-          </p>
-          <div class="linha g2">
-            <?php foreach (AREAS as $chave => $rotulo): ?>
-              <label class="check">
-                <input type="checkbox" name="areas[]" value="<?= h($chave) ?>"
-                       <?= in_array($chave, $aberta['areas'] ?? [], true) ? 'checked' : '' ?>>
-                <?= h($rotulo) ?>
-              </label>
-            <?php endforeach; ?>
-          </div>
-        </div>
-      </details>
-
-      <div class="campo" style="margin-top:14px">
-        <label for="f-obs">Anotação <span class="dica">— opcional</span></label>
-        <textarea id="f-obs" name="observacao" rows="2" maxlength="400"><?= h($aberta['observacao'] ?? '') ?></textarea>
-      </div>
-
-      <div class="acoes">
-        <button class="btn btn-ouro" type="submit"><?= $aberta ? 'Salvar' : 'Cadastrar' ?></button>
-        <?php if ($aberta): ?>
-          <a class="btn" href="/painel/pessoas.php">Cancelar</a>
-        <?php endif; ?>
-      </div>
-    </form>
-
-    <?php if ($aberta): ?>
-      <form method="post" class="decidir-recusa"
-            onsubmit="return confirm('Apagar <?= h($aberta['nome']) ?> e as presenças dela?')">
-        <input type="hidden" name="csrf" value="<?= h(token()) ?>">
-        <input type="hidden" name="acao" value="apagar">
-        <input type="hidden" name="id" value="<?= h($aberta['id']) ?>">
         <div class="acoes">
-          <button class="btn btn-risco" type="submit">Apagar esta pessoa</button>
+          <button class="btn" type="submit">Filtrar</button>
+          <?php if ($busca !== '' || $cidadeF !== '' || $ordem !== 'nome'): ?>
+            <a class="btn" href="/painel/pessoas.php<?= $filtro !== '' ? '?tipo=' . urlencode($filtro) : '' ?>">Limpar</a>
+          <?php endif; ?>
         </div>
       </form>
     <?php endif; ?>
-  </fieldset>
-
-  <?php /* ============ a lista ============ */ ?>
-  <fieldset id="lista">
-    <legend>Todas (<?= count($todas) ?><?= $busca !== '' || $filtro !== '' ? ' de ' . count(ler_pessoas()) : '' ?>)</legend>
-
-    <form method="get" class="linha g3" style="margin-bottom:14px">
-      <div class="campo">
-        <label for="q">Procurar</label>
-        <input id="q" name="q" type="search" maxlength="60" value="<?= h($busca) ?>"
-               placeholder="nome, telefone ou login">
-      </div>
-      <div class="campo">
-        <label for="t">Tipo</label>
-        <select id="t" name="tipo">
-          <option value="">todos</option>
-          <?php foreach (TIPOS_PESSOA as $chave => $rotulo): ?>
-            <option value="<?= h($chave) ?>" <?= $filtro === $chave ? 'selected' : '' ?>>
-              <?= h($rotulo) ?> (<?= (int) ($porTipo[$chave] ?? 0) ?>)
-            </option>
-          <?php endforeach; ?>
-        </select>
-      </div>
-      <div class="campo" style="align-self:end">
-        <button class="btn" type="submit">Filtrar</button>
-      </div>
-    </form>
 
     <?php if ($todas === []): ?>
       <p class="dica" style="margin:0">Ninguém encontrado.</p>
@@ -628,7 +710,10 @@ abrir_pagina('Pessoas');
                   <?php endif; ?>
                 </td>
                 <td><?= count(encontros_da_pessoa($p['id'])) ?: '—' ?></td>
-                <td><a class="btn btn-mini" href="?p=<?= h($p['id']) ?>#ficha">Abrir</a></td>
+                <td>
+                  <a class="btn btn-mini" href="?p=<?= h($p['id']) ?>#ficha">Abrir</a>
+                  <a class="btn btn-mini" data-modal="editar-pessoa" href="?editar=<?= h($p['id']) ?>">Editar</a>
+                </td>
               </tr>
             <?php endforeach; ?>
           </tbody>
@@ -636,6 +721,20 @@ abrir_pagina('Pessoas');
       </div>
     <?php endif; ?>
   </fieldset>
+
+  <?php /* ============ os modais ============
+           No fim do documento, e não dentro do <fieldset>: <dialog> aninhado em
+           formulário ou tabela é HTML inválido, e o navegador reorganiza a árvore
+           sozinho — o formulário some sem um erro sequer no console. */ ?>
+  <?php abrir_modal('nova-pessoa', 'Cadastrar pessoa', isset($_GET['novo'])); ?>
+    <?php formulario_pessoa(null, $catalogo); ?>
+  <?php fechar_modal(); ?>
+
+  <?php if ($editando !== null): ?>
+    <?php abrir_modal('editar-pessoa', 'Editar ' . $editando['nome'], true); ?>
+      <?php formulario_pessoa($editando, $catalogo); ?>
+    <?php fechar_modal(); ?>
+  <?php endif; ?>
 </div>
 <?php
 fechar_pagina();

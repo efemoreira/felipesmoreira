@@ -25,6 +25,12 @@
 # senha. Versionar por engano é vazamento, não bagunça.
 /public/dados/
 
+# Cópias locais dos catálogos que o publish.yml gera em out/ (funcoes.json e
+# municipios-ce.json). Quem roda o PHP local precisa delas ao lado do painel,
+# mas a fonte é src/data/ — versionar a cópia é criar a segunda verdade.
+/public/funcoes.json
+/public/municipios-ce.json
+
 # misc
 .DS_Store
 *.pem

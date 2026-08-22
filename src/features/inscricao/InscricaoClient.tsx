@@ -15,7 +15,8 @@ import {
   validarTelefone,
   CHAVE_RASCUNHO,
 } from "./validacao";
-import { GRUPO_GERAL, WHATSAPP_COORDENACAO, TELEFONE_COORDENACAO } from "@/lib/contato";
+import { GRUPO_GERAL, WHATSAPP_COORDENACAO, TELEFONE_COORDENACAO, linkOiCoordenacao } from "@/lib/contato";
+import { MUNICIPIOS_CE, FORA_DO_CEARA } from "@/lib/municipios";
 import { compartilharTexto } from "@/lib/compartilhar";
 import { slugDe, SITE, CHAVE_NOME } from "@/lib/atribuicao";
 
@@ -120,7 +121,9 @@ export default function InscricaoClient() {
   }, [campos]);
 
   const tituloRef = useRef<HTMLHeadingElement>(null);
-  const refs = useRef<Partial<Record<CampoTexto, HTMLInputElement | null>>>({});
+  /* HTMLElement, e não HTMLInputElement: a cidade é um <select>, e o "leve-me
+     ao primeiro erro" lá embaixo precisa alcançá-la pelo mesmo mapa. */
+  const refs = useRef<Partial<Record<CampoTexto, HTMLElement | null>>>({});
   const consentRef = useRef<HTMLInputElement>(null);
   const listaFuncoesRef = useRef<HTMLDivElement>(null);
 
@@ -248,7 +251,7 @@ export default function InscricaoClient() {
     }
   };
 
-  if (envio === "pronto") return <Sucesso nome={campos.nome} escolhidas={escolhidas} />;
+  if (envio === "pronto") return <Sucesso nome={campos.nome} cidade={campos.cidade} escolhidas={escolhidas} />;
 
   return (
     <div className="in-fundo">
@@ -356,9 +359,8 @@ export default function InscricaoClient() {
               aoMudar={mudar} aoSair={aoSair} refs={refs}
             />
             <div className="in-linha-dupla">
-              <Campo
-                campo="cidade" valor={campos.cidade} erro={tocado.cidade ? erros.cidade : ""}
-                autoComplete="address-level2" inputMode="text"
+              <CampoCidade
+                valor={campos.cidade} erro={tocado.cidade ? erros.cidade : ""}
                 aoMudar={mudar} aoSair={aoSair} refs={refs}
               />
               <Campo
@@ -594,7 +596,7 @@ const Campo: React.FC<{
   inputMode?: "text" | "numeric" | "email";
   aoMudar: (c: CampoTexto, v: string) => void;
   aoSair: (c: CampoTexto) => void;
-  refs: React.MutableRefObject<Partial<Record<CampoTexto, HTMLInputElement | null>>>;
+  refs: React.MutableRefObject<Partial<Record<CampoTexto, HTMLElement | null>>>;
 }> = ({ campo, valor, erro, dica, opcional, tipo = "text", autoComplete, inputMode, aoMudar, aoSair, refs }) => {
   const idErro = `erro-${campo}`;
   const idDica = `dica-${campo}`;
@@ -631,6 +633,61 @@ const Campo: React.FC<{
 };
 
 /**
+ * A cidade é escolha, não digitação.
+ *
+ * São 184 municípios no Ceará — uma lista fechada, que o `<select>` nativo
+ * resolve sem uma linha de JavaScript e que no celular abre a roleta do próprio
+ * aparelho, com busca por letra. Digitar produzia "Juazeiro do Norte",
+ * "juazeiro" e "JUAZEIRO" na mesma coluna do relatório.
+ *
+ * **A primeira opção é para quem não é do Ceará.** Sem ela, quem está de
+ * passagem — ou mora em outro estado e acompanha de longe — não teria o que
+ * escolher e inventaria a cidade mais parecida, que é pior do que "de fora".
+ *
+ * Ele não usa o `Campo` acima porque `Campo` guarda um `ref` de `<input>` para
+ * o foco do primeiro erro; o `<select>` registra o dele por conta própria, no
+ * mesmo mapa, para o "leve-me ao erro" continuar funcionando.
+ */
+const CampoCidade: React.FC<{
+  valor: string;
+  erro?: string;
+  aoMudar: (c: CampoTexto, v: string) => void;
+  aoSair: (c: CampoTexto) => void;
+  refs: React.MutableRefObject<Partial<Record<CampoTexto, HTMLElement | null>>>;
+}> = ({ valor, erro, aoMudar, aoSair, refs }) => {
+  const idErro = "erro-cidade";
+  return (
+    <div className="in-campo">
+      <label htmlFor="cidade">{ROTULOS.cidade}</label>
+      <select
+        id="cidade"
+        ref={(el) => {
+          refs.current.cidade = el;
+        }}
+        value={valor}
+        autoComplete="address-level2"
+        aria-invalid={erro ? true : undefined}
+        aria-describedby={erro ? idErro : undefined}
+        className={erro ? "com-erro" : undefined}
+        onChange={(e) => aoMudar("cidade", e.target.value)}
+        onBlur={() => aoSair("cidade")}
+      >
+        <option value="">Escolha sua cidade</option>
+        <option value={FORA_DO_CEARA}>{FORA_DO_CEARA} — estou de fora</option>
+        <optgroup label="Ceará">
+          {MUNICIPIOS_CE.map((m) => (
+            <option key={m} value={m}>{m}</option>
+          ))}
+        </optgroup>
+      </select>
+      {erro && (
+        <p className="in-erro" id={idErro}>{erro}</p>
+      )}
+    </div>
+  );
+};
+
+/**
  * A tela depois do envio.
  *
  * Antes ela listava três passos que eram todos **ação de outra pessoa** ("a
@@ -643,7 +700,7 @@ const Campo: React.FC<{
  * que a coordenação faz do lado dela vem depois, como informação, não como
  * instrução de esperar.
  */
-const Sucesso: React.FC<{ nome: string; escolhidas: Funcao[] }> = ({ nome, escolhidas }) => {
+const Sucesso: React.FC<{ nome: string; cidade: string; escolhidas: Funcao[] }> = ({ nome, cidade, escolhidas }) => {
   const primeiro = nome.trim().split(" ")[0] || "companheiro";
   const [convite, setConvite] = useState("Mandar o convite");
 
@@ -685,7 +742,7 @@ const Sucesso: React.FC<{ nome: string; escolhidas: Funcao[] }> = ({ nome, escol
             </>
           ) : (
             <>
-              Sua inscrição está com a coordenação. Enquanto ela confere, tem quatro coisas
+              Sua inscrição está com a coordenação. Enquanto ela confere, tem cinco coisas
               que você já pode fazer.
             </>
           )}
@@ -693,8 +750,30 @@ const Sucesso: React.FC<{ nome: string; escolhidas: Funcao[] }> = ({ nome, escol
 
         <p className="in-agora-titulo">Agora, sem esperar ninguém</p>
         <ol className="in-proximos">
+          {/* O "oi" vem antes do grupo de propósito: é o único passo que acelera
+              a APROVAÇÃO dela, e é o que impede o número da coordenação de cair.
+              Quem manda a primeira mensagem abre a conversa; a coordenação
+              responde dentro dela em vez de abordar dezenas de desconhecidos —
+              que é o que o WhatsApp pune com bloqueio. */}
           <li>
             <b>1</b>
+            <span>
+              <strong>Manda um oi pra coordenação.</strong> É o que faz sua aprovação
+              andar: com a conversa aberta, dá pra te responder na hora. A mensagem
+              já vai escrita.
+              <a
+                className="in-passo-link"
+                href={linkOiCoordenacao(nome, cidade)}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Icon name="whatsapp" size={15} />
+                Mandar o oi agora
+              </a>
+            </span>
+          </li>
+          <li>
+            <b>2</b>
             <span>
               <strong>Entre no grupo.</strong> É onde sai a convocação da semana e o aviso de
               cada encontro. Entrada direta, sem esperar ninguém aprovar nada.
@@ -710,7 +789,7 @@ const Sucesso: React.FC<{ nome: string; escolhidas: Funcao[] }> = ({ nome, escol
             </span>
           </li>
           <li>
-            <b>2</b>
+            <b>3</b>
             <span>
               <strong>Leia o plano.</strong> São sete compromissos com meta, prazo e de onde vem o
               dinheiro. Quem conhece o plano consegue defender o movimento em qualquer conversa.
@@ -721,7 +800,7 @@ const Sucesso: React.FC<{ nome: string; escolhidas: Funcao[] }> = ({ nome, escol
             </span>
           </li>
           <li>
-            <b>3</b>
+            <b>4</b>
             <span>
               <strong>Comece a espalhar.</strong> Na Munição tem arte e texto prontos, cada um com a
               página do plano. Põe seu nome lá e a coordenação vê quem você trouxe.
@@ -732,7 +811,7 @@ const Sucesso: React.FC<{ nome: string; escolhidas: Funcao[] }> = ({ nome, escol
             </span>
           </li>
           <li>
-            <b>4</b>
+            <b>5</b>
             <span>
               <strong>Chame mais gente.</strong> Manda o link pra quem você sabe que ia
               querer estar junto. Ele já vai com o seu nome — a coordenação vê quem
@@ -747,9 +826,11 @@ const Sucesso: React.FC<{ nome: string; escolhidas: Funcao[] }> = ({ nome, escol
 
         <p className="in-agora-titulo">O que a coordenação faz do lado dela</p>
         <p className="in-aviso" style={{ margin: "10px 0 0" }}>
-          Confere sua inscrição e te manda no WhatsApp o usuário e uma senha provisória para entrar
-          na área da militância, onde ficam a formação e as ferramentas. No primeiro acesso você
-          troca a senha. Se passar de alguns dias, chama sem cerimônia — não é incômodo.
+          Confere sua inscrição e te <strong>responde no WhatsApp</strong> com o usuário e uma
+          senha provisória para entrar na área da militância, onde ficam a formação e as
+          ferramentas. No primeiro acesso você troca a senha. É por isso que o passo 1 é
+          você mandar o oi: a resposta chega na conversa que você abriu. Se passar de alguns
+          dias, chama de novo sem cerimônia — não é incômodo.
         </p>
 
         <div className="in-acoes">
@@ -951,15 +1032,15 @@ const css = `
     font-size: 10.5px; letter-spacing: 1px; opacity: .6;
     margin-left: 7px; text-transform: none;
   }
-  .in-campo input {
+  .in-campo input, .in-campo select {
     width: 100%; font-family: ${FONT_BITTER}; font-size: 16px;
     min-height: 48px; padding: 11px 13px;
     background: ${C.cream}; color: ${C.ink};
     border: 3px solid ${C.ink}; border-radius: 0;
     box-shadow: 3px 3px 0 rgba(24,18,3,.24);
   }
-  .in-campo input:focus-visible { outline: 3px solid ${C.goldDim}; outline-offset: 2px; }
-  .in-campo input.com-erro { border-color: #8C2F22; box-shadow: 3px 3px 0 rgba(140,47,34,.3); }
+  .in-campo input:focus-visible, .in-campo select:focus-visible { outline: 3px solid ${C.goldDim}; outline-offset: 2px; }
+  .in-campo input.com-erro, .in-campo select.com-erro { border-color: #8C2F22; box-shadow: 3px 3px 0 rgba(140,47,34,.3); }
   .in-dica { font-size: 13px; line-height: 1.45; opacity: .7; margin: 6px 0 0; }
   .in-erro {
     font-size: 13.5px; line-height: 1.45; margin: 6px 0 0;

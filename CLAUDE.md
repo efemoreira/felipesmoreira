@@ -228,6 +228,18 @@ com os traços de `cordelCanvas.ts`).
 - **Sem número não cadastra.** Colinha com número errado é pior que colinha
   nenhuma. Nome e número são os únicos obrigatórios — cargo, partido, @ e foto
   não travam o cadastro.
+- **O cargo vem de `CARGOS` (`sessao.php`), e é ele que confere o número.** São
+  doze cargos no Brasil inteiro: cabe numa lista, e "Dep. Federal", "Deputado
+  federal" e "DEPUTADO FEDERAL" digitados por três pessoas viravam três cargos
+  no filtro e três grafias na colinha. Cada entrada carrega `digitos`, e a
+  gravação recusa o que não bate — vereador com quatro dígitos não é um número
+  quase certo, é um voto que não vai para ninguém.
+- **Vice e suplente levam os dígitos do TITULAR, não zero.** O vice não tem
+  número próprio, e é justamente por isso que o número dele na colinha é o de
+  quem encabeça a chapa: é o que o eleitor digita. É o que a `/amissao` explica
+  com todas as letras.
+- **A API manda o RÓTULO do cargo, não a chave.** Uma tabela de cargos repetida
+  em TypeScript divergiria na primeira eleição; o site desenha o que recebe.
 - **A ordem da lista é a ordem da colinha.** Não é alfabética: quem vem primeiro
   é quem se quer que seja lembrado primeiro.
 - **Recolher um candidato tira ele de todas as listas de uma vez.** A limpeza é
@@ -474,6 +486,28 @@ grupos, e a linha divisória é a conta, não a intenção:**
 > `grep -rn "chat.whatsapp.com/C8rQ" src` tem de voltar **vazio**: o grupo de
 > trabalho não pode existir no bundle público.
 
+### Quem fala primeiro é a pessoa
+
+O WhatsApp bloqueia conta que **inicia** conversa com muita gente que nunca
+falou com ela — e mandar acesso para quem se inscreveu é exatamente isso:
+dezenas de primeiras mensagens saindo do mesmo número. Foi assim que o número da
+coordenação caiu.
+
+O conserto não é técnico, é de ordem: o **passo 1** da tela de confirmação de
+`/queroajudar` é a pessoa mandar um "oi", com o texto já escrito
+(`linkOiCoordenacao()` em `contato.ts`). Aberta a conversa, a coordenação
+**responde** dentro dela em vez de abordar desconhecidos — e resposta em conversa
+aberta não é abordagem fria.
+
+- **É o passo 1, antes até do grupo.** É o único que acelera a aprovação da
+  própria pessoa, e o texto pronto é o que faz a mensagem sair no primeiro
+  toque: "mando depois" é a mensagem que não sai.
+- **A tela de aprovação do painel repete a regra** — procure a conversa que já
+  existe e responda nela. O botão de "abrir WhatsApp com a mensagem pronta"
+  continua o mesmo; o que muda é ele cair numa conversa que já existia.
+- O número na cláusula de LGPD do formulário **fica**: a lei exige um canal para
+  a pessoa exercer os direitos dela, e é outro tipo de contato.
+
 **Não há e-mail.** `contato@felipesmoreira.com` saiu do site inteiro, inclusive
 do `email` do JSON-LD — tirar da tela e deixar no dado estruturado, que é
 justamente o que raspador lê, não tira de lugar nenhum. A LGPD exige um canal
@@ -573,21 +607,32 @@ desfazer.
 - **duas contas de painel nunca se fundem**: escolher qual login sobrevive não é
   decisão que se toma por inferência.
 
-### A migração
+### A migração acabou, e a Manutenção ficou
 
-`migrar.php` converte os quatro arquivos antigos na primeira leitura de
-`ler_pessoas()`, e só quando `pessoas.php` ainda não existe. **Roda sozinho, e
-não por um botão** — migração que depende de alguém lembrar de clicar é migração
-que roda no meio do expediente errado.
+`migrar.php` convertia os quatro cadastros antigos na primeira leitura de
+`ler_pessoas()`. **Ele não existe mais.** Cumprido o papel, o que sobrava era um
+caminho de código que ninguém exercitava e que só sabia fazer uma coisa:
+ressuscitar, na leitura seguinte, exatamente os arquivos que a Manutenção
+acabara de apagar. Zerar e ver tudo voltar não era risco teórico.
 
-Casa por telefone e, na falta dele, por nome sem acento. Preserva os ids de
-**conta** (a sessão guarda o id: trocá-lo derrubaria quem estiver logado) e de
-**candidato** (as listas apontam para ele). As áreas viram capacidades: quem
-tinha todas as áreas de uma capacidade ganha a capacidade, e o resto fica como
-ajuste fino.
+No lugar dele existe **`public/painel/manutencao.php`** — apagar o que o painel
+gravou, por grupo, para sair da fase de teste com a casa limpa.
 
-> Os arquivos antigos **não são apagados**. Se algo saiu errado, o conserto é
-> apagar `pessoas.php` e ajustar o `migrar.php` — o original continua lá.
+- **Sem área e fora do menu.** A porta é `exigir_admin()` e o endereço se digita;
+  o único link para ela mora em `conta.php`. Uma porta chamada "apagar tudo" no
+  menu de todo dia é uma porta que alguém abre por curiosidade.
+- **A lista de arquivos é explícita**, nunca um `glob('*.php')`: varrer a pasta
+  apagaria um dia o `.htaccess` que é justamente o que a fecha para a web.
+- **A confirmação é digitada** (`ZERAR TUDO`), e não um `confirm()`: caixa de
+  confirmação se dispensa no reflexo, e isto não tem desfazer.
+- **Zerar as pessoas derruba a sessão** e leva o painel de volta ao "criar o
+  primeiro administrador" — a sessão guarda um id que deixou de existir, e um
+  painel meio carregado erra na primeira leitura.
+- **O `segredo.php` nunca é apagado.** Dele saem os convites do Dia 0 e as `ref`
+  da presença: apagá-lo invalida o que já circula, e isso é quebra, não limpeza.
+- **As imagens só saem junto com quem as usava** (pessoas *e* encontros marcados
+  ao mesmo tempo). Sozinhas, sobraria ficha apontando para arquivo que não
+  existe — e cartão com foto quebrada é pior que cartão sem foto.
 
 ## Fluxo de entrada de militante
 
@@ -727,6 +772,33 @@ A régua de validação é uma só: `src/features/inscricao/validacao.ts` (másc
 DDD de verdade, exigência de sobrenome). Duas réguas divergem na terceira
 alteração.
 
+### A cidade é lista, não caixa de texto
+
+`src/data/municipios-ce.json` tem os **184 municípios do Ceará** na grafia do
+IBGE. É fonte única para os dois lados, pela mesma mecânica do `funcoes.json`: o
+Next importa no build (`src/lib/municipios.ts`) e o `publish.yml` copia para
+`out/municipios-ce.json`, que o PHP lê em `municipios_ce()` (no `sessao.php`,
+porque a inscrição, a presença, a pessoa e o encontro precisam todos dela).
+
+Digitar produzia "Juazeiro do Norte", "juazeiro" e "JUAZEIRO" na mesma coluna, e
+o agrupamento por região contava a mesma cidade três vezes — é exatamente o que
+`militancia_por_regiao()` responde, em `/painel/inscricoes`.
+
+- **`cidade_valida()` devolve a grafia do CATÁLOGO**, e não a que chegou. Ela é
+  quem `normalizar_pessoa()` chama, então nenhuma ficha entra com cidade
+  inventada, venha de onde vier.
+- **A primeira opção é "Fora do Ceará"** — quem está visitando, ou mora em outro
+  estado e acompanha de longe. Sem ela a pessoa escolheria a cidade mais
+  parecida, que é pior do que "de fora". O rótulo mora no próprio JSON, para os
+  dois lados compararem a mesma string.
+- **Catálogo ausente não apaga cidade.** Num deploy em que o arquivo não foi
+  copiado, `cidade_valida()` aceita o que veio: melhor uma grafia solta do que
+  todo mundo sem cidade.
+- **O filtro do painel lista só as cidades que TÊM gente.** Oferecer os 184 num
+  filtro é oferecer 180 recortes que devolvem lista vazia.
+- No painel o campo sai de `campo_cidade()` (`layout.php`) — uma cópia só para as
+  três telas que perguntam a mesma coisa.
+
 ### Conferência de origem
 
 `origem_confere()` (em `sessao.php`) é a única cópia da checagem que a
@@ -849,6 +921,43 @@ novo encontro, que vivia embaixo de duas listas com dezenas de itens, virou
 > existe com JavaScript: sem JS a página recarrega com o `<dialog open>` e o
 > formulário continua ali. Com JS, o link vira modal de verdade — foco preso,
 > Esc fecha, véu por cima.
+
+**Cadastrar é modal, em toda tela.** `botao_modal()` + `abrir_modal()` /
+`fechar_modal()` (`layout.php`) são a peça única; o script que os promove a
+camada mora em `fechar_pagina()` e serve o painel inteiro, em vez de uma cópia
+por página. Vale para encontro, candidato, lista e pessoa.
+
+- **O formulário de criar e o de editar são a MESMA função** (`formulario_pessoa()`,
+  `formulario_candidato()`), desenhada duas vezes. Duas cópias divergiriam na
+  primeira vez que um campo entrasse só numa delas — e o defeito apareceria como
+  "some quando eu edito".
+- **Os ids dos campos do modal de edição levam sufixo (`-e`).** Os dois
+  formulários coexistem no documento: id repetido faz o `<label for>` apontar
+  para o campo errado, e no celular o toque no rótulo foca o outro modal.
+- **O `<dialog>` fica no fim do documento, nunca dentro do `<fieldset>` ou da
+  tabela.** `<dialog>` aninhado em formulário ou tabela é HTML inválido: o
+  navegador reorganiza a árvore sozinho e o formulário some sem um erro sequer
+  no console.
+
+**Duas listas na mesma tela viram abas.** `barra_abas()` (`layout.php`) — usada
+em `pessoas` (por tipo), `candidatos` (candidatos · listas), `eventos`
+(próximos · já aconteceram) e `inscricoes` (fila · decididas).
+
+> **Abas são links (`?aba=…`), não botões de JavaScript**: cada aba tem URL
+> própria, o Voltar do navegador funciona e dá para mandar no grupo o link já na
+> aba certa. Ela **preserva os outros parâmetros** — trocar de aba não pode
+> apagar a busca recém-digitada. A aba aberta perde o `href` e vira
+> `<span aria-current>`: link que leva ao lugar onde já se está é ruído para
+> quem navega por teclado.
+>
+> Empilhadas, a lista que só cresce (encontros passados, inscrições decididas)
+> empurra para fora da tela justamente a que interessa. A aba diz o número das
+> duas sem desenhar nenhuma das duas.
+
+**Filtro é `.filtros`, e só aparece quando há o que filtrar.** Com quatro itens
+ele é três controles em cima de uma lista que já cabe na tela. **A ordem padrão
+de gente é A-Z** — a pergunta quase sempre é "cadê o Fulano" —; a ordem padrão de
+candidato é a da colinha, que é decisão de campanha e não alfabeto.
 
 **Fila grande pede recolher:** listas de decisão (como as inscrições) mostram só
 o resumo, com o formulário dentro de um `<details class="decidir">`. Com 20

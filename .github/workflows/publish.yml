@@ -28,6 +28,12 @@ jobs:
       - name: Catálogo de funções (usado pelo painel PHP)
         run: cp src/data/funcoes.json out/funcoes.json
 
+      # Os 184 municípios do Ceará, pelo mesmo motivo e pela mesma mecânica: o
+      # formulário público importa no build, o painel lê o arquivo copiado. Duas
+      # listas de cidade seriam duas grafias da mesma cidade no relatório.
+      - name: Municípios do Ceará (usado pelo painel PHP)
+        run: cp src/data/municipios-ce.json out/municipios-ce.json
+
       - name: Criar .htaccess (SPA + SEO headers)
         run: |
           cat > out/.htaccess <<'HTACCESS'
@@ -60,6 +66,7 @@ jobs:
           RewriteRule ^painel/candidatos/?$ /painel/candidatos.php [L]
           RewriteRule ^painel/pessoas/?$ /painel/pessoas.php [L]
           RewriteRule ^painel/conta/?$ /painel/conta.php [L]
+          RewriteRule ^painel/manutencao/?$ /painel/manutencao.php [L]
           # Rotas antigas, com hífen. Elas estão no sitemap e circulam em link de
           # WhatsApp: sem o 301 elas cairiam no fallback lá embaixo e devolveriam
           # a HOME com status 200 — um soft 404, que para buscador é pior que o

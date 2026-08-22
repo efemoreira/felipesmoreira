@@ -14,6 +14,7 @@ import {
   CHAVE_RASCUNHO,
 } from "@/features/inscricao/validacao";
 import { slugDe } from "@/lib/atribuicao";
+import { MUNICIPIOS_CE, FORA_DO_CEARA } from "@/lib/municipios";
 import type { Alvo, Encontro } from "./tipos";
 
 /**
@@ -428,6 +429,9 @@ export default function PresencaClient() {
           autoComplete="tel-national"
           required
         />
+        {/* Lista, e não digitação: são 184 municípios conhecidos, e na porta do
+            encontro — em pé, com a fila andando — escolher é mais rápido e mais
+            certo que escrever. A primeira opção é de quem não é do Ceará. */}
         <Campo
           id="p-cidade"
           rotulo="Cidade"
@@ -437,6 +441,10 @@ export default function PresencaClient() {
           erro={tocado.cidade ? erros.cidade : ""}
           autoComplete="address-level2"
           required
+          lista={MUNICIPIOS_CE}
+          listaVazia="Escolha sua cidade"
+          listaExtra={FORA_DO_CEARA}
+          listaGrupo="Ceará"
         />
         <Campo
           id="p-bairro"
@@ -752,6 +760,19 @@ const Voltar: React.FC = () => (
   </Link>
 );
 
+/** A moldura é a mesma do <input> e do <select>: uma cópia só. */
+const molduraDoCampo = (erro: string): React.CSSProperties => ({
+  width: "100%",
+  /* 16px é o mínimo: abaixo disso o Safari do iPhone dá zoom ao focar */
+  font: `16px/1.5 ${FONT_BITTER}`,
+  minHeight: 50,
+  padding: "12px 14px",
+  color: C.cream,
+  background: "rgba(0,0,0,.35)",
+  border: `2px solid ${erro !== "" ? "#E4572E" : "rgba(255,203,5,.3)"}`,
+  borderRadius: 0,
+});
+
 const Campo: React.FC<{
   id: string;
   rotulo: string;
@@ -766,9 +787,17 @@ const Campo: React.FC<{
   required?: boolean;
   opcional?: boolean;
   autoFoco?: boolean;
+  /* Com `lista`, o campo vira <select> — mesmo rótulo, mesma moldura, mesma
+     mensagem de erro. Um segundo componente só para isso duplicaria o desenho
+     inteiro, e as duas cópias divergiriam na primeira mudança de borda. */
+  lista?: readonly string[];
+  listaVazia?: string;
+  listaExtra?: string;
+  listaGrupo?: string;
 }> = ({
   id, rotulo, valor, aoMudar, aoSair, erro = "", tipo = "text", modo, dica,
   autoComplete, required, opcional, autoFoco,
+  lista, listaVazia = "Escolha", listaExtra, listaGrupo,
 }) => (
   <div style={{ margin: "0 0 16px" }}>
     <label
@@ -790,30 +819,42 @@ const Campo: React.FC<{
         <span style={{ color: "#8e877a", letterSpacing: 1 }}> (opcional)</span>
       )}
     </label>
-    <input
-      id={id}
-      type={tipo}
-      inputMode={modo}
-      value={valor}
-      required={required}
-      autoFocus={autoFoco}
-      autoComplete={autoComplete}
-      aria-invalid={erro !== ""}
-      aria-describedby={erro !== "" ? `${id}-erro` : dica ? `${id}-dica` : undefined}
-      onChange={(e) => aoMudar(e.target.value)}
-      onBlur={aoSair}
-      style={{
-        width: "100%",
-        /* 16px é o mínimo: abaixo disso o Safari do iPhone dá zoom ao focar */
-        font: `16px/1.5 ${FONT_BITTER}`,
-        minHeight: 50,
-        padding: "12px 14px",
-        color: C.cream,
-        background: "rgba(0,0,0,.35)",
-        border: `2px solid ${erro !== "" ? "#E4572E" : "rgba(255,203,5,.3)"}`,
-        borderRadius: 0,
-      }}
-    />
+    {lista ? (
+      <select
+        id={id}
+        value={valor}
+        required={required}
+        autoComplete={autoComplete}
+        aria-invalid={erro !== ""}
+        aria-describedby={erro !== "" ? `${id}-erro` : dica ? `${id}-dica` : undefined}
+        onChange={(e) => aoMudar(e.target.value)}
+        onBlur={aoSair}
+        style={molduraDoCampo(erro)}
+      >
+        <option value="">{listaVazia}</option>
+        {listaExtra && <option value={listaExtra}>{listaExtra} — sou de fora</option>}
+        <optgroup label={listaGrupo}>
+          {lista.map((item) => (
+            <option key={item} value={item}>{item}</option>
+          ))}
+        </optgroup>
+      </select>
+    ) : (
+      <input
+        id={id}
+        type={tipo}
+        inputMode={modo}
+        value={valor}
+        required={required}
+        autoFocus={autoFoco}
+        autoComplete={autoComplete}
+        aria-invalid={erro !== ""}
+        aria-describedby={erro !== "" ? `${id}-erro` : dica ? `${id}-dica` : undefined}
+        onChange={(e) => aoMudar(e.target.value)}
+        onBlur={aoSair}
+        style={molduraDoCampo(erro)}
+      />
+    )}
     {erro !== "" ? (
       <p id={`${id}-erro`} role="alert" style={{ margin: "6px 0 0", fontSize: 13.5, color: "#F09A7E" }}>
         {erro}

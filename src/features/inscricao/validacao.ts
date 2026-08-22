@@ -5,6 +5,8 @@
  * aqui é para ajudar quem preenche, lá é para valer. Nunca confie só nesta.
  */
 
+import { cidadeConhecida } from "@/lib/municipios";
+
 /**
  * O rascunho dos campos, na sessão da aba.
  *
@@ -75,9 +77,18 @@ export function validarEmail(valor: string): string {
   return "";
 }
 
+/**
+ * A cidade vem de lista, então validar é conferir que uma foi escolhida.
+ *
+ * O "escreva o nome da cidade" de antes não existe mais: não há como escrever
+ * errado o que se escolhe. O que sobrou é o caso de o rascunho guardado no
+ * `sessionStorage` trazer um nome de uma versão anterior da lista — aí a
+ * escolha caducou e a pessoa escolhe de novo, em vez de enviar um valor que o
+ * servidor vai descartar em silêncio.
+ */
 export function validarCidade(valor: string): string {
-  if (valor.trim() === "") return "Diga em que cidade você mora.";
-  if (valor.trim().length < 2) return "Escreva o nome da cidade.";
+  if (valor.trim() === "") return "Escolha sua cidade na lista.";
+  if (!cidadeConhecida(valor)) return "Essa cidade não está na lista. Escolha de novo.";
   return "";
 }
 

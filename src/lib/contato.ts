@@ -38,6 +38,30 @@ export const GRUPO_GERAL = "https://chat.whatsapp.com/LUVbUSlmogqBZ8EKDHusS0?mod
  */
 export const WHATSAPP_COORDENACAO = "https://wa.me/5585981872972";
 
+/**
+ * O link que faz a PESSOA falar primeiro.
+ *
+ * O WhatsApp derruba conta que inicia conversa com muita gente desconhecida —
+ * e mandar acesso para quem se inscreveu é exatamente isso: dezenas de
+ * primeiras mensagens saindo do mesmo número, para números que nunca falaram
+ * com ele. Foi assim que o número da coordenação caiu.
+ *
+ * O conserto não é técnico, é de ordem: quando quem se inscreveu manda um "oi"
+ * antes, a conversa já existe, e a coordenação **responde** em vez de iniciar.
+ * Resposta dentro de conversa aberta não conta como abordagem fria.
+ *
+ * Por isso o texto já vem pronto: a mensagem tem de sair no primeiro toque,
+ * enquanto a pessoa ainda está na tela de confirmação. "Vou mandar depois" é
+ * a mensagem que não sai.
+ */
+export function linkOiCoordenacao(nome: string, cidade: string): string {
+  const quem = nome.trim().split(/\s+/)[0] || "";
+  const texto =
+    `Oi! Sou ${quem || "novo aqui"}${cidade.trim() === "" ? "" : `, de ${cidade.trim()}`}. ` +
+    "Acabei de me inscrever no site pra ajudar a Missão Ceará.";
+  return `${WHATSAPP_COORDENACAO}?text=${encodeURIComponent(texto)}`;
+}
+
 /** O mesmo número, do jeito que se lê em voz alta. */
 export const TELEFONE_COORDENACAO = "(85) 98187-2972";
 

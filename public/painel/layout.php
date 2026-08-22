@@ -24,7 +24,7 @@ require_once __DIR__ . '/icones.php';
 require_once __DIR__ . '/agora.php';
 
 /** Versão do CSS — muda junto com o painel.css para furar o cache do navegador. */
-const VERSAO_ESTILO = '11';
+const VERSAO_ESTILO = '12';
 
 /**
  * Os grupos da navegação, na ordem em que aparecem.
@@ -391,6 +391,28 @@ function fechar_pagina(): void
               });
             });
           });
+
+          /* Modal: um link com data-modal="id" vira caixa de diálogo.
+             O link continua sendo um LINK de verdade — sem JavaScript, ou em
+             navegador sem <dialog>, o href leva a `?novo=1` e a página volta com
+             o <dialog open> no corpo, que é um bloco comum. Com JS ele nunca
+             navega: abre por cima, com foco preso e Esc fechando. */
+          document.querySelectorAll('a[data-modal]').forEach(function (elo) {
+            var caixa = document.getElementById(elo.dataset.modal);
+            if (!caixa || typeof caixa.showModal !== 'function') return;
+            elo.addEventListener('click', function (e) {
+              e.preventDefault();
+              caixa.showModal();
+            });
+          });
+          /* Aberto pelo servidor (a pessoa chegou por `?novo=1`, ou o formulário
+             voltou com erro): vira camada de verdade, em vez de bloco no meio da
+             página. Removido antes para o showModal() não recusar. */
+          document.querySelectorAll('dialog.modal[open]').forEach(function (caixa) {
+            if (typeof caixa.showModal !== 'function') return;
+            caixa.removeAttribute('open');
+            caixa.showModal();
+          });
         })();
         </script>
         <?php
@@ -408,6 +430,106 @@ function fechar_pagina(): void
  * em POST-redirect-GET com âncora: o navegador salta para o item mexido e a
  * confirmação, se fosse estática, ficaria acima da dobra sem ninguém ver.
  */
+/**
+ * A barra de abas de uma tela que mostra uma lista de cada vez.
+ *
+ * `$abas` é `chave => ['nome' => …, 'conta' => …]`, e a chave vai para o
+ * parâmetro `$param` da URL. **Os outros parâmetros da URL são preservados**:
+ * trocar de aba não pode apagar a busca que a pessoa acabou de digitar.
+ *
+ * A aba aberta é um `<span aria-current>`, e não um link — link que leva ao
+ * lugar onde já se está é ruído para quem navega por teclado ou leitor de tela.
+ */
+function barra_abas(array $abas, string $atual, string $param = 'aba', string $rotulo = 'Abas'): void
+{
+    $base = strtok((string) ($_SERVER['REQUEST_URI'] ?? ''), '?');
+    ?>
+    <nav class="abas" aria-label="<?= h($rotulo) ?>">
+      <?php foreach ($abas as $chave => $aba): ?>
+        <?php
+        $qs = $_GET;
+        unset($qs['p'], $qs['c'], $qs['novo'], $qs['nova'], $qs['editar']);
+        $qs[$param] = $chave;
+        $url = $base . '?' . http_build_query($qs);
+        $conta = $aba['conta'] ?? null;
+        ?>
+        <?php if ((string) $chave === $atual): ?>
+          <span aria-current="page">
+            <?= h($aba['nome']) ?><?= $conta !== null ? '<span>' . (int) $conta . '</span>' : '' ?>
+          </span>
+        <?php else: ?>
+          <a href="<?= h($url) ?>">
+            <?= h($aba['nome']) ?><?= $conta !== null ? '<span>' . (int) $conta . '</span>' : '' ?>
+          </a>
+        <?php endif; ?>
+      <?php endforeach; ?>
+    </nav>
+    <?php
+}
+
+/**
+ * O botão que abre um modal, e o modal.
+ *
+ * São duas funções porque o botão fica onde a pessoa olha (topo da lista) e a
+ * caixa fica no fim do documento — mas os dois têm de concordar no id, e é o
+ * que estas duas garantem.
+ *
+ * `$aberto` é o que faz a coisa funcionar sem JavaScript: a página recarrega
+ * com `?novo=1`, o `<dialog>` sai com `open` e o formulário está ali, no corpo
+ * da página. O script de `fechar_pagina()` promove isso a camada quando pode.
+ */
+function botao_modal(string $id, string $texto, string $qs, string $classe = 'btn btn-ouro'): void
+{
+    $base = strtok((string) ($_SERVER['REQUEST_URI'] ?? ''), '?');
+    echo '<a class="' . h($classe) . '" data-modal="' . h($id) . '" href="'
+        . h($base . '?' . $qs) . '">' . h($texto) . '</a>';
+}
+
+function abrir_modal(string $id, string $titulo, bool $aberto = false): void
+{
+    ?>
+    <dialog id="<?= h($id) ?>" class="modal"<?= $aberto ? ' open' : '' ?>>
+      <form method="dialog" class="modal-fechar">
+        <button type="submit" aria-label="Fechar">&times;</button>
+      </form>
+      <h2><?= h($titulo) ?></h2>
+    <?php
+}
+
+function fechar_modal(): void
+{
+    echo '</dialog>';
+}
+
+/**
+ * O campo de cidade, que é lista e não caixa de texto.
+ *
+ * Uma cópia só, porque são três telas que perguntam a mesma coisa — a ficha da
+ * pessoa, o cadastro de quem chegou no encontro e o filtro da lista. Três
+ * `<select>` escritos à mão divergiriam no dia em que a primeira opção mudasse
+ * de texto.
+ *
+ * `$vazio` é o rótulo da opção em branco: no cadastro ela diz "escolha", no
+ * filtro ela diz "todas". Mesmo controle, perguntas diferentes.
+ */
+function campo_cidade(string $id, string $nome, string $valor, string $vazio = 'Escolha a cidade', bool $obrigatorio = false): void
+{
+    $lista = municipios_ce();
+    ?>
+    <select id="<?= h($id) ?>" name="<?= h($nome) ?>"<?= $obrigatorio ? ' required' : '' ?>>
+      <option value=""><?= h($vazio) ?></option>
+      <option value="<?= h($lista['fora']) ?>" <?= $valor === $lista['fora'] ? 'selected' : '' ?>>
+        <?= h($lista['fora']) ?>
+      </option>
+      <optgroup label="Ceará">
+        <?php foreach ($lista['municipios'] as $m): ?>
+          <option value="<?= h($m) ?>" <?= $valor === $m ? 'selected' : '' ?>><?= h($m) ?></option>
+        <?php endforeach; ?>
+      </optgroup>
+    </select>
+    <?php
+}
+
 function recado(?string $erro, ?string $ok): void
 {
     if (!$erro && !$ok) {

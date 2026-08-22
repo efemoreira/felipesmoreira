@@ -246,7 +246,7 @@ if (($bruto['consentimento'] ?? false) !== true) {
 
 $nome   = limpar_texto($bruto['nome'] ?? '', 80);
 $bairro = limpar_texto($bruto['bairro'] ?? '', 60);
-$cidade = limpar_texto($bruto['cidade'] ?? '', 60);
+$cidade = cidade_valida($bruto['cidade'] ?? '');   // do catálogo, ou nada
 $convidadoPor = limpar_texto($bruto['convidadoPor'] ?? '', 60);
 
 $nome = preg_replace('/\s+/u', ' ', $nome) ?? $nome;
@@ -258,7 +258,7 @@ if (mb_strlen($nome) < 3) {
    quem veio de outro município, que é metade do valor da lista de um encontro
    no interior. */
 if ($bairro === '' || $cidade === '') {
-    recusar('Diga seu bairro e sua cidade.');
+    recusar('Diga seu bairro e escolha sua cidade na lista.');
 }
 
 $pessoas = ler_pessoas();

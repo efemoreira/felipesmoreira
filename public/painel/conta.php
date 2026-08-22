@@ -100,6 +100,23 @@ abrir_pagina('Minha senha', !$obrigatoria);
   <?php if ($sucesso && !$obrigatoria): ?>
     <p style="margin-top:20px"><a class="btn" href="/painel/">Ir para o painel</a></p>
   <?php endif; ?>
+
+  <?php /* A Manutenção não tem área nem entra no menu: uma porta chamada
+           "apagar tudo" no menu de todo dia é uma porta que alguém abre por
+           curiosidade. Ela mora aqui, na tela da própria conta, que é onde
+           quem administra vai quando o assunto é o sistema e não o trabalho. */ ?>
+  <?php if (e_admin() && !$obrigatoria): ?>
+    <fieldset style="margin-top:28px">
+      <legend>Administração</legend>
+      <p class="dica" style="margin:0 0 12px">
+        Terminou a fase de teste e quer recomeçar limpo? A Manutenção apaga o que o
+        painel gravou — por grupo, com confirmação digitada.
+      </p>
+      <div class="acoes">
+        <a class="btn" href="/painel/manutencao.php">Abrir a Manutenção</a>
+      </div>
+    </fieldset>
+  <?php endif; ?>
 </div>
 <?php
 fechar_pagina();
