@@ -204,21 +204,39 @@ internet é proibido nesse dia) → `depois`. Quem escreve o recado de cada fase
 
 ### Os candidatos e a colinha (`/candidatos`)
 
-A área `candidatos` do painel guarda nome, nome de urna, cargo, **número**, @ e
-os grupos de cada um; `api/candidatos.php` entrega só os publicados, e
-`/candidatos` desenha a lista e gera a **colinha** no canvas
-(`src/features/candidatos/colinha.ts`, com os traços de `cordelCanvas.ts`).
+**Duas coisas separadas, e é a separação que importa:**
+
+- o **candidato** é um cadastro simples — quem é, que número tem, qual o @, e uma
+  foto opcional. Rápido, sem decisão nenhuma junto;
+- a **lista** é curadoria — um nome ("Deputados federais", "As mulheres da
+  chapa", "Os que eu apoio") e quem entra nela. É a lista que vira colinha.
+
+> A primeira versão tinha grupos fixos marcados no próprio candidato
+> (`federais`, `mulheres`, `escolhidos`) e estava errada nos dois lados:
+> obrigava a classificar na hora de cadastrar, quando o que se quer é só
+> registrar o número certo; e engessava as listas em categorias decididas no
+> código, quando **lista é conteúdo de campanha e muda toda semana**.
+
+`api/candidatos.php` entrega os dois juntos — pedir as listas num segundo
+endpoint faria a página piscar duas vezes no 4G de quem abriu na fila.
+`/candidatos` desenha e gera a colinha (`src/features/candidatos/colinha.ts`,
+com os traços de `cordelCanvas.ts`).
 
 - **Não é lista no código.** Nome de urna e número saem do registro no TSE e
   mudam até a véspera; lista no repositório é lista que exige um deploy para
   corrigir um dígito.
-- **Sem número não publica.** Colinha com número errado é pior que colinha
-  nenhuma.
-- **Os grupos são múltiplos** (`presidente`, `governador`, `federais`,
-  `estaduais`, `mulheres`, `escolhidos`): uma candidata a federal é federal *e*
-  mulher, e um grupo só por pessoa obrigaria a escolher entre duas coisas que
-  não se excluem. `escolhidos` é a curadoria — são eles que aparecem na home.
-- **Sem candidato publicado, o bloco da home não aparece.** Mesmo padrão de
+- **Sem número não cadastra.** Colinha com número errado é pior que colinha
+  nenhuma. Nome e número são os únicos obrigatórios — cargo, partido, @ e foto
+  não travam o cadastro.
+- **A ordem da lista é a ordem da colinha.** Não é alfabética: quem vem primeiro
+  é quem se quer que seja lembrado primeiro.
+- **Recolher um candidato tira ele de todas as listas de uma vez.** A limpeza é
+  na saída (`listas_publicadas()`), não na gravação — quem recolhe não deveria
+  ter que lembrar de editar cinco listas, e republicar devolve a todas.
+- **Uma lista vai para a home** (`naHome`), e só uma: a home é a página onde o
+  visitante tem menos paciência. Marcar a segunda desmarca a primeira em vez de
+  recusar — quem clicou já decidiu.
+- **Sem lista publicada, o bloco da home não aparece.** Mesmo padrão de
   `CHAPA.numero`: melhor não dizer nada do que deixar um buraco onde o eleitor
   espera um número.
 
@@ -321,9 +339,13 @@ para a mesma coisa é duas datas que divergem na terceira alteração.
 > o caminho de imagem que moravam lá dentro. Segue a convenção dos outros
 > `*-comum.php`: só define, e quem inclui decide se exige login.
 
-**O instante mora em `inicio`, e o resto é derivado dele.** Vale para o item de
-agenda e para o encontro, que agora são a mesma coisa. Um campo só,
-`datetime-local`, gravado como ISO com fuso fixo do Ceará
+**Dois campos na tela, UM instante no arquivo.** Quem marca o encontro pensa
+"sábado, 9 da manhã" — são um `<input type="date">` e um `<input type="time">`,
+e no celular o primeiro abre um calendário de verdade, que o `datetime-local`
+não abre em todo aparelho. `inicio_de_dia_e_hora()` junta os dois na gravação.
+
+**O que não muda é o que fica guardado:** um `inicio` só, ISO com fuso fixo do
+Ceará
 (`2026-10-04T19:00-03:00`); `dia`, `data` e `hora` saem dele na hora de gravar e
 continuam no JSON porque o pôster e o cartão os desenham. Antes eram três
 campos de texto digitados à mão — `"29/07"`, sem ano, e `"19H"` — e por isso a
@@ -351,6 +373,11 @@ marca quando começa e ninguém volta ao painel para dizer que acabou.
 - **O JSON-LD `Event` só sai para evento futuro** e também só no cliente, pela
   mesma razão. Google recusa `Event` sem `startDate` — era essa falta, e não o
   schema, que bloqueava.
+
+**A hora pode ficar em branco** — o dia já ordena, e o cartão simplesmente não
+mostra horário. Meia-noite em ponto é como isso fica gravado, e é por isso que
+`normalizar_evento()` trata `0H` como "hora ainda não definida": anunciar um
+encontro à meia-noite seria pior que não anunciar hora nenhuma.
 
 Item antigo, sem `inicio`, não some nem quebra: vira `sem-horario`, cai para o
 fim da lista e mostra o texto legado. O formulário exibe esse texto ao lado do
@@ -529,6 +556,12 @@ pelo mesmo número — presenças de qualquer encontro, `inscricao_por_telefone(
   pessoa escolher. Sem isso não há como desempatar;
 - **nenhum** → a ficha curta, com o telefone já preenchido.
 
+**As duas telas dizem, no topo, o que fazem.** Os dois links levam à mesma rota
+e se parecem, e a confusão não é teórica: quem abre o link do grupo em casa acha
+que está "dando presença", e quem lê o QR na porta acha que só está "avisando
+que vem". A faixa de modo vem antes de qualquer campo, e o verbo do botão repete
+a mesma coisa para quem rolou direto.
+
 > **A `ref` da escolha nunca é o id.** É `hash_hmac` do telefone com o id e o
 > `segredo()` do site: o servidor recalcula em vez de guardar, e uma ref só
 > serve para o telefone que a gerou. Id que sai de endpoint público é
@@ -552,6 +585,21 @@ com os dados já preenchidos**, por `sessionStorage` (`CHAVE_RASCUNHO`) e nunca
 por querystring: telefone em URL entra no histórico, no referrer e no log do
 servidor. O `?de=encontro-<slug>` fica na URL porque não é dado pessoal — é ele
 que responde "quantos militantes saíram do encontro X".
+
+### O time também conta na lista
+
+Militante com conta **não lê o QR da mesa** — ele está atrás dela, recebendo os
+outros. Sem escalar, a lista do encontro contava só quem entrou pela porta, e o
+relatório esquecia justamente quem fez o encontro acontecer.
+
+`time_fora_do_evento()` lista quem tem conta e ainda não está na ficha (casando
+por id **e** por telefone, para não duplicar quem já se cadastrou sozinho), e a
+ação `add-time` escala em bloco. Quem entra assim nasce `militante`, não
+`curioso` — classificá-lo como lead novo sujaria o funil —, com `confirmou` e
+sem `compareceu`: marca-se no dia, que é o que faz a conta fechar.
+
+O `usuarioId` no lead é o que sustenta o selo "do time" na lista e na visão
+cruzada.
 
 ### Quatro campos obrigatórios, e só quatro
 
@@ -683,6 +731,18 @@ que estava escrito e não era renderizado em lugar nenhum.
 vence `.mesa-icone` (0,1,0) e repinta o ícone. Ao estilizar filhos de um cartão,
 escreva o seletor com a classe junto (`.mesa .mesa-icone`) ou mire o filho
 direto (`.encontro-texto > span`).
+
+**Tela longa pede índice, e formulário pede modal.** O encontro aberto tem
+playbook, cinco peças, lista de gente, follow-up e dados — sem um índice
+(`.secoes`, âncoras e não abas: funcionam sem JavaScript e dão link para mandar
+no grupo), chegar em "Pessoas" no celular é rolar às cegas. E o formulário de
+novo encontro, que vivia embaixo de duas listas com dezenas de itens, virou
+`<dialog class="modal">`.
+
+> **O botão do modal é um link de verdade** (`?novo=1`), não um botão que só
+> existe com JavaScript: sem JS a página recarrega com o `<dialog open>` e o
+> formulário continua ali. Com JS, o link vira modal de verdade — foco preso,
+> Esc fecha, véu por cima.
 
 **Fila grande pede recolher:** listas de decisão (como as inscrições) mostram só
 o resumo, com o formulário dentro de um `<details class="decidir">`. Com 20

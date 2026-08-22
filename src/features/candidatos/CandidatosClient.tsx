@@ -5,7 +5,7 @@ import { Icon } from "@/components/icons";
 import { C, FONT_ALFA, FONT_ELITE, FONT_BITTER } from "@/lib/theme";
 import { canvasParaBlob } from "@/lib/cordelCanvas";
 import { faseEm, type Fase } from "@/lib/eleicao";
-import { GRUPOS, obterCandidatos, type Candidato } from "@/lib/api/candidatos";
+import { obterChapa, pessoasDa, type Candidato, type Lista } from "@/lib/api/candidatos";
 import {
   CABEM_POR_ARTE,
   gerarColinha,
@@ -31,7 +31,8 @@ import {
  * lugar: onde a ação acontece, e não num documento que ninguém relê.
  */
 export default function CandidatosClient() {
-  const [lista, setLista] = useState<Candidato[]>([]);
+  const [candidatos, setCandidatos] = useState<Candidato[]>([]);
+  const [listas, setListas] = useState<Lista[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [gerando, setGerando] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
@@ -41,8 +42,11 @@ export default function CandidatosClient() {
 
   useEffect(() => {
     setFase(faseEm());
-    obterCandidatos()
-      .then(setLista)
+    obterChapa()
+      .then((chapa) => {
+        setCandidatos(chapa.candidatos);
+        setListas(chapa.listas);
+      })
       .catch(() => {
         /* A rede falhou. A página fica vazia, e é melhor assim do que mostrar
            número velho guardado — número errado na urna não tem conserto. */
@@ -52,16 +56,20 @@ export default function CandidatosClient() {
 
   const podeCompartilhar = fase === "campanha" || fase === "reta-final";
 
-  const porGrupo = useMemo(
-    () =>
-      GRUPOS.map((g) => ({
-        ...g,
-        pessoas: lista.filter((c) => c.grupos.includes(g.id)),
-      })).filter((g) => g.pessoas.length > 0),
-    [lista],
+  /* Cada lista já vem com os ids na ordem que a coordenação decidiu; aqui só se
+     resolvem as fichas. Lista que ficou sem ninguém publicado não desce do
+     painel, então não há caso de título sem nada embaixo. */
+  const montadas = useMemo(
+    () => listas.map((l) => ({ lista: l, pessoas: pessoasDa(l, candidatos) })).filter((m) => m.pessoas.length > 0),
+    [listas, candidatos],
   );
 
-  const escolhidos = useMemo(() => lista.filter((c) => c.grupos.includes("escolhidos")), [lista]);
+  /* Quem não está em lista nenhuma continua tendo número — e alguém pode estar
+     procurando justamente por ele. */
+  const soltos = useMemo(() => {
+    const emLista = new Set(listas.flatMap((l) => l.candidatos));
+    return candidatos.filter((c) => !emLista.has(c.id));
+  }, [listas, candidatos]);
 
   /** Compartilha a arte pronta, ou baixa quando o aparelho não tem o menu. */
   const entregar = useCallback(async (canvas: HTMLCanvasElement, nome: string, texto: string) => {
@@ -107,15 +115,15 @@ export default function CandidatosClient() {
     [entregar],
   );
 
-  const compartilharGrupo = useCallback(
-    async (id: string, nome: string, pessoas: Candidato[]) => {
-      setGerando(id);
+  const compartilharLista = useCallback(
+    async (lista: Lista, pessoas: Candidato[]) => {
+      setGerando(lista.id);
       setAviso(null);
       try {
         await entregar(
-          await gerarColinha(nome, pessoas),
-          nomeArquivoColinha(id),
-          `A colinha de ${nome} da Missão no Ceará.\nfelipesmoreira.com/candidatos`,
+          await gerarColinha(lista.nome, pessoas),
+          nomeArquivoColinha(lista.id),
+          `${lista.nome} — a colinha da Missão no Ceará.\nfelipesmoreira.com/candidatos`,
         );
       } catch {
         setAviso("Não consegui montar a colinha agora. Tente de novo.");
@@ -145,7 +153,7 @@ export default function CandidatosClient() {
 
         {carregando && <p className="cd-vazio">Carregando…</p>}
 
-        {!carregando && lista.length === 0 && (
+        {!carregando && candidatos.length === 0 && (
           <p className="cd-vazio">
             A lista ainda está sendo fechada. Volte já já — ou{" "}
             <Link href="/propostas" className="cd-elo">
@@ -155,48 +163,31 @@ export default function CandidatosClient() {
           </p>
         )}
 
-        {escolhidos.length > 0 && (
-          <section className="cd-secao">
-            <h2 className="cd-secao-titulo">Comece por estes</h2>
-            <div className="cd-grade">
-              {escolhidos.map((c) => (
-                <Ficha
-                  key={c.id}
-                  c={c}
-                  destaque
-                  podeCompartilhar={podeCompartilhar}
-                  gerando={gerando === c.id}
-                  aoCompartilhar={() => compartilharUm(c)}
-                />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {porGrupo.map((g) => (
-          <section key={g.id} className="cd-secao">
+        {montadas.map(({ lista, pessoas }) => (
+          <section key={lista.id} className="cd-secao">
             <div className="cd-secao-topo">
-              <h2 className="cd-secao-titulo">{g.nome}</h2>
+              <h2 className="cd-secao-titulo">{lista.nome}</h2>
               {podeCompartilhar && (
                 <button
                   type="button"
                   className="cd-btn-grupo"
-                  onClick={() => compartilharGrupo(g.id, g.nome, g.pessoas)}
-                  disabled={gerando === g.id}
+                  onClick={() => compartilharLista(lista, pessoas)}
+                  disabled={gerando === lista.id}
                 >
                   <Icon name="whatsapp" size={15} />
-                  {gerando === g.id ? "Montando…" : "Colinha do grupo"}
+                  {gerando === lista.id ? "Montando…" : "Colinha desta lista"}
                 </button>
               )}
             </div>
-            {g.pessoas.length > CABEM_POR_ARTE && (
+            {lista.descricao && <p className="cd-nota">{lista.descricao}</p>}
+            {pessoas.length > CABEM_POR_ARTE && (
               <p className="cd-nota">
                 A colinha leva os {CABEM_POR_ARTE} primeiros — mais que isso e o número
                 deixa de ser lido de relance.
               </p>
             )}
             <div className="cd-grade">
-              {g.pessoas.map((c) => (
+              {pessoas.map((c) => (
                 <Ficha
                   key={c.id}
                   c={c}
@@ -209,16 +200,37 @@ export default function CandidatosClient() {
           </section>
         ))}
 
+        {/* Quem não entrou em lista nenhuma continua tendo número, e alguém pode
+            estar procurando justamente por ele. */}
+        {soltos.length > 0 && (
+          <section className="cd-secao">
+            <h2 className="cd-secao-titulo">
+              {montadas.length > 0 ? "Também na chapa" : "Nossos candidatos"}
+            </h2>
+            <div className="cd-grade">
+              {soltos.map((c) => (
+                <Ficha
+                  key={c.id}
+                  c={c}
+                  podeCompartilhar={podeCompartilhar}
+                  gerando={gerando === c.id}
+                  aoCompartilhar={() => compartilharUm(c)}
+                />
+              ))}
+            </div>
+          </section>
+        )}
+
         {aviso && <p className="cd-aviso">{aviso}</p>}
 
-        {fase === "votacao" && lista.length > 0 && (
+        {fase === "votacao" && candidatos.length > 0 && (
           <p className="cd-trava">
             <strong>Hoje é dia de votar.</strong> Os números continuam aqui para você
             conferir, mas a arte de compartilhar está fechada: publicar propaganda nova
             na internet no dia da eleição é proibido.
           </p>
         )}
-        {fase === "depois" && lista.length > 0 && (
+        {fase === "depois" && candidatos.length > 0 && (
           <p className="cd-trava">
             A eleição passou. A lista fica no ar como registro de quem disputou.
           </p>
@@ -239,6 +251,23 @@ const Ficha: React.FC<{
   aoCompartilhar: () => void;
 }> = ({ c, destaque, podeCompartilhar, gerando, aoCompartilhar }) => (
   <article className={`cd-ficha${destaque ? " cd-ficha-ouro" : ""}`}>
+    {/* A coluna da foto é SEMPRE desenhada, mesmo sem foto.
+        O cartão é um grid de colunas fixas: filho condicional escorrega todo
+        mundo uma casa para a esquerda — foi assim que a data do cartão da
+        programação foi parar do outro lado. Sem foto entra a inicial, que
+        também dá ao cartão uma âncora visual em vez de um buraco.
+
+        eslint-disable-next-line @next/next/no-img-element -- export estático:
+        `images.unoptimized` está ligado, então <Image> não otimizaria nada e
+        ainda embarcaria o runtime dele. A foto já sai reduzida do painel. */}
+    {c.imagem ? (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img className="cd-foto" src={c.imagem} alt="" width={56} height={56} />
+    ) : (
+      <span className="cd-foto cd-foto-vazia" aria-hidden="true">
+        {c.nome.trim().charAt(0).toUpperCase()}
+      </span>
+    )}
     <span className="cd-numero">{c.numero}</span>
     <div className="cd-quem">
       <h3 className="cd-nome">{c.nome}</h3>
@@ -295,8 +324,16 @@ const css = `
 
   .cd-grade { display: grid; gap: 12px; }
 
+  .cd-foto {
+    width: 56px; height: 56px; object-fit: cover; flex: 0 0 auto;
+    border: 3px solid ${C.ink}; background: rgba(246,245,239,.08);
+  }
+  .cd-foto-vazia {
+    display: inline-flex; align-items: center; justify-content: center;
+    font-family: ${FONT_ALFA}; font-size: 22px; color: ${C.gold2};
+  }
   .cd-ficha {
-    display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 16px;
+    display: grid; grid-template-columns: auto auto 1fr auto; align-items: center; gap: 14px;
     padding: 16px 18px; background: rgba(246,245,239,.05);
     border: 3px solid rgba(255,203,5,.28);
   }
@@ -332,7 +369,7 @@ const css = `
   .cd-elo { color: ${C.gold2}; }
 
   @media (max-width: 560px) {
-    .cd-ficha { grid-template-columns: auto 1fr; }
+    .cd-ficha { grid-template-columns: auto auto 1fr; }
     .cd-btn { grid-column: 1 / -1; justify-content: center; }
   }
 `;

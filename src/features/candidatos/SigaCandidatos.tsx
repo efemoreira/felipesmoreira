@@ -3,13 +3,13 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { Icon } from "@/components/icons";
 import { C, FONT_ALFA, FONT_ELITE } from "@/lib/theme";
-import { obterCandidatos, type Candidato } from "@/lib/api/candidatos";
+import { obterChapa, pessoasDa, type Candidato } from "@/lib/api/candidatos";
 
 /**
  * "Siga nossos candidatos" — o bloco da home.
  *
- * Mostra só os `escolhidos`, que é a curadoria da coordenação: a chapa inteira
- * na home seria uma lista que ninguém decora, e a home é a página onde o
+ * Mostra **uma lista só**, a que a coordenação marcou como “na home”: a chapa
+ * inteira aqui seria uma lista que ninguém decora, e a home é a página onde o
  * visitante tem menos paciência.
  *
  * **Sem candidato publicado, o bloco não existe.** É o mesmo padrão de
@@ -21,10 +21,16 @@ import { obterCandidatos, type Candidato } from "@/lib/api/candidatos";
  */
 export const SigaCandidatos: React.FC = () => {
   const [escolhidos, setEscolhidos] = useState<Candidato[]>([]);
+  const [titulo, setTitulo] = useState("Siga nossos candidatos");
 
   useEffect(() => {
-    obterCandidatos()
-      .then((lista) => setEscolhidos(lista.filter((c) => c.grupos.includes("escolhidos"))))
+    obterChapa()
+      .then(({ candidatos, listas }) => {
+        const daHome = listas.find((l) => l.naHome);
+        if (!daHome) return;  // nenhuma marcada: o bloco não aparece
+        setEscolhidos(pessoasDa(daHome, candidatos));
+        setTitulo(daHome.nome);
+      })
       .catch(() => {
         /* Rede fora: o bloco simplesmente não aparece. Melhor do que mostrar
            número guardado de antes — número errado na urna não tem conserto. */
@@ -55,7 +61,7 @@ export const SigaCandidatos: React.FC = () => {
           opacity: 0.7,
         }}
       >
-        Siga nossos candidatos
+        {titulo}
       </p>
 
       <ul style={{ listStyle: "none", margin: "0 0 14px", padding: 0, display: "grid", gap: 10 }}>

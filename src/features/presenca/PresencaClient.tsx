@@ -269,23 +269,29 @@ export default function PresencaClient() {
   }
 
   if (fase === "pronto") {
-    const confirmando = encontro?.existe && encontro.modo === "confirmacao";
+    const confirmandoPronto = encontro?.existe && encontro.modo === "confirmacao";
     return (
       <Casca
         titulo={
           reconhecido
-            ? `${confirmando ? "Combinado" : "Bem-vindo"}, ${reconhecido}!`
+            ? `${confirmandoPronto ? "Combinado" : "Bem-vindo"}, ${reconhecido}!`
             : jaEstava
               ? "Você já estava na lista"
               : "Pronto!"
         }
       >
         <p style={textoP}>
-          {confirmando
-            ? "Sua presença está confirmada. A gente te espera — se não der para ir, tudo bem, é só não aparecer."
-            : jaEstava
-              ? "Seu nome já tinha entrado. Pode guardar o celular e aproveitar o encontro."
-              : "Você está na lista. Obrigado por estar com a gente."}
+          {confirmandoPronto ? (
+            <>
+              Anotamos que <strong>você pretende ir</strong>. Se mudar de ideia, tudo
+              bem — é só não aparecer. <strong>No dia, procure o QR na entrada</strong>:
+              é ele que registra que você esteve lá.
+            </>
+          ) : jaEstava ? (
+            "Seu nome já estava na lista de presença. Pode guardar o celular e aproveitar o encontro."
+          ) : (
+            "Você está na lista de presença. Obrigado por estar com a gente."
+          )}
         </p>
 
         {/* A pessoa apareceu num encontro por vontade própria e ainda não é do
@@ -326,14 +332,14 @@ export default function PresencaClient() {
   if (fase === "telefone") {
     return (
       <Casca titulo={detalhes?.titulo ?? "Presença"}>
+        <Modo confirmando={confirmando} />
         <Quando detalhes={detalhes} />
+        <ModoExplica confirmando={confirmando} />
         <form onSubmit={procurar} style={{ textAlign: "left" }}>
           <p style={{ ...textoP, margin: "0 0 18px" }}>
-            {confirmando
-              ? "Diz seu WhatsApp para confirmar que você vem."
-              : "Diz seu WhatsApp para entrar na lista."}{" "}
-            Se você já veio a algum encontro ou já se inscreveu, é só isso — o resto a
-            gente já tem.
+            Comece pelo seu <strong>WhatsApp</strong>. Se você já veio a algum encontro
+            ou já se inscreveu para ajudar, é só isso — nome, bairro e cidade a gente já
+            tem, e você não digita de novo.
           </p>
           <Campo
             id="p-tel"
@@ -352,7 +358,7 @@ export default function PresencaClient() {
           <Armadilha honeypot={honeypot} />
           {erro && <Erro texto={erro} />}
           <button type="submit" style={botaoOuro}>
-            Continuar
+            {confirmando ? "Continuar — vou nesse" : "Continuar — cheguei"}
           </button>
         </form>
       </Casca>
@@ -363,6 +369,8 @@ export default function PresencaClient() {
   if (fase === "escolher") {
     return (
       <Casca titulo="Qual é você?">
+        <Modo confirmando={confirmando} />
+        <Quando detalhes={detalhes} />
         <p style={textoP}>
           Esse número está no cadastro de mais de uma pessoa — em casa que divide
           celular isso é comum. Toque no seu nome.
@@ -384,11 +392,13 @@ export default function PresencaClient() {
 
   return (
     <Casca titulo={detalhes?.titulo ?? "Presença"}>
+      <Modo confirmando={confirmando} />
       <Quando detalhes={detalhes} />
 
       <form onSubmit={enviar} style={{ textAlign: "left" }}>
         <p style={{ ...textoP, margin: "0 0 18px" }}>
-          A gente ainda não te conhece — são quatro campos e acabou.
+          A gente ainda não conhece esse número — são quatro campos e acabou.
+          Da próxima vez você digita só o WhatsApp.
         </p>
         <Campo
           id="p-nome"
@@ -521,7 +531,11 @@ export default function PresencaClient() {
             opacity: fase === "enviando" ? 0.6 : 1,
           }}
         >
-          {fase === "enviando" ? "Enviando…" : confirmando ? "Confirmar que vou" : "Estou aqui"}
+          {fase === "enviando"
+            ? "Enviando…"
+            : confirmando
+              ? "Confirmar que eu vou"
+              : "Registrar minha presença"}
         </button>
       </form>
     </Casca>
@@ -562,6 +576,56 @@ const botaoEscolhaFraco: React.CSSProperties = {
   border: "3px solid rgba(255,203,5,.25)",
   fontSize: 15,
 };
+
+/**
+ * A faixa que diz **o que esta tela faz** — a peça mais importante da página.
+ *
+ * Os dois links levam à mesma rota e se parecem, e a confusão entre eles não é
+ * teórica: quem abre o link do grupo em casa acha que está "dando presença", e
+ * quem lê o QR na porta acha que só está "avisando que vem". A diferença tem de
+ * estar no topo, grande, antes de qualquer campo — e o verbo do botão no fim
+ * repete a mesma coisa, para quem rolou direto.
+ */
+const Modo: React.FC<{ confirmando: boolean }> = ({ confirmando }) => (
+  <p
+    style={{
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 9,
+      margin: "0 0 16px",
+      padding: "9px 14px",
+      background: confirmando ? "rgba(255,203,5,.12)" : C.gold,
+      color: confirmando ? C.gold : C.ink,
+      border: `3px solid ${confirmando ? C.gold : C.ink}`,
+      fontFamily: FONT_ELITE,
+      fontSize: 12,
+      letterSpacing: 1.8,
+      textTransform: "uppercase",
+    }}
+  >
+    <Icon name={confirmando ? "calendar" : "flag"} size={16} />
+    {confirmando ? "Confirmar que eu vou" : "Cheguei no encontro"}
+  </p>
+);
+
+/** Uma linha explicando o que a marca significa — e o que ela NÃO significa. */
+const ModoExplica: React.FC<{ confirmando: boolean }> = ({ confirmando }) => (
+  <p style={{ ...textoP, margin: "0 0 20px", fontSize: 14.5, opacity: 0.85 }}>
+    {confirmando ? (
+      <>
+        Isto <strong>não</strong> é a lista de presença — é o aviso de que você
+        pretende ir, para a gente saber quantos esperar. No dia, quem estiver lá
+        lê o QR na entrada.
+      </>
+    ) : (
+      <>
+        Esta é a <strong>lista de presença</strong> do encontro, e vale para quem
+        está aqui agora. Se você só quer avisar que pretende vir, use o link que a
+        coordenação manda no grupo.
+      </>
+    )}
+  </p>
+);
 
 /** Quando e onde — a linha que confirma que a pessoa abriu o link certo. */
 const Quando: React.FC<{ detalhes: { data: string; hora: string; local: string } | null }> = ({

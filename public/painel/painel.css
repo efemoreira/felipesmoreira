@@ -796,6 +796,52 @@ input[type=file]::file-selector-button {
   font-family:var(--corpo); font-size:12px;
 }
 
+/* Caixa de diálogo (novo encontro, e o que mais precisar).
+   O <dialog> nativo faz o trabalho pesado — foco preso, Esc fecha, véu por
+   cima —, então aqui é só a aparência do cordel: canto reto, borda grossa,
+   sombra dura. `::backdrop` não herda variável do :root em todo navegador, por
+   isso o véu é literal (é o mesmo `bg-black/70` dos modais do Estúdio). */
+.modal {
+  width:min(560px, calc(100vw - 32px));
+  max-height:calc(100dvh - 48px);
+  overflow:auto;
+  padding:24px 22px 26px;
+  background:var(--papel); color:var(--texto);
+  border:3px solid var(--linha-2); box-shadow:8px 8px 0 var(--sombra);
+  border-radius:0;
+}
+.modal::backdrop { background:rgba(0,0,0,.7); }
+.modal > h2 {
+  font:400 20px/1.2 var(--display); color:var(--titulo);
+  margin:0 0 18px; padding-right:40px;
+}
+.modal-fechar { position:absolute; top:14px; right:16px; margin:0; }
+.modal-fechar button {
+  min-width:44px; min-height:44px; cursor:pointer;
+  background:none; border:0; color:var(--texto-fraco);
+  font-size:26px; line-height:1;
+}
+.modal-fechar button:hover { color:var(--acento); }
+/* Sem JS o <dialog open> é um bloco na página, não uma camada: não pode ficar
+   preso no meio da tela nem ganhar véu, senão vira um bloco flutuando sozinho. */
+.modal:not([open]) { display:none; }
+
+/* Índice de seções de uma tela longa (o encontro aberto).
+   Mesmo desenho de `.atalho-colunas`, mas SEM a regra que o esconde no
+   computador: lá o atalho existe só porque o quadro vira pilha no celular;
+   aqui a tela é longa nos dois, e o índice serve nos dois. */
+.secoes { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 20px; }
+.secoes a {
+  display:inline-flex; align-items:center; gap:7px; min-height:44px; padding:8px 13px;
+  font:400 12px/1 var(--etiqueta); letter-spacing:1.3px; text-transform:uppercase;
+  border:2px solid var(--linha); color:var(--texto-fraco); text-decoration:none;
+}
+.secoes a:hover { border-color:var(--ouro); color:var(--texto); }
+.secoes a span {
+  min-width:20px; padding:0 5px; background:var(--realce-3); color:var(--acento);
+  font-family:var(--corpo); font-size:12px;
+}
+
 /* ---- quadro de produção ----
    Quatro colunas no desktop; no celular vira uma pilha, porque rolar de lado
    entre colunas briga com a rolagem da página no dedo. */

@@ -65,6 +65,54 @@ function medirCom(ctx: CanvasRenderingContext2D, txt: string, font: string): num
   return w;
 }
 
+/**
+ * Carrega a foto do candidato, ou devolve null.
+ *
+ * Null e não exceção: a foto é enfeite, o número é a peça. Uma imagem que não
+ * carrega (arquivo apagado, rede caindo) não pode impedir a arte de sair — o
+ * militante está no meio do mutirão e precisa da peça, com ou sem rosto.
+ */
+function carregarFoto(src: string): Promise<HTMLImageElement | null> {
+  if (!src) return Promise.resolve(null);
+  return new Promise((resolve) => {
+    const img = new Image();
+    /* Mesma origem (a foto vem de /dados/imagens), mas declarar é o que garante
+       que o canvas não fique "sujo" e o toBlob continue funcionando. */
+    img.crossOrigin = "anonymous";
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
+}
+
+/** Desenha a foto cortada num círculo, com a moldura do cordel. */
+function retrato(
+  ctx: CanvasRenderingContext2D,
+  img: HTMLImageElement,
+  cx: number,
+  cy: number,
+  raio: number,
+) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(cx, cy, raio, 0, Math.PI * 2);
+  ctx.closePath();
+  ctx.clip();
+
+  /* Cobre o círculo sem distorcer: escala pelo lado menor e centraliza. */
+  const escala = Math.max((raio * 2) / img.width, (raio * 2) / img.height);
+  const l = img.width * escala;
+  const a = img.height * escala;
+  ctx.drawImage(img, cx - l / 2, cy - a / 2, l, a);
+  ctx.restore();
+
+  ctx.strokeStyle = C.gold;
+  ctx.lineWidth = 8;
+  ctx.beginPath();
+  ctx.arc(cx, cy, raio, 0, Math.PI * 2);
+  ctx.stroke();
+}
+
 /* ===================== um candidato ===================== */
 
 export async function gerarFicha(c: Candidato): Promise<HTMLCanvasElement> {
@@ -91,9 +139,19 @@ export async function gerarFicha(c: Candidato): Promise<HTMLCanvasElement> {
     corpo -= 10;
   }
 
+  const foto = await carregarFoto(c.imagem);
+  const RAIO = 190;
+  const alturaFoto = foto ? RAIO * 2 + 54 : 0;
+
   const linhasNome = quebrar(ctx, c.nome, larguraUtil, `58px ${ALFA}`, 2);
-  const alturaBloco = 62 + 46 + corpo * 0.9 + 48 + linhasNome.length * 74 + 40 + 44;
+  const alturaBloco =
+    alturaFoto + 62 + 46 + corpo * 0.9 + 48 + linhasNome.length * 74 + 40 + 44;
   let y = Math.max(PAD + 40, (H - alturaBloco) / 2 - H * 0.06);
+
+  if (foto) {
+    retrato(ctx, foto, centro, y + RAIO, RAIO);
+    y += alturaFoto;
+  }
 
   if (c.cargo) {
     pilula(ctx, c.cargo.toUpperCase(), centro, y, {
