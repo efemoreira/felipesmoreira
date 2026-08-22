@@ -211,6 +211,69 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         voltar($alvo['id'], 'dados');
     }
 
+    /* ---------- apagar o encontro (coordenação) ---------- */
+    if ($acao === 'apagar') {
+        exigir_coordenacao($coordena, $alvo['id']);
+
+        /* ENCONTRO COM GENTE NA LISTA NÃO SE APAGA.
+           A lista de presença é o registro de quem esteve lá: apagar o encontro
+           apagaria, junto, a resposta de "em que encontros o Fulano esteve" —
+           para todo mundo que apareceu, de uma vez, e sem desfazer.
+           O que se apaga é o engano: o encontro digitado duas vezes, o rascunho
+           que nunca virou nada. Para o que não vai acontecer existe CANCELADO,
+           que já tira o encontro da programação pública sem apagar ninguém. */
+        $naLista = count(presencas_do_evento($alvo['id']));
+        if ($naLista > 0) {
+            avisar('erro', 'Este encontro já tem ' . $naLista . ($naLista === 1 ? ' pessoa' : ' pessoas')
+                . ' na lista — apagá-lo apagaria o histórico de cada uma delas. Se ele não vai acontecer, mude a situação para “Cancelado”: sai da programação do site e a lista fica.');
+            voltar($alvo['id'], 'dados');
+        }
+
+        $eventos = array_values(array_filter(ler_eventos(), fn ($e) => $e['id'] !== $alvo['id']));
+        if (!gravar_eventos($eventos)) {
+            avisar('erro', 'Não consegui gravar em /dados.');
+            voltar($alvo['id'], 'dados');
+        }
+        apagar_imagem($alvo['imagem']);
+        /* Regrava a agenda na hora: o encontro pode estar no ar em /programacao,
+           e um cartão apontando para um encontro que não existe mais é pior do
+           que um cartão a menos. */
+        republicar_agenda();
+        avisar('ok', 'Encontro apagado.');
+        voltar();
+    }
+
+    /* ---------- tirar alguém da lista do encontro ---------- */
+    if ($acao === 'tirar-pessoa') {
+        $lead = limpar_texto($_POST['lead'] ?? '', 40);
+        $linha = null;
+        foreach (presencas_do_evento($alvo['id']) as $l) {
+            if ($l['id'] === $lead) {
+                $linha = $l;
+                break;
+            }
+        }
+        if ($linha === null) {
+            avisar('erro', 'Essa pessoa não está na lista deste encontro.');
+            voltar($alvo['id'], 'pessoas');
+        }
+        /* Some a LINHA, e não a pessoa: ela continua no cadastro, com telefone,
+           funções e os outros encontros dela. O que se desfaz aqui é "esteve
+           neste sábado" — quase sempre o dedo errado na lista, ou o mesmo
+           número cadastrado duas vezes na porta. */
+        $presencas = array_values(array_filter(
+            ler_presencas(),
+            fn ($l) => $l['id'] !== $linha['id']
+        ));
+        if (!gravar_presencas($presencas)) {
+            avisar('erro', 'Não consegui gravar em /dados.');
+            voltar($alvo['id'], 'pessoas');
+        }
+        avisar('ok', explode(' ', $linha['pessoa']['nome'])[0]
+            . ' saiu da lista deste encontro. O cadastro dela continua em /painel/pessoas.');
+        voltar($alvo['id'], 'pessoas');
+    }
+
     /* ---------- marcar item do checklist (qualquer um da área) ---------- */
     if ($acao === 'marcar') {
         $peca  = limpar_texto($_POST['peca'] ?? '', 20);
@@ -619,6 +682,27 @@ if ($aberto === null) {
 
 $familia   = FAMILIAS[$aberto['familia']];
 $pessoas   = presencas_do_evento($aberto['id']);
+$naLista   = count($pessoas);
+
+/* A busca dentro do encontro. Numa noite de encontro grande a lista passa de
+   cem linhas, e a pergunta na mesa é sempre a mesma — "o Fulano já deu
+   presença?". Rolar cem nomes com o celular na mão, em pé, não é resposta.
+
+   O parâmetro é o mesmo `q` da lista de encontros porque as duas telas nunca
+   estão abertas ao mesmo tempo: com `?e=` aberto, `q` é desta lista. */
+$buscaP = limpar_texto($_GET['q'] ?? '', 60);
+if ($buscaP !== '') {
+    $digitosP = so_digitos($buscaP);
+    $pessoas = array_values(array_filter($pessoas, function ($l) use ($buscaP, $digitosP) {
+        $q = $l['pessoa'];
+        if (combina_com([$q['nome'], $q['bairro'], $q['cidade']], $buscaP)) {
+            return true;
+        }
+        /* Dígito casa com dígito: quem procura na porta tem o número na tela do
+           próprio WhatsApp, e "(85) 9" não acharia "85 9" como texto. */
+        return $digitosP !== '' && $q['telefone'] !== '' && str_contains($q['telefone'], $digitosP);
+    }));
+}
 $preparo   = preparo_do_evento($aberto);
 $time      = array_values(array_filter(ler_pessoas(), fn ($u) => $u['ativo']));
 
@@ -626,7 +710,9 @@ $time      = array_values(array_filter(ler_pessoas(), fn ($u) => $u['ativo']));
    aba Pessoas, mas quem monta a tela precisa do número antes disso. */
 $vencidos = [];
 if ($coordena) {
-    foreach ($pessoas as $l) {
+    /* Sobre a lista INTEIRA: o follow-up vencido é o que está devendo, e
+       escondê-lo porque a busca está ligada seria esconder trabalho. */
+    foreach (presencas_do_evento($aberto['id']) as $l) {
         if (($etapa = etapa_vencida($l, $aberto)) !== null) {
             $vencidos[] = [$l, $etapa];
         }
@@ -663,7 +749,9 @@ abrir_pagina($aberto['titulo']);
   <?php
   $abasDoEncontro = [
       'preparo' => ['nome' => 'Preparo', 'conta' => $preparo['feito'] . '/' . $preparo['total']],
-      'pessoas' => ['nome' => 'Pessoas', 'conta' => count($pessoas)],
+      /* O número da aba é o da lista inteira, e não o do recorte: a aba diz
+         quantos estão no encontro, e não quantos casam com o que foi digitado. */
+      'pessoas' => ['nome' => 'Pessoas', 'conta' => $naLista],
   ];
   /* Dados é da coordenação: quem executa marca checklist e recebe gente, não
      muda data, local nem o que vai para a programação pública. */
@@ -738,7 +826,15 @@ abrir_pagina($aberto['titulo']);
   <?php if ($aba === 'pessoas'): ?>
   <!-- lista de presença -->
   <fieldset id="pessoas">
-    <legend>Quem vem e quem veio (<?= count($pessoas) ?>)</legend>
+    <legend>
+      Quem vem e quem veio (<?= count($pessoas) ?><?= $buscaP !== '' ? ' de ' . $naLista : '' ?>)
+    </legend>
+
+    <?php /* Só aparece quando há o que procurar: com oito nomes a caixa é um
+             controle em cima de uma lista que cabe inteira na tela. */ ?>
+    <?php if ($naLista > 8 || $buscaP !== ''): ?>
+      <?php barra_busca($buscaP, 'nome, WhatsApp, bairro ou cidade', ['e' => $aberto['id'], 'aba' => 'pessoas']); ?>
+    <?php endif; ?>
 
     <?php if ($aberto['token'] !== ''): ?>
       <?php $urlPresenca = url_presenca($aberto); ?>
@@ -825,6 +921,10 @@ abrir_pagina($aberto['titulo']);
             <input type="hidden" name="csrf" value="<?= h(token()) ?>">
             <input type="hidden" name="id" value="<?= h($aberto['id']) ?>">
             <input type="hidden" name="acao" value="add-time">
+            <?php if (count($doTime) > 8): ?>
+              <?php filtro_de_marcacao('time-fora', 'nome ou função'); ?>
+            <?php endif; ?>
+            <div id="time-fora">
             <?php foreach ($doTime as $u): ?>
               <label class="check">
                 <input type="checkbox" name="usuario[]" value="<?= h($u['id']) ?>">
@@ -834,12 +934,19 @@ abrir_pagina($aberto['titulo']);
                 <?php endif; ?>
               </label>
             <?php endforeach; ?>
+            </div>
             <div class="acoes" style="margin-top:12px">
               <button type="submit" class="btn btn-ouro">Escalar quem marquei</button>
             </div>
           </form>
         </div>
       </details>
+    <?php endif; ?>
+
+    <?php /* Lista vazia por causa do recorte não é lista vazia: sem esta saída
+             quem errou a grafia acha que a pessoa não deu presença. */ ?>
+    <?php if ($pessoas === [] && $buscaP !== ''): ?>
+      <?php nada_encontrado($buscaP, '/painel/eventos.php?e=' . urlencode($aberto['id']) . '&aba=pessoas'); ?>
     <?php endif; ?>
 
     <?php if ($pessoas !== []): ?>
@@ -876,7 +983,7 @@ abrir_pagina($aberto['titulo']);
       <div class="rolagem">
         <table class="tabela">
           <thead>
-            <tr><th>Quem</th><th>Confirmou</th><th>Compareceu</th><th>O que é</th></tr>
+            <tr><th>Quem</th><th>Confirmou</th><th>Compareceu</th><th>O que é</th><th></th></tr>
           </thead>
           <tbody>
             <?php foreach ($pessoas as $l): ?>
@@ -931,6 +1038,21 @@ abrir_pagina($aberto['titulo']);
                       <?php endforeach; ?>
                     </select>
                     <noscript><button type="submit" class="btn btn-mini">ok</button></noscript>
+                  </form>
+                </td>
+                <td>
+                  <?php /* Tira a LINHA, não a pessoa: o cadastro dela continua em
+                           /painel/pessoas, com telefone e os outros encontros. O
+                           que se desfaz é "esteve neste sábado" — o dedo errado
+                           na lista, ou o mesmo número cadastrado duas vezes na
+                           porta. */ ?>
+                  <form method="post"
+                        onsubmit="return confirm(<?= texto_js('Tirar ' . $q['nome'] . ' da lista deste encontro? O cadastro dela continua em Pessoas.') ?>)">
+                    <input type="hidden" name="csrf" value="<?= h(token()) ?>">
+                    <input type="hidden" name="id" value="<?= h($aberto['id']) ?>">
+                    <input type="hidden" name="lead" value="<?= h($l['id']) ?>">
+                    <button type="submit" class="btn btn-mini btn-risco" name="acao" value="tirar-pessoa"
+                            title="Tirar da lista deste encontro">Tirar</button>
                   </form>
                 </td>
               </tr>
@@ -1190,6 +1312,39 @@ abrir_pagina($aberto['titulo']);
           <button type="submit" class="btn btn-mini">Mudar situação</button>
         </div>
       </form>
+
+      <?php /* Apagar fica por último, depois de tudo que se faz todo dia, e só
+               aparece quando é de fato possível: encontro com gente na lista não
+               se apaga — apagá-lo apagaria o histórico de cada uma dessas
+               pessoas, de uma vez e sem desfazer. Para o que não vai acontecer
+               existe CANCELADO, ali em cima, que já tira o encontro da
+               programação do site sem apagar ninguém.
+
+               Mostrar um botão que o POST vai recusar é pedir para a pessoa
+               clicar à toa — o mesmo desenho da decisão do próprio fato. */ ?>
+      <div class="decidir-recusa">
+        <?php if ($naLista > 0): ?>
+          <p class="dica" style="margin:0">
+            Este encontro não pode ser apagado: <?= $naLista ?>
+            <?= $naLista === 1 ? 'pessoa está' : 'pessoas estão' ?> na lista dele, e apagá-lo
+            apagaria esse encontro do histórico de cada uma. Se ele não vai acontecer,
+            marque <strong>Cancelado</strong> — sai da programação do site e a lista fica.
+          </p>
+        <?php else: ?>
+          <p class="dica" style="margin:0 0 10px">
+            Ninguém na lista ainda, então apagar não apaga o histórico de ninguém.
+            Serve para o encontro cadastrado duas vezes, ou o rascunho que não virou nada.
+          </p>
+          <form method="post"
+                onsubmit="return confirm(<?= texto_js('Apagar “' . $aberto['titulo'] . '”? Isto não tem desfazer.') ?>)">
+            <input type="hidden" name="csrf" value="<?= h(token()) ?>">
+            <input type="hidden" name="id" value="<?= h($aberto['id']) ?>">
+            <div class="acoes">
+              <button type="submit" class="btn btn-risco" name="acao" value="apagar">Apagar o encontro</button>
+            </div>
+          </form>
+        <?php endif; ?>
+      </div>
     </fieldset>
   <?php endif; ?>
 </div>

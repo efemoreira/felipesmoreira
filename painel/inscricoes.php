@@ -349,6 +349,17 @@ abrir_pagina('Inscrições');
             <strong><?= h($i['nome']) ?></strong>
             <span><?= h($i['bairro']) ?>, <?= h($i['cidade']) ?> · chegou <?= h($formatar($i['criadoEm'])) ?></span>
           </span>
+          <?php /* Corrigir o cadastro é na ficha da pessoa, e não aqui: a
+                   inscrição não é um registro à parte — é a MESMA pessoa, com o
+                   bloco de entrada preenchido. Um segundo formulário de edição
+                   nesta tela seria uma segunda régua para o mesmo dado.
+
+                   Só quem enxerga a lista de pessoas vê o elo: ela tem telefone
+                   e endereço de todo mundo, e dado pessoal acompanha a
+                   responsabilidade sobre ele. */ ?>
+          <?php if (pode('pessoas')): ?>
+            <a class="btn btn-mini" href="/painel/pessoas.php?p=<?= h($i['id']) ?>">Abrir a ficha</a>
+          <?php endif; ?>
         </header>
 
         <dl class="ficha-dados">
@@ -449,7 +460,7 @@ abrir_pagina('Inscrições');
             </form>
 
             <form method="post" class="decidir-recusa"
-                  onsubmit="return confirm('Recusar a inscrição de <?= h($i['nome']) ?>? Ela fica registrada, mas não vira acesso.')">
+                  onsubmit="return confirm(<?= texto_js('Recusar a inscrição de ' . $i['nome'] . '? Ela fica registrada, mas não vira acesso.') ?>)">
               <input type="hidden" name="acao" value="recusar">
               <input type="hidden" name="id" value="<?= h($i['id']) ?>">
               <input type="hidden" name="csrf" value="<?= h(token()) ?>">
@@ -483,7 +494,13 @@ abrir_pagina('Inscrições');
             ?>
             <?php foreach ($emOrdem as $i): ?>
               <tr>
-                <td><?= h($i['nome']) ?></td>
+                <td>
+                  <?php if (pode('pessoas')): ?>
+                    <a href="/painel/pessoas.php?p=<?= h($i['id']) ?>"><?= h($i['nome']) ?></a>
+                  <?php else: ?>
+                    <?= h($i['nome']) ?>
+                  <?php endif; ?>
+                </td>
                 <td><?= h($i['cidade']) ?></td>
                 <td>
                   <?php if ($i['status'] === 'aprovada'): ?>

@@ -99,6 +99,29 @@ $comVideo   = count($videos);
 $publicadas = count(array_filter($videos, fn ($v) => $v['publicada']));
 $totalRapidas = count(array_filter(todas_as_aulas(), fn ($a) => $a['pista'] === 'rapida'));
 
+/* ---------------- recorte ----------------
+   São 32 aulas em seis Dias, e a pergunta que traz alguém aqui é sempre sobre
+   UMA delas — "onde pendura o vídeo da Checagem?", "quais ainda estão sem
+   vídeo?". Sem recorte, as duas se respondem abrindo seis blocos e lendo. */
+$buscaAu  = limpar_texto($_GET['q'] ?? '', 60);
+$estadoAu = in_array($_GET['estado'] ?? '', ['sem-video', 'rascunho', 'publicada'], true)
+    ? (string) $_GET['estado'] : '';
+
+$recorteAu = function (array $aula) use ($videos, $buscaAu, $estadoAu): bool {
+    if ($buscaAu !== '' && !combina_com([$aula['titulo'], $aula['resumo'], $aula['id']], $buscaAu)) {
+        return false;
+    }
+    $v = $videos[$aula['id']] ?? null;
+    return match ($estadoAu) {
+        'sem-video'  => $v === null,
+        'rascunho'   => $v !== null && !$v['publicada'],
+        'publicada'  => $v !== null && $v['publicada'],
+        default      => true,
+    };
+};
+$recortadoAu = $buscaAu !== '' || $estadoAu !== '';
+$achadasAu = count(array_filter(todas_as_aulas(), $recorteAu));
+
 abrir_pagina('Aulas em vídeo');
 ?>
 <div class="capa">
@@ -146,6 +169,40 @@ abrir_pagina('Aulas em vídeo');
     <?= $total ?> aulas · <?= $comVideo ?> com vídeo · <?= $publicadas ?> publicadas.
   </p>
 
+  <form method="get" class="filtros">
+    <div class="campo">
+      <label for="q">Procurar</label>
+      <input id="q" name="q" type="search" maxlength="60" value="<?= h($buscaAu) ?>"
+             placeholder="título da aula ou assunto" autocapitalize="none"
+             spellcheck="false" title="Atalho: tecle /">
+    </div>
+    <div class="campo">
+      <label for="fe">Estado</label>
+      <select id="fe" name="estado">
+        <option value="">todas</option>
+        <option value="sem-video" <?= $estadoAu === 'sem-video' ? 'selected' : '' ?>>sem vídeo (<?= $total - $comVideo ?>)</option>
+        <option value="rascunho"  <?= $estadoAu === 'rascunho'  ? 'selected' : '' ?>>vídeo em rascunho (<?= $comVideo - $publicadas ?>)</option>
+        <option value="publicada" <?= $estadoAu === 'publicada' ? 'selected' : '' ?>>publicadas (<?= $publicadas ?>)</option>
+      </select>
+    </div>
+    <div class="acoes">
+      <button class="btn" type="submit">Filtrar</button>
+      <?php if ($recortadoAu): ?>
+        <a class="btn" href="/painel/aulas.php">Limpar</a>
+      <?php endif; ?>
+    </div>
+  </form>
+
+  <?php if ($recortadoAu): ?>
+    <p class="dica" style="margin:-6px 0 12px"><?= $achadasAu ?> de <?= $total ?> aulas.</p>
+    <?php /* Fora do <p>: `nada_encontrado()` desenha parágrafo e `<div>`, e
+             bloco dentro de parágrafo faz o navegador fechar o <p> sozinho,
+             reorganizando a árvore. */ ?>
+    <?php if ($achadasAu === 0): ?>
+      <?php nada_encontrado($buscaAu, '/painel/aulas.php', 'Nenhuma aula nesse estado.'); ?>
+    <?php endif; ?>
+  <?php endif; ?>
+
 <?php foreach (CURRICULO as $dia): ?>
   <?php
     /* Quanto deste Dia já tem vídeo — sem isso, achar o Dia incompleto exige
@@ -154,7 +211,12 @@ abrir_pagina('Aulas em vídeo');
         $dia['aulas'],
         fn ($a) => isset($videos[$a['id']])
     ));
+    /* O Dia inteiro sai da tela quando nenhuma aula dele casa: um bloco vazio
+       com o título do Dia faria procurar dentro dele. O contador do topo continua
+       dizendo o total, para ninguém achar que as outras sumiram. */
+    $aulasDoDia = array_values(array_filter($dia['aulas'], $recorteAu));
   ?>
+  <?php if ($aulasDoDia === []) { continue; } ?>
   <fieldset>
     <legend>
       Dia <?= (int) $dia['numero'] ?> — <?= h($dia['titulo']) ?>
@@ -162,7 +224,7 @@ abrir_pagina('Aulas em vídeo');
     </legend>
     <p class="dica" style="margin:0 0 14px"><?= h($dia['resumo']) ?></p>
 
-    <?php foreach ($dia['aulas'] as $aula): ?>
+    <?php foreach ($aulasDoDia as $aula): ?>
       <?php
         $v = $videos[$aula['id']] ?? null;
         $rapida = $aula['pista'] === 'rapida';
@@ -232,7 +294,7 @@ abrir_pagina('Aulas em vídeo');
       });
     ?>
     <?php if ($pessoas === []): ?>
-      <p class="dica" style="margin:0">Ninguém com acesso às aulas ainda. Libere a área em <a href="/painel/usuarios.php">Usuários</a>.</p>
+      <p class="dica" style="margin:0">Ninguém com acesso às aulas ainda. Libere a área na ficha da pessoa, em <a href="/painel/pessoas.php">Pessoas</a>.</p>
     <?php else: ?>
       <div class="rolagem">
         <table class="tabela">

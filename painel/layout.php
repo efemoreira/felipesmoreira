@@ -24,7 +24,7 @@ require_once __DIR__ . '/icones.php';
 require_once __DIR__ . '/agora.php';
 
 /** Versão do CSS — muda junto com o painel.css para furar o cache do navegador. */
-const VERSAO_ESTILO = '15';
+const VERSAO_ESTILO = '16';
 
 /**
  * Os grupos da navegação, na ordem em que aparecem.
@@ -414,6 +414,33 @@ function fechar_pagina(): void
             caixa.showModal();
           });
 
+          /* A peneira dos paredões de checkbox. Esconde o que não casa, sem
+             tocar no que está marcado e sem recarregar — recarregar no meio da
+             marcação jogaria fora tudo que ainda não foi salvo.
+
+             Ignora acento e caixa dos dois lados, como o `combina_com()` do
+             PHP. O jeito certo de fazer isso em JavaScript é `normalize("NFD")`
+             mais o corte dos diacríticos: o Unicode define o resultado, então
+             ele é o mesmo em qualquer navegador. */
+          function semAcento(texto) {
+            return texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+          }
+          document.querySelectorAll('input[data-peneira]').forEach(function (caixa) {
+            var alvo = document.getElementById(caixa.dataset.peneira);
+            if (!alvo) return;
+            var itens = alvo.querySelectorAll('label.check');
+            if (itens.length === 0) return;
+            var campo = caixa.closest('.campo-peneira');
+            if (campo) campo.hidden = false;   // só existe onde de fato peneira
+            caixa.addEventListener('input', function () {
+              var procurado = semAcento(caixa.value.trim());
+              itens.forEach(function (item) {
+                item.hidden = procurado !== '' &&
+                  semAcento(item.textContent || '').indexOf(procurado) < 0;
+              });
+            });
+          });
+
           /* "/" põe o cursor na busca — quem usa o painel todo dia procura mais
              do que clica, e a caixa nem sempre está na altura da tela.
 
@@ -557,6 +584,26 @@ function nada_encontrado(string $busca, string $volta, string $vazio = 'Nada por
 }
 
 /**
+ * Um texto do cadastro dentro de um `confirm()`, sem quebrar no apóstrofo.
+ *
+ * `h()` escapa a aspa simples como `&#039;`, e o navegador a devolve como `'`
+ * ao ler o atributo — então "Sant'Ana" fecha a string do JavaScript no meio e o
+ * `onsubmit` inteiro para de existir: o formulário passa a apagar sem
+ * perguntar nada. Nome de gente é dado que vem do cadastro, e apóstrofo em
+ * sobrenome cearense não é caso raro.
+ *
+ * As flags `JSON_HEX_*` são o mesmo cuidado do `estudio.php`: sem elas um
+ * `</script>` ou uma aspa dentro do nome escapa do contexto.
+ */
+function texto_js(string $texto): string
+{
+    return h((string) json_encode(
+        $texto,
+        JSON_UNESCAPED_UNICODE | JSON_HEX_QUOT | JSON_HEX_APOS | JSON_HEX_TAG | JSON_HEX_AMP
+    ));
+}
+
+/**
  * O botão que abre um modal, e o modal.
  *
  * São duas funções porque o botão fica onde a pessoa olha (topo da lista) e a
@@ -588,6 +635,32 @@ function abrir_modal(string $id, string $titulo, bool $aberto = false): void
 function fechar_modal(): void
 {
     echo '</dialog>';
+}
+
+/**
+ * A caixa que peneira um paredão de checkboxes.
+ *
+ * As listas de marcação do painel — quem entra na colinha, quem do time é
+ * escalado para o encontro — crescem com o movimento: aos quarenta nomes, achar
+ * um é rolar a tela lendo. A busca das outras telas não serve aqui: ela é um
+ * `<form method="get">`, e recarregar a página no meio da marcação jogaria fora
+ * tudo que ainda não foi salvo.
+ *
+ * Por isso ela peneira NO NAVEGADOR, escondendo o que não casa e deixando
+ * marcado o que já estava. E por isso nasce `hidden`: sem JavaScript ela não
+ * peneiraria nada, e caixa de procurar que não procura é pior do que caixa
+ * nenhuma. Quem a mostra é o script de `fechar_pagina()`.
+ */
+function filtro_de_marcacao(string $alvoId, string $dica = 'nome ou número'): void
+{
+    ?>
+    <div class="campo campo-peneira" hidden>
+      <label for="peneira-<?= h($alvoId) ?>">Procurar nesta lista</label>
+      <input id="peneira-<?= h($alvoId) ?>" type="search" data-peneira="<?= h($alvoId) ?>"
+             maxlength="60" placeholder="<?= h($dica) ?>" autocapitalize="none" spellcheck="false">
+      <p class="dica">Só esconde quem não casa — o que você já marcou continua marcado.</p>
+    </div>
+    <?php
 }
 
 /**

@@ -148,6 +148,81 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         voltar($alvo['id']);
     }
 
+    /* ---------- corrigir o card ---------- */
+    if ($acao === 'editar') {
+        $titulo = limpar_texto($_POST['titulo'] ?? '', 200);
+        $etapa  = limpar_texto($_POST['etapa'] ?? '', 20);
+        $fonte  = limpar_texto($_POST['fonteUrl'] ?? '', 500);
+
+        if ($titulo === '') {
+            avisar('erro', 'O card precisa de um título — é ele que vira o nome do arquivo no Acervo.');
+            voltar($alvo['id']);
+        }
+        if (!isset(ETAPAS[$etapa])) {
+            avisar('erro', 'Etapa desconhecida.');
+            voltar($alvo['id']);
+        }
+        /* A fonte pode ficar vazia (card aberto à mão), mas se vier tem de ser
+           link de verdade: é ela que o Acervo guarda como prova da peça. */
+        if ($fonte !== '' && filter_var($fonte, FILTER_VALIDATE_URL) === false) {
+            avisar('erro', 'A fonte precisa ser um endereço de verdade, ou ficar em branco.');
+            voltar($alvo['id']);
+        }
+
+        foreach ($cards as &$c) {
+            if ($c['id'] !== $alvo['id']) {
+                continue;
+            }
+            /* O nome do arquivo é GERADO do título e da etapa — mudar qualquer um
+               dos dois muda o nome que o Estúdio vai exportar. Por isso a
+               mudança fica anotada: quem já baixou o PNG com o nome antigo
+               precisa saber que ele mudou. */
+            if ($c['titulo'] !== $titulo || $c['etapa'] !== $etapa) {
+                anotar($c, $eu['nome'], 'Corrigiu o card — o nome do arquivo mudou.');
+            } else {
+                anotar($c, $eu['nome'], 'Corrigiu o card.');
+            }
+            $c['titulo']      = $titulo;
+            $c['etapa']       = $etapa;
+            $c['prazo']       = limpar_texto($_POST['prazo'] ?? '', 20);
+            $c['responsavel'] = limpar_texto($_POST['responsavel'] ?? '', 160);
+            $c['fonteUrl']    = $fonte;
+        }
+        unset($c);
+
+        if (!gravar_cards($cards)) {
+            avisar('erro', 'Não consegui gravar em /dados.');
+            voltar($alvo['id']);
+        }
+        avisar('ok', 'Card corrigido.');
+        voltar($alvo['id']);
+    }
+
+    /* ---------- apagar o card ---------- */
+    if ($acao === 'apagar') {
+        /* Card publicado é o rastro de uma peça que foi ao ar: é ele que
+           responde, na tela de Fatos, "o que foi feito com aquele fato", e o
+           Acervo aponta para o link que está aqui dentro. Apagá-lo deixa peça
+           publicada sem ficha que a justifique — e é isso que a Checagem existe
+           para não permitir. Admin destrava, porque card publicado por engano
+           também existe; qualquer outro apaga só o que ainda não foi ao ar. */
+        if ($alvo['coluna'] === 'publicado' && !e_admin()) {
+            avisar('erro', 'Card publicado não se apaga: é ele que responde “o que foi feito com aquele fato”, e o Acervo aponta para o link que está nele.');
+            voltar($alvo['id']);
+        }
+
+        $cards = array_values(array_filter($cards, fn ($c) => $c['id'] !== $alvo['id']));
+        if (!gravar_cards($cards)) {
+            avisar('erro', 'Não consegui gravar em /dados.');
+            voltar($alvo['id']);
+        }
+        /* O fato NÃO volta para a fila: ele foi checado, e a decisão continua
+           tomada. O que some é a peça que ninguém vai fazer — e a tela de Fatos
+           volta a mostrá-lo como "sem peça", que é a verdade. */
+        avisar('ok', 'Card apagado. O fato continua checado, e volta a aparecer como “sem peça”.');
+        voltar();
+    }
+
     /* ---------- abrir a etapa seguinte do mesmo fato ---------- */
     if ($acao === 'nova-etapa') {
         $etapa = limpar_texto($_POST['etapa'] ?? '', 20);
@@ -219,25 +294,91 @@ abrir_pagina('Produção');
      As colunas vazias continuam desenhadas, com o número em zero: é a moldura
      do quadro que diz onde o card não está. */
   $buscaPr = limpar_texto($_GET['q'] ?? '', 60);
+  $etapaF  = (string) ($_GET['etapa'] ?? '');
+  if (!isset(ETAPAS[$etapaF])) {
+      $etapaF = '';
+  }
+  /* "Meus" e "Sem dono" são as duas perguntas que se fazem num quadro cheio —
+     o que eu estou devendo, e o que está largado esperando alguém. */
+  $donoF = in_array($_GET['dono'] ?? '', ['meus', 'sem-dono', 'atrasados'], true) ? (string) $_GET['dono'] : '';
+
+  $recortePr = function (array $c) use ($buscaPr, $etapaF, $donoF, $eu, $hoje) {
+      if ($buscaPr !== '' && !combina_com([$c['titulo'], $c['donoNome'], $c['responsavel'], $c['fonteUrl'], nome_de_arquivo($c)], $buscaPr)) {
+          return false;
+      }
+      if ($etapaF !== '' && $c['etapa'] !== $etapaF) {
+          return false;
+      }
+      return match ($donoF) {
+          'meus'      => $c['donoId'] === $eu['id'],
+          'sem-dono'  => $c['donoId'] === '',
+          'atrasados' => $c['coluna'] !== 'publicado' && $c['prazo'] !== '' && $c['prazo'] < $hoje,
+          default     => true,
+      };
+  };
+
   $porColuna = [];
   $quantosCards = 0;
+  $porEtapa = [];
   foreach (COLUNAS as $chave => $nome) {
       $daColuna = cards_da_coluna($chave);
       $quantosCards += count($daColuna);
-      $porColuna[$chave] = $buscaPr === '' ? $daColuna : array_values(array_filter(
-          $daColuna,
-          fn ($c) => combina_com([$c['titulo'], $c['donoNome'], $c['fonteUrl'], nome_de_arquivo($c)], $buscaPr)
-      ));
+      foreach ($daColuna as $c) {
+          $porEtapa[$c['etapa']] = ($porEtapa[$c['etapa']] ?? 0) + 1;
+      }
+      $porColuna[$chave] = array_values(array_filter($daColuna, $recortePr));
   }
   $achados = array_sum(array_map('count', $porColuna));
+  $recortado = $buscaPr !== '' || $etapaF !== '' || $donoF !== '';
+
+  /* Qual card está aberto para correção. É um GET (`?editar=<id>`) e não estado
+     de JavaScript: sem JS a página recarrega com o `<dialog open>` e o
+     formulário continua ali. */
+  $corrigindo = achar_card(limpar_texto($_GET['editar'] ?? '', 40));
   ?>
 
-  <?php if ($quantosCards > 6 || $buscaPr !== ''): ?>
-    <?php barra_busca($buscaPr, 'título, dono, fonte ou nome do arquivo'); ?>
-    <?php if ($buscaPr !== ''): ?>
+  <?php /* O filtro só aparece quando há o que filtrar: com quatro cards ele é
+           três controles em cima de um quadro que cabe inteiro na tela. */ ?>
+  <?php if ($quantosCards > 6 || $recortado): ?>
+    <form method="get" class="filtros">
+      <div class="campo">
+        <label for="q">Procurar</label>
+        <input id="q" name="q" type="search" maxlength="60" value="<?= h($buscaPr) ?>"
+               placeholder="título, dono, alvo, fonte ou nome do arquivo"
+               autocapitalize="none" spellcheck="false" title="Atalho: tecle /">
+      </div>
+      <div class="campo">
+        <label for="fe">Peça</label>
+        <select id="fe" name="etapa">
+          <option value="">todas</option>
+          <?php foreach (ETAPAS as $chave => $nome): ?>
+            <?php if (($porEtapa[$chave] ?? 0) === 0 && $etapaF !== $chave) { continue; } ?>
+            <option value="<?= h($chave) ?>" <?= $etapaF === $chave ? 'selected' : '' ?>>
+              <?= h($nome) ?> (<?= (int) ($porEtapa[$chave] ?? 0) ?>)
+            </option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+      <div class="campo">
+        <label for="fd">Mostrar</label>
+        <select id="fd" name="dono">
+          <option value="">o quadro inteiro</option>
+          <option value="meus"      <?= $donoF === 'meus'      ? 'selected' : '' ?>>os meus</option>
+          <option value="sem-dono"  <?= $donoF === 'sem-dono'  ? 'selected' : '' ?>>sem dono</option>
+          <option value="atrasados" <?= $donoF === 'atrasados' ? 'selected' : '' ?>>atrasados</option>
+        </select>
+      </div>
+      <div class="acoes">
+        <button class="btn" type="submit">Filtrar</button>
+        <?php if ($recortado): ?>
+          <a class="btn" href="/painel/producao.php">Limpar</a>
+        <?php endif; ?>
+      </div>
+    </form>
+    <?php if ($recortado): ?>
       <p class="dica" style="margin:-6px 0 18px">
         <?= $achados ?> de <?= $quantosCards ?> no quadro.
-        <?php if ($achados === 0): ?>
+        <?php if ($achados === 0 && $buscaPr !== ''): ?>
           Confira a grafia — a busca ignora acento e maiúscula, mas não adivinha.
         <?php endif; ?>
       </p>
@@ -264,10 +405,10 @@ abrir_pagina('Produção');
         <?php if ($daColuna === []): ?>
           <?php /* Tela vazia é onboarding: dizer o que vai cair aqui e quem põe
                    ensina o fluxo do manual sem obrigar ninguém a decorá-lo. Com
-                   busca ligada a coluna não está vazia, está recortada — e dizer
+                   recorte ligado a coluna não está vazia, está recortada — e dizer
                    ali o texto de onboarding seria mentir sobre o quadro. */ ?>
           <p class="dica coluna-vazia">
-            <?= $buscaPr !== '' ? 'Nada com esse texto.' : h(COLUNA_VAZIA[$chave] ?? 'Vazio.') ?>
+            <?= $recortado ? 'Nada com esse recorte.' : h(COLUNA_VAZIA[$chave] ?? 'Vazio.') ?>
           </p>
         <?php endif; ?>
 
@@ -399,6 +540,25 @@ abrir_pagina('Produção');
                   </p>
                 <?php endif; ?>
 
+                <?php /* Corrigir e apagar ficam por último, depois do que se faz
+                         todo dia: são as ações raras, e a rara em cima da comum
+                         é a que se clica sem querer. */ ?>
+                <div class="decidir-recusa">
+                  <div class="acoes">
+                    <?php botao_modal('editar-card', 'Corrigir o card', 'editar=' . urlencode($c['id']) . '#' . $c['id'], 'btn btn-mini'); ?>
+                    <?php if ($chave !== 'publicado' || e_admin()): ?>
+                      <form method="post" style="display:inline"
+                            onsubmit="return confirm(<?= texto_js($chave === 'publicado'
+                                ? 'Apagar um card JÁ PUBLICADO? Some o rastro que liga a peça ao fato — e o Acervo aponta para o link que está nele.'
+                                : 'Apagar este card? O fato continua checado e volta a aparecer como “sem peça”.') ?>)">
+                        <input type="hidden" name="csrf" value="<?= h(token()) ?>">
+                        <input type="hidden" name="id" value="<?= h($c['id']) ?>">
+                        <button type="submit" class="btn btn-mini btn-risco" name="acao" value="apagar">Apagar</button>
+                      </form>
+                    <?php endif; ?>
+                  </div>
+                </div>
+
                 <?php if ($c['historico'] !== []): ?>
                   <p class="dica" style="margin-top:14px">Histórico</p>
                   <ul class="historico">
@@ -417,6 +577,64 @@ abrir_pagina('Produção');
       </section>
     <?php endforeach; ?>
   </div>
+
+  <?php /* O modal fica no fim do documento, e não dentro do <article> do card:
+           <dialog> aninhado em formulário é HTML inválido — o navegador
+           reorganiza a árvore sozinha e o formulário some sem erro no console. */ ?>
+  <?php if ($corrigindo !== null): ?>
+    <?php abrir_modal('editar-card', 'Corrigir o card', true); ?>
+      <form method="post">
+        <input type="hidden" name="csrf" value="<?= h(token()) ?>">
+        <input type="hidden" name="id" value="<?= h($corrigindo['id']) ?>">
+        <input type="hidden" name="acao" value="editar">
+
+        <div class="campo">
+          <label for="c-titulo">Título</label>
+          <input id="c-titulo" type="text" name="titulo" maxlength="200" required
+                 value="<?= h($corrigindo['titulo']) ?>">
+        </div>
+
+        <div class="linha g2">
+          <div class="campo">
+            <label for="c-etapa">Peça</label>
+            <select id="c-etapa" name="etapa">
+              <?php foreach (ETAPAS as $chaveE => $nomeE): ?>
+                <option value="<?= h($chaveE) ?>" <?= $corrigindo['etapa'] === $chaveE ? 'selected' : '' ?>>
+                  <?= h($nomeE) ?>
+                </option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <div class="campo">
+            <label for="c-prazo">Prazo <span class="dica">— opcional</span></label>
+            <input id="c-prazo" type="date" name="prazo" value="<?= h($corrigindo['prazo']) ?>">
+          </div>
+        </div>
+
+        <div class="campo">
+          <label for="c-resp">Alvo principal <span class="dica">— é sobre ele que a regra do ledger conta as 48h</span></label>
+          <input id="c-resp" type="text" name="responsavel" maxlength="160"
+                 value="<?= h($corrigindo['responsavel']) ?>">
+        </div>
+
+        <div class="campo">
+          <label for="c-fonte">Link da fonte</label>
+          <input id="c-fonte" type="url" name="fonteUrl" maxlength="500" inputmode="url"
+                 placeholder="https://…" value="<?= h($corrigindo['fonteUrl']) ?>">
+        </div>
+
+        <p class="dica">
+          O nome do arquivo é gerado do título e da peça — mudar qualquer um dos dois
+          muda o nome que o Estúdio vai exportar, e quem já baixou o PNG ficou com o
+          antigo. Por isso a correção fica anotada no histórico do card.
+        </p>
+
+        <div class="acoes">
+          <button type="submit" class="btn btn-ouro">Salvar o card</button>
+        </div>
+      </form>
+    <?php fechar_modal(); ?>
+  <?php endif; ?>
 </div>
 <?php
 fechar_pagina();

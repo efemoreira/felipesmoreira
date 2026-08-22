@@ -203,7 +203,28 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                     continue;
                 }
                 $achou = true;
-                if ($acao === 'lista-apagar') {
+                if ($acao === 'lista-salvar') {
+                    /* Só o que a curadoria decide: nome, descrição e ordem. Quem
+                       entra continua sendo `lista-quem`, que é a outra pergunta —
+                       e misturar as duas num formulário faria renomear a lista
+                       reenviar a marcação inteira dos candidatos. */
+                    $editada = $l;
+                    $editada['nome']      = $_POST['nome'] ?? '';
+                    $editada['descricao'] = $_POST['descricao'] ?? '';
+                    $editada['ordem']     = $_POST['ordem'] ?? 0;
+                    if (normalizar_lista($editada) === null) {
+                        avisar('erro', 'Dê um nome à lista — é ele que aparece como título da colinha.');
+                        voltar('listas');
+                    }
+                    $listas[$i] = $editada;
+                    /* O nome da lista É o título da colinha que circula no
+                       WhatsApp: mudá-lo com a lista no ar muda o que a próxima
+                       colinha gerada vai dizer. As já baixadas continuam como
+                       estavam — imagem no celular de alguém não se atualiza. */
+                    avisar('ok', $l['publicada']
+                        ? 'Lista salva. Ela está no ar, então o novo nome já é o título da colinha.'
+                        : 'Lista salva.');
+                } elseif ($acao === 'lista-apagar') {
                     unset($listas[$i]);
                     avisar('ok', 'Lista apagada. Os candidatos continuam cadastrados.');
                 } elseif ($acao === 'lista-publicar') {
@@ -352,6 +373,35 @@ foreach ($todos as $c) {
     }
 }
 
+/* ---------------- recorte das listas ----------------
+   A mesma caixa `q` das duas abas: elas nunca são desenhadas ao mesmo tempo, e
+   dois nomes de parâmetro fariam a busca sumir ao trocar de aba — que é
+   exatamente o que `barra_abas()` existe para não deixar acontecer.
+
+   Casa também pelo NOME DE QUEM ESTÁ DENTRO: a pergunta que traz alguém aqui
+   quase sempre é "em que listas o Fulano está?", e não o nome da lista. */
+$listasVisiveis = $listas;
+if ($busca !== '') {
+    $listasVisiveis = array_values(array_filter($listas, function ($l) use ($busca, $porId) {
+        if (combina_com([$l['nome'], $l['descricao']], $busca)) {
+            return true;
+        }
+        foreach ($l['candidatos'] as $cid) {
+            if (isset($porId[$cid]) && combina_com([$porId[$cid]['nome'], $porId[$cid]['urna']], $busca)) {
+                return true;
+            }
+        }
+        return false;
+    }));
+}
+
+/* Qual lista está aberta para edição. É um GET, e não estado de JavaScript:
+   sem JS a página recarrega com o `<dialog open>` e o formulário continua ali. */
+$listaEditando = null;
+if (isset($_GET['lista'])) {
+    $listaEditando = achar_lista(limpar_texto((string) $_GET['lista'], 40));
+}
+
 /**
  * O formulário do candidato — um só, desenhado em dois modais.
  *
@@ -455,6 +505,57 @@ function formulario_candidato(?array $editando, string $rotulo = ''): void
         <?php if ($editando): ?>
           <a class="btn" href="/painel/candidatos.php">Cancelar</a>
         <?php endif; ?>
+      </div>
+    </form>
+    <?php
+}
+
+/**
+ * O formulário da lista — um só, desenhado em dois modais.
+ *
+ * Criar e renomear perguntam exatamente a mesma coisa (nome, descrição e
+ * ordem); QUEM entra continua sendo a outra pergunta, respondida no
+ * `lista-quem` de dentro da ficha. Duas cópias deste formulário divergiriam no
+ * dia em que um campo novo entrasse só numa delas.
+ */
+function formulario_lista(?array $l): void
+{
+    $e = $l !== null ? '-e' : '';
+    ?>
+    <form method="post">
+      <input type="hidden" name="csrf" value="<?= h(token()) ?>">
+      <?php if ($l !== null): ?>
+        <input type="hidden" name="id" value="<?= h($l['id']) ?>">
+      <?php endif; ?>
+      <div class="campo">
+        <label for="l-nome<?= $e ?>">Nome da lista</label>
+        <input id="l-nome<?= $e ?>" name="nome" type="text" maxlength="60" required
+               placeholder="Deputados federais" value="<?= h($l['nome'] ?? '') ?>">
+        <p class="dica">Vira o título da colinha. Escreva como você diria no grupo.</p>
+      </div>
+      <div class="linha g2">
+        <div class="campo">
+          <label for="l-desc<?= $e ?>">Descrição <span class="dica">— opcional</span></label>
+          <input id="l-desc<?= $e ?>" name="descricao" type="text" maxlength="160"
+                 value="<?= h($l['descricao'] ?? '') ?>">
+        </div>
+        <div class="campo">
+          <label for="l-ordem<?= $e ?>">Ordem</label>
+          <input id="l-ordem<?= $e ?>" name="ordem" type="number" min="0" max="999"
+                 value="<?= (int) ($l['ordem'] ?? 0) ?>">
+        </div>
+      </div>
+      <?php if ($l !== null && $l['publicada']): ?>
+        <p class="dica">
+          Esta lista está no ar: o novo nome já vira o título da próxima colinha gerada.
+          As que já foram baixadas continuam com o nome antigo — imagem no celular de
+          alguém não se atualiza sozinha.
+        </p>
+      <?php endif; ?>
+      <div class="acoes">
+        <button class="btn btn-ouro" name="acao" value="<?= $l !== null ? 'lista-salvar' : 'lista-nova' ?>" type="submit">
+          <?= $l !== null ? 'Salvar a lista' : 'Criar lista' ?>
+        </button>
       </div>
     </form>
     <?php
@@ -582,7 +683,7 @@ abrir_pagina('Candidatos');
                         </button>
                       </form>
                       <form method="post" style="display:inline"
-                            onsubmit="return confirm('Tirar <?= h($c['nome']) ?> da chapa? A pessoa continua na lista, com o histórico dela.')">
+                            onsubmit="return confirm(<?= texto_js('Tirar ' . $c['nome'] . ' da chapa? A pessoa continua na lista, com o histórico dela.') ?>)">
                         <input type="hidden" name="csrf" value="<?= h(token()) ?>">
                         <input type="hidden" name="id" value="<?= h($c['id']) ?>">
                         <button class="btn btn-mini btn-risco" name="acao" value="cand-apagar" type="submit">Tirar da chapa</button>
@@ -617,6 +718,16 @@ abrir_pagina('Candidatos');
           <?php botao_modal('nova-lista', 'Nova lista', 'aba=listas&nova=1'); ?>
         </div>
 
+        <?php /* Só aparece quando há o que procurar: com três listas a caixa é um
+                 controle em cima de algo que cabe inteiro na tela. */ ?>
+        <?php if (count($listas) > 4 || $busca !== ''): ?>
+          <?php barra_busca($busca, 'nome da lista, ou quem está nela', ['aba' => 'listas']); ?>
+        <?php endif; ?>
+
+        <?php if ($listasVisiveis === [] && $listas !== []): ?>
+          <?php nada_encontrado($busca, '/painel/candidatos.php?aba=listas', 'Nenhuma lista com esse recorte.'); ?>
+        <?php endif; ?>
+
         <?php if ($listas === []): ?>
           <p class="dica" style="margin:0">
             Nenhuma lista ainda. Sem lista publicada o bloco da página inicial não
@@ -625,7 +736,7 @@ abrir_pagina('Candidatos');
           </p>
         <?php endif; ?>
 
-        <?php foreach ($listas as $l): ?>
+        <?php foreach ($listasVisiveis as $l): ?>
           <?php $dentro = array_values(array_filter($l['candidatos'], fn ($id) => isset($porId[$id]))); ?>
           <article class="ficha">
             <header class="ficha-topo">
@@ -662,6 +773,14 @@ abrir_pagina('Candidatos');
                   <input type="hidden" name="id" value="<?= h($l['id']) ?>">
                   <input type="hidden" name="acao" value="lista-quem">
                   <input type="hidden" name="ordem_ids" value="<?= h(implode(',', $l['candidatos'])) ?>">
+                  <?php /* Com meia dúzia de candidatos o paredão cabe na tela; com
+                           quarenta, achar um é rolar lendo. A peneira é do
+                           navegador, e não um `<form get>`: recarregar no meio da
+                           marcação jogaria fora o que ainda não foi salvo. */ ?>
+                  <?php if (count($todos) > 8): ?>
+                    <?php filtro_de_marcacao('quem-' . $l['id'], 'nome, número ou cargo'); ?>
+                  <?php endif; ?>
+                  <div id="quem-<?= h($l['id']) ?>">
                   <?php foreach ($todos as $c): ?>
                     <label class="check">
                       <input type="checkbox" name="candidato[]" value="<?= h($c['id']) ?>"
@@ -676,6 +795,7 @@ abrir_pagina('Candidatos');
                       <?php endif; ?>
                     </label>
                   <?php endforeach; ?>
+                  </div>
                   <p class="dica">
                     Quem está como rascunho pode entrar na lista, mas não aparece no site
                     enquanto não for publicado.
@@ -687,6 +807,10 @@ abrir_pagina('Candidatos');
 
                 <div class="decidir-recusa">
                   <div class="acoes">
+                    <?php /* Renomear é a ação mais frequente das quatro: lista é
+                             conteúdo de campanha e o nome dela é o título da
+                             colinha. Vem primeiro por isso. */ ?>
+                    <?php botao_modal('editar-lista', 'Renomear', 'aba=listas&lista=' . urlencode($l['id']), 'btn'); ?>
                     <form method="post" style="display:inline">
                       <input type="hidden" name="csrf" value="<?= h(token()) ?>">
                       <input type="hidden" name="id" value="<?= h($l['id']) ?>">
@@ -702,7 +826,7 @@ abrir_pagina('Candidatos');
                       </button>
                     </form>
                     <form method="post" style="display:inline"
-                          onsubmit="return confirm('Apagar a lista “<?= h($l['nome']) ?>”? Os candidatos continuam cadastrados.')">
+                          onsubmit="return confirm(<?= texto_js('Apagar a lista “' . $l['nome'] . '”? Os candidatos continuam cadastrados.') ?>)">
                       <input type="hidden" name="csrf" value="<?= h(token()) ?>">
                       <input type="hidden" name="id" value="<?= h($l['id']) ?>">
                       <button class="btn btn-risco" name="acao" value="lista-apagar" type="submit">Apagar a lista</button>
@@ -773,29 +897,14 @@ abrir_pagina('Candidatos');
   <?php endif; ?>
 
   <?php abrir_modal('nova-lista', 'Nova lista', isset($_GET['nova'])); ?>
-    <form method="post">
-      <input type="hidden" name="csrf" value="<?= h(token()) ?>">
-      <div class="campo">
-        <label for="l-nome">Nome da lista</label>
-        <input id="l-nome" name="nome" type="text" maxlength="60" required
-               placeholder="Deputados federais">
-        <p class="dica">Vira o título da colinha. Escreva como você diria no grupo.</p>
-      </div>
-      <div class="linha g2">
-        <div class="campo">
-          <label for="l-desc">Descrição <span class="dica">— opcional</span></label>
-          <input id="l-desc" name="descricao" type="text" maxlength="160">
-        </div>
-        <div class="campo">
-          <label for="l-ordem">Ordem</label>
-          <input id="l-ordem" name="ordem" type="number" min="0" max="999" value="0">
-        </div>
-      </div>
-      <div class="acoes">
-        <button class="btn btn-ouro" name="acao" value="lista-nova" type="submit">Criar lista</button>
-      </div>
-    </form>
+    <?php formulario_lista(null); ?>
   <?php fechar_modal(); ?>
+
+  <?php if ($listaEditando !== null): ?>
+    <?php abrir_modal('editar-lista', 'Editar “' . $listaEditando['nome'] . '”', true); ?>
+      <?php formulario_lista($listaEditando); ?>
+    <?php fechar_modal(); ?>
+  <?php endif; ?>
 </div>
 <?php
 fechar_pagina();
