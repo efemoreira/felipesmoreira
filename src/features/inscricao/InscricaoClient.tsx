@@ -13,10 +13,11 @@ import {
   validarEmail,
   validarNome,
   validarTelefone,
+  CHAVE_RASCUNHO,
 } from "./validacao";
 import { GRUPO_GERAL, WHATSAPP_COORDENACAO, TELEFONE_COORDENACAO } from "@/lib/contato";
 import { compartilharTexto } from "@/lib/compartilhar";
-import { slugDe, SITE, CHAVE_NOME } from "@/features/kit/data";
+import { slugDe, SITE, CHAVE_NOME } from "@/lib/atribuicao";
 
 const CATALOGO = catalogo as CatalogoFuncoes;
 const ORDEM_GRUPOS: GrupoFuncao[] = ["comunicacao", "eventos", "outro"];
@@ -42,17 +43,6 @@ const ROTULOS: Record<CampoTexto, string> = {
   cidade: "Cidade",
   bairro: "Bairro",
 };
-
-/**
- * O rascunho dos campos, na sessão da aba.
- *
- * Exportado porque a página de presença grava nesta MESMA chave para mandar
- * quem confirmou presença ao formulário sem redigitar nada (ver
- * `levarParaAjudar()` em PresencaClient). Duas cópias da string divergiriam na
- * primeira vez que alguém a renomeasse, e o defeito seria silencioso: o
- * formulário simplesmente abriria vazio.
- */
-export const CHAVE_RASCUNHO = "inscricao-campos";
 
 export default function InscricaoClient() {
   const [passo, setPasso] = useState(1);

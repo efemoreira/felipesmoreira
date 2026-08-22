@@ -140,34 +140,6 @@ export const pecas: Peca[] = [
   },
 ];
 
-/** O domínio, para montar link absoluto que vai colado num WhatsApp. */
-export const SITE = "https://felipesmoreira.com";
-
-/**
- * Onde o nome do militante fica guardado no navegador dele.
- *
- * É `localStorage` e não servidor de propósito: o nome serve só para montar o
- * `?de=` do link, e guardar isso do nosso lado seria coletar dado que não
- * precisamos ter. A inscrição grava a mesma chave ao terminar, para quem for ao
- * mutirão depois já encontrar o campo preenchido — o mesmo nome era digitado
- * duas vezes, em duas páginas, para o mesmo fim.
- */
-export const CHAVE_NOME = "kit-nome";
-
-/**
- * "João da Silva" -> "joao-da-silva", igual ao `normalizar_origem()` do PHP.
- *
- * `normalize("NFD")` é o equivalente correto do `sem_acento()` do painel: o
- * Unicode define o resultado, então dá o mesmo em qualquer máquina. Os dois
- * lados **precisam** concordar, senão o mesmo militante vira duas origens no
- * relatório.
- */
-export function slugDe(nome: string): string {
-  return nome
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "") // tira as marcas que o NFD separou
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 60);
-}
+/* A atribuição mora em `@/lib/atribuicao`: três páginas precisam dela, e
+   importá-la daqui arrastava as oito peças acima para o bundle de cada uma. */
+export { SITE, CHAVE_NOME, slugDe } from "@/lib/atribuicao";

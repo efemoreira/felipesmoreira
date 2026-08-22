@@ -5,6 +5,20 @@
  * aqui é para ajudar quem preenche, lá é para valer. Nunca confie só nesta.
  */
 
+/**
+ * O rascunho dos campos, na sessão da aba.
+ *
+ * Mora aqui, e não no InscricaoClient, porque a página de presença grava nesta
+ * MESMA chave para mandar quem confirmou presença ao formulário sem redigitar
+ * nada. Importá-la do componente arrastaria o formulário de inscrição inteiro
+ * (~16 kB) para dentro do bundle do /presenca — que é aberto em pé, na porta do
+ * encontro, no 4G de quem chegou.
+ *
+ * Duas cópias da string divergiriam na primeira vez que alguém a renomeasse, e
+ * o defeito seria silencioso: o formulário simplesmente abriria vazio.
+ */
+export const CHAVE_RASCUNHO = "inscricao-campos";
+
 /** Só os dígitos, do jeito que a gente guarda e manda pro WhatsApp. */
 export const soDigitos = (v: string) => v.replace(/\D/g, "");
 

@@ -11,9 +11,9 @@ import {
   validarCidade,
   validarNome,
   validarTelefone,
+  CHAVE_RASCUNHO,
 } from "@/features/inscricao/validacao";
-import { slugDe } from "@/features/kit/data";
-import { CHAVE_RASCUNHO } from "@/features/inscricao/InscricaoClient";
+import { slugDe } from "@/lib/atribuicao";
 import type { Alvo, Encontro } from "./tipos";
 
 /**

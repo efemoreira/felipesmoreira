@@ -172,9 +172,14 @@ no `localStorage`, não no servidor), e todo link das peças sai com o `?de=<slu
 — o mesmo campo que `api/inscricao.php` grava desde a inscrição. Sem isso o
 alcance existe e ninguém sabe de quem foi.
 
-> O `slugDe()` do `src/features/kit/data.ts` e o `normalizar_origem()` do
+> O `slugDe()` de `src/lib/atribuicao.ts` e o `normalizar_origem()` do
 > `inscricoes-comum.php` **têm de concordar**. Se um normalizar diferente do
 > outro, o mesmo militante vira duas origens no relatório.
+>
+> Ele morava em `features/kit/data.ts`. Mudou de casa quando a inscrição e a
+> presença passaram a precisar dele: importá-lo de lá arrastava as oito peças
+> fixas do plano para o bundle do `/presenca`, que é aberto em pé, na porta do
+> encontro. Medido — o texto das peças estava mesmo no chunk da página.
 
 ### O calendário da eleição
 

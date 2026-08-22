@@ -7,7 +7,8 @@ import { canvasParaBlob } from "@/lib/cordelCanvas";
 import { faseEm } from "@/lib/eleicao";
 import { RECADOS } from "./calendario";
 import { comoPeca, obterPecasDoPainel } from "@/lib/api/kit";
-import { pecas as pecasFixas, slugDe, type Peca, SITE, CHAVE_NOME } from "./data";
+import { pecas as pecasFixas, type Peca } from "./data";
+import { slugDe, SITE, CHAVE_NOME } from "@/lib/atribuicao";
 import { FORMATOS, gerarCartao, nomeArquivo, type Formato } from "./cartao";
 
 
