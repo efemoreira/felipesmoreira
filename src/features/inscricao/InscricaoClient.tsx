@@ -192,10 +192,18 @@ export default function InscricaoClient() {
   const avancar = () => {
     setErroGeral(null);
     if (passo === 1) {
-      /* Escolher função é OPCIONAL de propósito. Quem chegou disposto e ainda
-         não sabe onde encaixa é militante do mesmo jeito — barrar a inscrição
-         por causa de uma linha de relatório troca um militante novo por um
-         campo preenchido. Sem escolha, a aprovação assume "Onde precisar". */
+      /* Escolher é obrigatório, e "Onde precisar" (grupo "Ainda não sei") é a
+         escolha de quem ainda não sabe — por isso o recado do erro aponta pra
+         ela. Seguir em branco e seguir por "Ainda não sei" dão no mesmo pro
+         cadastro; a diferença é que a segunda é uma resposta, e resposta é o
+         que a coordenação usa pra puxar a conversa depois. */
+      if (funcoes.length === 0) {
+        setErroGeral(
+          'Escolha ao menos uma função. Se ainda não sabe, marque "Onde precisar", em "Ainda não sei" — a coordenação conversa com você depois.',
+        );
+        listaFuncoesRef.current?.focus();
+        return;
+      }
       setPasso(2);
       return;
     }
@@ -307,11 +315,6 @@ export default function InscricaoClient() {
               Não precisa ter experiência: o movimento ensina quem chega. Toque
               em <strong>ver detalhes</strong> pra entender o que cada função faz no dia a dia.
             </p>
-            <p className="in-ajuda in-ajuda-pular">
-              <strong>Não sabe ainda?</strong> Pode seguir sem marcar nada — a coordenação
-              conversa com você e encaixa onde fizer sentido.
-            </p>
-
             {ORDEM_GRUPOS.map((g) => {
               const lista = porGrupo.get(g) ?? [];
               if (lista.length === 0) return null;
@@ -382,26 +385,17 @@ export default function InscricaoClient() {
         {passo === 3 && (
           <div className="in-confirma">
             <div className="in-resumo">
-              <h3 className="in-resumo-titulo">
-                {escolhidas.length > 0 ? "Você escolheu ajudar em" : "Onde você vai ajudar"}
-              </h3>
-              {escolhidas.length > 0 ? (
-                <ul className="in-resumo-funcoes">
-                  {escolhidas.map((f) => (
-                    <li key={f.id}>
-                      <Icon name={f.icone as IconName} size={18} />
-                      <span>{f.nome}</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="in-ajuda" style={{ margin: "10px 0 0" }}>
-                  Você não escolheu função — tudo bem. A coordenação conversa com você
-                  e encaixa onde fizer sentido.
-                </p>
-              )}
+              <h3 className="in-resumo-titulo">Você escolheu ajudar em</h3>
+              <ul className="in-resumo-funcoes">
+                {escolhidas.map((f) => (
+                  <li key={f.id}>
+                    <Icon name={f.icone as IconName} size={18} />
+                    <span>{f.nome}</span>
+                  </li>
+                ))}
+              </ul>
               <button type="button" className="in-editar" onClick={() => setPasso(1)}>
-                {escolhidas.length > 0 ? "Mudar as funções" : "Escolher uma função"}
+                Mudar as funções
               </button>
             </div>
 
@@ -943,11 +937,6 @@ const css = `
     padding: 12px 14px;
   }
   .in-erro-geral svg { flex: 0 0 auto; margin-top: 2px; }
-
-  .in-ajuda-pular {
-    border-left: 3px solid ${C.goldDim};
-    padding-left: 12px;
-  }
 
   /* ---- passo 1: funções ---- */
   .in-grupos { outline: none; }

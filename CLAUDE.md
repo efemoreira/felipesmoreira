@@ -795,11 +795,20 @@ presença consegue preencher uma inscrição inteira e a inscrição consegue
 reconhecer quem chega na porta. Campo que existe de um lado só é campo que a
 pessoa digita duas vezes.
 
-> **Escolher função deixou de ser obrigatório.** O servidor recusava a inscrição
-> de quem não marcasse nenhuma; quem chegou disposto e ainda não sabe onde
-> encaixa é militante do mesmo jeito, e barrar por causa de uma linha de
-> relatório troca um militante novo por um campo preenchido. Sem escolha, a
-> aprovação assume `onde-precisar`, que já existia no catálogo para isso.
+> **O passo 1 pede uma escolha, e "não sei" é uma delas.** O formulário não
+> avança em branco — mas quem ainda não sabe onde encaixa tem o cartão
+> **"Onde precisar"** (grupo "Ainda não sei"), que já existia no catálogo para
+> isso. Não é o mesmo que barrar: barrar seria não ter a saída. Antes havia
+> as duas coisas ao mesmo tempo — uma caixa dizendo "pode seguir sem marcar
+> nada" logo acima de uma lista que oferecia exatamente esse cartão —, e o
+> convite a pular esvaziava a resposta que a coordenação usa para puxar a
+> conversa depois.
+>
+> **O servidor continua aceitando inscrição sem função**, e isso é de
+> propósito: `api/inscricao.php` é endpoint público, e a aprovação assume
+> `onde-precisar` (ver `inscricoes.php`). A exigência é da tela, onde a
+> pergunta é feita; recusar no servidor jogaria fora um militante por causa de
+> uma linha de relatório.
 
 A régua de validação é uma só: `src/features/inscricao/validacao.ts` (máscara,
 DDD de verdade, exigência de sobrenome). Duas réguas divergem na terceira
@@ -912,6 +921,20 @@ borda**; quem escreve é a tinta. Por isso existem tokens separados: `--titulo`,
 claro. Escrever `color:var(--ouro)` faz o texto sumir no papel — `--ouro` só
 entra em `background` e `border`.
 
+> **4,5:1 é sobre o fundo REAL, não sobre o papel.** `--acento` era `#8A6508`,
+> que dá 4,52:1 sobre `--fundo` — passa raspando, e só ali: dentro da pílula do
+> contador (fundo `--realce-3`, mais escuro que o papel) o mesmo tom caía para
+> 3,36:1, e o número da aba era o que menos se lia numa tela feita de números.
+> Hoje é `#6B4E06`: 6,56:1 no papel, 4,88:1 na pílula, e continua sendo ouro
+> queimado. Ao criar um par cor/fundo novo, meça no fundo em que ele vai cair.
+
+> **Meça com o painel renderizado.** Ler o CSS não pega isto: o fundo efetivo é
+> a pilha de translúcidos composta até o `body`, e a cor que vence é a da regra
+> mais específica *depois de o HTML existir*. Uma sonda `getComputedStyle()`
+> rodando em cima das telas de verdade, nos dois temas, achou em minutos o que
+> passou por todas as leituras anteriores — inclusive o ouro sobre ouro da
+> gaveta, logo abaixo. É o mesmo espírito do `httpd -f` para o `.htaccess`.
+
 ### A navegação
 
 **Mora no `layout.php`, e só lá.** Antes as áreas apareciam numa fileira no topo
@@ -942,6 +965,16 @@ que estava escrito e não era renderizado em lugar nenhum.
 vence `.mesa-icone` (0,1,0) e repinta o ícone. Ao estilizar filhos de um cartão,
 escreva o seletor com a classe junto (`.mesa .mesa-icone`) ou mire o filho
 direto (`.encontro-texto > span`).
+
+> **A barra do celular usa `>`, e não descendente — a gaveta mora dentro dela.**
+> `.barra-baixo > a[aria-current]`. O "Mais" é um `<details>` *dentro* da
+> `.barra-baixo`, e ele desenha o menu inteiro outra vez. Escrita como
+> descendente, a regra da barra (`color:var(--titulo)`, ouro, porque ali o fundo
+> é o papel escuro) alcançava também o item atual lá de dentro — que já é bloco
+> de **ouro cheio** — e, com a mesma especificidade e mais abaixo no arquivo,
+> ganhava: no escuro a área em que a pessoa está virava um retângulo dourado
+> vazio na gaveta. Ouro é texto num lugar e bloco no outro; os dois não podem se
+> encontrar.
 
 **Tela longa pede aba, e formulário pede modal.** O encontro aberto tem
 playbook, cinco peças, lista de gente, follow-up e dados — empilhado, chegar em
