@@ -26,17 +26,30 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') {
     exit;
 }
 
-$saida = [];
+$candidatos = [];
 foreach (candidatos_publicados() as $c) {
-    $saida[] = [
+    $candidatos[] = [
         'id'     => $c['id'],
         'nome'   => $c['urna'] !== '' ? $c['urna'] : $c['nome'],
         'cargo'  => $c['cargo'],
         'numero' => $c['numero'],
         'partido' => $c['partido'],
         'instagram' => $c['instagram'],
-        'grupos' => $c['grupos'],
+        'imagem' => $c['imagem'],
     ];
 }
 
-echo json_encode(['candidatos' => $saida], JSON_UNESCAPED_UNICODE);
+/* As listas descem junto: são elas que o site desenha, e pedi-las num segundo
+   endpoint faria a página piscar duas vezes no 4G de quem abriu na fila. */
+$listas = [];
+foreach (listas_publicadas() as $l) {
+    $listas[] = [
+        'id'   => $l['id'],
+        'nome' => $l['nome'],
+        'descricao' => $l['descricao'],
+        'candidatos' => $l['candidatos'],
+        'naHome' => $l['naHome'],
+    ];
+}
+
+echo json_encode(['candidatos' => $candidatos, 'listas' => $listas], JSON_UNESCAPED_UNICODE);

@@ -4,18 +4,24 @@ declare(strict_types=1);
 /**
  * Candidatos — felipesmoreira.com/painel/candidatos
  *
- * Quem a coordenação cadastra aqui aparece em /candidatos, e é dali que sai a
- * colinha que o militante manda no grupo e o eleitor leva para a urna.
+ * DUAS COISAS SEPARADAS, e é a separação que faz a tela funcionar:
  *
- * Uma tela de cadastro, e não uma lista no código: nome de urna e número saem
- * do registro no TSE e mudam até a véspera. Lista no repositório é lista que
- * exige um deploy para corrigir um dígito errado.
+ *   1. **Cadastrar** quem é candidato — nome, número, @, foto. Rápido, sem
+ *      decisão nenhuma junto: registrar o número é urgente, classificar não.
+ *   2. **Montar listas** — "Deputados federais", "As mulheres da chapa", "Os
+ *      que eu apoio". É a lista que vira colinha no site.
+ *
+ * A primeira versão obrigava a marcar grupos fixos na hora do cadastro. Estava
+ * errada nos dois lados: atrapalhava o cadastro (que só quer o número certo) e
+ * engessava as listas em categorias decididas no código, quando lista é
+ * conteúdo de campanha e muda toda semana.
  *
  * Toda ação termina em redirecionamento (POST-redirect-GET).
  */
 
 require_once __DIR__ . '/layout.php';
 require_once __DIR__ . '/candidatos-comum.php';
+require_once __DIR__ . '/agenda-comum.php';  // o pipeline de imagem (upload, corte, apagar)
 exigir_area('candidatos');
 
 $eu = usuario_atual();
@@ -25,9 +31,9 @@ function avisar(string $tipo, string $texto): void
     $_SESSION['recado'] = ['tipo' => $tipo, 'texto' => $texto];
 }
 
-function voltar(): void
+function voltar(string $ancora = ''): void
 {
-    header('Location: /painel/candidatos.php', true, 302);
+    header('Location: /painel/candidatos.php' . ($ancora !== '' ? '#' . $ancora : ''), true, 302);
     exit;
 }
 
@@ -42,73 +48,167 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     }
 
     $acao = (string) ($_POST['acao'] ?? '');
-    $lista = ler_candidatos();
 
-    if ($acao === 'criar') {
-        $novo = [
-            'id'     => novo_id_candidato(),
-            'nome'   => $_POST['nome'] ?? '',
-            'urna'   => $_POST['urna'] ?? '',
-            'cargo'  => $_POST['cargo'] ?? '',
-            'numero' => $_POST['numero'] ?? '',
-            'partido' => $_POST['partido'] ?? '',
-            'instagram' => $_POST['instagram'] ?? '',
-            'grupos' => (array) ($_POST['grupos'] ?? []),
-            'ordem'  => $_POST['ordem'] ?? 0,
-            'publicado' => false,
-            'criadoEm'  => date('c'),
-        ];
-        if (normalizar_candidato($novo) === null) {
-            avisar('erro', 'Precisa de nome e número — sem o número não dá para votar, e a colinha existe para isso.');
-            voltar();
-        }
-        $lista[] = $novo;
-        avisar('ok', 'Candidato cadastrado. Confira e publique quando estiver certo.');
-    } elseif ($acao === 'publicar' || $acao === 'apagar' || $acao === 'salvar') {
-        $id = limpar_texto($_POST['id'] ?? '', 40);
-        $achou = false;
-        foreach ($lista as $i => $c) {
-            if ($c['id'] !== $id) {
-                continue;
+    /* ---------- candidatos ---------- */
+    if (str_starts_with($acao, 'cand-')) {
+        $lista = ler_candidatos();
+
+        if ($acao === 'cand-novo' || $acao === 'cand-salvar') {
+            $id = $acao === 'cand-novo' ? novo_id_candidato() : limpar_texto($_POST['id'] ?? '', 40);
+            $atual = achar_candidato($id);
+
+            /* A foto é opcional e não pode derrubar o cadastro: número certo no
+               ar vale mais que rosto. Falha de upload avisa e segue. */
+            $imagem = (string) ($atual['imagem'] ?? '');
+            if (($env = arquivo_simples('imagem')) !== null) {
+                $r = guardar_upload($env);
+                if ($r['ok']) {
+                    apagar_imagem($imagem);
+                    $imagem = $r['caminho'];
+                } elseif ($r['erro'] !== '') {
+                    avisar('erro', $r['erro'] . ' O resto foi salvo.');
+                }
+            } elseif (!empty($_POST['tirarImagem'])) {
+                apagar_imagem($imagem);
+                $imagem = '';
             }
-            $achou = true;
-            if ($acao === 'apagar') {
-                unset($lista[$i]);
-                avisar('ok', 'Candidato apagado.');
-            } elseif ($acao === 'publicar') {
-                $lista[$i]['publicado'] = !$c['publicado'];
-                avisar('ok', $lista[$i]['publicado'] ? 'No ar em /candidatos.' : 'Recolhido do site.');
+
+            $ficha = [
+                'id'     => $id,
+                'nome'   => $_POST['nome'] ?? '',
+                'urna'   => $_POST['urna'] ?? '',
+                'cargo'  => $_POST['cargo'] ?? '',
+                'numero' => $_POST['numero'] ?? '',
+                'partido' => $_POST['partido'] ?? '',
+                'instagram' => $_POST['instagram'] ?? '',
+                'imagem' => $imagem,
+                'ordem'  => $_POST['ordem'] ?? 0,
+                'publicado' => $atual['publicado'] ?? false,
+                'criadoEm'  => $atual['criadoEm'] ?? date('c'),
+            ];
+            if (normalizar_candidato($ficha) === null) {
+                avisar('erro', 'Precisa de nome e número — sem o número não dá para votar, e a colinha existe para isso.');
+                voltar('cadastro');
+            }
+
+            if ($atual === null) {
+                $lista[] = $ficha;
+                avisar('ok', 'Cadastrado. Publique quando o número estiver conferido.');
             } else {
-                $lista[$i] = array_merge($c, [
-                    'nome'   => $_POST['nome'] ?? $c['nome'],
-                    'urna'   => $_POST['urna'] ?? '',
-                    'cargo'  => $_POST['cargo'] ?? '',
-                    'numero' => $_POST['numero'] ?? $c['numero'],
-                    'partido' => $_POST['partido'] ?? '',
-                    'instagram' => $_POST['instagram'] ?? '',
-                    'grupos' => (array) ($_POST['grupos'] ?? []),
-                    'ordem'  => $_POST['ordem'] ?? 0,
-                ]);
-                if (normalizar_candidato($lista[$i]) === null) {
-                    avisar('erro', 'Nome e número são obrigatórios.');
-                    voltar();
+                foreach ($lista as $i => $c) {
+                    if ($c['id'] === $id) {
+                        $lista[$i] = $ficha;
+                    }
                 }
                 avisar('ok', 'Alterado.');
             }
-            break;
+        } else {
+            $id = limpar_texto($_POST['id'] ?? '', 40);
+            $achou = false;
+            foreach ($lista as $i => $c) {
+                if ($c['id'] !== $id) {
+                    continue;
+                }
+                $achou = true;
+                if ($acao === 'cand-apagar') {
+                    apagar_imagem($c['imagem']);
+                    unset($lista[$i]);
+                    avisar('ok', 'Candidato apagado. Ele sai das listas junto.');
+                } elseif ($acao === 'cand-publicar') {
+                    $lista[$i]['publicado'] = !$c['publicado'];
+                    avisar('ok', $lista[$i]['publicado'] ? 'No ar em /candidatos.' : 'Recolhido do site.');
+                }
+                break;
+            }
+            if (!$achou) {
+                avisar('erro', 'Candidato não encontrado.');
+                voltar();
+            }
         }
-        if (!$achou) {
-            avisar('erro', 'Candidato não encontrado.');
-            voltar();
+
+        if (!gravar_candidatos(array_values($lista))) {
+            avisar('erro', 'Não consegui gravar em /dados.');
         }
-    } else {
-        avisar('erro', 'Ação desconhecida.');
-        voltar();
+        voltar('cadastro');
     }
 
-    if (!gravar_candidatos(array_values($lista))) {
-        avisar('erro', 'Não consegui gravar em /dados.');
+    /* ---------- listas ---------- */
+    if (str_starts_with($acao, 'lista-')) {
+        $listas = ler_listas();
+
+        if ($acao === 'lista-nova') {
+            $nova = [
+                'id'    => novo_id_lista(),
+                'nome'  => $_POST['nome'] ?? '',
+                'descricao' => $_POST['descricao'] ?? '',
+                'candidatos' => [],
+                'publicada' => false,
+                'naHome' => false,
+                'ordem' => $_POST['ordem'] ?? 0,
+                'criadoEm' => date('c'),
+            ];
+            if (normalizar_lista($nova) === null) {
+                avisar('erro', 'Dê um nome à lista — é ele que aparece como título da colinha.');
+                voltar('listas');
+            }
+            $listas[] = $nova;
+            avisar('ok', 'Lista criada. Agora escolha quem entra nela.');
+        } else {
+            $id = limpar_texto($_POST['id'] ?? '', 40);
+            $achou = false;
+            foreach ($listas as $i => $l) {
+                if ($l['id'] !== $id) {
+                    continue;
+                }
+                $achou = true;
+                if ($acao === 'lista-apagar') {
+                    unset($listas[$i]);
+                    avisar('ok', 'Lista apagada. Os candidatos continuam cadastrados.');
+                } elseif ($acao === 'lista-publicar') {
+                    $listas[$i]['publicada'] = !$l['publicada'];
+                    avisar('ok', $listas[$i]['publicada'] ? 'Lista no ar.' : 'Lista recolhida.');
+                } elseif ($acao === 'lista-home') {
+                    /* Uma só na home. Marcar a segunda desmarca a primeira em
+                       vez de recusar: quem clicou já decidiu qual quer. */
+                    foreach ($listas as $j => $outra) {
+                        $listas[$j]['naHome'] = false;
+                    }
+                    $listas[$i]['naHome'] = !$l['naHome'];
+                    avisar('ok', $listas[$i]['naHome'] ? 'É esta que aparece na página inicial.' : 'A home volta a não mostrar lista nenhuma.');
+                } elseif ($acao === 'lista-quem') {
+                    $marcados = array_map('strval', (array) ($_POST['candidato'] ?? []));
+                    /* Preserva a ORDEM que a coordenação arrastou, e não a ordem
+                       dos checkboxes: numa colinha quem vem primeiro é decisão. */
+                    $ordenados = [];
+                    foreach (explode(',', (string) ($_POST['ordem_ids'] ?? '')) as $cid) {
+                        $cid = trim($cid);
+                        if ($cid !== '' && in_array($cid, $marcados, true) && !in_array($cid, $ordenados, true)) {
+                            $ordenados[] = $cid;
+                        }
+                    }
+                    foreach ($marcados as $cid) {
+                        if (!in_array($cid, $ordenados, true)) {
+                            $ordenados[] = $cid;
+                        }
+                    }
+                    $listas[$i]['candidatos'] = $ordenados;
+                    avisar('ok', count($ordenados) . ' na lista “' . $l['nome'] . '”.');
+                }
+                break;
+            }
+            if (!$achou) {
+                avisar('erro', 'Lista não encontrada.');
+                voltar('listas');
+            }
+        }
+
+        if (!gravar_listas(array_values($listas))) {
+            avisar('erro', 'Não consegui gravar em /dados.');
+        }
+        voltar('listas');
     }
+
+    avisar('erro', 'Ação desconhecida.');
     voltar();
 }
 
@@ -119,44 +219,192 @@ unset($_SESSION['recado']);
 $erro = ($recado['tipo'] ?? '') === 'erro' ? $recado['texto'] : null;
 $ok   = ($recado['tipo'] ?? '') === 'ok'   ? $recado['texto'] : null;
 
-$todos = ler_candidatos();
-$noAr = count(array_filter($todos, fn ($c) => $c['publicado']));
+$todos  = ler_candidatos();
+$listas = ler_listas();
+$noAr   = count(array_filter($todos, fn ($c) => $c['publicado']));
+$porId  = [];
+foreach ($todos as $c) {
+    $porId[$c['id']] = $c;
+}
+$editando = achar_candidato(limpar_texto($_GET['c'] ?? '', 40));
 
 abrir_pagina('Candidatos');
 ?>
 <div class="capa">
   <?php cabecalho_pagina(
       'Candidatos',
-      'Nome de urna, número e @ de cada um. É desta lista que sai a colinha em '
-      . '<a href="/candidatos" target="_blank">/candidatos</a>, que o militante manda no grupo.',
+      'Cadastre quem é candidato; depois monte as listas que viram colinha em '
+      . '<a href="/candidatos" target="_blank">/candidatos</a>.',
       null,
       null,
       [
-          'Cadastrar candidato: sem número ele não entra — colinha com número errado é pior que colinha nenhuma.',
-          'Publicar e recolher: só o que está no ar aparece no site.',
-          'Os grupos são múltiplos — a mesma pessoa pode ser federal, mulher e escolhida.',
-          '“Os escolhidos” é a curadoria: são eles que aparecem na página inicial.',
+          'Cadastrar é rápido: nome e número bastam. Foto, cargo e @ são opcionais.',
+          'Publicar põe o candidato no ar; recolher tira dele todas as listas de uma vez.',
+          'Lista é curadoria — o nome dela vira o título da colinha que circula no grupo.',
+          'Uma lista pode ir para a página inicial. Só uma, porque a home tem pouca paciência.',
       ]
   ); ?>
 
   <?php recado($erro, $ok); ?>
 
-  <fieldset>
-    <legend>No ar (<?= $noAr ?> de <?= count($todos) ?>)</legend>
+  <nav class="secoes" aria-label="Seções">
+    <a href="#cadastro">Candidatos <span><?= count($todos) ?></span></a>
+    <a href="#listas">Listas <span><?= count($listas) ?></span></a>
+  </nav>
+
+  <!-- ============ as listas ============ -->
+  <fieldset id="listas">
+    <legend>Listas (<?= count($listas) ?>)</legend>
+    <p class="dica" style="margin:0 0 14px">
+      Cada lista vira uma colinha no site, com o nome dela por título. A ordem em
+      que os candidatos aparecem é a ordem da colinha — quem vem primeiro é quem
+      você quer que seja lembrado primeiro.
+    </p>
 
     <?php if ($todos === []): ?>
       <p class="dica" style="margin:0">
-        Ninguém cadastrado ainda. Enquanto a lista estiver vazia, o bloco “Siga nossos
-        candidatos” não aparece no site — é melhor não dizer nada do que deixar um
-        buraco onde o eleitor espera o número.
+        Cadastre alguém primeiro, ali embaixo. Lista vazia não aparece no site.
+      </p>
+    <?php else: ?>
+      <?php foreach ($listas as $l): ?>
+        <?php $dentro = array_values(array_filter($l['candidatos'], fn ($id) => isset($porId[$id]))); ?>
+        <article class="ficha">
+          <header class="ficha-topo">
+            <span class="ficha-quem">
+              <strong><?= h($l['nome']) ?></strong>
+              <span>
+                <?= count($dentro) ?> <?= count($dentro) === 1 ? 'candidato' : 'candidatos' ?>
+                <?= $l['descricao'] !== '' ? ' · ' . h($l['descricao']) : '' ?>
+              </span>
+            </span>
+            <span>
+              <span class="selo <?= $l['publicada'] ? 'selo-ok' : 'selo-cinza' ?>">
+                <?= $l['publicada'] ? 'no ar' : 'rascunho' ?>
+              </span>
+              <?php if ($l['naHome']): ?>
+                <span class="selo">na home</span>
+              <?php endif; ?>
+            </span>
+          </header>
+
+          <?php if ($dentro !== []): ?>
+            <p style="margin:0 0 10px">
+              <?php foreach ($dentro as $cid): ?>
+                <span class="selo"><?= h($porId[$cid]['numero']) ?> <?= h($porId[$cid]['urna'] !== '' ? $porId[$cid]['urna'] : $porId[$cid]['nome']) ?></span>
+              <?php endforeach; ?>
+            </p>
+          <?php endif; ?>
+
+          <details class="decidir">
+            <summary class="btn">Quem entra nesta lista</summary>
+            <div class="decidir-corpo">
+              <form method="post">
+                <input type="hidden" name="csrf" value="<?= h(token()) ?>">
+                <input type="hidden" name="id" value="<?= h($l['id']) ?>">
+                <input type="hidden" name="acao" value="lista-quem">
+                <input type="hidden" name="ordem_ids" value="<?= h(implode(',', $l['candidatos'])) ?>">
+                <?php foreach ($todos as $c): ?>
+                  <label class="check">
+                    <input type="checkbox" name="candidato[]" value="<?= h($c['id']) ?>"
+                           <?= in_array($c['id'], $l['candidatos'], true) ? 'checked' : '' ?>>
+                    <strong><?= h($c['numero']) ?></strong>
+                    <?= h($c['urna'] !== '' ? $c['urna'] : $c['nome']) ?>
+                    <?php if (!$c['publicado']): ?>
+                      <span class="selo selo-cinza">rascunho</span>
+                    <?php endif; ?>
+                  </label>
+                <?php endforeach; ?>
+                <p class="dica">
+                  Quem está como rascunho pode entrar na lista, mas não aparece no site
+                  enquanto não for publicado.
+                </p>
+                <div class="acoes" style="margin-top:12px">
+                  <button type="submit" class="btn btn-ouro">Salvar quem está na lista</button>
+                </div>
+              </form>
+
+              <div class="decidir-recusa">
+                <div class="acoes">
+                  <form method="post" style="display:inline">
+                    <input type="hidden" name="csrf" value="<?= h(token()) ?>">
+                    <input type="hidden" name="id" value="<?= h($l['id']) ?>">
+                    <button class="btn" name="acao" value="lista-publicar" type="submit">
+                      <?= $l['publicada'] ? 'Recolher do site' : 'Publicar no site' ?>
+                    </button>
+                  </form>
+                  <form method="post" style="display:inline">
+                    <input type="hidden" name="csrf" value="<?= h(token()) ?>">
+                    <input type="hidden" name="id" value="<?= h($l['id']) ?>">
+                    <button class="btn" name="acao" value="lista-home" type="submit">
+                      <?= $l['naHome'] ? 'Tirar da página inicial' : 'Mostrar na página inicial' ?>
+                    </button>
+                  </form>
+                  <form method="post" style="display:inline"
+                        onsubmit="return confirm('Apagar a lista “<?= h($l['nome']) ?>”? Os candidatos continuam cadastrados.')">
+                    <input type="hidden" name="csrf" value="<?= h(token()) ?>">
+                    <input type="hidden" name="id" value="<?= h($l['id']) ?>">
+                    <button class="btn btn-risco" name="acao" value="lista-apagar" type="submit">Apagar a lista</button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </details>
+        </article>
+      <?php endforeach; ?>
+
+      <details class="decidir" style="margin-top:16px">
+        <summary class="btn btn-ouro">Nova lista</summary>
+        <div class="decidir-corpo">
+          <form method="post">
+            <input type="hidden" name="csrf" value="<?= h(token()) ?>">
+            <div class="campo">
+              <label for="l-nome">Nome da lista</label>
+              <input id="l-nome" name="nome" type="text" maxlength="60" required
+                     placeholder="Deputados federais">
+              <p class="dica">Vira o título da colinha. Escreva como você diria no grupo.</p>
+            </div>
+            <div class="linha g2">
+              <div class="campo">
+                <label for="l-desc">Descrição <span class="dica">— opcional</span></label>
+                <input id="l-desc" name="descricao" type="text" maxlength="160">
+              </div>
+              <div class="campo">
+                <label for="l-ordem">Ordem</label>
+                <input id="l-ordem" name="ordem" type="number" min="0" max="999" value="0">
+              </div>
+            </div>
+            <div class="acoes">
+              <button class="btn btn-ouro" name="acao" value="lista-nova" type="submit">Criar lista</button>
+            </div>
+          </form>
+        </div>
+      </details>
+    <?php endif; ?>
+  </fieldset>
+
+  <!-- ============ o cadastro ============ -->
+  <fieldset id="cadastro">
+    <legend>Candidatos (<?= $noAr ?> no ar de <?= count($todos) ?>)</legend>
+
+    <?php if ($todos === []): ?>
+      <p class="dica" style="margin:0 0 14px">
+        Ninguém cadastrado ainda. Enquanto não houver lista publicada, o bloco da
+        página inicial não aparece — é melhor não dizer nada do que deixar um buraco
+        onde o eleitor espera um número.
       </p>
     <?php else: ?>
       <div class="rolagem">
         <table class="tabela">
-          <thead><tr><th>Quem</th><th>Número</th><th>Grupos</th><th>Estado</th><th></th></tr></thead>
+          <thead><tr><th></th><th>Quem</th><th>Número</th><th>Estado</th><th></th></tr></thead>
           <tbody>
             <?php foreach ($todos as $c): ?>
               <tr>
+                <td>
+                  <?php if ($c['imagem'] !== ''): ?>
+                    <img src="<?= h($c['imagem']) ?>" alt="" width="52" height="52"
+                         style="width:52px;height:52px;object-fit:cover;border:2px solid var(--linha-2)">
+                  <?php endif; ?>
+                </td>
                 <td>
                   <strong><?= h($c['urna'] !== '' ? $c['urna'] : $c['nome']) ?></strong><br>
                   <span class="dica">
@@ -166,28 +414,24 @@ abrir_pagina('Candidatos');
                 </td>
                 <td><strong style="font-size:19px"><?= h($c['numero']) ?></strong></td>
                 <td>
-                  <?php foreach ($c['grupos'] as $g): ?>
-                    <span class="selo"><?= h(GRUPOS_CANDIDATO[$g]) ?></span>
-                  <?php endforeach; ?>
-                </td>
-                <td>
                   <span class="selo <?= $c['publicado'] ? 'selo-ok' : 'selo-cinza' ?>">
                     <?= $c['publicado'] ? 'no ar' : 'rascunho' ?>
                   </span>
                 </td>
                 <td>
+                  <a class="btn btn-mini" href="?c=<?= h($c['id']) ?>#cadastro">Editar</a>
                   <form method="post" style="display:inline">
                     <input type="hidden" name="csrf" value="<?= h(token()) ?>">
                     <input type="hidden" name="id" value="<?= h($c['id']) ?>">
-                    <button class="btn btn-mini" name="acao" value="publicar" type="submit">
+                    <button class="btn btn-mini" name="acao" value="cand-publicar" type="submit">
                       <?= $c['publicado'] ? 'Recolher' : 'Publicar' ?>
                     </button>
                   </form>
                   <form method="post" style="display:inline"
-                        onsubmit="return confirm('Apagar este candidato?')">
+                        onsubmit="return confirm('Apagar <?= h($c['nome']) ?>?')">
                     <input type="hidden" name="csrf" value="<?= h(token()) ?>">
                     <input type="hidden" name="id" value="<?= h($c['id']) ?>">
-                    <button class="btn btn-mini btn-risco" name="acao" value="apagar" type="submit">Apagar</button>
+                    <button class="btn btn-mini btn-risco" name="acao" value="cand-apagar" type="submit">Apagar</button>
                   </form>
                 </td>
               </tr>
@@ -196,59 +440,80 @@ abrir_pagina('Candidatos');
         </table>
       </div>
     <?php endif; ?>
-  </fieldset>
 
-  <fieldset>
-    <legend>Cadastrar candidato</legend>
-    <form method="post">
+    <h3 style="margin:22px 0 12px"><?= $editando ? 'Editar ' . h($editando['nome']) : 'Cadastrar candidato' ?></h3>
+    <form method="post" enctype="multipart/form-data">
       <input type="hidden" name="csrf" value="<?= h(token()) ?>">
+      <?php if ($editando): ?>
+        <input type="hidden" name="id" value="<?= h($editando['id']) ?>">
+      <?php endif; ?>
       <div class="linha g2">
         <div class="campo">
           <label for="c-nome">Nome</label>
-          <input id="c-nome" name="nome" type="text" maxlength="80" required>
+          <input id="c-nome" name="nome" type="text" maxlength="80" required
+                 value="<?= h($editando['nome'] ?? '') ?>">
         </div>
         <div class="campo">
-          <label for="c-urna">Nome de urna</label>
-          <input id="c-urna" name="urna" type="text" maxlength="60" placeholder="como aparece na urna">
+          <label for="c-numero">Número</label>
+          <input id="c-numero" name="numero" type="text" inputmode="numeric" maxlength="6" required
+                 value="<?= h($editando['numero'] ?? '') ?>">
+          <p class="dica">O que se digita na urna. É a única coisa, além do nome, que não pode faltar.</p>
         </div>
       </div>
       <div class="linha g3">
         <div class="campo">
-          <label for="c-numero">Número</label>
-          <input id="c-numero" name="numero" type="text" inputmode="numeric" maxlength="6" required>
+          <label for="c-urna">Nome de urna <span class="dica">— opcional</span></label>
+          <input id="c-urna" name="urna" type="text" maxlength="60"
+                 value="<?= h($editando['urna'] ?? '') ?>" placeholder="como aparece na urna">
         </div>
         <div class="campo">
-          <label for="c-cargo">Cargo</label>
-          <input id="c-cargo" name="cargo" type="text" maxlength="60" placeholder="Deputado Federal">
+          <label for="c-cargo">Cargo <span class="dica">— opcional</span></label>
+          <input id="c-cargo" name="cargo" type="text" maxlength="60"
+                 value="<?= h($editando['cargo'] ?? '') ?>" placeholder="Deputado Federal">
         </div>
         <div class="campo">
-          <label for="c-partido">Partido</label>
-          <input id="c-partido" name="partido" type="text" maxlength="40" value="Missão">
+          <label for="c-partido">Partido <span class="dica">— opcional</span></label>
+          <input id="c-partido" name="partido" type="text" maxlength="40"
+                 value="<?= h($editando['partido'] ?? 'Missão') ?>">
         </div>
       </div>
       <div class="linha g2">
         <div class="campo">
-          <label for="c-insta">Instagram</label>
-          <input id="c-insta" name="instagram" type="text" maxlength="60" placeholder="@perfil">
+          <label for="c-insta">Instagram <span class="dica">— opcional</span></label>
+          <input id="c-insta" name="instagram" type="text" maxlength="60"
+                 value="<?= $editando && $editando['instagram'] !== '' ? '@' . h($editando['instagram']) : '' ?>"
+                 placeholder="@perfil">
           <p class="dica">Só o @, ou cole o link — dá na mesma.</p>
         </div>
         <div class="campo">
           <label for="c-ordem">Ordem na lista</label>
-          <input id="c-ordem" name="ordem" type="number" min="0" max="999" value="0">
+          <input id="c-ordem" name="ordem" type="number" min="0" max="999"
+                 value="<?= (int) ($editando['ordem'] ?? 0) ?>">
           <p class="dica">Menor primeiro. Empate desempata pelo nome.</p>
         </div>
       </div>
+      <div class="campo">
+        <label for="c-img">Foto <span class="dica">— opcional</span></label>
+        <?php if ($editando && $editando['imagem'] !== ''): ?>
+          <p><img src="<?= h($editando['imagem']) ?>" alt="" style="max-width:180px;border:3px solid var(--linha-2)"></p>
+          <label class="check">
+            <input type="checkbox" name="tirarImagem" value="1"> Remover esta foto
+          </label>
+        <?php endif; ?>
+        <input id="c-img" name="imagem" type="file" accept="image/*">
+        <p class="dica">
+          JPG, PNG ou WEBP até 8 MB. Sem foto o cartão mostra o número grande, que é o
+          que o eleitor precisa mesmo levar.
+        </p>
+      </div>
 
-      <p class="dica" style="margin:14px 0 6px">Em que grupos ele entra (pode marcar vários):</p>
-      <?php foreach (GRUPOS_CANDIDATO as $chave => $nome): ?>
-        <label class="check">
-          <input type="checkbox" name="grupos[]" value="<?= h($chave) ?>">
-          <?= h($nome) ?>
-        </label>
-      <?php endforeach; ?>
-
-      <div class="acoes" style="margin-top:14px">
-        <button class="btn btn-ouro" name="acao" value="criar" type="submit">Cadastrar</button>
+      <div class="acoes">
+        <button class="btn btn-ouro" name="acao" value="<?= $editando ? 'cand-salvar' : 'cand-novo' ?>" type="submit">
+          <?= $editando ? 'Salvar' : 'Cadastrar' ?>
+        </button>
+        <?php if ($editando): ?>
+          <a class="btn" href="/painel/candidatos.php#cadastro">Cancelar</a>
+        <?php endif; ?>
       </div>
     </form>
   </fieldset>

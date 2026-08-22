@@ -161,7 +161,11 @@ function normalizar_evento($e): ?array
     if ($inicio !== '') {
         $partes = partes_de_exibicao($inicio);
         $data = $partes['data'];
-        $hora = $partes['hora'];
+        /* Meia-noite em ponto significa "o dia está marcado, a hora ainda não".
+           É o que `inicio_de_dia_e_hora()` grava quando o campo de hora fica em
+           branco, e mostrar "0H" no cartão seria anunciar um encontro à
+           meia-noite — que não existe em campanha. O dia continua ordenando. */
+        $hora = $partes['hora'] === '0H' ? '' : $partes['hora'];
     } else {
         $data = limpar_texto($e['data'] ?? '', 20);
         $hora = limpar_texto($e['hora'] ?? '', 10);
@@ -527,6 +531,12 @@ function normalizar_lead($l): ?array
         'compareceu' => !empty($l['compareceu']),
         // 'qr' quando a pessoa se cadastrou sozinha na porta; 'painel' quando alguém digitou
         'origem'   => in_array($l['origem'] ?? 'painel', ['qr', 'painel'], true) ? $l['origem'] : 'painel',
+        /* Quando a ficha é de alguém que TEM conta no painel.
+           Sem isto, o militante escalado para trabalhar no encontro não
+           aparecia na lista de quem foi — ele não lê o QR da mesa, ele está
+           atrás dela. E aí o relatório dizia que o encontro teve menos gente do
+           que teve, justamente esquecendo quem fez o encontro acontecer. */
+        'usuarioId'   => limpar_texto($l['usuarioId'] ?? '', 40),
         'criadoPorId' => limpar_texto($l['criadoPorId'] ?? '', 40),
         'criadoEm'    => limpar_texto($l['criadoEm'] ?? '', 40),
         'consentimentoEm'     => limpar_texto($l['consentimentoEm'] ?? '', 40),
@@ -673,6 +683,7 @@ function pessoas_agrupadas(): array
                 'nome' => $l['nome'], 'telefone' => $l['telefone'],
                 'bairro' => $l['bairro'], 'cidade' => $l['cidade'],
                 'classe' => $l['classe'], 'criadoPorId' => $l['criadoPorId'],
+                'usuarioId' => $l['usuarioId'],
                 'veio' => 0, 'confirmou' => 0, 'faltou' => 0, 'convites' => 0,
                 'ultimo' => '',
             ];
@@ -700,6 +711,9 @@ function pessoas_agrupadas(): array
         if ($l['cidade'] !== '') {
             $r['cidade'] = $l['cidade'];
         }
+        if ($l['usuarioId'] !== '') {
+            $r['usuarioId'] = $l['usuarioId'];
+        }
         unset($r);
     }
 
@@ -707,6 +721,40 @@ function pessoas_agrupadas(): array
        quem a coordenação precisa ligar. */
     uasort($por, fn ($a, $b) => [$b['veio'], $b['faltou']] <=> [$a['veio'], $a['faltou']]);
     return array_values($por);
+}
+
+/**
+ * O time que ainda não está na lista deste encontro.
+ *
+ * Militante com conta não lê o QR da mesa — ele está atrás dela, recebendo os
+ * outros. Escalar em bloco é o que faz a lista do encontro contar as pessoas
+ * que efetivamente estiveram lá, e não só as que chegaram pela porta.
+ */
+function time_fora_do_evento(string $eventoId): array
+{
+    $dentro = [];
+    foreach (leads_do_evento($eventoId) as $l) {
+        if ($l['usuarioId'] !== '') {
+            $dentro[$l['usuarioId']] = true;
+        }
+        if ($l['telefone'] !== '') {
+            $dentro['tel:' . $l['telefone']] = true;
+        }
+    }
+
+    $fora = [];
+    foreach (ler_usuarios() as $u) {
+        if (empty($u['ativo'])) {
+            continue;
+        }
+        $tel = so_digitos($u['telefone'] ?? '');
+        if (isset($dentro[$u['id']]) || ($tel !== '' && isset($dentro['tel:' . $tel]))) {
+            continue;
+        }
+        $fora[] = $u;
+    }
+    usort($fora, fn ($a, $b) => strcmp($a['nome'], $b['nome']));
+    return $fora;
 }
 
 /* ===================== funil de follow-up ===================== */

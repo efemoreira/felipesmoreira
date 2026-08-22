@@ -232,6 +232,62 @@ function arquivo_enviado($indice): ?array
 }
 
 /**
+ * Um `<input type="file" name="X">` solto — sem o `[N]` do formulário da agenda.
+ *
+ * `arquivo_enviado()` existe para `name="imagem[N]"`, onde o PHP entrega
+ * `$_FILES['imagem']['name'][N]` e é preciso remontar a ficha. Quando o campo é
+ * um só, a ficha já vem pronta e remontar seria só chance de errar.
+ */
+function arquivo_simples(string $campo): ?array
+{
+    $f = $_FILES[$campo] ?? null;
+    if (!is_array($f) || !isset($f['error']) || is_array($f['error'])) {
+        return null;
+    }
+    return [
+        'tmp_name' => (string) ($f['tmp_name'] ?? ''),
+        'error'    => (int) $f['error'],
+        'size'     => (int) ($f['size'] ?? 0),
+    ];
+}
+
+/**
+ * Dia e hora, dois campos, viram o instante único que fica gravado.
+ *
+ * A pessoa que marca o encontro pensa "sábado, 9 da manhã" — dois campos, e o
+ * `<input type="date">` do celular abre um calendário de verdade, que o
+ * `datetime-local` não abre em todo aparelho.
+ *
+ * O que NÃO muda é o que fica no arquivo: um `inicio` só, com o fuso do Ceará
+ * junto. É dele que saem a ordenação, o "já passou" e o "ao vivo" — três coisas
+ * que não existiam quando data e hora eram texto solto, e que voltariam a não
+ * existir se os dois campos fossem gravados separados.
+ */
+function inicio_de_dia_e_hora($dia, $hora): string
+{
+    $d = limpar_texto($dia, 10);
+    if ($d === '') {
+        return '';
+    }
+    $h = limpar_texto($hora, 5);
+    if ($h === '' || preg_match('/^\d{2}:\d{2}$/', $h) !== 1) {
+        $h = '00:00';  // encontro sem hora marcada ainda ordena pelo dia
+    }
+    return inicio_iso($d . 'T' . $h);
+}
+
+/** O ISO de volta para os dois campos do formulário. */
+function dia_do_inicio(string $iso): string
+{
+    return $iso === '' ? '' : substr($iso, 0, 10);
+}
+
+function hora_do_inicio(string $iso): string
+{
+    return $iso === '' ? '' : substr($iso, 11, 5);
+}
+
+/**
  * Valida, corrige a rotação (foto de celular) e grava redimensionada.
  * Devolve ['ok' => bool, 'caminho' => string, 'erro' => string].
  */

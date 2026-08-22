@@ -17,6 +17,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/layout.php';
 require_once __DIR__ . '/eventos-comum.php';
+require_once __DIR__ . '/inscricoes-comum.php';  // nome_funcao(), para rotular quem é do time
 exigir_area('eventos');
 
 $eu = usuario_atual();
@@ -61,7 +62,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
 
         $titulo  = limpar_texto($_POST['titulo'] ?? '', 120);
         $familia = limpar_texto($_POST['familia'] ?? '', 20);
-        $inicio  = inicio_iso($_POST['inicio'] ?? '');
+        $inicio  = inicio_de_dia_e_hora($_POST['dia'] ?? '', $_POST['hora'] ?? '');
 
         if ($titulo === '') {
             avisar('erro', 'Dê um nome ao encontro.');
@@ -71,12 +72,28 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             avisar('erro', 'Escolha a família do evento — é ela que traz o playbook e as travas.');
             voltar();
         }
-        /* Um campo só, com data E hora, gravado com o fuso do Ceará junto. Eram
-           dois campos de texto — "29/07" sem ano e "19H" — e por isso a página
-           não conseguia ordenar nem saber o que já tinha passado. */
+        /* Dois campos na tela, UM instante no arquivo. A pessoa pensa "sábado,
+           9 da manhã"; o arquivo guarda o momento com o fuso do Ceará junto, que
+           é o que faz ordenar, saber o que já passou e acender o "ao vivo" na
+           hora certa. Antes eram dois textos livres — "29/07" sem ano e "19H" —
+           e nada disso era possível. A hora pode ficar em branco: o dia já
+           ordena, e o cartão simplesmente não mostra horário. */
         if ($inicio === '') {
-            avisar('erro', 'Informe o dia e a hora do encontro.');
+            avisar('erro', 'Informe pelo menos o dia do encontro.');
             voltar();
+        }
+
+        /* A imagem é opcional. Falha de upload não derruba a criação do
+           encontro: avisa e segue sem imagem — perder o encontro inteiro porque
+           a foto era pesada demais seria trocar o essencial pelo enfeite. */
+        $imagemNova = '';
+        if (($env = arquivo_simples('imagem')) !== null) {
+            $r = guardar_upload($env);
+            if ($r['ok']) {
+                $imagemNova = $r['caminho'];
+            } elseif ($r['erro'] !== '') {
+                avisar('erro', $r['erro'] . ' O encontro foi criado sem imagem.');
+            }
         }
 
         $eventos = ler_eventos();
@@ -89,6 +106,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             'endereco' => limpar_texto($_POST['endereco'] ?? '', 200),
             'publicoEsperado' => (int) ($_POST['publicoEsperado'] ?? 0),
             'naAgenda' => !empty($_POST['naAgenda']),
+            'imagem'   => $imagemNova,
             'token'   => bin2hex(random_bytes(10)),
             'tokenConfirmacao' => bin2hex(random_bytes(10)),
             'status'  => 'planejado',
@@ -129,7 +147,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 }
             } else {
                 $e['titulo']   = limpar_texto($_POST['titulo'] ?? $e['titulo'], 120);
-                $e['inicio']   = inicio_iso($_POST['inicio'] ?? '');
+                $e['inicio']   = inicio_de_dia_e_hora($_POST['dia'] ?? '', $_POST['hora'] ?? '');
                 $e['local']    = limpar_texto($_POST['local'] ?? '', 120);
                 $e['endereco'] = limpar_texto($_POST['endereco'] ?? '', 200);
                 $e['publicoEsperado'] = (int) ($_POST['publicoEsperado'] ?? 0);
@@ -142,6 +160,20 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 $e['plataforma'] = (string) ($_POST['plataforma'] ?? '');
                 $e['aoVivo']     = !empty($_POST['aoVivo']);
                 $e['link']       = limpar_link($_POST['link'] ?? '');
+
+                /* imagem: upload novo > pedido de remoção > o que já estava lá */
+                if (($env = arquivo_simples('imagem')) !== null) {
+                    $r = guardar_upload($env);
+                    if ($r['ok']) {
+                        apagar_imagem($e['imagem']);  // a que estava no lugar não serve mais
+                        $e['imagem'] = $r['caminho'];
+                    } elseif ($r['erro'] !== '') {
+                        avisar('erro', $r['erro'] . ' O resto foi salvo.');
+                    }
+                } elseif (!empty($_POST['tirarImagem'])) {
+                    apagar_imagem($e['imagem']);
+                    $e['imagem'] = '';
+                }
                 foreach (array_keys(PECAS) as $peca) {
                     $e['responsaveis'][$peca] = limpar_texto($_POST['resp'][$peca] ?? '', 40);
                 }
@@ -189,6 +221,57 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     }
 
     /* ---------- cadastrar quem vem ou quem chegou ---------- */
+    /* ---------- escalar o time (quem já tem conta) ---------- */
+    if ($acao === 'add-time') {
+        $ids = array_map('strval', (array) ($_POST['usuario'] ?? []));
+        if ($ids === []) {
+            avisar('erro', 'Marque quem do time vai estar nesse encontro.');
+            voltar($alvo['id'], 'pessoas');
+        }
+
+        $leads = ler_leads();
+        $quantos = 0;
+        foreach (time_fora_do_evento($alvo['id']) as $u) {
+            if (!in_array($u['id'], $ids, true)) {
+                continue;
+            }
+            $leads[] = [
+                'id'       => novo_id_lead(),
+                'eventoId' => $alvo['id'],
+                'nome'     => $u['nome'],
+                'telefone' => so_digitos($u['telefone'] ?? ''),
+                'bairro'   => (string) ($u['bairro'] ?? ''),
+                'cidade'   => (string) ($u['cidade'] ?? ''),
+                /* Quem é do time não é "curioso": já assumiu função no
+                   movimento, e classificá-lo como lead novo sujaria o funil. */
+                'classe'   => 'militante',
+                'confirmou'  => true,
+                'compareceu' => false,   // marca-se quando o encontro acontece
+                'origem'     => 'painel',
+                'usuarioId'  => $u['id'],
+                'criadoPorId' => $eu['id'],
+                'criadoEm'    => date('c'),
+                /* O consentimento é o do cadastro dele no painel, que já existe
+                   — não se pede de novo a quem já é do time. */
+                'consentimentoEm'     => (string) ($u['consentimentoEm'] ?? ''),
+                'consentimentoVersao' => (string) ($u['consentimentoVersao'] ?? ''),
+            ];
+            $quantos++;
+        }
+
+        if ($quantos === 0) {
+            avisar('erro', 'Ninguém novo para escalar.');
+            voltar($alvo['id'], 'pessoas');
+        }
+        if (!gravar_leads($leads)) {
+            avisar('erro', 'Não consegui gravar em /dados.');
+            voltar($alvo['id'], 'pessoas');
+        }
+        avisar('ok', $quantos . ($quantos === 1 ? ' pessoa escalada.' : ' pessoas escaladas.')
+            . ' Marque “compareceu” no dia — é isso que faz a conta do encontro fechar.');
+        voltar($alvo['id'], 'pessoas');
+    }
+
     if ($acao === 'add-pessoa') {
         $nome     = limpar_texto($_POST['nome'] ?? '', 80);
         $telefone = so_digitos($_POST['telefone'] ?? '');
@@ -324,6 +407,12 @@ if ($aberto === null) {
 
       <?php recado($erro, $ok); ?>
 
+      <?php if ($coordena): ?>
+        <div class="acoes" style="margin:0 0 22px">
+          <a class="btn btn-ouro" id="abrir-novo" href="?novo=1">Novo encontro</a>
+        </div>
+      <?php endif; ?>
+
       <?php /* ===== quem é do movimento, olhando todos os encontros juntos =====
                Exige 'agenda' porque é a lista de contatos inteira, com telefone.
                Fica recolhida: a pauta desta tela é o encontro que vem, não o
@@ -347,7 +436,11 @@ if ($aberto === null) {
                     <?php foreach ($todas as $pes): ?>
                       <tr>
                         <td>
-                          <strong><?= h($pes['nome']) ?></strong><br>
+                          <strong><?= h($pes['nome']) ?></strong>
+                          <?php if ($pes['usuarioId'] !== ''): ?>
+                            <span class="selo selo-cinza">do time</span>
+                          <?php endif; ?>
+                          <br>
                           <span class="dica">
                             <?php $onde = trim($pes['bairro'] . ($pes['cidade'] !== '' ? ', ' . $pes['cidade'] : ''), ', '); ?>
                             <?= $onde !== '' ? h($onde) . ' · ' : '' ?>
@@ -386,8 +479,8 @@ if ($aberto === null) {
             <p class="dica" style="margin:0 0 8px">
               Nenhum encontro marcado. O primeiro passo é <strong>Local &amp; Hora</strong>: três
               opções avaliadas (capacidade, custo, acesso, energia, som) antes de fechar qualquer
-              coisa — e a reserva confirmada por escrito. Use o formulário abaixo para abrir o
-              encontro e as cinco peças aparecem prontas para dividir.
+              coisa — e a reserva confirmada por escrito. Toque em <strong>Novo encontro</strong>
+              lá em cima e as cinco peças aparecem prontas para dividir.
             </p>
           <?php endif; ?>
           <?php if ($lista === []): ?>
@@ -414,9 +507,19 @@ if ($aberto === null) {
       <?php endforeach; ?>
 
       <?php if ($coordena): ?>
-        <fieldset>
-          <legend>Novo encontro</legend>
-          <form method="post">
+        <?php /* O formulário vivia solto no fim da página, embaixo de duas listas
+                 que podem ter dezenas de encontros — criar um exigia rolar até o
+                 fim, toda vez. Agora é um <dialog>.
+
+                 O botão é um LINK de verdade para `?novo=1`, e não um botão que
+                 só existe com JavaScript: sem JS a página recarrega com o modal
+                 já aberto (atributo `open`) e o formulário continua ali. */ ?>
+        <dialog id="novo-encontro" class="modal"<?= isset($_GET['novo']) ? ' open' : '' ?>>
+          <form method="dialog" class="modal-fechar">
+            <button type="submit" aria-label="Fechar">&times;</button>
+          </form>
+          <h2>Novo encontro</h2>
+          <form method="post" enctype="multipart/form-data">
             <input type="hidden" name="csrf" value="<?= h(token()) ?>">
             <input type="hidden" name="acao" value="criar">
             <div class="campo">
@@ -432,12 +535,27 @@ if ($aberto === null) {
               </select>
               <p class="dica">A família traz o playbook, as travas e o material específico.</p>
             </div>
+            <div class="linha g2">
+              <div class="campo">
+                <label for="dia">Dia</label>
+                <input id="dia" type="date" name="dia" required>
+              </div>
+              <div class="campo">
+                <label for="hora">Hora <span class="dica">— dá para deixar em branco</span></label>
+                <input id="hora" type="time" name="hora">
+              </div>
+            </div>
+            <p class="dica">
+              Horário do Ceará. É daqui que saem o dia da semana, a data e a hora que o
+              site mostra — nenhum dos três se digita à parte. Sem hora, o encontro
+              continua na lista pelo dia, só sem horário no cartão.
+            </p>
             <div class="campo">
-              <label for="inicio">Quando começa</label>
-              <input id="inicio" type="datetime-local" name="inicio" required>
+              <label for="img-novo">Imagem <span class="dica">— opcional</span></label>
+              <input id="img-novo" type="file" name="imagem" accept="image/*">
               <p class="dica">
-                Dia e hora juntos, no horário do Ceará. É deste campo que saem o dia,
-                a data e a hora que o site mostra — nenhum dos três se digita.
+                JPG, PNG ou WEBP até 8 MB. Ela é reduzida e cortada no cartão; sem
+                imagem, entra o fundo hachurado com a sigla do dia.
               </p>
             </div>
             <label class="check">
@@ -453,11 +571,29 @@ if ($aberto === null) {
               <button type="submit" class="btn btn-ouro">Criar encontro</button>
             </div>
           </form>
-        </fieldset>
+        </dialog>
       <?php else: ?>
         <p class="dica">Só a coordenação cria encontro. Você executa e cadastra presença.</p>
       <?php endif; ?>
     </div>
+    <?php if ($coordena): ?>
+    <script>
+      (function () {
+        var caixa = document.getElementById('novo-encontro');
+        var abrir = document.getElementById('abrir-novo');
+        if (!caixa || !abrir || typeof caixa.showModal !== 'function') return;
+        /* Com JS o link vira modal de verdade: foco preso, Esc fecha, véu por
+           cima. Sem JS ou sem <dialog>, o href continua levando a ?novo=1. */
+        var jaAberto = caixa.hasAttribute('open');
+        caixa.removeAttribute('open');
+        abrir.addEventListener('click', function (e) {
+          e.preventDefault();
+          caixa.showModal();
+        });
+        if (jaAberto) caixa.showModal();
+      })();
+    </script>
+    <?php endif; ?>
     <?php
     fechar_pagina();
     exit;
@@ -469,6 +605,17 @@ $familia   = FAMILIAS[$aberto['familia']];
 $pessoas   = leads_do_evento($aberto['id']);
 $preparo   = preparo_do_evento($aberto);
 $time      = array_values(array_filter(ler_usuarios(), fn ($u) => $u['ativo']));
+
+/* Calculado aqui em cima porque a barra de seções, lá no topo, precisa do
+   número — e o bloco do funil só aparece bem mais abaixo. */
+$vencidos = [];
+if ($coordena) {
+    foreach ($pessoas as $l) {
+        if (($etapa = etapa_vencida($l, $aberto)) !== null) {
+            $vencidos[] = [$l, $etapa];
+        }
+    }
+}
 
 abrir_pagina($aberto['titulo']);
 ?>
@@ -483,6 +630,20 @@ abrir_pagina($aberto['titulo']);
   ); ?>
 
   <?php recado($erro, $ok); ?>
+
+  <?php /* A tela do encontro é longa por natureza — playbook, cinco peças,
+           lista de gente, follow-up, dados. Sem um índice, chegar em "Pessoas"
+           no celular é rolar às cegas. Âncoras e não abas: funcionam sem
+           JavaScript, o navegador guarda a posição, e dá para mandar o link de
+           uma seção no grupo. Mesmo desenho do `.atalho-colunas` da Produção. */ ?>
+  <nav class="secoes" aria-label="Seções do encontro">
+    <a href="#preparo">Preparo <span><?= $preparo['feito'] ?>/<?= $preparo['total'] ?></span></a>
+    <a href="#pessoas">Pessoas <span><?= count($pessoas) ?></span></a>
+    <?php if ($vencidos !== []): ?>
+      <a href="#funil">Follow-up <span><?= count($vencidos) ?></span></a>
+    <?php endif; ?>
+    <a href="#dados">Dados</a>
+  </nav>
 
   <!-- playbook da família -->
   <fieldset>
@@ -503,7 +664,7 @@ abrir_pagina($aberto['titulo']);
   </fieldset>
 
   <!-- as cinco peças -->
-  <fieldset>
+  <fieldset id="preparo">
     <legend>As cinco peças — preparo <?= $preparo['feito'] ?>/<?= $preparo['total'] ?></legend>
 
     <?php foreach (PECAS as $chave => $peca): ?>
@@ -612,6 +773,39 @@ abrir_pagina($aberto['titulo']);
       </details>
     <?php endif; ?>
 
+    <?php /* ===== escalar o time ===== */ ?>
+    <?php $doTime = time_fora_do_evento($aberto['id']); ?>
+    <?php if ($doTime !== []): ?>
+      <details class="decidir" style="margin:0 0 22px">
+        <summary class="btn">Escalar o time (<?= count($doTime) ?> ainda fora da lista)</summary>
+        <div class="decidir-corpo">
+          <p class="dica" style="margin:0 0 12px">
+            Quem tem conta no painel <strong>não lê o QR da mesa</strong> — está atrás
+            dela, recebendo os outros. Sem escalar, a lista do encontro conta só quem
+            entrou pela porta, e o relatório esquece justamente quem fez o encontro
+            acontecer.
+          </p>
+          <form method="post">
+            <input type="hidden" name="csrf" value="<?= h(token()) ?>">
+            <input type="hidden" name="id" value="<?= h($aberto['id']) ?>">
+            <input type="hidden" name="acao" value="add-time">
+            <?php foreach ($doTime as $u): ?>
+              <label class="check">
+                <input type="checkbox" name="usuario[]" value="<?= h($u['id']) ?>">
+                <?= h($u['nome']) ?>
+                <?php if (!empty($u['funcoes'])): ?>
+                  <span class="dica"><?= h(nome_funcao($u['funcoes'][0])) ?></span>
+                <?php endif; ?>
+              </label>
+            <?php endforeach; ?>
+            <div class="acoes" style="margin-top:12px">
+              <button type="submit" class="btn btn-ouro">Escalar quem marquei</button>
+            </div>
+          </form>
+        </div>
+      </details>
+    <?php endif; ?>
+
     <?php if ($pessoas !== []): ?>
       <?php
         /* Os quatro estados saem de `confirmou` × `compareceu`, sem campo novo.
@@ -666,6 +860,7 @@ abrir_pagina($aberto['titulo']);
                       <?= h(telefone_encoberto($l['telefone'])) ?>
                     <?php endif; ?>
                     <?= $l['origem'] === 'qr' ? ' · cadastro no celular' : '' ?>
+                    <?= $l['usuarioId'] !== '' ? ' · <span class="selo selo-cinza">do time</span>' : '' ?>
                   </span>
                 </td>
                 <?php foreach (['confirmou', 'compareceu'] as $campo): ?>
@@ -742,14 +937,6 @@ abrir_pagina($aberto['titulo']);
 
   <!-- funil -->
   <?php if ($coordena): ?>
-    <?php
-      $vencidos = [];
-      foreach ($pessoas as $l) {
-          if (($etapa = etapa_vencida($l, $aberto)) !== null) {
-              $vencidos[] = [$l, $etapa];
-          }
-      }
-    ?>
     <fieldset id="funil">
       <legend>Follow-up vencido (<?= count($vencidos) ?>)</legend>
       <p class="dica">
@@ -789,9 +976,9 @@ abrir_pagina($aberto['titulo']);
 
   <!-- dados do encontro -->
   <?php if ($coordena): ?>
-    <fieldset>
+    <fieldset id="dados">
       <legend>Dados do encontro</legend>
-      <form method="post">
+      <form method="post" enctype="multipart/form-data">
         <input type="hidden" name="csrf" value="<?= h(token()) ?>">
         <input type="hidden" name="id" value="<?= h($aberto['id']) ?>">
         <input type="hidden" name="acao" value="salvar">
@@ -800,20 +987,25 @@ abrir_pagina($aberto['titulo']);
           <label for="e-titulo">Nome</label>
           <input id="e-titulo" type="text" name="titulo" maxlength="120" value="<?= h($aberto['titulo']) ?>">
         </div>
-        <div class="campo">
-          <label for="e-inicio">Quando começa</label>
-          <input id="e-inicio" type="datetime-local" name="inicio"
-                 value="<?= h(inicio_para_campo($aberto['inicio'])) ?>">
-          <?php if ($aberto['inicio'] === '' && $aberto['data'] !== ''): ?>
-            <p class="dica">
-              Este encontro é anterior ao campo de horário e guardava
-              “<?= h(trim($aberto['data'] . ' ' . $aberto['hora'])) ?>” como texto.
-              Preencha acima para ele voltar a ordenar e a saber quando acabou.
-            </p>
-          <?php else: ?>
-            <p class="dica">Dia e hora juntos, no horário do Ceará.</p>
-          <?php endif; ?>
+        <div class="linha g2">
+          <div class="campo">
+            <label for="e-dia">Dia</label>
+            <input id="e-dia" type="date" name="dia" value="<?= h(dia_do_inicio($aberto['inicio'])) ?>">
+          </div>
+          <div class="campo">
+            <label for="e-hora">Hora <span class="dica">— dá para deixar em branco</span></label>
+            <input id="e-hora" type="time" name="hora" value="<?= h(hora_do_inicio($aberto['inicio'])) ?>">
+          </div>
         </div>
+        <?php if ($aberto['inicio'] === '' && $aberto['data'] !== ''): ?>
+          <p class="dica">
+            Este encontro é anterior ao campo de horário e guardava
+            “<?= h(trim($aberto['data'] . ' ' . $aberto['hora'])) ?>” como texto.
+            Preencha acima para ele voltar a ordenar e a saber quando acabou.
+          </p>
+        <?php else: ?>
+          <p class="dica">Horário do Ceará. Sem hora, o cartão mostra só o dia.</p>
+        <?php endif; ?>
         <?php $ehDigital = $aberto['familia'] === 'digital'; ?>
         <?php if (!$ehDigital): ?>
           <div class="campo">
@@ -868,6 +1060,20 @@ abrir_pagina($aberto['titulo']);
             </select>
             <p class="dica"><?= $ehDigital ? 'Onde a transmissão acontece.' : 'Só para encontro digital.' ?></p>
           </div>
+        </div>
+        <div class="campo">
+          <label for="e-img">Imagem <span class="dica">— opcional</span></label>
+          <?php if ($aberto['imagem'] !== ''): ?>
+            <p><img src="<?= h($aberto['imagem']) ?>" alt="" style="max-width:240px;border:3px solid var(--linha-2)"></p>
+            <label class="check">
+              <input type="checkbox" name="tirarImagem" value="1"> Remover esta imagem
+            </label>
+          <?php endif; ?>
+          <input id="e-img" type="file" name="imagem" accept="image/*">
+          <p class="dica">
+            JPG, PNG ou WEBP até 8 MB. Enviar uma nova substitui a atual.
+            Sem imagem, o cartão desenha a hachura do cordel com a sigla do dia.
+          </p>
         </div>
         <div class="campo">
           <label for="e-link">Link</label>
