@@ -176,10 +176,17 @@ usort($usuarios, fn($a, $b) => [$b['papel'] === 'admin', $a['usuario']] <=> [$a[
 abrir_pagina('Usuários');
 ?>
 <div class="capa">
-  <h1>Usuários do painel</h1>
-  <p class="sub">
-    Quem entra, o que cada um abre. Senha não se recupera — se alguém esquecer, use “Resetar senha”.
-  </p>
+  <?php cabecalho_pagina(
+      'Usuários do painel',
+      'Quem entra, o que cada um abre. Senha não se recupera — se alguém esquecer, use “Resetar senha”.',
+      null,
+      null,
+      [
+          'Marcar as áreas de cada pessoa — área é permissão de tela, não a função dela no movimento.',
+          'Resetar a senha de quem perdeu o acesso: a provisória aparece uma vez, na hora.',
+          'Desativar quem saiu, em vez de apagar — o histórico do que a pessoa fez continua fazendo sentido.',
+      ]
+  ); ?>
 
   <?php
   recado(

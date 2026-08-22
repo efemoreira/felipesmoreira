@@ -62,14 +62,12 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && (string) ($_POST['acao'] ??
 abrir_pagina('Minha senha', !$obrigatoria);
 ?>
 <div class="<?= $obrigatoria ? 'caixa' : 'capa' ?>">
-  <h1><?= $obrigatoria ? 'Troque sua senha' : 'Minha senha' ?></h1>
-  <p class="sub">
-    <?php if ($obrigatoria): ?>
-      Você entrou com uma senha provisória. Escolha uma sua para continuar.
-    <?php else: ?>
-      <?= h($eu['nome']) ?> · login <strong><?= h($eu['usuario']) ?></strong>
-    <?php endif; ?>
-  </p>
+  <?php cabecalho_pagina(
+      $obrigatoria ? 'Troque sua senha' : 'Minha senha',
+      $obrigatoria
+          ? 'Você entrou com uma senha provisória. Escolha uma sua para continuar.'
+          : h($eu['nome']) . ' · login <strong>' . h($eu['usuario']) . '</strong>'
+  ); ?>
 
   <?php recado($aviso, $sucesso); ?>
 

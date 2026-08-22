@@ -24,7 +24,7 @@ require_once __DIR__ . '/icones.php';
 require_once __DIR__ . '/agora.php';
 
 /** Versão do CSS — muda junto com o painel.css para furar o cache do navegador. */
-const VERSAO_ESTILO = '9';
+const VERSAO_ESTILO = '10';
 
 /**
  * Os grupos da navegação, na ordem em que aparecem.
@@ -38,20 +38,22 @@ const VERSAO_ESTILO = '9';
  * ÁREA NOVA precisa entrar em um destes grupos, senão não aparece no menu.
  */
 const GRUPOS_NAV = [
-    'Comunicação' => ['fatos', 'producao', 'estudio'],
+    'Comunicação' => ['fatos', 'producao', 'municao', 'estudio'],
     'Encontros'   => ['eventos', 'agenda'],
-    'Coordenação' => ['inscricoes'],
+    'Coordenação' => ['inscricoes', 'candidatos'],
 ];
 
 /** Rótulos curtos, para caber na barra do celular. */
 const ROTULO_CURTO = [
     'fatos'      => 'Fatos',
     'producao'   => 'Produção',
+    'municao'    => 'Munição',
     'estudio'    => 'Estúdio',
     'eventos'    => 'Encontros',
     'agenda'     => 'Agenda',
     'aulas'      => 'Aulas',
     'inscricoes' => 'Inscrições',
+    'candidatos' => 'Candidatos',
 ];
 
 /** fechar_pagina() precisa saber se abriu a moldura, para não fechar div à toa. */
@@ -122,10 +124,13 @@ function menu_do_painel(array $u, array $pendencias): array
         ];
     };
 
-    /* Início e Formação, fora de grupo */
+    /* Início e Formação, fora de grupo.
+       Início ganha selo pelo que não pertence a área nenhuma — hoje, só a
+       obrigação de entrar no grupo de trabalho. Sem isto a tarefa apareceria na
+       fila do hub e o menu ficaria mudo sobre ela. */
     $soltos = [[
         'url' => '/painel/', 'arquivo' => 'index.php', 'rotulo' => 'Início',
-        'curto' => 'Início', 'icone' => 'home', 'conta' => 0, 'marca' => '',
+        'curto' => 'Início', 'icone' => 'home', 'conta' => $pendencias['index'] ?? 0, 'marca' => '',
     ]];
     if (in_array('aulas', $areas, true)) {
         $aulas = $item('aulas');
@@ -250,7 +255,7 @@ function desenhar_barra_celular(array $u, array $menu, string $aqui): void
     foreach (mesas_de($u) as $mesa) {
         $ordem[] = $mesa['area'];
     }
-    foreach (['eventos', 'aulas', 'fatos', 'producao', 'inscricoes', 'agenda', 'estudio'] as $a) {
+    foreach (['eventos', 'aulas', 'fatos', 'municao', 'producao', 'inscricoes', 'agenda', 'candidatos', 'estudio'] as $a) {
         $ordem[] = $a;
     }
 
@@ -299,9 +304,15 @@ function desenhar_barra_celular(array $u, array $menu, string $aqui): void
  *
  * @param array|null  $voltar     ['url' => ..., 'texto' => ...]
  * @param string|null $ferramenta caminho da ferramenta no currículo, ex: /painel/fatos
+ * @param array|null  $comoUsar   3 ou 4 frases do que dá para fazer nesta tela
  */
-function cabecalho_pagina(string $titulo, string $sub = '', ?array $voltar = null, ?string $ferramenta = null): void
-{
+function cabecalho_pagina(
+    string $titulo,
+    string $sub = '',
+    ?array $voltar = null,
+    ?string $ferramenta = null,
+    ?array $comoUsar = null
+): void {
     if ($voltar !== null) {
         echo '<p class="voltar"><a href="' . h($voltar['url']) . '">'
             . icone('arrowLeft', 16) . ' ' . h($voltar['texto']) . '</a></p>';
@@ -325,6 +336,22 @@ function cabecalho_pagina(string $titulo, string $sub = '', ?array $voltar = nul
                 . icone('chevronRight', 14) . '</a>';
         }
         echo '</p>';
+    }
+
+    /* "O que dá para fazer aqui" — fechado por padrão, <details> puro.
+       Sem JavaScript e sem estado de "já vi" guardado em lugar nenhum: quem
+       conhece a tela nunca abre, quem chegou hoje abre uma vez, e ninguém
+       precisa de um banner para dispensar.
+
+       Divisão de texto, para não duplicar: aqui é O QUE a tela faz; o "Como se
+       faz" acima leva para a aula, que é o COMO. Texto repetido em dois lugares
+       é texto que diverge na terceira alteração. */
+    if ($comoUsar !== null && $comoUsar !== []) {
+        echo '<details class="explicacao"><summary>O que dá para fazer aqui</summary><ul>';
+        foreach ($comoUsar as $linha) {
+            echo '<li>' . h((string) $linha) . '</li>';
+        }
+        echo '</ul></details>';
     }
 }
 

@@ -25,6 +25,11 @@ declare(strict_types=1);
 require_once __DIR__ . '/sessao.php';
 
 /** Quantas linhas a fila mostra antes de virar "e mais N". */
+/* Quanto tempo um fato aprovado pode ficar sem virar peça antes de virar
+   pendência. Mesma lógica de HORAS_LIMITE_INSCRICAO: o vão entre "decidido" e
+   "feito" é onde o trabalho some. */
+const HORAS_SEM_SAIDA = 48;
+
 const TETO_FILA = 6;
 
 /**
@@ -47,11 +52,38 @@ function tarefas_de(array $u): array
 
     $tarefas = [];
 
+    /* ---------- A primeira obrigação: estar no grupo de trabalho ----------
+       Vem antes de tudo e é urgente porque é onde a convocação sai: quem não
+       está no grupo não fica sabendo do encontro, e todo o resto do painel
+       perde o sentido. Some assim que a pessoa marca "já entrei" no hub.
+
+       Não dá para conferir de fora se ela entrou mesmo — o WhatsApp não conta
+       isso —, e tudo bem: a marca serve para o painel parar de cobrar. */
+    if (empty($u['entrouNoGrupo'])) {
+        $tarefas[] = [
+            'area'    => 'index',
+            'icone'   => 'whatsapp',
+            'urgente' => true,
+            'texto'   => 'Entrar no grupo de trabalho',
+            'porque'  => 'é por ali que sai a convocação da semana — a primeira coisa que todo mundo faz ao chegar',
+            'url'     => '/painel/#grupo',
+        ];
+    }
+
     /* ---------- Fatos: a fila da Checagem ---------- */
     if (pode('fatos')) {
         require_once __DIR__ . '/fatos-comum.php';
+        require_once __DIR__ . '/producao-comum.php';
 
-        $fila = fatos_com_status('a-checar');
+        /* O fato que a própria pessoa trouxe não é pendência dela: ela não pode
+           checá-lo. Contá-lo aqui mandaria alguém para uma tela onde a única
+           coisa a fazer é esperar — e o selo no menu ficaria aceso para sempre
+           quando a fila fosse só de fato próprio. Para o resto do time ele
+           continua contando normalmente. */
+        $fila = array_values(array_filter(
+            fatos_com_status('a-checar'),
+            fn ($f) => $f['autorId'] !== $u['id']
+        ));
         if ($fila !== []) {
             // o mais antigo manda no recado: é ele que estoura o prazo
             $horas = 0;
@@ -68,6 +100,31 @@ function tarefas_de(array $u): array
                     ? "o mais antigo está parado há {$horas}h — o prazo da checagem é 2h"
                     : 'nada dorme sem status: a meta é zerar a fila do dia',
                 'url'     => '/painel/fatos.php#fila',
+            ];
+        }
+    }
+
+    /* ---------- Fatos: aprovado e parado, sem virar peça nenhuma ----------
+       A pergunta "o que foi feito com o fato" só tem resposta se ficar sem
+       resposta doer. Aprovar sem marcar saída é legítimo — decidir depois é
+       normal —, mas passar de 48h assim é o fato morrendo em silêncio, que é
+       exatamente o que o status 'arquivado' existe para evitar. */
+    if (pode('fatos')) {
+        $parados = array_values(array_filter(
+            fatos_com_status('ok-checado'),
+            fn ($f) => saidas_do_fato($f['id']) === [] && horas_esperando($f) >= HORAS_SEM_SAIDA
+        ));
+        if ($parados !== []) {
+            $quantos = count($parados);
+            $tarefas[] = [
+                'area'    => 'fatos',
+                'icone'   => 'search',
+                'urgente' => false,
+                'texto'   => $quantos === 1
+                    ? 'Decidir o que fazer com 1 fato aprovado'
+                    : "Decidir o que fazer com {$quantos} fatos aprovados",
+                'porque'  => 'passaram da checagem e não viraram peça nenhuma — abra uma saída ou arquive com o motivo',
+                'url'     => '/painel/fatos.php#checados',
             ];
         }
     }

@@ -107,7 +107,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     }
 
     /* ---------- a Checagem decide ---------- */
-    if ($acao === 'aprovar' || $acao === 'pendente') {
+    if ($acao === 'aprovar' || $acao === 'pendente' || $acao === 'arquivar') {
         $alvo = achar_fato(limpar_texto($_POST['id'] ?? '', 40));
 
         if ($alvo === null) {
@@ -119,40 +119,81 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             voltar('fila');
         }
 
+        /* QUEM TRAZ O FATO NÃO CHECA O FATO.
+           Checagem que o próprio autor faz não é checagem — é a mesma pessoa
+           conferindo a si mesma, e o passo inteiro vira carimbo. O dado para
+           aplicar isto já estava gravado (`autorId`) desde sempre.
+           O admin destrava, mas caro: precisa escrever o porquê, e o porquê
+           fica na ficha. É o mesmo desenho da regra do ledger na Produção. */
+        $destrava = limpar_texto($_POST['destrava'] ?? '', 300);
+        if ($alvo['autorId'] !== '' && $alvo['autorId'] === $eu['id']) {
+            if ($eu['papel'] !== 'admin') {
+                avisar('erro', 'Você trouxe este fato — quem checa é outra pessoa. Ele fica na fila até alguém do time abrir.');
+                voltar('fila');
+            }
+            if ($destrava === '') {
+                avisar('erro', 'Para checar o próprio fato, escreva por que não deu para outra pessoa checar. Fica anotado na ficha.');
+                voltar('fila');
+            }
+        } else {
+            $destrava = '';  // só vale quando a regra foi de fato contornada
+        }
+
         $motivo = limpar_texto($_POST['motivo'] ?? '', 300);
         if ($acao === 'pendente' && $motivo === '') {
             avisar('erro', 'Diga por que ficou pendente — sem o motivo anotado ninguém sabe o que faltou para destravar depois.');
             voltar('fila');
         }
+        if ($acao === 'arquivar' && $motivo === '') {
+            avisar('erro', 'Diga por que o fato não vira peça — é isso que responde “o que foi feito com ele” daqui a um mês.');
+            voltar('fila');
+        }
 
-        /* Aprovar abre o card de roteiro no quadro. É esta ligação que faz a
-           ferramenta valer a pena: o roteirista recebe o fato com fonte e
-           responsável colados, em vez de um link copiado à mão para o Trello.
+        /* Aprovar abre no quadro as saídas que a Checagem marcou. É esta ligação
+           que faz a ferramenta valer a pena: quem produz recebe o fato com
+           fonte e responsável colados, em vez de um link copiado à mão para o
+           Trello.
 
-           O card entra primeiro: se ele falhar, o fato continua na fila e a
+           NENHUMA saída é obrigatória e nenhuma é exclusiva: o mesmo fato pode
+           virar roteiro e arte, só um vídeo, ou nada — e "nada" é uma resposta
+           legítima, que fica registrada. Antes, aprovar criava sempre um card
+           de roteiro, então o quadro enchia de card que ninguém ia escrever.
+
+           Os cards entram primeiro: se falharem, o fato continua na fila e a
            Checagem tenta de novo. O contrário deixaria fato aprovado sem
            ninguém para escrever, que é pior de perceber. */
         $cardId = '';
         if ($acao === 'aprovar') {
-            $card  = card_do_fato($alvo, $eu);
-            $cards = ler_cards();
-            $cards[] = $card;
+            $saidas = array_values(array_intersect(
+                array_keys(ETAPAS),
+                array_map('strval', (array) ($_POST['saida'] ?? []))
+            ));
 
-            if (!gravar_cards($cards)) {
-                avisar('erro', 'Não consegui abrir o card no quadro de Produção. O fato segue na fila — tente de novo.');
-                voltar('fila');
+            if ($saidas !== []) {
+                $cards = ler_cards();
+                foreach ($saidas as $etapa) {
+                    $card = card_do_fato($alvo, $eu, $etapa);
+                    $cards[] = $card;
+                    if ($cardId === '') {
+                        $cardId = $card['id'];  // o primeiro, só para o atalho da ficha
+                    }
+                }
+                if (!gravar_cards($cards)) {
+                    avisar('erro', 'Não consegui abrir os cards no quadro de Produção. O fato segue na fila — tente de novo.');
+                    voltar('fila');
+                }
             }
-            $cardId = $card['id'];
         }
 
         $fatos = ler_fatos();
         foreach ($fatos as &$f) {
             if ($f['id'] === $alvo['id']) {
-                $f['status']     = $acao === 'aprovar' ? 'ok-checado' : 'pendente';
+                $f['status']     = $acao === 'aprovar' ? 'ok-checado' : ($acao === 'arquivar' ? 'arquivado' : 'pendente');
                 $f['motivo']     = $acao === 'aprovar' ? '' : $motivo;
                 $f['checadoPor'] = $eu['nome'];
                 $f['checadoEm']  = date('c');
                 $f['cardId']     = $cardId;
+                $f['destravaMotivo'] = $destrava;
             }
         }
         unset($f);
@@ -162,9 +203,15 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             voltar('fila');
         }
 
-        avisar('ok', $acao === 'aprovar'
-            ? 'Fato aprovado — o card de roteiro já está em “A fazer” na Produção.'
-            : 'Fato marcado como pendente. Ele fica guardado com o motivo.');
+        if ($acao === 'aprovar') {
+            avisar('ok', $cardId === ''
+                ? 'Fato aprovado, sem abrir peça. Ele fica na lista dos checados esperando alguém decidir o que fazer com ele.'
+                : 'Fato aprovado — as peças já estão em “A fazer” na Produção.');
+        } elseif ($acao === 'arquivar') {
+            avisar('ok', 'Fato arquivado com o motivo. Ele sai da fila e o rastro fica.');
+        } else {
+            avisar('ok', 'Fato marcado como pendente. Ele fica guardado com o motivo.');
+        }
         voltar('fila');
     }
 
@@ -186,6 +233,7 @@ $v = fn (string $campo, string $padrao = '') => h($rascunho[$campo] ?? $padrao);
 $fila      = fatos_com_status('a-checar');
 $checados  = array_slice(array_reverse(fatos_com_status('ok-checado')), 0, 15);
 $pendentes = array_slice(array_reverse(fatos_com_status('pendente')), 0, 15);
+$arquivados = array_slice(array_reverse(fatos_com_status('arquivado')), 0, 15);
 
 $quando = function (string $iso): string {
     $t = strtotime($iso);
@@ -200,7 +248,13 @@ abrir_pagina('Fatos do dia');
       'O Olheiro traz o fato com a prova; a Checagem abre o link e decide. '
       . 'Nada segue para roteiro ou arte sem passar por aqui.',
       null,
-      '/painel/fatos'
+      '/painel/fatos',
+      [
+          'Trazer um fato: só o que aconteceu, quem é o responsável e o link que prova.',
+          'Checar o que chegou — mas nunca o seu próprio fato: isso é carimbo, não checagem.',
+          'Ao aprovar, marque o que ele vira: roteiro, arte, vídeo, mais de um, ou nenhum.',
+          'Fato que confere mas não rende peça se arquiva com o motivo, para não morrer em silêncio.',
+      ]
   ); ?>
 
   <?php recado($erro, $ok); ?>
@@ -257,6 +311,20 @@ abrir_pagina('Fatos do dia');
           <p class="dica">Fora da janela de 48h, marcado como desdobramento novo de algo mais antigo.</p>
         <?php endif; ?>
 
+        <?php
+          /* Quem trouxe o fato não checa o fato. Para o autor comum a decisão
+             nem aparece — mostrar um formulário que vai ser recusado no POST é
+             pedir para a pessoa digitar à toa. Admin vê, com a justificativa
+             obrigatória junto. */
+          $meu = $f['autorId'] !== '' && $f['autorId'] === $eu['id'];
+        ?>
+        <?php if ($meu && $eu['papel'] !== 'admin'): ?>
+          <p class="dica">
+            <strong>Você trouxe este fato.</strong> Quem checa é outra pessoa — ele fica
+            na fila até alguém do time abrir. Checagem que o autor faz é carimbo,
+            não checagem.
+          </p>
+        <?php else: ?>
         <details class="decidir">
           <summary class="btn btn-ouro">Checar este fato</summary>
           <div class="decidir-corpo">
@@ -268,9 +336,41 @@ abrir_pagina('Fatos do dia');
               <?php endif; ?>
             </p>
 
+            <?php if ($meu): ?>
+              <p class="msg msg-erro" style="margin:0 0 14px">
+                Este fato é seu. Como admin você consegue checar assim mesmo, mas
+                escreva por que não deu para outra pessoa — fica anotado na ficha.
+              </p>
+            <?php endif; ?>
+
             <form method="post">
               <input type="hidden" name="csrf" value="<?= h(token()) ?>">
               <input type="hidden" name="id" value="<?= h($f['id']) ?>">
+
+              <fieldset class="saidas">
+                <legend>O que este fato vira?</legend>
+                <p class="dica" style="margin:0 0 10px">
+                  Marque o que faz sentido — pode ser mais de um, e pode ser nenhum.
+                  Fato aprovado sem peça fica esperando decisão, e aparece no hub
+                  depois de 48h.
+                </p>
+                <?php foreach (ETAPAS as $chave => $nome): ?>
+                  <label class="check">
+                    <input type="checkbox" name="saida[]" value="<?= h($chave) ?>"
+                           <?= $chave === 'roteiro' ? 'checked' : '' ?>>
+                    <?= h($nome) ?>
+                  </label>
+                <?php endforeach; ?>
+              </fieldset>
+
+              <?php if ($meu): ?>
+                <div class="campo">
+                  <label for="destrava-<?= h($f['id']) ?>">Por que você mesmo está checando?</label>
+                  <input id="destrava-<?= h($f['id']) ?>" type="text" name="destrava" maxlength="300" required
+                         placeholder="Ex: fato urgente, ninguém da Checagem disponível hoje">
+                </div>
+              <?php endif; ?>
+
               <div class="acoes">
                 <button type="submit" class="btn btn-ouro" name="acao" value="aprovar">
                   Confere — aprovar
@@ -281,8 +381,11 @@ abrir_pagina('Fatos do dia');
             <form method="post" class="decidir-recusa">
               <input type="hidden" name="csrf" value="<?= h(token()) ?>">
               <input type="hidden" name="id" value="<?= h($f['id']) ?>">
+              <?php if ($meu): ?>
+                <input type="hidden" name="destrava" value="Arquivado/recusado pelo próprio autor.">
+              <?php endif; ?>
               <div class="campo">
-                <label for="motivo-<?= h($f['id']) ?>">Não deu para confirmar. Por quê?</label>
+                <label for="motivo-<?= h($f['id']) ?>">Não deu para confirmar, ou não vira peça. Por quê?</label>
                 <input id="motivo-<?= h($f['id']) ?>" type="text" name="motivo" maxlength="300"
                        placeholder="Ex: o link não abre / o número não bate com a fonte">
               </div>
@@ -290,14 +393,20 @@ abrir_pagina('Fatos do dia');
                 <button type="submit" class="btn btn-risco" name="acao" value="pendente">
                   Deixar pendente
                 </button>
+                <button type="submit" class="btn" name="acao" value="arquivar">
+                  Arquivar sem virar peça
+                </button>
               </div>
               <p class="dica">
-                Pendente não é lixo: o fato fica guardado com o motivo e pode voltar
-                quando sair o documento que faltava.
+                <strong>Pendente</strong> é o que falta prova: fica guardado com o motivo e
+                pode voltar quando sair o documento.
+                <strong>Arquivar</strong> é o fato que confere mas não rende peça — encerra
+                o assunto e deixa o rastro de que foi decidido, não esquecido.
               </p>
             </form>
           </div>
         </details>
+        <?php endif; ?>
       </article>
     <?php endforeach; ?>
   </fieldset>
@@ -385,23 +494,74 @@ abrir_pagina('Fatos do dia');
   </fieldset>
 
   <!-- ============ o que já foi decidido ============ -->
-  <fieldset>
-    <legend>Checados, prontos para roteiro (<?= count($checados) ?>)</legend>
+  <fieldset id="checados">
+    <legend>Checados (<?= count($checados) ?>)</legend>
+    <p class="dica">
+      O que cada fato virou. <strong>Sem peça</strong> não é erro — é decisão que
+      ainda não foi tomada, e depois de 48h ela aparece no hub como pendência.
+    </p>
     <?php if ($checados === []): ?>
       <p class="dica" style="margin:0">Nenhum fato aprovado ainda.</p>
     <?php else: ?>
       <div class="rolagem">
         <table class="tabela">
-          <thead><tr><th>O quê</th><th>Responsável</th><th>Checado por</th></tr></thead>
+          <thead><tr><th>O quê</th><th>Virou</th><th>Checado por</th></tr></thead>
           <tbody>
             <?php foreach ($checados as $f): ?>
+              <?php $saidas = saidas_do_fato($f['id']); ?>
               <tr>
                 <td>
                   <strong><?= h($f['oQue']) ?></strong><br>
+                  <span class="dica"><?= h($f['quem']) ?></span> ·
                   <a href="<?= h($f['fonteUrl']) ?>" target="_blank" rel="noopener noreferrer">fonte</a>
                 </td>
-                <td><?= h($f['quem']) ?></td>
-                <td><?= h($f['checadoPor']) ?><br><span class="dica"><?= h($quando($f['checadoEm'])) ?></span></td>
+                <td>
+                  <?php if ($saidas === []): ?>
+                    <span class="selo selo-off">sem peça</span>
+                  <?php else: ?>
+                    <?php foreach ($saidas as $c): ?>
+                      <span class="selo <?= $c['coluna'] === 'publicado' ? '' : 'selo-cinza' ?>">
+                        <?= h(ETAPAS[$c['etapa']] ?? $c['etapa']) ?>
+                        · <?= h(COLUNAS[$c['coluna']] ?? $c['coluna']) ?>
+                      </span>
+                      <?php if ($c['linkPost'] !== ''): ?>
+                        <a href="<?= h($c['linkPost']) ?>" target="_blank" rel="noopener noreferrer">post</a>
+                      <?php endif; ?>
+                      <br>
+                    <?php endforeach; ?>
+                  <?php endif; ?>
+                </td>
+                <td>
+                  <?= h($f['checadoPor']) ?><br>
+                  <span class="dica"><?= h($quando($f['checadoEm'])) ?></span>
+                  <?php if ($f['destravaMotivo'] !== ''): ?>
+                    <br><span class="selo selo-off">checou o próprio fato</span>
+                    <br><span class="dica"><?= h($f['destravaMotivo']) ?></span>
+                  <?php endif; ?>
+                </td>
+              </tr>
+            <?php endforeach; ?>
+          </tbody>
+        </table>
+      </div>
+    <?php endif; ?>
+  </fieldset>
+
+  <fieldset>
+    <legend>Arquivados (<?= count($arquivados) ?>)</legend>
+    <p class="dica">
+      Conferem, mas não renderam peça. Ficam aqui para a pergunta “o que foi feito
+      com aquele fato” ter resposta — decidido, não esquecido.
+    </p>
+    <?php if ($arquivados !== []): ?>
+      <div class="rolagem">
+        <table class="tabela">
+          <thead><tr><th>O quê</th><th>Por que não virou peça</th></tr></thead>
+          <tbody>
+            <?php foreach ($arquivados as $f): ?>
+              <tr>
+                <td><strong><?= h($f['oQue']) ?></strong></td>
+                <td><?= h($f['motivo']) ?></td>
               </tr>
             <?php endforeach; ?>
           </tbody>

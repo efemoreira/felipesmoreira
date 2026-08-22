@@ -33,7 +33,12 @@ const STATUS_FATO = [
     'a-checar'   => 'A checar',
     'ok-checado' => 'Checado',
     'pendente'   => 'Pendente',
+    /* Checado e encerrado sem virar peça nenhuma. Sem este estado, um fato
+       aprovado que ninguém aproveitou fica idêntico a um fato esquecido — e a
+       pergunta "o que foi feito com o fato" não tem resposta. */
+    'arquivado'  => 'Arquivado',
 ];
+
 
 /* ===================== leitura e gravação ===================== */
 
@@ -74,6 +79,10 @@ function normalizar_fato($f): ?array
         'criadoEm'   => limpar_texto($f['criadoEm'] ?? '', 40),
         // preenchido quando a aprovação abre o card no quadro de Produção
         'cardId'     => limpar_texto($f['cardId'] ?? '', 40),
+        /* Quem traz o fato não checa o fato. Quando um admin destrava assim
+           mesmo, o porquê fica escrito e aparece na ficha: decisão destravada
+           que ninguém lê é decisão sem revisão. */
+        'destravaMotivo' => limpar_texto($f['destravaMotivo'] ?? '', 300),
     ];
 }
 

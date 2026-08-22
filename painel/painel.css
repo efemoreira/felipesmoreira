@@ -177,6 +177,29 @@ a { color:var(--elo); text-underline-offset:3px; }
 }
 .sub-aula:hover { border-color:var(--ouro); background:var(--realce-2); }
 
+/* "O que dá para fazer aqui" — a explicação curta de cada tela.
+   Fechada por padrão: quem já conhece a ferramenta nunca abre, e quem chegou
+   hoje abre uma vez. É <details> puro, sem JavaScript e sem estado de "já vi"
+   guardado — banner que precisa ser dispensado é banner que alguém dispensa
+   errado e nunca mais acha. Só tokens: cor literal aqui quebraria um dos temas. */
+.explicacao { margin:-14px 0 26px; max-width:70ch; }
+.explicacao > summary {
+  display:inline-flex; align-items:center; gap:6px; cursor:pointer; list-style:none;
+  min-height:44px; padding:0;
+  font:400 11px/1 var(--etiqueta); letter-spacing:1.5px; text-transform:uppercase;
+  color:var(--rotulo);
+}
+.explicacao > summary::-webkit-details-marker { display:none; }
+.explicacao > summary::after { content:'▾'; font-size:13px; line-height:1; }
+.explicacao[open] > summary::after { content:'▴'; }
+.explicacao > summary:hover { color:var(--acento); }
+.explicacao ul {
+  margin:2px 0 0; padding:14px 16px 14px 32px;
+  border:2px solid var(--linha); background:var(--superficie);
+  color:var(--texto-fraco); font-size:14.5px; line-height:1.6;
+}
+.explicacao li + li { margin-top:7px; }
+
 /* ======================================================================
    NAVEGAÇÃO
 
@@ -628,6 +651,35 @@ input[type=file]::file-selector-button {
    trabalho · o que está esperando · o que vem aí · quanto eu já aprendi.
    A grade de áreas veio para o fim: ela é o índice, não a pauta do dia.
    ====================================================================== */
+
+/* ---- a grade do hub: trabalho à esquerda, o grupo à direita ----
+   No celular vira uma coluna só, e a coluna da direita SOBE (order:-1). O
+   cartão do grupo é a primeira obrigação de quem entra: deixá-lo no fim de uma
+   página rolada seria o mesmo que escondê-lo, e o celular é de onde vem a
+   maioria. */
+.hub { display:grid; grid-template-columns:minmax(0,1fr) 300px; gap:26px; align-items:start; }
+.hub-principal { min-width:0; }
+@media (max-width: 980px) {
+  .hub { grid-template-columns:1fr; }
+  .hub-lado { order:-1; }
+}
+
+.cartao-grupo {
+  border:3px solid var(--linha-2); background:var(--superficie);
+  box-shadow:6px 6px 0 var(--sombra);
+  padding:20px 18px;
+}
+.cartao-grupo-icone { display:block; color:var(--acento); margin-bottom:10px; }
+.cartao-grupo h2 {
+  font:400 13px/1.2 var(--etiqueta); letter-spacing:2px; text-transform:uppercase;
+  color:var(--rotulo); margin:0 0 10px;
+}
+.cartao-grupo p { margin:0 0 16px; font-size:14.5px; line-height:1.6; color:var(--texto-fraco); }
+.cartao-grupo .acoes { margin:0; }
+.cartao-grupo .btn-ouro { width:100%; justify-content:center; }
+.cartao-grupo-feito { margin-top:12px; }
+.cartao-grupo-feito .btn { width:100%; justify-content:center; }
+.cartao-grupo .dica { margin-top:10px; }
 
 /* ---- título de bloco ---- */
 .secao {

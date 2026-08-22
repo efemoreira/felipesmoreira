@@ -21,6 +21,25 @@ $sucesso = null;
 $acao = (string) ($_POST['acao'] ?? '');
 $primeiroAcesso = ler_usuarios() === [];
 
+/* A pessoa diz que já entrou no grupo de trabalho. Não dá para conferir do
+   nosso lado — o WhatsApp não conta isso —, e não é para conferir: a marca
+   serve para o painel parar de cobrar, e quem mentir só engana a si mesmo. */
+if ($acao === 'entrei-no-grupo' && token_valido()) {
+    $eu = usuario_atual();
+    if ($eu !== null) {
+        $usuarios = ler_usuarios();
+        foreach ($usuarios as &$linha) {
+            if ($linha['id'] === $eu['id']) {
+                $linha['entrouNoGrupo'] = true;
+            }
+        }
+        unset($linha);
+        gravar_usuarios($usuarios);
+    }
+    header('Location: /painel/', true, 302);
+    exit;
+}
+
 /** Só aceita voltar para dentro do painel — nada de redirecionar para fora. */
 function destino_pos_login(): string
 {
@@ -156,7 +175,7 @@ if ($u === null) {
       </form>
       <p class="dica" style="margin-top:20px">
         Esqueceu a senha ou ainda não tem acesso? Fale com a coordenação no
-        <a href="https://wa.me/5585981872972" target="_blank" rel="noopener">WhatsApp</a>.
+        <a href="<?= h(WHATSAPP_COORDENACAO) ?>" target="_blank" rel="noopener">WhatsApp</a>.
       </p>
     <?php endif; ?>
     </div>
@@ -205,25 +224,39 @@ $sobrando = $naFila - count($mostradas);
 abrir_pagina('Início');
 ?>
 <div class="capa">
-  <h1>Olá, <?= h(explode(' ', $u['nome'])[0]) ?></h1>
-  <p class="sub">
-    <?php if ($areas === []): ?>
-      Seu acesso está ativo, mas nenhuma área foi liberada ainda.
-    <?php elseif ($naFila === 0): ?>
-      Nada esperando por você agora.
-    <?php elseif ($naFila === 1): ?>
-      Uma coisa está esperando por você.
-    <?php else: ?>
-      <?= $naFila ?> coisas estão esperando por você.
-    <?php endif; ?>
-  </p>
+  <?php
+    if ($areas === []) {
+        $resumo = 'Seu acesso está ativo, mas nenhuma área foi liberada ainda.';
+    } elseif ($naFila === 0) {
+        $resumo = 'Nada esperando por você agora.';
+    } elseif ($naFila === 1) {
+        $resumo = 'Uma coisa está esperando por você.';
+    } else {
+        $resumo = $naFila . ' coisas estão esperando por você.';
+    }
+    cabecalho_pagina(
+        'Olá, ' . h(explode(' ', $u['nome'])[0]),
+        $resumo,
+        null,
+        null,
+        [
+            'Esta tela é só o que está esperando por você hoje — para onde ir fica no menu, ao lado.',
+            'A mesa do topo é a da sua função no movimento; “Ver tudo” abre a ferramenta inteira.',
+            'Área é permissão de tela; função é o seu papel na militância. Uma não limita a outra.',
+            'Fila vazia é o objetivo, não erro: a meta é que nada durma sem status.',
+        ]
+    );
+  ?>
 
   <?php recado($aviso, $sucesso); ?>
+
+  <div class="hub">
+  <div class="hub-principal">
 
   <?php if ($areas === []): ?>
     <p class="msg msg-erro">
       Nenhuma área foi liberada para a sua conta ainda. Fale com a coordenação no
-      <a href="https://wa.me/5585981872972" target="_blank" rel="noopener">WhatsApp</a>
+      <a href="<?= h(WHATSAPP_COORDENACAO) ?>" target="_blank" rel="noopener">WhatsApp</a>
       para liberarem o seu acesso.
     </p>
   <?php else: ?>
@@ -371,6 +404,42 @@ abrir_pagina('Início');
     <?php endif; ?>
 
   <?php endif; ?>
+
+  </div><?php /* fim de .hub-principal */ ?>
+
+  <?php /* ============ a coluna da direita ============
+           No computador ela fica ao lado; no celular a grade vira uma coluna só
+           e ESTE bloco sobe para o topo (ver painel.css). "Com prioridade" que
+           vira o último bloco de uma página rolada no celular não é prioridade
+           nenhuma — e o celular é de onde vem a maioria. */ ?>
+  <aside class="hub-lado">
+    <section class="cartao-grupo" id="grupo">
+      <span class="cartao-grupo-icone"><?= icone('whatsapp', 28) ?></span>
+      <h2>Grupo de trabalho</h2>
+      <p>
+        Entre no grupo para acompanhar avisos e novidade dos trabalhos da
+        militância da Missão no Ceará.
+      </p>
+      <div class="acoes">
+        <a class="btn btn-ouro" href="<?= h(GRUPO_TRABALHO) ?>" target="_blank" rel="noopener">
+          Entrar no grupo
+        </a>
+      </div>
+      <?php if (empty($u['entrouNoGrupo'])): ?>
+        <form method="post" class="cartao-grupo-feito">
+          <input type="hidden" name="csrf" value="<?= h(token()) ?>">
+          <input type="hidden" name="acao" value="entrei-no-grupo">
+          <button class="btn btn-mini" type="submit">Já entrei</button>
+        </form>
+        <p class="dica">
+          É a primeira coisa que se faz aqui. Enquanto não marcar, ela continua
+          no topo da sua fila.
+        </p>
+      <?php endif; ?>
+    </section>
+  </aside>
+
+  </div><?php /* fim de .hub */ ?>
 
 </div>
 <?php

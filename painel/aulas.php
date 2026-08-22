@@ -102,13 +102,20 @@ $totalRapidas = count(array_filter(todas_as_aulas(), fn ($a) => $a['pista'] === 
 abrir_pagina('Aulas em vídeo');
 ?>
 <div class="capa">
-  <h1>Aulas em vídeo</h1>
-  <p class="sub">
-    A formação que o time vê em <a href="/aulas" target="_blank">/aulas</a>. A divisão em
-    <strong>🚗 Pista Rápida</strong> e <strong>Pista Lenta</strong> é explicada na primeira aula,
-    <a href="/aulas#como-funciona-a-formacao" target="_blank">Como esta formação funciona</a> —
-    aqui não se repete, para os dois textos não divergirem.
-  </p>
+  <?php cabecalho_pagina(
+      'Aulas em vídeo',
+      'A formação que o time vê em <a href="/aulas" target="_blank">/aulas</a>. A divisão em '
+      . '<strong>🚗 Pista Rápida</strong> e <strong>Pista Lenta</strong> é explicada na primeira aula, '
+      . '<a href="/aulas#como-funciona-a-formacao" target="_blank">Como esta formação funciona</a> — '
+      . 'aqui não se repete, para os dois textos não divergirem.',
+      null,
+      null,
+      [
+          'Pendurar o vídeo de uma aula: o texto dela já está escrito e vem do manual.',
+          'Ver quem já estudou o quê, e quem parou no meio.',
+          'Aula sem vídeo continua funcionando — o texto é o que ensina; o vídeo ajuda.',
+      ]
+  ); ?>
   <p class="dica">
     O texto de cada aula já está escrito e vem do manual da militância. Aqui você só pendura o vídeo:
     enquanto ele não existir, a aula funciona pelo texto. Aula nova de reforço entra como Pista

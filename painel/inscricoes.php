@@ -4,7 +4,7 @@ declare(strict_types=1);
 /**
  * Inscrições da militância — felipesmoreira.com/painel/inscricoes.php
  *
- * A fila de quem se inscreveu em /quero-ajudar. Aqui a coordenação lê a
+ * A fila de quem se inscreveu em /queroajudar. Aqui a coordenação lê a
  * inscrição, confere e decide: aprovar (vira acesso) ou recusar.
  *
  * Aprovar cria o usuário com senha provisória e trocarSenha ligado — quem
@@ -39,9 +39,11 @@ function voltar(): void
  */
 function login_sugerido(string $nome): string
 {
-    $ascii = @iconv('UTF-8', 'ASCII//TRANSLIT', $nome);
-    $ascii = is_string($ascii) ? $ascii : $nome;
-    $ascii = strtolower(preg_replace('/[^a-zA-Z ]/', '', $ascii) ?? '');
+    /* `sem_acento()` e não `iconv('ASCII//TRANSLIT')`: o TRANSLIT depende da
+       libc, e "Antônio" vira "antonio" no Linux da Hostinger e "antnio" no
+       macOS. Login é identificador permanente de uma pessoa — não pode depender
+       da máquina em que a inscrição foi aprovada. */
+    $ascii = strtolower(preg_replace('/[^a-zA-Z ]/', '', sem_acento($nome)) ?? '');
 
     $partes = array_values(array_filter(explode(' ', $ascii)));
     // ignora as partículas do meio (de, da, dos…) na hora de montar o login
@@ -134,7 +136,10 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             'email'       => $alvo['email'],
             'cidade'      => $alvo['cidade'],
             'bairro'      => $alvo['bairro'],
-            'funcoes'     => $alvo['funcoes'],
+            /* Inscrição sem função é válida (o formulário deixou de exigir).
+               "onde-precisar" existe no catálogo exatamente para isso — deixar
+               o array vazio faria o hub não ter atalho nenhum para a pessoa. */
+            'funcoes'     => $alvo['funcoes'] !== [] ? $alvo['funcoes'] : ['onde-precisar'],
             'origem'      => 'inscricao',
             'consentimentoEm'     => $alvo['consentimentoEm'],
             'consentimentoVersao' => $alvo['consentimentoVersao'],
@@ -216,11 +221,19 @@ $formatar = function (string $iso): string {
 abrir_pagina('Inscrições');
 ?>
 <div class="capa">
-  <h1>Inscrições da militância</h1>
-  <p class="sub">
-    Quem preencheu o formulário em <a href="/quero-ajudar" target="_blank">/quero-ajudar</a>.
-    Aprovar cria o acesso e mostra a senha para você mandar no WhatsApp.
-  </p>
+  <?php cabecalho_pagina(
+      'Inscrições da militância',
+      'Quem preencheu o formulário em <a href="/queroajudar" target="_blank">/queroajudar</a>. '
+      . 'Aprovar cria o acesso e mostra a senha para você mandar no WhatsApp.',
+      null,
+      null,
+      [
+          'Aprovar: cria a conta, marca as áreas sugeridas e mostra a senha provisória UMA vez.',
+          'O botão do WhatsApp já abre a conversa da pessoa com a mensagem pronta.',
+          'Quem não escolheu função entra como “Onde precisar” — combine na conversa.',
+          'Fila parada há mais de 48h aparece como urgente no Início: é onde mais se perde gente.',
+      ]
+  ); ?>
 
   <?php recado($erro, $ok); ?>
 
@@ -261,7 +274,7 @@ abrir_pagina('Inscrições');
       <div class="decidir-corpo">
         <p class="dica" style="margin:0 0 12px">
           De onde vieram as inscrições, pelo <code>?de=</code> do link que a pessoa abriu.
-          Quem compartilha pelo <a href="/kit" target="_blank">kit</a> aparece aqui pelo nome.
+          Quem compartilha pela <a href="/municao" target="_blank">Munição</a> aparece aqui pelo nome.
         </p>
         <table class="tabela">
           <thead>
@@ -367,9 +380,16 @@ abrir_pagina('Inscrições');
           <div class="ficha-funcoes">
             <dt>Quer ajudar em</dt>
             <dd>
-              <?php foreach ($i['funcoes'] as $f): ?>
-                <span class="selo"><?= h(nome_funcao($f)) ?></span>
-              <?php endforeach; ?>
+              <?php if ($i['funcoes'] === []): ?>
+                <span class="selo selo-cinza">não escolheu</span>
+                <span class="dica" style="display:inline">
+                  Entra como “Onde precisar” — combine na conversa.
+                </span>
+              <?php else: ?>
+                <?php foreach ($i['funcoes'] as $f): ?>
+                  <span class="selo"><?= h(nome_funcao($f)) ?></span>
+                <?php endforeach; ?>
+              <?php endif; ?>
             </dd>
           </div>
         </dl>
