@@ -39,6 +39,41 @@ function guardar_rascunho(array $campos): void
     $_SESSION['rascunho_fato'] = $campos;
 }
 
+/**
+ * Os campos que a Ficha de Fato pergunta, já limpos.
+ *
+ * Um lugar só para trazer e para corrigir: duas cópias divergiriam no dia em
+ * que um campo novo entrasse só numa delas, e o defeito apareceria como "some
+ * quando eu corrijo".
+ */
+function campos_do_fato(): array
+{
+    return [
+        'oQue'      => limpar_texto($_POST['oQue'] ?? '', 300),
+        'quem'      => limpar_texto($_POST['quem'] ?? '', 160),
+        'quando'    => limpar_texto($_POST['quando'] ?? '', 20),
+        'quanto'    => limpar_texto($_POST['quanto'] ?? '', 120),
+        'afetados'  => limpar_texto($_POST['afetados'] ?? '', 200),
+        'fonteUrl'  => limpar_texto($_POST['fonteUrl'] ?? '', 500),
+        'fonteData' => limpar_texto($_POST['fonteData'] ?? '', 20),
+        'segundaFonte'  => limpar_texto($_POST['segundaFonte'] ?? '', 500),
+        'categoria'     => limpar_texto($_POST['categoria'] ?? 'outro', 20),
+        'desdobramento' => !empty($_POST['desdobramento']),
+    ];
+}
+
+/**
+ * Quem pode mexer numa ficha: o autor, ou um admin.
+ *
+ * Não é a Checagem: corrigir o texto de um fato é acertar o que foi trazido, e
+ * quem trouxe é quem sabe o que quis dizer. Admin entra porque fato sem autor
+ * (importado, ou de conta apagada) precisaria ficar errado para sempre.
+ */
+function posso_mexer(array $fato, array $eu): bool
+{
+    return e_admin() || ($fato['autorId'] !== '' && $fato['autorId'] === $eu['id']);
+}
+
 /* ===================== ações ===================== */
 
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
@@ -53,18 +88,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
 
     /* ---------- o Olheiro traz um fato ---------- */
     if ($acao === 'enviar') {
-        $campos = [
-            'oQue'      => limpar_texto($_POST['oQue'] ?? '', 300),
-            'quem'      => limpar_texto($_POST['quem'] ?? '', 160),
-            'quando'    => limpar_texto($_POST['quando'] ?? '', 20),
-            'quanto'    => limpar_texto($_POST['quanto'] ?? '', 120),
-            'afetados'  => limpar_texto($_POST['afetados'] ?? '', 200),
-            'fonteUrl'  => limpar_texto($_POST['fonteUrl'] ?? '', 500),
-            'fonteData' => limpar_texto($_POST['fonteData'] ?? '', 20),
-            'segundaFonte'  => limpar_texto($_POST['segundaFonte'] ?? '', 500),
-            'categoria'     => limpar_texto($_POST['categoria'] ?? 'outro', 20),
-            'desdobramento' => !empty($_POST['desdobramento']),
-        ];
+        $campos = campos_do_fato();
 
         // as travas do manual, na ordem em que o Olheiro erra
         if ($campos['oQue'] === '') {
@@ -103,6 +127,98 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             voltar('trazer');
         }
         avisar('ok', 'Fato enviado para a Checagem.');
+        voltar('fila');
+    }
+
+    /* ---------- corrigir a ficha (autor ou admin) ---------- */
+    if ($acao === 'editar') {
+        $alvo = achar_fato(limpar_texto($_POST['id'] ?? '', 40));
+
+        if ($alvo === null) {
+            avisar('erro', 'Fato não encontrado.');
+            voltar('fila');
+        }
+        /* Só se corrige o que ainda não foi decidido. Depois da Checagem a ficha
+           é o registro do que ela viu: mudar o texto por baixo transformaria uma
+           decisão tomada em carimbo sobre outra coisa — e é dessa ficha que o
+           card do quadro carrega fonte e responsável. */
+        if ($alvo['status'] !== 'a-checar') {
+            avisar('erro', 'Esse fato já foi decidido. A ficha decidida é o registro do que a Checagem viu — corrigi-la por baixo mudaria a decisão sem que ninguém soubesse.');
+            voltar('fila');
+        }
+        if (!posso_mexer($alvo, $eu)) {
+            avisar('erro', 'Quem corrige a ficha é quem trouxe o fato. Se estiver errada, avise quem enviou.');
+            voltar('fila');
+        }
+
+        $campos = campos_do_fato();
+
+        if ($campos['oQue'] === '') {
+            avisar('erro', 'Escreva em uma frase o que aconteceu.');
+            voltar('fila');
+        }
+        if ($campos['quem'] === '') {
+            avisar('erro', 'Diga quem é o responsável — o órgão ou o gestor, de forma institucional.');
+            voltar('fila');
+        }
+        if (!fonte_valida($campos['fonteUrl'])) {
+            avisar('erro', 'Cole o link da fonte primária. Print não é fonte, e sem link a Checagem não tem o que abrir.');
+            voltar('fila');
+        }
+        /* A janela de 48h é pergunta de ENTRADA, e só se refaz quando a resposta
+           muda: corrigir a frase de um fato que chegou ontem não pode ser
+           recusado porque ontem já passou de 48h da publicação. Trocar a data,
+           sim — aí a pergunta é outra e vale a pena refazê-la. */
+        if ($campos['fonteData'] !== $alvo['fonteData']
+            && !dentro_da_janela($campos['fonteData']) && !$campos['desdobramento']) {
+            avisar('erro', 'Essa data está fora da janela de 48h. Se for um desdobramento novo de algo mais antigo, marque a caixa que diz isso.');
+            voltar('fila');
+        }
+
+        $fatos = ler_fatos();
+        foreach ($fatos as &$f) {
+            if ($f['id'] === $alvo['id']) {
+                $f = $campos + $f;   // o que a tela pergunta ganha; id, autor e datas ficam
+            }
+        }
+        unset($f);
+
+        if (!gravar_fatos($fatos)) {
+            avisar('erro', 'Não consegui gravar em /dados. Confira as permissões da pasta no hPanel.');
+            voltar('fila');
+        }
+        avisar('ok', 'Ficha corrigida. Ela continua na fila da Checagem.');
+        voltar('fila');
+    }
+
+    /* ---------- apagar a ficha (autor ou admin) ---------- */
+    if ($acao === 'apagar') {
+        $alvo = achar_fato(limpar_texto($_POST['id'] ?? '', 40));
+
+        if ($alvo === null) {
+            avisar('erro', 'Fato não encontrado.');
+            voltar('fila');
+        }
+        /* Fato decidido NÃO se apaga, nem por admin. É ele que responde "o que
+           foi feito com aquele fato" — e o card do quadro aponta para este id.
+           Apagá-lo deixaria peça publicada sem a ficha que a justifica, que é
+           exatamente a situação que a Checagem existe para não permitir.
+           O que se apaga é o engano da fila: o duplicado, o link colado errado. */
+        if ($alvo['status'] !== 'a-checar') {
+            avisar('erro', 'Fato já decidido não se apaga: é ele que responde “o que foi feito com aquele fato”, e as peças do quadro apontam para ele. Para encerrar sem virar peça, arquive com o motivo.');
+            voltar('fila');
+        }
+        if (!posso_mexer($alvo, $eu)) {
+            avisar('erro', 'Quem apaga a ficha é quem trouxe o fato. Se ela não deveria estar aí, avise quem enviou.');
+            voltar('fila');
+        }
+
+        $fatos = array_values(array_filter(ler_fatos(), fn ($f) => $f['id'] !== $alvo['id']));
+        if (!gravar_fatos($fatos)) {
+            avisar('erro', 'Não consegui gravar em /dados. Confira as permissões da pasta no hPanel.');
+            voltar('fila');
+        }
+        avisar('ok', 'Ficha apagada da fila.');
         voltar('fila');
     }
 
@@ -226,20 +342,38 @@ unset($_SESSION['recado']);
 $erro = ($recado['tipo'] ?? '') === 'erro' ? $recado['texto'] : null;
 $ok   = ($recado['tipo'] ?? '') === 'ok'   ? $recado['texto'] : null;
 
+/* O que foi digitado antes do erro: `formulario_fato()` o recebe e devolve o
+   formulário preenchido, em vez de mandar a pessoa redigitar tudo. */
 $rascunho = $_SESSION['rascunho_fato'] ?? [];
 unset($_SESSION['rascunho_fato']);
-$v = fn (string $campo, string $padrao = '') => h($rascunho[$campo] ?? $padrao);
 
 /* A busca recorta ANTES do corte de 15: filtrar depois procuraria só dentro do
    que coube na tela, e o fato que se está procurando é justamente o que ficou
    de fora. */
 $buscaFa = limpar_texto($_GET['q'] ?? '', 60);
+$catF = (string) ($_GET['cat'] ?? '');
+if (!isset(CATEGORIAS[$catF])) {
+    $catF = '';
+}
 $recorteFa = fn (array $f) => combina_com(
     [$f['oQue'], $f['quem'], $f['quanto'], $f['afetados'], $f['fonteUrl'],
      $f['autorNome'], $f['checadoPor'], $f['motivo']],
     $buscaFa
-);
+) && ($catF === '' || $f['categoria'] === $catF);
 $peneirar = fn (array $lista) => array_values(array_filter($lista, $recorteFa));
+
+$porCategoria = [];
+foreach (ler_fatos() as $f) {
+    $porCategoria[$f['categoria']] = ($porCategoria[$f['categoria']] ?? 0) + 1;
+}
+
+/* Qual ficha está aberta para correção. É um GET (`?editar=<id>`), e não estado
+   de JavaScript: sem JS a página recarrega com o `<dialog open>` e o formulário
+   continua ali — o mesmo desenho dos outros modais do painel. */
+$corrigindo = achar_fato(limpar_texto($_GET['editar'] ?? '', 40));
+if ($corrigindo !== null && ($corrigindo['status'] !== 'a-checar' || !posso_mexer($corrigindo, $eu))) {
+    $corrigindo = null;   // a trava do POST desenhada na tela: formulário que vai ser recusado não se mostra
+}
 
 $fila      = $peneirar(fatos_com_status('a-checar'));
 $checados  = array_slice($peneirar(array_reverse(fatos_com_status('ok-checado'))), 0, 15);
@@ -251,6 +385,107 @@ $quando = function (string $iso): string {
     $t = strtotime($iso);
     return $t ? date('d/m \à\s H:i', $t) : '';
 };
+
+
+/**
+ * A Ficha de Fato — um formulário só, desenhado em dois lugares.
+ *
+ * Trazer e corrigir perguntam exatamente a mesma coisa. Duas cópias
+ * divergiriam no dia em que um campo novo entrasse só numa delas, e o defeito
+ * apareceria como "some quando eu corrijo".
+ *
+ * Os ids levam sufixo na correção porque os dois formulários coexistem no
+ * documento: id repetido faz o `<label for>` apontar para o campo errado, e no
+ * celular o toque no rótulo foca o outro formulário.
+ */
+function formulario_fato(?array $f, array $rascunho = []): void
+{
+    $e = $f !== null ? '-e' : '';
+    /* Corrigindo, o valor vem da ficha; trazendo, do rascunho que sobrou do
+       erro anterior — é o que faz o formulário voltar preenchido. */
+    $v = fn (string $campo) => h((string) ($f[$campo] ?? $rascunho[$campo] ?? ''));
+    $cat = (string) ($f['categoria'] ?? $rascunho['categoria'] ?? 'outro');
+    $desd = !empty($f['desdobramento']) || !empty($rascunho['desdobramento']);
+    ?>
+    <form method="post">
+      <input type="hidden" name="csrf" value="<?= h(token()) ?>">
+      <input type="hidden" name="acao" value="<?= $f !== null ? 'editar' : 'enviar' ?>">
+      <?php if ($f !== null): ?>
+        <input type="hidden" name="id" value="<?= h($f['id']) ?>">
+      <?php endif; ?>
+
+      <div class="campo">
+        <label for="oQue<?= $e ?>">O quê <span class="dica">— uma frase objetiva do que aconteceu</span></label>
+        <input id="oQue<?= $e ?>" type="text" name="oQue" maxlength="300" required value="<?= $v('oQue') ?>">
+      </div>
+
+      <div class="campo">
+        <label for="quem<?= $e ?>">Quem <span class="dica">— o órgão ou gestor responsável, de forma institucional</span></label>
+        <input id="quem<?= $e ?>" type="text" name="quem" maxlength="160" required value="<?= $v('quem') ?>">
+      </div>
+
+      <div class="linha g2">
+        <div class="campo">
+          <label for="quando<?= $e ?>">Quando aconteceu</label>
+          <input id="quando<?= $e ?>" type="date" name="quando" value="<?= $v('quando') ?>">
+        </div>
+        <div class="campo">
+          <label for="quanto<?= $e ?>">Quanto <span class="dica">— número, valor, quantidade</span></label>
+          <input id="quanto<?= $e ?>" type="text" name="quanto" maxlength="120" value="<?= $v('quanto') ?>">
+        </div>
+      </div>
+
+      <div class="campo">
+        <label for="afetados<?= $e ?>">Afetados <span class="dica">— quem sente na pele: bairro, categoria, cidade</span></label>
+        <input id="afetados<?= $e ?>" type="text" name="afetados" maxlength="200" value="<?= $v('afetados') ?>">
+      </div>
+
+      <div class="campo">
+        <label for="fonteUrl<?= $e ?>">Link da fonte primária</label>
+        <input id="fonteUrl<?= $e ?>" type="url" name="fonteUrl" maxlength="500" inputmode="url" required
+               placeholder="https://…" value="<?= $v('fonteUrl') ?>">
+      </div>
+
+      <div class="linha g2">
+        <div class="campo">
+          <label for="fonteData<?= $e ?>">Data da publicação</label>
+          <input id="fonteData<?= $e ?>" type="date" name="fonteData" required value="<?= $v('fonteData') ?>">
+        </div>
+        <div class="campo">
+          <label for="categoria<?= $e ?>">Categoria</label>
+          <select id="categoria<?= $e ?>" name="categoria">
+            <?php foreach (CATEGORIAS as $chave => $nome): ?>
+              <option value="<?= h($chave) ?>" <?= $cat === $chave ? 'selected' : '' ?>>
+                <?= h($nome) ?>
+              </option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+      </div>
+
+      <div class="campo">
+        <label for="segundaFonte<?= $e ?>">Segunda fonte <span class="dica">— opcional, mas obrigatória se a afirmação for forte</span></label>
+        <input id="segundaFonte<?= $e ?>" type="url" name="segundaFonte" maxlength="500" inputmode="url"
+               placeholder="https://…" value="<?= $v('segundaFonte') ?>">
+      </div>
+
+      <label class="check">
+        <input type="checkbox" name="desdobramento" value="1" <?= $desd ? 'checked' : '' ?>>
+        É desdobramento novo de algo mais antigo
+      </label>
+      <p class="dica">
+        Só entra fato das últimas <?= JANELA_HORAS ?>h. Marque acima se a publicação
+        for mais antiga por ser um desdobramento — é a única exceção à janela.
+      </p>
+
+      <div class="acoes">
+        <button type="submit" class="btn btn-ouro">
+          <?= $f !== null ? 'Salvar a correção' : 'Enviar para a Checagem' ?>
+        </button>
+      </div>
+    </form>
+    <?php
+}
 
 abrir_pagina('Fatos do dia');
 ?>
@@ -271,8 +506,35 @@ abrir_pagina('Fatos do dia');
 
   <?php recado($erro, $ok); ?>
 
-  <?php if ($quantosFatos > 6 || $buscaFa !== ''): ?>
-    <?php barra_busca($buscaFa, 'o que aconteceu, quem, fonte ou autor'); ?>
+  <?php /* O filtro só aparece quando há o que filtrar: com quatro fatos ele é
+           dois controles em cima de uma lista que já cabe na tela. */ ?>
+  <?php if ($quantosFatos > 6 || $buscaFa !== '' || $catF !== ''): ?>
+    <form method="get" class="filtros">
+      <div class="campo">
+        <label for="q">Procurar</label>
+        <input id="q" name="q" type="search" maxlength="60" value="<?= h($buscaFa) ?>"
+               placeholder="o que aconteceu, quem, fonte ou autor" autocapitalize="none"
+               spellcheck="false" title="Atalho: tecle /">
+      </div>
+      <div class="campo">
+        <label for="fcat">Categoria</label>
+        <select id="fcat" name="cat">
+          <option value="">todas</option>
+          <?php foreach (CATEGORIAS as $chave => $nome): ?>
+            <?php if (($porCategoria[$chave] ?? 0) === 0 && $catF !== $chave) { continue; } ?>
+            <option value="<?= h($chave) ?>" <?= $catF === $chave ? 'selected' : '' ?>>
+              <?= h($nome) ?> (<?= (int) ($porCategoria[$chave] ?? 0) ?>)
+            </option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+      <div class="acoes">
+        <button class="btn" type="submit">Filtrar</button>
+        <?php if ($buscaFa !== '' || $catF !== ''): ?>
+          <a class="btn" href="/painel/fatos.php">Limpar</a>
+        <?php endif; ?>
+      </div>
+    </form>
   <?php endif; ?>
 
   <!-- ============ a fila ============ -->
@@ -334,6 +596,22 @@ abrir_pagina('Fatos do dia');
              obrigatória junto. */
           $meu = $f['autorId'] !== '' && $f['autorId'] === $eu['id'];
         ?>
+
+        <?php /* Corrigir e apagar são de quem trouxe o fato, e só enquanto ele
+                 espera decisão: quem escreveu é quem sabe o que quis dizer, e
+                 depois da Checagem a ficha vira registro do que ela viu. Pelo
+                 mesmo motivo do bloco acima, quem não pode nem vê os botões. */ ?>
+        <?php if (posso_mexer($f, $eu)): ?>
+          <div class="acoes" style="margin:0 0 12px">
+            <?php botao_modal('corrigir-fato', 'Corrigir a ficha', 'editar=' . urlencode($f['id']) . '#fila', 'btn btn-mini'); ?>
+            <form method="post" style="display:inline"
+                  onsubmit="return confirm('Apagar esta ficha da fila? Ela não foi decidida, então nada aponta para ela — mas não tem desfazer.')">
+              <input type="hidden" name="csrf" value="<?= h(token()) ?>">
+              <input type="hidden" name="id" value="<?= h($f['id']) ?>">
+              <button type="submit" class="btn btn-mini btn-risco" name="acao" value="apagar">Apagar</button>
+            </form>
+          </div>
+        <?php endif; ?>
         <?php if ($meu && !e_admin()): ?>
           <p class="dica">
             <strong>Você trouxe este fato.</strong> Quem checa é outra pessoa — ele fica
@@ -435,78 +713,7 @@ abrir_pagina('Fatos do dia');
       Duas varreduras por dia: de manhã e no fim da tarde.
     </p>
 
-    <form method="post">
-      <input type="hidden" name="csrf" value="<?= h(token()) ?>">
-      <input type="hidden" name="acao" value="enviar">
-
-      <div class="campo">
-        <label for="oQue">O quê <span class="dica">— uma frase objetiva do que aconteceu</span></label>
-        <input id="oQue" type="text" name="oQue" maxlength="300" required value="<?= $v('oQue') ?>">
-      </div>
-
-      <div class="campo">
-        <label for="quem">Quem <span class="dica">— o órgão ou gestor responsável, de forma institucional</span></label>
-        <input id="quem" type="text" name="quem" maxlength="160" required value="<?= $v('quem') ?>">
-      </div>
-
-      <div class="linha g2">
-        <div class="campo">
-          <label for="quando">Quando aconteceu</label>
-          <input id="quando" type="date" name="quando" value="<?= $v('quando') ?>">
-        </div>
-        <div class="campo">
-          <label for="quanto">Quanto <span class="dica">— número, valor, quantidade</span></label>
-          <input id="quanto" type="text" name="quanto" maxlength="120" value="<?= $v('quanto') ?>">
-        </div>
-      </div>
-
-      <div class="campo">
-        <label for="afetados">Afetados <span class="dica">— quem sente na pele: bairro, categoria, cidade</span></label>
-        <input id="afetados" type="text" name="afetados" maxlength="200" value="<?= $v('afetados') ?>">
-      </div>
-
-      <div class="campo">
-        <label for="fonteUrl">Link da fonte primária</label>
-        <input id="fonteUrl" type="url" name="fonteUrl" maxlength="500" inputmode="url" required
-               placeholder="https://…" value="<?= $v('fonteUrl') ?>">
-      </div>
-
-      <div class="linha g2">
-        <div class="campo">
-          <label for="fonteData">Data da publicação</label>
-          <input id="fonteData" type="date" name="fonteData" required value="<?= $v('fonteData') ?>">
-        </div>
-        <div class="campo">
-          <label for="categoria">Categoria</label>
-          <select id="categoria" name="categoria">
-            <?php foreach (CATEGORIAS as $chave => $nome): ?>
-              <option value="<?= h($chave) ?>" <?= ($rascunho['categoria'] ?? '') === $chave ? 'selected' : '' ?>>
-                <?= h($nome) ?>
-              </option>
-            <?php endforeach; ?>
-          </select>
-        </div>
-      </div>
-
-      <div class="campo">
-        <label for="segundaFonte">Segunda fonte <span class="dica">— opcional, mas obrigatória se a afirmação for forte</span></label>
-        <input id="segundaFonte" type="url" name="segundaFonte" maxlength="500" inputmode="url"
-               placeholder="https://…" value="<?= $v('segundaFonte') ?>">
-      </div>
-
-      <label class="check">
-        <input type="checkbox" name="desdobramento" value="1" <?= !empty($rascunho['desdobramento']) ? 'checked' : '' ?>>
-        É desdobramento novo de algo mais antigo
-      </label>
-      <p class="dica">
-        Só entra fato das últimas <?= JANELA_HORAS ?>h. Marque acima se a publicação
-        for mais antiga por ser um desdobramento — é a única exceção à janela.
-      </p>
-
-      <div class="acoes">
-        <button type="submit" class="btn btn-ouro">Enviar para a Checagem</button>
-      </div>
-    </form>
+    <?php formulario_fato(null, $rascunho); ?>
   </fieldset>
 
   <!-- ============ o que já foi decidido ============ -->
@@ -605,6 +812,18 @@ abrir_pagina('Fatos do dia');
       </div>
     <?php endif; ?>
   </fieldset>
+
+  <?php /* O modal fica no fim do documento, e não dentro do <fieldset> nem da
+           tabela: <dialog> aninhado ali é HTML inválido, e o navegador
+           reorganiza a árvore sozinho — o formulário some sem erro no console. */ ?>
+  <?php if ($corrigindo !== null): ?>
+    <?php abrir_modal('corrigir-fato', 'Corrigir a ficha', true); ?>
+      <p class="dica" style="margin:0 0 14px">
+        Ela continua na fila depois de salvar — corrigir não é decidir.
+      </p>
+      <?php formulario_fato($corrigindo); ?>
+    <?php fechar_modal(); ?>
+  <?php endif; ?>
 </div>
 <?php
 fechar_pagina();

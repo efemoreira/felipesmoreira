@@ -429,7 +429,7 @@ function formulario_pessoa(?array $aberta, array $catalogo): void
                de risco dentro do formulário que se usa todo dia é o botão que se
                aperta por engano. */ ?>
       <form method="post" class="decidir-recusa"
-            onsubmit="return confirm('Apagar <?= h($aberta['nome']) ?> e as presenças dela?')">
+            onsubmit="return confirm(<?= texto_js('Apagar ' . $aberta['nome'] . ' e as presenças dela?') ?>)">
         <input type="hidden" name="csrf" value="<?= h(token()) ?>">
         <input type="hidden" name="acao" value="apagar">
         <input type="hidden" name="id" value="<?= h($aberta['id']) ?>">
@@ -519,7 +519,7 @@ abrir_pagina('Pessoas');
           <div class="acoes">
             <?php foreach ([['a', 'b'], ['b', 'a']] as [$fica, $vai]): ?>
               <form method="post" style="display:inline"
-                    onsubmit="return confirm('Juntar tudo em “<?= h($d[$fica]['nome']) ?>” e apagar a outra ficha?')">
+                    onsubmit="return confirm(<?= texto_js('Juntar tudo em “' . $d[$fica]['nome'] . '” e apagar a outra ficha?') ?>)">
                 <input type="hidden" name="csrf" value="<?= h(token()) ?>">
                 <input type="hidden" name="acao" value="juntar">
                 <input type="hidden" name="id" value="<?= h($d[$fica]['id']) ?>">

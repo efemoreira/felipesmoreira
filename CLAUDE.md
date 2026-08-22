@@ -1038,8 +1038,10 @@ uma contagem ("12"), mas o Preparo conta duas coisas de uma vez ("3/12").
 `layout.php` — cinco cópias de um `<form method="get">` com `name="q"` dentro
 divergiriam na primeira vez que alguém mexesse no rótulo, e a busca é justamente
 o controle que precisa estar no mesmo lugar, com o mesmo nome, em toda tela. Está
-em `eventos`, `inscricoes`, `fatos` e `producao`; `pessoas` e `candidatos` montam
-o `.filtros` por conta própria, porque ali a busca é um campo entre outros.
+em `eventos` (a lista e a de presença de dentro do encontro), `inscricoes` e
+`candidatos > listas`; `pessoas`, `candidatos`, `municao`, `fatos`, `producao` e
+`aulas` montam o `.filtros` por conta própria, porque ali a busca é um campo
+entre outros.
 
 - **O casamento de texto é `combina_com()`** (`sessao.php`): sem acento e sem
   caixa dos dois lados, para "jose" achar "José". Busca vazia casa com tudo, e é
@@ -1069,6 +1071,76 @@ candidato é a da colinha, que é decisão de campanha e não alfabeto.
 **Fila grande pede recolher:** listas de decisão (como as inscrições) mostram só
 o resumo, com o formulário dentro de um `<details class="decidir">`. Com 20
 pessoas na fila, formulário aberto para todas vira um paredão impossível de ler.
+
+**Paredão de checkbox pede `filtro_de_marcacao()`.** As listas de marcação —
+quem entra na colinha, quem do time é escalado para o encontro — crescem com o
+movimento, e aos quarenta nomes achar um é rolar lendo. A busca das outras telas
+não serve ali: ela é um `<form method="get">`, e recarregar no meio da marcação
+jogaria fora tudo que ainda não foi salvo. Esta peneira roda **no navegador**,
+escondendo o que não casa e deixando marcado o que já estava.
+
+- **Nasce `hidden`, e quem a mostra é o script de `fechar_pagina()`.** Sem
+  JavaScript ela não peneiraria nada, e caixa de procurar que não procura é pior
+  que caixa nenhuma.
+- **`.check[hidden]` precisa estar no CSS.** `[hidden]` é `display:none` na folha
+  do navegador, e perde para o `display:flex` de `.check`: sem a regra a peneira
+  roda, marca as labels e não some com nenhuma. Mesmo problema de especificidade
+  do `.mesa span` que repintava o ícone.
+- **O casamento é `normalize("NFD")`**, o equivalente JavaScript do
+  `sem_acento()` do PHP — o Unicode define o resultado, então "fabio" acha
+  "Fábio" em qualquer navegador.
+
+### Editar e remover: onde a trava mora
+
+Toda lista do painel se pesquisa, se filtra, se corrige e se remove — mas **o que
+já foi decidido não se corrige por baixo, e o que é rastro não se apaga.** A
+regra é a mesma em todas as telas, e é sempre o servidor que a aplica; a tela só
+deixa de desenhar o botão que o POST recusaria, para ninguém digitar à toa.
+
+| lista | corrige | apaga |
+|---|---|---|
+| pessoas · candidatos · listas · encontros · peças da Munição | sempre | sempre |
+| fatos | só na fila, e só o autor (ou admin) | idem |
+| cards de Produção | sempre | só o que não foi publicado (admin destrava) |
+| lista de presença | marca-se e classifica-se | tira-se a LINHA, nunca a pessoa |
+
+- **Fato decidido é o registro do que a Checagem viu.** Corrigi-lo por baixo
+  transformaria uma decisão tomada em carimbo sobre outra coisa — e é dessa
+  ficha que o card do quadro carrega fonte e responsável. Apagá-lo tira a
+  resposta de "o que foi feito com aquele fato". Para encerrar sem virar peça
+  existe **arquivar com o motivo**, que é a saída desenhada para isso.
+- **Quem corrige o fato é quem o trouxe**, e não a Checagem: quem escreveu é quem
+  sabe o que quis dizer. É o outro lado da regra de que quem traz não checa.
+- **A janela de 48h é pergunta de ENTRADA, e só se refaz quando a resposta muda.**
+  Corrigir a frase de um fato de ontem não pode ser recusado porque ontem já
+  passou de 48h da publicação; trocar a `fonteData`, sim.
+- **Card publicado é o rastro de uma peça que foi ao ar** — o Acervo aponta para
+  o link que está dentro dele. Apagá-lo deixaria peça publicada sem ficha que a
+  justifique.
+- **Encontro com gente na lista não se apaga.** Apagá-lo apagaria o encontro do
+  histórico de cada uma dessas pessoas, de uma vez e sem desfazer. Para o que não
+  vai acontecer existe **Cancelado**, que já tira o encontro da programação
+  pública e deixa a lista. Apagar um encontro **republica o `agenda.json`**:
+  cartão apontando para encontro que não existe mais é pior que cartão a menos.
+- **Tirar alguém do encontro tira a LINHA, não a pessoa.** Ela continua no
+  cadastro, com telefone e os outros encontros dela — é a mesma razão pela qual
+  presença é relação e não cópia.
+- **A peça da Munição mantém o `id` quando o número muda.** Ele já é o nome do
+  PNG que alguém baixou e o link que circula no grupo: corrigir um dígito não
+  pode transformar a peça numa peça diferente.
+- **Corrigir uma lista de candidatos não mexe em quem está nela.** Nome, descrição
+  e ordem são a curadoria; quem entra é a outra pergunta, e misturar as duas num
+  formulário faria renomear a lista reenviar a marcação inteira.
+- **Inscrição não tem formulário de edição próprio.** A inscrição não é registro à
+  parte — é a MESMA pessoa, com o bloco de entrada preenchido; a ficha leva a
+  `/painel/pessoas`, e só para quem tem a área.
+
+> **`texto_js()` (`layout.php`) é o que põe nome de gente dentro de um
+> `confirm()`.** `h()` escapa a aspa simples como `&#039;` e o navegador a
+> devolve como `'` ao ler o atributo — então "Sant'Ana" fechava a string do
+> JavaScript no meio e o `onsubmit` inteiro deixava de existir: o formulário
+> passava a apagar **sem perguntar nada**. Apóstrofo em sobrenome cearense não é
+> caso raro.
 
 ### Áreas e permissões
 

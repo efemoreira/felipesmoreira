@@ -480,6 +480,12 @@ input:focus, select:focus, textarea:focus {
   min-height:44px;
 }
 .check input { width:22px; height:22px; flex:0 0 auto; accent-color:var(--ouro); cursor:pointer; }
+/* A peneira dos paredões de checkbox esconde o que não casa pondo `hidden` na
+   label — e `[hidden]` do navegador é `display:none` na folha do UA, que perde
+   para o `display:flex` de `.check` logo acima. Sem esta linha a peneira roda,
+   marca as labels e não some com nenhuma: o mesmo problema de especificidade
+   do `.mesa span` que repintava o ícone. */
+.check[hidden], .campo-peneira[hidden] { display:none; }
 .canais { display:flex; flex-wrap:wrap; gap:6px 20px; }
 
 /* ---- imagem do item da agenda ---- */
