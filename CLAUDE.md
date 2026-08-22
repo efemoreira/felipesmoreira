@@ -554,6 +554,22 @@ autentica, e pôr o registro fora dele criaria include circular. O
 `pessoas-comum.php` tem só o que se pergunta *depois* — duplicatas, fusão, a
 fila de entrada.
 
+**Entra-se pelo login OU pelo e-mail** (`pessoa_por_login()`). Ninguém decora o
+usuário que a coordenação escolheu por ele; todo mundo sabe o próprio e-mail.
+
+- **O login ganha do e-mail** quando os dois casam. Não há como se cruzarem:
+  `validar_nome_usuario()` recusa o `@`, então texto com arroba nunca é login.
+- **E-mail repetido não abre conta nenhuma.** O e-mail não é único — o da
+  coordenação já está em mais de uma ficha, e casal que divide caixa de entrada
+  é comum. Com dois achados não dá para saber qual conta abrir, e escolher por
+  inferência é entregar a sessão de alguém.
+- **O teto de tentativas conta por CONTA, não pelo texto digitado.** Duas
+  grafias que abrem a mesma porta dariam duas vezes o número de tentativas para
+  forçá-la. Sem conta a que chegar, a chave é o próprio texto — é tudo que há.
+- A mensagem de erro continua uma só ("Usuário, e-mail ou senha incorretos") e o
+  `password_verify` roda mesmo sem usuário: nem o texto nem o tempo de resposta
+  dizem quais contas existem.
+
 **O telefone é a chave natural.** Era a única coisa que as quatro listas tinham
 em comum, é o que a pessoa digita na porta do encontro e é por ele que a
 coordenação fala com ela. Não é chave primária — gente troca de número —, mas é
@@ -984,6 +1000,33 @@ uma contagem ("12"), mas o Preparo conta duas coisas de uma vez ("3/12").
 > Empilhadas, a lista que só cresce (encontros passados, inscrições decididas)
 > empurra para fora da tela justamente a que interessa. A aba diz o número das
 > duas sem desenhar nenhuma das duas.
+
+**Procurar é `barra_busca()`, e é a mesma caixa em toda tela.** Uma peça só em
+`layout.php` — cinco cópias de um `<form method="get">` com `name="q"` dentro
+divergiriam na primeira vez que alguém mexesse no rótulo, e a busca é justamente
+o controle que precisa estar no mesmo lugar, com o mesmo nome, em toda tela. Está
+em `eventos`, `inscricoes`, `fatos` e `producao`; `pessoas` e `candidatos` montam
+o `.filtros` por conta própria, porque ali a busca é um campo entre outros.
+
+- **O casamento de texto é `combina_com()`** (`sessao.php`): sem acento e sem
+  caixa dos dois lados, para "jose" achar "José". Busca vazia casa com tudo, e é
+  por isso que a tela filtra sem precisar perguntar antes se há filtro.
+- **Dígito casa com dígito.** Telefone e número de urna saem do `combina_com()` e
+  são comparados por `so_digitos()`: "(85) 9" não acharia "85 9" como texto.
+- **A busca recorta as DUAS abas antes de uma ser desenhada.** Senão o contador
+  da aba fechada diria quantos existem, e não quantos casam — e quem procurasse
+  na aba errada veria zero sem saber que o item estava na outra.
+- **Recortar vem antes de cortar.** Em `fatos` as listas são fatiadas em 15;
+  filtrar depois procuraria só dentro do que coube na tela, que é justamente onde
+  o item procurado não está.
+- **`$manter` carrega a aba aberta.** Formulário GET manda só o que está dentro
+  dele: sem os campos escondidos, procurar em "Já aconteceram" devolveria o
+  resultado em "Próximos".
+- **Lista vazia por recorte não é beco** (`nada_encontrado()`): diz o que foi
+  procurado e dá o link de ver tudo de novo. Sem isso quem errou a grafia acha
+  que a tela quebrou.
+- **`/` põe o cursor na busca.** Quem usa o painel todo dia procura mais do que
+  clica. Só fora de campo de texto — dentro de um `<input>` a barra é uma barra.
 
 **Filtro é `.filtros`, e só aparece quando há o que filtrar.** Com quatro itens
 ele é três controles em cima de uma lista que já cabe na tela. **A ordem padrão

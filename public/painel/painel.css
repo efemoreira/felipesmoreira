@@ -880,6 +880,19 @@ input[type=file]::file-selector-button {
 .filtros .campo { margin:0; }
 .filtros .acoes { margin:0; }
 
+/* A barra que SÓ procura (`barra_busca()`): a caixa fica com o que sobrar e os
+   botões com o que precisam. Com o `auto-fit` do `.filtros` os dois botões
+   ficavam com metade da largura e a caixa onde se digita um nome inteiro com a
+   outra metade. No celular vira pilha, que é onde a caixa precisa da linha
+   toda. */
+.filtros-busca { grid-template-columns:1fr auto; }
+@media (max-width:600px) { .filtros-busca { grid-template-columns:1fr; } }
+
+/* Âncora não pode encostar no topo da janela: `voltar()` manda para `#peca-...`
+   e `#funil`, e o alvo chegava colado na borda, sem nada acima que dissesse
+   onde a página estava. */
+fieldset[id], .item[id], .ficha[id] { scroll-margin-top:18px; }
+
 /* ---- quadro de produção ----
    Quatro colunas no desktop; no celular vira uma pilha, porque rolar de lado
    entre colunas briga com a rolagem da página no dedo. */

@@ -321,13 +321,12 @@ $ordem = in_array($_GET['ordem'] ?? '', ['nome', 'numero', 'cargo'], true) ? (st
 
 $visiveis = $todos;
 if ($busca !== '') {
-    $alvo = mb_strtolower(sem_acento($busca));
+    /* O número casa por dígito, e não como texto: é o que a pessoa tem na mão
+       quando quer conferir se o 1412 já está cadastrado. */
     $digitos = preg_replace('/\D/', '', $busca) ?? '';
-    $visiveis = array_values(array_filter($visiveis, function ($c) use ($alvo, $digitos) {
-        foreach ([$c['nome'], $c['urna'], $c['partido'], $c['instagram']] as $campo) {
-            if ($campo !== '' && str_contains(mb_strtolower(sem_acento($campo)), $alvo)) {
-                return true;
-            }
+    $visiveis = array_values(array_filter($visiveis, function ($c) use ($busca, $digitos) {
+        if (combina_com([$c['nome'], $c['urna'], $c['partido'], $c['instagram'], rotulo_cargo($c['cargo'])], $busca)) {
+            return true;
         }
         return $digitos !== '' && str_contains($c['numero'], $digitos);
     }));
@@ -545,7 +544,7 @@ abrir_pagina('Candidatos');
         <?php endif; ?>
 
         <?php if ($visiveis === []): ?>
-          <p class="dica" style="margin:0">Nenhum candidato com esse recorte.</p>
+          <?php nada_encontrado($busca, '/painel/candidatos.php?aba=candidatos', 'Nenhum candidato com esse recorte.'); ?>
         <?php else: ?>
           <div class="rolagem">
             <table class="tabela">

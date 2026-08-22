@@ -24,7 +24,7 @@ require_once __DIR__ . '/icones.php';
 require_once __DIR__ . '/agora.php';
 
 /** Versão do CSS — muda junto com o painel.css para furar o cache do navegador. */
-const VERSAO_ESTILO = '13';
+const VERSAO_ESTILO = '14';
 
 /**
  * Os grupos da navegação, na ordem em que aparecem.
@@ -413,6 +413,23 @@ function fechar_pagina(): void
             caixa.removeAttribute('open');
             caixa.showModal();
           });
+
+          /* "/" põe o cursor na busca — quem usa o painel todo dia procura mais
+             do que clica, e a caixa nem sempre está na altura da tela.
+
+             Só quando NÃO se está digitando em outro lugar: dentro de um campo a
+             barra é uma barra, e roubá-la impediria de escrever "e/ou". */
+          var busca = document.querySelector('.filtros input[type=search]');
+          if (busca) {
+            document.addEventListener('keydown', function (e) {
+              if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey) return;
+              var alvo = e.target;
+              if (alvo && (alvo.matches('input, textarea, select') || alvo.isContentEditable)) return;
+              e.preventDefault();
+              busca.focus();
+              busca.select();
+            });
+          }
         })();
         </script>
         <?php
@@ -471,6 +488,71 @@ function barra_abas(array $abas, string $atual, string $param = 'aba', string $r
         <?php endif; ?>
       <?php endforeach; ?>
     </nav>
+    <?php
+}
+
+/**
+ * A caixa de procurar de uma tela de lista.
+ *
+ * Uma peça só para o painel inteiro: cinco cópias de um `<form method="get">`
+ * com um `<input name="q">` dentro divergiriam na primeira vez que alguém
+ * mexesse no rótulo, e a busca é justamente o controle que precisa estar no
+ * mesmo lugar, com o mesmo nome, em toda tela.
+ *
+ * `$manter` são os parâmetros que a busca não pode apagar — a aba aberta, o
+ * recorte já escolhido. Formulário GET manda só o que está dentro dele: sem os
+ * campos escondidos, procurar na aba "Já aconteceram" devolveria o resultado na
+ * aba "Próximos", que é o mesmo que perder o lugar onde a pessoa estava.
+ *
+ * Telas com mais de um controle (pessoas, candidatos) montam o `.filtros` por
+ * conta própria — ali a busca é um campo entre outros.
+ */
+function barra_busca(string $valor, string $dica = '', array $manter = []): void
+{
+    $base = strtok((string) ($_SERVER['REQUEST_URI'] ?? ''), '?');
+    $limpo = $manter !== [] ? $base . '?' . http_build_query($manter) : $base;
+    ?>
+    <form method="get" class="filtros filtros-busca">
+      <?php foreach ($manter as $nome => $conteudo): ?>
+        <input type="hidden" name="<?= h((string) $nome) ?>" value="<?= h((string) $conteudo) ?>">
+      <?php endforeach; ?>
+      <div class="campo">
+        <label for="q">Procurar</label>
+        <?php /* `type="search"` e não `text`: o navegador desenha o × que apaga
+                 o que foi digitado, e no celular a tecla de ação vira "buscar". */ ?>
+        <input id="q" name="q" type="search" maxlength="60" value="<?= h($valor) ?>"
+               placeholder="<?= h($dica) ?>" autocapitalize="none" spellcheck="false"
+               title="Atalho: tecle /">
+      </div>
+      <div class="acoes">
+        <button class="btn" type="submit">Procurar</button>
+        <?php if ($valor !== ''): ?>
+          <a class="btn" href="<?= h($limpo) ?>">Limpar</a>
+        <?php endif; ?>
+      </div>
+    </form>
+    <?php
+}
+
+/**
+ * "Nada encontrado" com saída, e não um beco.
+ *
+ * Lista vazia por causa do recorte é diferente de lista vazia de verdade: a
+ * primeira precisa dizer o que apagar para voltar a ver alguma coisa. Sem isso
+ * quem procurou errado acha que a tela está quebrada.
+ */
+function nada_encontrado(string $busca, string $volta, string $vazio = 'Nada por aqui ainda.'): void
+{
+    if ($busca === '') {
+        echo '<p class="dica" style="margin:0">' . h($vazio) . '</p>';
+        return;
+    }
+    ?>
+    <p class="dica" style="margin:0 0 12px">
+      Nada com <strong>“<?= h($busca) ?>”</strong>. Confira a grafia — a busca ignora
+      acento e maiúscula, mas não adivinha.
+    </p>
+    <div class="acoes"><a class="btn" href="<?= h($volta) ?>">Ver tudo de novo</a></div>
     <?php
 }
 

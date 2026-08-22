@@ -230,10 +230,22 @@ $rascunho = $_SESSION['rascunho_fato'] ?? [];
 unset($_SESSION['rascunho_fato']);
 $v = fn (string $campo, string $padrao = '') => h($rascunho[$campo] ?? $padrao);
 
-$fila      = fatos_com_status('a-checar');
-$checados  = array_slice(array_reverse(fatos_com_status('ok-checado')), 0, 15);
-$pendentes = array_slice(array_reverse(fatos_com_status('pendente')), 0, 15);
-$arquivados = array_slice(array_reverse(fatos_com_status('arquivado')), 0, 15);
+/* A busca recorta ANTES do corte de 15: filtrar depois procuraria só dentro do
+   que coube na tela, e o fato que se está procurando é justamente o que ficou
+   de fora. */
+$buscaFa = limpar_texto($_GET['q'] ?? '', 60);
+$recorteFa = fn (array $f) => combina_com(
+    [$f['oQue'], $f['quem'], $f['quanto'], $f['afetados'], $f['fonteUrl'],
+     $f['autorNome'], $f['checadoPor'], $f['motivo']],
+    $buscaFa
+);
+$peneirar = fn (array $lista) => array_values(array_filter($lista, $recorteFa));
+
+$fila      = $peneirar(fatos_com_status('a-checar'));
+$checados  = array_slice($peneirar(array_reverse(fatos_com_status('ok-checado'))), 0, 15);
+$pendentes = array_slice($peneirar(array_reverse(fatos_com_status('pendente'))), 0, 15);
+$arquivados = array_slice($peneirar(array_reverse(fatos_com_status('arquivado'))), 0, 15);
+$quantosFatos = count(ler_fatos());
 
 $quando = function (string $iso): string {
     $t = strtotime($iso);
@@ -259,12 +271,16 @@ abrir_pagina('Fatos do dia');
 
   <?php recado($erro, $ok); ?>
 
+  <?php if ($quantosFatos > 6 || $buscaFa !== ''): ?>
+    <?php barra_busca($buscaFa, 'o que aconteceu, quem, fonte ou autor'); ?>
+  <?php endif; ?>
+
   <!-- ============ a fila ============ -->
   <fieldset id="fila">
     <legend>Esperando checagem (<?= count($fila) ?>)</legend>
 
     <?php if ($fila === []): ?>
-      <p class="dica" style="margin:0">Fila zerada. É esse o objetivo: nada dorme sem status.</p>
+      <?php nada_encontrado($buscaFa, '/painel/fatos.php', 'Fila zerada. É esse o objetivo: nada dorme sem status.'); ?>
     <?php endif; ?>
 
     <?php foreach ($fila as $f): ?>

@@ -729,6 +729,47 @@ function pessoa_por_usuario(string $usuario): ?array
 }
 
 /**
+ * Quem está tentando entrar — pelo LOGIN ou pelo E-MAIL.
+ *
+ * Ninguém decora o login que a coordenação escolheu por ele; todo mundo sabe o
+ * próprio e-mail. Aceitar os dois na mesma caixa custa uma varredura e evita a
+ * mensagem no WhatsApp perguntando "qual era mesmo o meu usuário?".
+ *
+ * Duas regras que não são zelo:
+ *
+ *   1. **o login ganha do e-mail.** Se as duas coisas casarem, quem manda é o
+ *      login — ele é único por construção (`validar_nome_usuario()` recusa o
+ *      `@`, então texto com arroba nunca é login e as buscas não se cruzam);
+ *   2. **e-mail repetido não abre conta nenhuma.** O e-mail não é único: o da
+ *      coordenação já está em ficha de mais de uma pessoa, e casal que divide
+ *      caixa de entrada é comum. Com dois achados não há como saber qual conta
+ *      abrir, e escolher por inferência é entregar a sessão de alguém.
+ */
+function pessoa_por_login(string $texto): ?array
+{
+    $alvo = mb_strtolower(trim($texto));
+    if ($alvo === '') {
+        return null;
+    }
+    if (($pelo_login = pessoa_por_usuario($alvo)) !== null) {
+        return $pelo_login;
+    }
+    if (!str_contains($alvo, '@')) {
+        return null;
+    }
+
+    $achados = [];
+    foreach (ler_pessoas() as $p) {
+        /* Só quem TEM conta: e-mail de quem só apareceu num encontro não é
+           porta de entrada de coisa nenhuma. */
+        if (tem_conta($p) && $p['email'] !== '' && mb_strtolower($p['email']) === $alvo) {
+            $achados[] = $p;
+        }
+    }
+    return count($achados) === 1 ? $achados[0] : null;
+}
+
+/**
  * Pelo telefone — a chave natural.
  *
  * Devolve TODAS, e não a primeira: casa que divide celular tem duas pessoas no
@@ -1006,6 +1047,31 @@ function autenticado(): bool
  * Substituiu o "papel" (Administrador/Editor), que era um segundo eixo de
  * permissão vivendo ao lado das áreas e dizendo quase a mesma coisa.
  */
+/**
+ * O texto digitado numa caixa de procurar casa com algum destes campos?
+ *
+ * Sem acento e sem caixa dos dois lados: quem procura "jose" tem de achar
+ * "José", e quem procura "PRAÇA" tem de achar "Praça da Sé". Busca vazia casa
+ * com tudo — assim a tela filtra sem precisar perguntar antes se há filtro.
+ *
+ * `sem_acento()` e não `iconv('ASCII//TRANSLIT')`: o TRANSLIT depende da libc e
+ * o mesmo texto vira coisa diferente no Linux da Hostinger e no macOS.
+ */
+function combina_com(array $campos, string $busca): bool
+{
+    $alvo = mb_strtolower(sem_acento(trim($busca)));
+    if ($alvo === '') {
+        return true;
+    }
+    foreach ($campos as $campo) {
+        $campo = (string) $campo;
+        if ($campo !== '' && str_contains(mb_strtolower(sem_acento($campo)), $alvo)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 function rotulo_do_acesso(array $p): string
 {
     if (in_array('adm', $p['capacidades'], true)) {

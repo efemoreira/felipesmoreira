@@ -265,18 +265,19 @@ $ordem = in_array($_GET['ordem'] ?? '', ['recente', 'cidade'], true) ? (string) 
 
 $todas = ler_pessoas();
 if ($busca !== '') {
-    /* Casa por nome sem acento, por telefone e por login: quem procura tem na
-       mão um desses três, e nunca sabe qual está gravado. */
-    $alvoBusca = mb_strtolower(sem_acento($busca));
+    /* Casa por nome, login, e-mail, cidade e bairro — e por telefone, que é o
+       único que não é texto: dígito casa com dígito, senão "(85) 9" não acharia
+       "85 9". Quem procura tem na mão um desses e nunca sabe qual foi gravado.
+
+       O e-mail entrou junto com o login por e-mail: se é por ele que a pessoa
+       entra, é por ele que a coordenação vai procurá-la quando ela disser "não
+       consigo entrar com o meu e-mail". */
     $digitos = so_digitos($busca);
-    $todas = array_values(array_filter($todas, function ($p) use ($alvoBusca, $digitos) {
-        if (str_contains(mb_strtolower(sem_acento($p['nome'])), $alvoBusca)) {
+    $todas = array_values(array_filter($todas, function ($p) use ($busca, $digitos) {
+        if (combina_com([$p['nome'], $p['usuario'], $p['email'], $p['cidade'], $p['bairro']], $busca)) {
             return true;
         }
-        if ($digitos !== '' && str_contains($p['telefone'], $digitos)) {
-            return true;
-        }
-        return $p['usuario'] !== '' && str_contains($p['usuario'], $alvoBusca);
+        return $digitos !== '' && $p['telefone'] !== '' && str_contains($p['telefone'], $digitos);
     }));
 }
 if ($filtro !== '') {
@@ -693,7 +694,8 @@ abrir_pagina('Pessoas');
         <div class="campo">
           <label for="q">Procurar</label>
           <input id="q" name="q" type="search" maxlength="60" value="<?= h($busca) ?>"
-                 placeholder="nome, telefone ou login">
+                 placeholder="nome, telefone, login ou e-mail"
+                 autocapitalize="none" spellcheck="false">
         </div>
         <div class="campo">
           <label for="fcid">Cidade</label>
@@ -724,7 +726,11 @@ abrir_pagina('Pessoas');
     <?php endif; ?>
 
     <?php if ($todas === []): ?>
-      <p class="dica" style="margin:0">Ninguém encontrado.</p>
+      <?php nada_encontrado(
+          $busca,
+          '/painel/pessoas.php' . ($filtro !== '' ? '?tipo=' . urlencode($filtro) : ''),
+          'Ninguém com esse recorte.'
+      ); ?>
     <?php else: ?>
       <div class="rolagem">
         <table class="tabela">

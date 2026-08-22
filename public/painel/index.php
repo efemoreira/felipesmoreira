@@ -87,25 +87,34 @@ if ($acao === 'criar_admin' && $primeiroAcesso) {
     $login = mb_strtolower(trim((string) ($_POST['usuario'] ?? '')));
     $senha = (string) ($_POST['senha'] ?? '');
 
+    /* Login OU e-mail, na mesma caixa: ninguém decora o usuário que a
+       coordenação escolheu por ele, e todo mundo sabe o próprio e-mail. */
+    $u = $login !== '' ? pessoa_por_login($login) : null;
+
+    /* O teto de tentativas conta por CONTA, e não pelo texto digitado. Com duas
+       grafias que abrem a mesma porta — o login e o e-mail —, contar por texto
+       daria o dobro de tentativas para quem quisesse forçá-la. Quando não há
+       conta a que chegar, o próprio texto é a chave: é tudo que existe. */
+    $chaveTeto = $u !== null ? $u['usuario'] : $login;
+
     if ($login === '') {
-        $aviso = 'Informe o login.';
-    } elseif ($ate = bloqueado_ate($login)) {
-        $aviso = 'Muitas tentativas com esse login. Tente de novo às ' . date('H:i', $ate) . '.';
+        $aviso = 'Informe seu usuário ou e-mail.';
+    } elseif ($ate = bloqueado_ate($chaveTeto)) {
+        $aviso = 'Muitas tentativas nesse acesso. Tente de novo às ' . date('H:i', $ate) . '.';
     } else {
-        $u = pessoa_por_usuario($login);
         // password_verify sempre roda, mesmo sem usuário: o tempo de resposta não
         // pode denunciar quais logins existem
         $hash = $u['hash'] ?? '$2y$10$invalidoinvalidoinvalidoinvalidoinvalidoinvalidoinvalidoinva';
         if (password_verify($senha, $hash) && $u !== null && $u['ativo']) {
             entrar_como($u);
-            limpar_falhas($login);
+            limpar_falhas($chaveTeto);
             header('Location: ' . destino_pos_login(), true, 302);
             exit;
         }
-        registrar_falha($login);
+        registrar_falha($chaveTeto);
         $aviso = ($u !== null && !$u['ativo'])
             ? 'Esse acesso está desativado. Fale com o administrador.'
-            : 'Login ou senha incorretos.';
+            : 'Usuário, e-mail ou senha incorretos.';
     }
 } elseif ($acao === 'sair') {
     derrubar_sessao();
@@ -160,16 +169,24 @@ if ($u === null) {
       <div class="caixa-selo" aria-hidden="true">✦</div>
       <h1>Missão Ceará</h1>
       <p class="sub">
-        A área de trabalho da militância. Entre com o usuário e a senha que a
-        coordenação mandou no seu WhatsApp.
+        A área de trabalho da militância. Entre com a senha que a coordenação
+        mandou no seu WhatsApp.
       </p>
       <?php recado($aviso, $sucesso); ?>
       <form method="post">
         <input type="hidden" name="acao" value="entrar">
         <div class="campo">
-          <label for="usuario">Seu usuário</label>
-          <input id="usuario" type="text" name="usuario" maxlength="24" required autofocus
-                 autocomplete="username" value="<?= h($_POST['usuario'] ?? '') ?>">
+          <label for="usuario">Seu usuário ou e-mail</label>
+          <?php /* `maxlength` de 120, e não os 24 do login: e-mail é mais
+                   comprido que isso, e caixa que corta o que a pessoa digitou
+                   recusa a senha certa sem dizer por quê.
+
+                   `type="text"` e não `type="email"`: o campo aceita as duas
+                   coisas, e a validação do navegador reprovaria o login. */ ?>
+          <input id="usuario" type="text" name="usuario" maxlength="120" required autofocus
+                 autocomplete="username" autocapitalize="none" spellcheck="false"
+                 value="<?= h($_POST['usuario'] ?? '') ?>">
+          <p class="dica">Tanto faz: o usuário que a coordenação mandou ou o seu e-mail.</p>
         </div>
         <div class="campo">
           <label for="senha">Sua senha</label>
