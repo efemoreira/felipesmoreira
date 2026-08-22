@@ -149,6 +149,14 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                     $pessoas[$i]['numero'] = '';
                     avisar('ok', 'Deixou de ser candidato. A pessoa continua na lista, com o histórico dela.');
                 } elseif ($acao === 'cand-publicar') {
+                    /* Sem número não vai ao ar. `candidatos_publicados()` já o
+                       filtra na saída, então o site nunca quebrou — mas o painel
+                       dizia "no ar" para uma ficha que o site não mostrava, e
+                       painel que mente é pior que painel que recusa. */
+                    if (!$c['publicado'] && $c['numero'] === '') {
+                        avisar('erro', 'Falta o número. É ele que o eleitor digita — sem número não há o que publicar.');
+                        voltar('candidatos');
+                    }
                     $pessoas[$i]['publicado'] = !$c['publicado'];
                     avisar('ok', $pessoas[$i]['publicado'] ? 'No ar em /candidatos.' : 'Recolhido do site.');
                 }
@@ -264,9 +272,39 @@ foreach ($todos as $c) {
    "Editar" da tabela vira modal com JavaScript e vira página com o <dialog
    open> sem ele. Mesma peça, dois estados. */
 $editando = achar_candidato(limpar_texto($_GET['c'] ?? '', 40));
+
+/* Chegar por `?pessoa=<id>` é chegar para transformar em candidato alguém que JÁ
+   está na lista de pessoas — veio de um encontro, se inscreveu, tem conta. O
+   formulário abre com a ficha dela, e é ao SALVAR que ela vira candidata: virar o
+   tipo no clique criaria candidato sem número, que é ficha que não pode ir ao ar
+   e que ninguém lembra de completar depois.
+
+   Só quem enxerga a lista de pessoas puxa dela. A tela de candidatos é sobre
+   número de urna, que é informação pública; a lista de pessoas tem telefone e
+   endereço, e a regra do painel é que dado pessoal acompanha a responsabilidade
+   sobre ele, não o trabalho do dia. */
+$podePuxar = pode('pessoas');
+$dePessoa = null;
+if ($podePuxar && ($idPessoa = limpar_texto($_GET['pessoa'] ?? '', 40)) !== '') {
+    $dePessoa = achar_pessoa($idPessoa);
+    if ($dePessoa !== null && $dePessoa['tipo'] === 'candidato') {
+        /* Já é candidata: o formulário certo é o de edição, e não um segundo
+           cadastro em cima do mesmo id. */
+        $editando = $dePessoa;
+        $dePessoa = null;
+    }
+}
+
 $aba = ($_GET['aba'] ?? '') === 'listas' ? 'listas' : 'candidatos';
-if ($editando !== null) {
-    $aba = 'candidatos';   // editar candidato é assunto da aba de candidatos
+if ($editando !== null || $dePessoa !== null) {
+    $aba = 'candidatos';   // cadastrar ou editar candidato é assunto desta aba
+}
+
+/* Quem ainda não é candidato, para o seletor. A-Z, que é como se procura gente. */
+$fora = [];
+if ($podePuxar) {
+    $fora = array_values(array_filter(ler_pessoas(), fn ($x) => $x['tipo'] !== 'candidato'));
+    usort($fora, fn ($a, $b) => strcmp(sem_acento($a['nome']), sem_acento($b['nome'])));
 }
 
 /* ---------------- recorte e ordem da lista ---------------- */
@@ -321,8 +359,14 @@ foreach ($todos as $c) {
  * Cadastrar e editar perguntam exatamente a mesma coisa; duas cópias do
  * formulário divergiriam no dia em que um campo novo entrasse só numa delas.
  */
-function formulario_candidato(?array $editando): void
+function formulario_candidato(?array $editando, string $rotulo = ''): void
 {
+    /* O rótulo do botão é o único parâmetro a mais porque é a única coisa que
+       muda entre os três usos: cadastrar do zero, editar quem já é candidato e
+       acrescentar a candidatura a quem já está na lista de pessoas. */
+    if ($rotulo === '') {
+        $rotulo = $editando ? 'Salvar' : 'Cadastrar';
+    }
     ?>
     <form method="post" enctype="multipart/form-data">
       <input type="hidden" name="csrf" value="<?= h(token()) ?>">
@@ -368,8 +412,13 @@ function formulario_candidato(?array $editando): void
       <div class="linha g3">
         <div class="campo">
           <label for="c-partido<?= $editando ? '-e' : '' ?>">Partido <span class="dica">— opcional</span></label>
+          <?php /* "Missão" é sugestão para ficha NOVA — inclusive a de quem foi
+                   puxado da lista de pessoas. Numa candidatura que já existe o
+                   campo mostra o que está gravado, mesmo vazio: quem apagou o
+                   partido apagou de propósito. */ ?>
+          <?php $partidoPadrao = ($editando['tipo'] ?? '') === 'candidato' ? '' : 'Missão'; ?>
           <input id="c-partido<?= $editando ? '-e' : '' ?>" name="partido" type="text" maxlength="40"
-                 value="<?= h($editando['partido'] ?? 'Missão') ?>">
+                 value="<?= h(($editando['partido'] ?? '') !== '' ? $editando['partido'] : $partidoPadrao) ?>">
         </div>
         <div class="campo">
           <label for="c-insta<?= $editando ? '-e' : '' ?>">Instagram <span class="dica">— opcional</span></label>
@@ -402,7 +451,7 @@ function formulario_candidato(?array $editando): void
 
       <div class="acoes">
         <button class="btn btn-ouro" name="acao" value="<?= $editando ? 'cand-salvar' : 'cand-novo' ?>" type="submit">
-          <?= $editando ? 'Salvar' : 'Cadastrar' ?>
+          <?= h($rotulo) ?>
         </button>
         <?php if ($editando): ?>
           <a class="btn" href="/painel/candidatos.php">Cancelar</a>
@@ -443,6 +492,9 @@ abrir_pagina('Candidatos');
 
       <div class="acoes" style="margin:0 0 18px">
         <?php botao_modal('novo-candidato', 'Novo candidato', 'aba=candidatos&novo=1'); ?>
+        <?php if ($fora !== []): ?>
+          <?php botao_modal('puxar-pessoa', 'Puxar da lista de pessoas', 'aba=candidatos&puxar=1', 'btn'); ?>
+        <?php endif; ?>
       </div>
 
       <?php if ($todos === []): ?>
@@ -677,6 +729,47 @@ abrir_pagina('Candidatos');
   <?php if ($editando !== null): ?>
     <?php abrir_modal('editar-candidato', 'Editar ' . $editando['nome'], true); ?>
       <?php formulario_candidato($editando); ?>
+    <?php fechar_modal(); ?>
+  <?php endif; ?>
+
+  <?php /* Puxar alguém da lista é um GET, e não um POST que já viraria o tipo:
+           escolher o nome e cadastrar a candidatura são dois passos, e só o
+           segundo muda alguma coisa. Sem JavaScript, o <select> recarrega a
+           página com o formulário aberto — o mesmo desenho dos outros modais. */ ?>
+  <?php if ($fora !== []): ?>
+    <?php abrir_modal('puxar-pessoa', 'Puxar da lista de pessoas', isset($_GET['puxar'])); ?>
+      <p class="dica" style="margin:0 0 12px">
+        Quem já está no movimento não precisa de uma segunda ficha: escolha o nome e
+        preencha só o que a candidatura acrescenta — número, cargo, @ e foto. O
+        histórico dela (encontros, telefone, conta) continua o mesmo.
+      </p>
+      <form method="get">
+        <input type="hidden" name="aba" value="candidatos">
+        <div class="campo">
+          <label for="c-pessoa">Quem</label>
+          <select id="c-pessoa" name="pessoa" required>
+            <option value="">— escolha —</option>
+            <?php foreach ($fora as $x): ?>
+              <option value="<?= h($x['id']) ?>">
+                <?= h($x['nome']) ?><?= $x['cidade'] !== '' ? ' — ' . h($x['cidade']) : '' ?>
+              </option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+        <div class="acoes">
+          <button class="btn btn-ouro" type="submit">Continuar</button>
+        </div>
+      </form>
+    <?php fechar_modal(); ?>
+  <?php endif; ?>
+
+  <?php if ($dePessoa !== null): ?>
+    <?php abrir_modal('candidato-de-pessoa', $dePessoa['nome'] . ' como candidato', true); ?>
+      <p class="dica" style="margin:0 0 14px">
+        Esta ficha já existe em <a href="/painel/pessoas.php?p=<?= h($dePessoa['id']) ?>">/painel/pessoas</a>.
+        Salvar acrescenta a candidatura a ela — não cria um segundo cadastro.
+      </p>
+      <?php formulario_candidato($dePessoa, 'Cadastrar a candidatura'); ?>
     <?php fechar_modal(); ?>
   <?php endif; ?>
 

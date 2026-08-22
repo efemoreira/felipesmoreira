@@ -28,9 +28,28 @@ function avisar(string $tipo, string $texto): void
     $_SESSION['recado'] = ['tipo' => $tipo, 'texto' => $texto];
 }
 
+/**
+ * Volta para o encontro, na aba em que a ação aconteceu.
+ *
+ * A âncora sozinha deixou de bastar quando a tela virou abas: `#funil` não
+ * existe no HTML enquanto a aba Pessoas não estiver aberta, e quem marcasse uma
+ * presença cairia no Preparo sem entender o que tinha acontecido com a lista.
+ * A âncora continua — ela é que rola até o ponto certo dentro da aba.
+ */
+function aba_da_ancora(string $ancora): string
+{
+    if ($ancora === 'pessoas' || $ancora === 'funil') {
+        return 'pessoas';
+    }
+    return str_starts_with($ancora, 'peca-') ? 'preparo' : 'dados';
+}
+
 function voltar(string $eventoId = '', string $ancora = ''): void
 {
     $url = '/painel/eventos.php' . ($eventoId !== '' ? '?e=' . urlencode($eventoId) : '');
+    if ($eventoId !== '' && $ancora !== '') {
+        $url .= '&aba=' . urlencode(aba_da_ancora($ancora));
+    }
     header('Location: ' . $url . ($ancora !== '' ? '#' . $ancora : ''), true, 302);
     exit;
 }
@@ -189,7 +208,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
            — e "esqueci de publicar" deixa de ser um jeito de o site ficar
            desatualizado sem ninguém perceber. */
         republicar_agenda();
-        voltar($alvo['id']);
+        voltar($alvo['id'], 'dados');
     }
 
     /* ---------- marcar item do checklist (qualquer um da área) ---------- */
@@ -578,8 +597,8 @@ $pessoas   = presencas_do_evento($aberto['id']);
 $preparo   = preparo_do_evento($aberto);
 $time      = array_values(array_filter(ler_pessoas(), fn ($u) => $u['ativo']));
 
-/* Calculado aqui em cima porque a barra de seções, lá no topo, precisa do
-   número — e o bloco do funil só aparece bem mais abaixo. */
+/* Calculado antes de desenhar qualquer coisa: o bloco do funil vive dentro da
+   aba Pessoas, mas quem monta a tela precisa do número antes disso. */
 $vencidos = [];
 if ($coordena) {
     foreach ($pessoas as $l) {
@@ -603,20 +622,37 @@ abrir_pagina($aberto['titulo']);
 
   <?php recado($erro, $ok); ?>
 
-  <?php /* A tela do encontro é longa por natureza — playbook, cinco peças,
-           lista de gente, follow-up, dados. Sem um índice, chegar em "Pessoas"
-           no celular é rolar às cegas. Âncoras e não abas: funcionam sem
-           JavaScript, o navegador guarda a posição, e dá para mandar o link de
-           uma seção no grupo. Mesmo desenho do `.atalho-colunas` da Produção. */ ?>
-  <nav class="secoes" aria-label="Seções do encontro">
-    <a href="#preparo">Preparo <span><?= $preparo['feito'] ?>/<?= $preparo['total'] ?></span></a>
-    <a href="#pessoas">Pessoas <span><?= count($pessoas) ?></span></a>
-    <?php if ($vencidos !== []): ?>
-      <a href="#funil">Follow-up <span><?= count($vencidos) ?></span></a>
-    <?php endif; ?>
-    <a href="#dados">Dados</a>
-  </nav>
+  <?php /* A tela do encontro é longa por natureza — playbook, cinco peças, lista
+           de gente, follow-up, dados —, e empilhada ela obrigava a rolar às cegas
+           para chegar em "Pessoas" no celular. Era um índice de âncoras, que
+           encurtava o caminho sem encurtar a tela: a página continuava inteira
+           embaixo do dedo.
 
+           Três abas, na ordem do encontro: PREPARO antes, PESSOAS durante e
+           depois, DADOS é o ajuste que se faz uma vez. O follow-up mora dentro de
+           Pessoas — é sobre quem veio, não é um quarto assunto.
+
+           São links (`?aba=…`), como em toda aba do painel: cada uma tem URL
+           própria, o Voltar do navegador funciona e dá para mandar no grupo o
+           link já na aba certa. */ ?>
+  <?php
+  $abasDoEncontro = [
+      'preparo' => ['nome' => 'Preparo', 'conta' => $preparo['feito'] . '/' . $preparo['total']],
+      'pessoas' => ['nome' => 'Pessoas', 'conta' => count($pessoas)],
+  ];
+  /* Dados é da coordenação: quem executa marca checklist e recebe gente, não
+     muda data, local nem o que vai para a programação pública. */
+  if ($coordena) {
+      $abasDoEncontro['dados'] = ['nome' => 'Dados'];
+  }
+  $aba = (string) ($_GET['aba'] ?? '');
+  if (!isset($abasDoEncontro[$aba])) {
+      $aba = 'preparo';
+  }
+  barra_abas($abasDoEncontro, $aba, 'aba', 'Seções do encontro');
+  ?>
+
+  <?php if ($aba === 'preparo'): ?>
   <!-- playbook da família -->
   <fieldset>
     <legend>Playbook — <?= h($familia['nome']) ?></legend>
@@ -672,6 +708,9 @@ abrir_pagina($aberto['titulo']);
     <?php endforeach; ?>
   </fieldset>
 
+  <?php endif; ?>
+
+  <?php if ($aba === 'pessoas'): ?>
   <!-- lista de presença -->
   <fieldset id="pessoas">
     <legend>Quem vem e quem veio (<?= count($pessoas) ?>)</legend>
@@ -954,8 +993,10 @@ abrir_pagina($aberto['titulo']);
     </fieldset>
   <?php endif; ?>
 
-  <!-- dados do encontro -->
-  <?php if ($coordena): ?>
+  <?php endif; ?>
+
+  <?php if ($aba === 'dados' && $coordena): ?>
+    <!-- dados do encontro -->
     <fieldset id="dados">
       <legend>Dados do encontro</legend>
       <form method="post" enctype="multipart/form-data">
@@ -1128,7 +1169,9 @@ abrir_pagina($aberto['titulo']);
   <?php endif; ?>
 </div>
 
-<?php if ($aberto['token'] !== ''): ?>
+<?php /* O `.qr-arte` só existe na aba Pessoas: baixar o desenhador nas outras
+         seria pagar um arquivo para não desenhar nada. */ ?>
+<?php if ($aberto['token'] !== '' && $aba === 'pessoas'): ?>
   <script src="/painel/vendor/qrcode.js?v=<?= VERSAO_ESTILO ?>"></script>
   <script>
     /* Desenha o QR em SVG. Servido do próprio domínio (ver vendor/LEIA-ME.md):

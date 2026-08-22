@@ -222,6 +222,18 @@ endpoint faria a página piscar duas vezes no 4G de quem abriu na fila.
 `/candidatos` desenha e gera a colinha (`src/features/candidatos/colinha.ts`,
 com os traços de `cordelCanvas.ts`).
 
+- **Candidato é uma PESSOA com `tipo = candidato`, e a tela mostra isso.** De
+  `/painel/pessoas` a ficha leva a `candidatos.php?pessoa=<id>`, que abre o
+  formulário de candidatura já com aquela ficha; de `/painel/candidatos` o botão
+  "Puxar da lista de pessoas" faz o mesmo caminho a partir de um seletor. Nos
+  dois casos **o tipo só vira `candidato` ao salvar com número válido** —
+  transformar no clique criaria candidato sem número, que é ficha que não pode ir
+  ao ar e que ninguém lembra de completar depois. Telefone, funções, conta e
+  presenças em encontro continuam as mesmas: é a mesma pessoa.
+- **Só quem enxerga a lista de pessoas puxa dela** (`pode('pessoas')`). A tela de
+  candidatos é sobre número de urna, que é informação pública; a lista de pessoas
+  tem telefone e endereço, e dado pessoal acompanha a responsabilidade sobre ele,
+  não o trabalho do dia.
 - **Não é lista no código.** Nome de urna e número saem do registro no TSE e
   mudam até a véspera; lista no repositório é lista que exige um deploy para
   corrigir um dígito.
@@ -565,6 +577,11 @@ pessoa coordena o quê?"), e quem marca acaba dando tudo por preguiça.
 As **áreas continuam existindo** por baixo, para a exceção — tirar o Estúdio de
 alguém de Comunicação sem inventar uma capacidade nova. `normalizar_pessoa()`
 grava o resultado das duas coisas somadas.
+
+> **O login aparece na lista e na ficha**, monoespaçado (`.login`). A busca já
+> casava por login sem nunca mostrá-lo: dava para achar, não dava para ditar — e
+> a pergunta que traz alguém a essa coluna é "qual é o login do Fulano?", feita
+> no grupo por quem esqueceu o dele.
 
 > **`pessoas` só entra em `adm`.** É a tela com telefone, e-mail e endereço de
 > todo mundo: acesso a dado pessoal não acompanha o trabalho do dia, acompanha a
@@ -910,12 +927,24 @@ vence `.mesa-icone` (0,1,0) e repinta o ícone. Ao estilizar filhos de um cartã
 escreva o seletor com a classe junto (`.mesa .mesa-icone`) ou mire o filho
 direto (`.encontro-texto > span`).
 
-**Tela longa pede índice, e formulário pede modal.** O encontro aberto tem
-playbook, cinco peças, lista de gente, follow-up e dados — sem um índice
-(`.secoes`, âncoras e não abas: funcionam sem JavaScript e dão link para mandar
-no grupo), chegar em "Pessoas" no celular é rolar às cegas. E o formulário de
-novo encontro, que vivia embaixo de duas listas com dezenas de itens, virou
-`<dialog class="modal">`.
+**Tela longa pede aba, e formulário pede modal.** O encontro aberto tem
+playbook, cinco peças, lista de gente, follow-up e dados — empilhado, chegar em
+"Pessoas" no celular era rolar às cegas. Foi um índice de âncoras (`.secoes`)
+antes de virar **três abas: Preparo · Pessoas · Dados**, que é a ordem do
+encontro — prepara-se antes, recebe-se durante, e os dados são o ajuste que se
+faz uma vez. A âncora encurtava o caminho sem encurtar a tela: tudo continuava
+desenhado embaixo do dedo. E o formulário de novo encontro, que vivia embaixo de
+duas listas com dezenas de itens, virou `<dialog class="modal">`.
+
+- **O follow-up mora dentro de Pessoas**, e não numa quarta aba: é sobre quem
+  veio. O link do hub para um follow-up vencido leva `&aba=pessoas#funil` — a
+  âncora sozinha não abre a aba, e cairia no Preparo.
+- **`voltar()` leva a aba junto da âncora** (`aba_da_ancora()`): marcar checklist
+  volta para Preparo, marcar presença volta para Pessoas, salvar volta para
+  Dados. Redirecionar para a aba errada é o mesmo que perder o que a pessoa
+  estava fazendo.
+- **Dados é da coordenação** (`pode('agenda')`): quem só executa nem vê a aba, e
+  forçar `?aba=dados` na URL cai no Preparo.
 
 > **O botão do modal é um link de verdade** (`?novo=1`), não um botão que só
 > existe com JavaScript: sem JS a página recarrega com o `<dialog open>` e o
@@ -940,8 +969,10 @@ por página. Vale para encontro, candidato, lista e pessoa.
   no console.
 
 **Duas listas na mesma tela viram abas.** `barra_abas()` (`layout.php`) — usada
-em `pessoas` (por tipo), `candidatos` (candidatos · listas), `eventos`
-(próximos · já aconteceram) e `inscricoes` (fila · decididas).
+em `pessoas` (por tipo), `candidatos` (candidatos · listas), `eventos` (próximos
+· já aconteceram, e as três seções do encontro aberto) e `inscricoes` (fila ·
+decididas). O contador ao lado do nome é **texto**, não número: quase sempre é
+uma contagem ("12"), mas o Preparo conta duas coisas de uma vez ("3/12").
 
 > **Abas são links (`?aba=…`), não botões de JavaScript**: cada aba tem URL
 > própria, o Voltar do navegador funciona e dá para mandar no grupo o link já na

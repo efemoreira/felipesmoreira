@@ -214,7 +214,7 @@ function tarefas_de(array $u): array
                     : "Fazer o follow-up de {$quantos} pessoas",
                 'porque'  => mb_strtolower(ROTULO_FUNIL[$primeiro['etapa']])
                     . ' — o passo venceu e lead sem segunda mensagem é lead perdido',
-                'url'     => '/painel/eventos.php?e=' . rawurlencode($primeiro['lead']['eventoId']) . '#funil',
+                'url'     => '/painel/eventos.php?e=' . rawurlencode($primeiro['lead']['eventoId']) . '&aba=pessoas#funil',
             ];
         }
 
