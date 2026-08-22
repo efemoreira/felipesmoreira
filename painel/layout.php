@@ -24,7 +24,7 @@ require_once __DIR__ . '/icones.php';
 require_once __DIR__ . '/agora.php';
 
 /** Versão do CSS — muda junto com o painel.css para furar o cache do navegador. */
-const VERSAO_ESTILO = '12';
+const VERSAO_ESTILO = '13';
 
 /**
  * Os grupos da navegação, na ordem em que aparecem.
@@ -448,18 +448,25 @@ function barra_abas(array $abas, string $atual, string $param = 'aba', string $r
       <?php foreach ($abas as $chave => $aba): ?>
         <?php
         $qs = $_GET;
-        unset($qs['p'], $qs['c'], $qs['novo'], $qs['nova'], $qs['editar']);
+        /* Trocar de aba fecha o que estava aberto por cima dela: modal e ficha
+           são estado de uma aba só, e carregá-los para a outra abre um
+           formulário no meio de uma tela que fala de outra coisa. */
+        unset($qs['p'], $qs['c'], $qs['novo'], $qs['nova'], $qs['editar'],
+              $qs['pessoa'], $qs['puxar']);
         $qs[$param] = $chave;
         $url = $base . '?' . http_build_query($qs);
         $conta = $aba['conta'] ?? null;
         ?>
+        <?php /* O contador é texto, e não número: quase sempre é uma contagem
+                 ("12"), mas o preparo do encontro conta duas coisas de uma vez
+                 ("3/12"), e um (int) ali transformava isso em "3". */ ?>
         <?php if ((string) $chave === $atual): ?>
           <span aria-current="page">
-            <?= h($aba['nome']) ?><?= $conta !== null ? '<span>' . (int) $conta . '</span>' : '' ?>
+            <?= h($aba['nome']) ?><?= $conta !== null ? '<span>' . h((string) $conta) . '</span>' : '' ?>
           </span>
         <?php else: ?>
           <a href="<?= h($url) ?>">
-            <?= h($aba['nome']) ?><?= $conta !== null ? '<span>' . (int) $conta . '</span>' : '' ?>
+            <?= h($aba['nome']) ?><?= $conta !== null ? '<span>' . h((string) $conta) . '</span>' : '' ?>
           </a>
         <?php endif; ?>
       <?php endforeach; ?>

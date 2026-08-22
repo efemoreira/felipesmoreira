@@ -604,6 +604,13 @@ abrir_pagina('Pessoas');
           </div>
         </form>
       <?php else: ?>
+        <?php /* O login escrito por extenso, e não só dentro do selo lá em cima:
+                 é ele que a pessoa digita para entrar, e é ele que a coordenação
+                 dita no WhatsApp quando alguém diz "não consigo entrar". Monoespaçado
+                 porque num tipo proporcional o l e o 1 têm o mesmo desenho. */ ?>
+        <p style="margin:0 0 12px">
+          <strong>Login:</strong> <span class="login"><?= h($aberta['usuario']) ?></span>
+        </p>
         <div class="acoes">
           <form method="post" style="display:inline">
             <input type="hidden" name="csrf" value="<?= h(token()) ?>">
@@ -622,6 +629,45 @@ abrir_pagina('Pessoas');
           Último acesso: <?= $aberta['ultimoAcesso'] !== '' ? h(date('d/m/Y H:i', (int) strtotime($aberta['ultimoAcesso']))) : 'nunca entrou' ?>.
           Senha não se recupera — só o hash fica guardado.
         </p>
+      <?php endif; ?>
+
+      <?php /* ---- candidatura ----
+               Candidato é uma PESSOA com `tipo = candidato`, e não um cadastro à
+               parte — por isso a ponte é daqui, e não uma segunda ficha lá. O que
+               não se faz aqui é virar o tipo no clique: candidato sem número é
+               candidato que não pode ir ao ar, e o número (com o cargo que confere
+               os dígitos) só é perguntado em um lugar, que é o formulário de
+               /painel/candidatos. O link leva a ele já preenchido com esta ficha. */ ?>
+      <?php if ($aberta['tipo'] === 'candidato' || pode('candidatos')): ?>
+        <h3 style="margin:22px 0 10px">Candidatura</h3>
+        <?php if ($aberta['tipo'] === 'candidato'): ?>
+          <p style="margin:0 0 10px">
+            <?php if ($aberta['numero'] !== ''): ?>
+              <span class="selo"><?= h($aberta['numero']) ?></span>
+            <?php else: ?>
+              <span class="selo selo-off">sem número</span>
+            <?php endif; ?>
+            <span class="selo selo-cinza"><?= h(rotulo_cargo($aberta['cargo'])) ?></span>
+            <span class="selo <?= $aberta['publicado'] ? 'selo-ok' : 'selo-cinza' ?>">
+              <?= $aberta['publicado'] ? 'no ar' : 'rascunho' ?>
+            </span>
+          </p>
+          <?php if (pode('candidatos')): ?>
+            <div class="acoes">
+              <a class="btn" href="/painel/candidatos.php?aba=candidatos&amp;c=<?= h($aberta['id']) ?>">Editar a candidatura</a>
+            </div>
+          <?php endif; ?>
+        <?php else: ?>
+          <p class="dica">
+            Não é candidata. Tornar candidato é preencher o número de urna — sem ele a
+            colinha não existe, e colinha com número errado é pior que colinha nenhuma.
+          </p>
+          <div class="acoes">
+            <a class="btn" href="/painel/candidatos.php?aba=candidatos&amp;pessoa=<?= h($aberta['id']) ?>">
+              Tornar candidato
+            </a>
+          </div>
+        <?php endif; ?>
       <?php endif; ?>
     </fieldset>
   <?php endif; ?>
@@ -704,6 +750,13 @@ abrir_pagina('Pessoas');
                 </td>
                 <td>
                   <?php if (tem_conta($p)): ?>
+                    <?php /* O LOGIN vem primeiro, e o que a pessoa abre vem embaixo.
+                             A pergunta que traz alguém a esta coluna é "qual é o login
+                             do Fulano?" — quem esqueceu o dele pergunta no grupo, e
+                             quem responde não deveria ter que abrir a ficha para ler
+                             uma palavra. A busca já casava por login sem nunca
+                             mostrá-lo: dava para achar, não dava para ditar. */ ?>
+                    <strong class="login"><?= h($p['usuario']) ?></strong><br>
                     <span class="selo <?= $p['ativo'] ? 'selo-ok' : 'selo-off' ?>"><?= h(rotulo_do_acesso($p)) ?></span>
                   <?php else: ?>
                     <span class="dica">—</span>

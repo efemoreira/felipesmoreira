@@ -550,6 +550,15 @@ input[type=file]::file-selector-button {
 .selo-off { border-color:var(--erro-borda); color:var(--erro); }
 .selo-ok { border-color:var(--ok-borda); color:var(--ok); }
 
+/* O login numa lista ou numa ficha. Monoespaçado e miúdo: ele é para ser lido em
+   voz alta no grupo — "é jota-silva, tudo junto" — e num tipo proporcional o l e
+   o 1 têm o mesmo desenho. Primo da `.provisoria` sem o peso dela: ali é uma
+   senha que aparece uma vez só, aqui é uma coluna inteira da tabela. */
+.login {
+  font:400 13px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
+  letter-spacing:.5px; color:var(--texto);
+}
+
 .provisoria {
   font:400 19px/1.7 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:2px;
   background:var(--campo); border:3px dashed var(--ouro); color:var(--acento);
@@ -826,26 +835,11 @@ input[type=file]::file-selector-button {
    preso no meio da tela nem ganhar véu, senão vira um bloco flutuando sozinho. */
 .modal:not([open]) { display:none; }
 
-/* Índice de seções de uma tela longa (o encontro aberto).
-   Mesmo desenho de `.atalho-colunas`, mas SEM a regra que o esconde no
-   computador: lá o atalho existe só porque o quadro vira pilha no celular;
-   aqui a tela é longa nos dois, e o índice serve nos dois. */
-.secoes { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 20px; }
-.secoes a {
-  display:inline-flex; align-items:center; gap:7px; min-height:44px; padding:8px 13px;
-  font:400 12px/1 var(--etiqueta); letter-spacing:1.3px; text-transform:uppercase;
-  border:2px solid var(--linha); color:var(--texto-fraco); text-decoration:none;
-}
-.secoes a:hover { border-color:var(--ouro); color:var(--texto); }
-.secoes a span {
-  min-width:20px; padding:0 5px; background:var(--realce-3); color:var(--acento);
-  font-family:var(--corpo); font-size:12px;
-}
-
 /* ---- abas ----
-   Prima do `.secoes`, e a diferença é o que cada uma faz: a seção é âncora
-   dentro de uma tela longa (tudo continua na página, o link rola até lá); a
-   aba TROCA o que está desenhado, e por isso precisa dizer qual está aberta.
+   O encontro aberto teve um índice de âncoras (`.secoes`) antes destas abas, e
+   a diferença é o que cada uma faz: a âncora encurtava o caminho sem encurtar a
+   tela — tudo continuava desenhado embaixo do dedo. A aba TROCA o que está na
+   página, e por isso precisa dizer qual está aberta.
 
    São links de verdade (`?aba=...`), não botões de JavaScript: cada aba tem
    URL própria, o botão Voltar do navegador funciona e dá para mandar no grupo
