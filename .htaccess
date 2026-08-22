@@ -27,6 +27,7 @@ RewriteRule ^painel/inscricoes/?$ /painel/inscricoes.php [L]
 RewriteRule ^painel/candidatos/?$ /painel/candidatos.php [L]
 RewriteRule ^painel/pessoas/?$ /painel/pessoas.php [L]
 RewriteRule ^painel/conta/?$ /painel/conta.php [L]
+RewriteRule ^painel/manutencao/?$ /painel/manutencao.php [L]
 # Rotas antigas, com hífen. Elas estão no sitemap e circulam em link de
 # WhatsApp: sem o 301 elas cairiam no fallback lá embaixo e devolveriam
 # a HOME com status 200 — um soft 404, que para buscador é pior que o

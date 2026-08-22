@@ -192,6 +192,7 @@ abrir_pagina('Inscrições');
       [
           'Aprovar: cria a conta, marca as áreas sugeridas e mostra a senha provisória UMA vez.',
           'O botão do WhatsApp já abre a conversa da pessoa com a mensagem pronta.',
+          'Ela foi orientada a mandar um oi antes: procure a conversa que já existe e RESPONDA nela — iniciar dezenas de conversas novas é o que derruba o número da coordenação.',
           'Quem não escolheu função entra como “Onde precisar” — combine na conversa.',
           'Fila parada há mais de 48h aparece como urgente no Início: é onde mais se perde gente.',
       ]
@@ -211,6 +212,11 @@ abrir_pagina('Inscrições');
     ?>
     <div class="msg msg-ok">
       <p style="margin:0 0 10px"><strong>Acesso criado.</strong> Mande agora — a senha não aparece de novo.</p>
+      <p class="dica" style="margin:0 0 10px">
+        Se ela já mandou o oi, o botão abre a conversa que existe e a mensagem entra como
+        <strong>resposta</strong>. É essa diferença que mantém o número da coordenação de pé:
+        o WhatsApp bloqueia quem inicia muitas conversas com quem nunca falou com ele.
+      </p>
       <div class="provisoria">
         usuário: <?= h($acesso['usuario']) ?><br>
         senha: <?= h($acesso['senha']) ?>
@@ -297,6 +303,18 @@ abrir_pagina('Inscrições');
     </details>
   <?php endif; ?>
 
+  <?php
+  /* A fila é o trabalho; as decididas são o arquivo. Empilhadas, o arquivo
+     cresce para sempre e a fila — que é o que alguém veio fazer aqui — some
+     para baixo. A aba abre na fila, sempre. */
+  $abaIn = ($_GET['aba'] ?? '') === 'decididas' && $decididas !== [] ? 'decididas' : 'fila';
+  barra_abas([
+      'fila'      => ['nome' => 'Esperando decisão', 'conta' => count($novas)],
+      'decididas' => ['nome' => 'Já decididas',      'conta' => count($decididas)],
+  ], $abaIn, 'aba', 'Inscrições');
+  ?>
+
+  <?php if ($abaIn === 'fila'): ?>
   <fieldset>
     <legend>Esperando decisão (<?= count($novas) ?>)</legend>
 
@@ -424,8 +442,9 @@ abrir_pagina('Inscrições');
       </article>
     <?php endforeach; ?>
   </fieldset>
+  <?php endif; ?>
 
-  <?php if ($decididas !== []): ?>
+  <?php if ($abaIn === 'decididas'): ?>
     <fieldset>
       <legend>Já decididas (<?= count($decididas) ?>)</legend>
       <div class="rolagem">
@@ -434,7 +453,14 @@ abrir_pagina('Inscrições');
             <tr><th>Nome</th><th>Cidade</th><th>Situação</th><th>Quem decidiu</th><th>Quando</th></tr>
           </thead>
           <tbody>
-            <?php foreach ($decididas as $i): ?>
+            <?php
+            /* A-Z: o arquivo se consulta procurando um nome ("o Fulano chegou a
+               ser aprovado?"), e não relendo do começo. A ordem de chegada, que
+               era a de antes, só serve para a fila — e a fila é a outra aba. */
+            $emOrdem = $decididas;
+            usort($emOrdem, fn ($a, $b) => strcmp(sem_acento($a['nome']), sem_acento($b['nome'])));
+            ?>
+            <?php foreach ($emOrdem as $i): ?>
               <tr>
                 <td><?= h($i['nome']) ?></td>
                 <td><?= h($i['cidade']) ?></td>

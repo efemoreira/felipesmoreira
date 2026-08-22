@@ -31,7 +31,9 @@ foreach (candidatos_publicados() as $c) {
     $candidatos[] = [
         'id'     => $c['id'],
         'nome'   => $c['urna'] !== '' ? $c['urna'] : $c['nome'],
-        'cargo'  => $c['cargo'],
+        /* O RÓTULO, e não a chave: o site desenha o que recebe, e uma tabela
+           de cargos repetida em TypeScript divergiria na primeira eleição. */
+        'cargo'  => rotulo_cargo($c['cargo']),
         'numero' => $c['numero'],
         'partido' => $c['partido'],
         'instagram' => $c['instagram'],

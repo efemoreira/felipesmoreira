@@ -238,7 +238,16 @@ function placar_de_origens(?array $pessoas = null): array
     return ['placar' => array_values($soma), 'semOrigem' => $semOrigem];
 }
 
-/** Quantos militantes por cidade/bairro — só aprovados, pelo mesmo motivo. */
+/**
+ * Quantos militantes por cidade/bairro — só aprovados, pelo mesmo motivo.
+ *
+ * Devolve LINHAS DE TABELA, e não o mapa cru `cidade => bairro => n`: a tela
+ * desenha `cidade`, `total` e a lista de `bairros`, e era o mapa cru que ela
+ * recebia — três chaves indefinidas por linha e a tabela saindo vazia.
+ *
+ * Cidade com mais gente primeiro, porque a pergunta é "onde já dá para montar
+ * um time"; empate desempata pelo nome, sem acento.
+ */
 function militancia_por_regiao(?array $pessoas = null): array
 {
     $pessoas ??= ler_pessoas();
@@ -247,11 +256,32 @@ function militancia_por_regiao(?array $pessoas = null): array
         if ($p['status'] !== 'aprovada' || $p['cidade'] === '') {
             continue;
         }
-        $mapa[$p['cidade']][$p['bairro'] !== '' ? $p['bairro'] : '—'] =
-            ($mapa[$p['cidade']][$p['bairro'] !== '' ? $p['bairro'] : '—'] ?? 0) + 1;
+        $bairro = $p['bairro'] !== '' ? $p['bairro'] : '';
+        $mapa[$p['cidade']][$bairro] = ($mapa[$p['cidade']][$bairro] ?? 0) + 1;
     }
-    ksort($mapa);
-    return $mapa;
+
+    $linhas = [];
+    foreach ($mapa as $cidade => $bairros) {
+        $total = array_sum($bairros);
+        /* Bairro em branco não vira "—" numa etiqueta: a tela já diz "sem
+           bairro informado" quando não sobra nenhum, e uma etiqueta com travessão
+           no meio dos bairros de verdade só ocupa espaço. */
+        unset($bairros['']);
+        arsort($bairros);
+        $linhas[] = [
+            'cidade'  => (string) $cidade,
+            'total'   => $total,
+            'bairros' => array_map(
+                fn ($nome, $n) => ['nome' => (string) $nome, 'total' => $n],
+                array_keys($bairros),
+                array_values($bairros)
+            ),
+        ];
+    }
+
+    usort($linhas, fn ($a, $b) => [$b['total'], sem_acento($a['cidade'])]
+        <=> [$a['total'], sem_acento($b['cidade'])]);
+    return $linhas;
 }
 
 /**

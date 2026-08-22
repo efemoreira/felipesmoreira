@@ -68,7 +68,9 @@ if (($bruto['consentimento'] ?? false) !== true) {
 $nome     = limpar_texto($bruto['nome'] ?? '', 80);
 $telefone = so_digitos($bruto['telefone'] ?? '');
 $email    = limpar_texto($bruto['email'] ?? '', 120);
-$cidade   = limpar_texto($bruto['cidade'] ?? '', 60);
+/* Conferida contra o catálogo, e devolvida na grafia dele: o formulário manda
+   uma opção da lista, mas o endpoint é público e recebe o que mandarem. */
+$cidade   = cidade_valida($bruto['cidade'] ?? '');
 $bairro   = limpar_texto($bruto['bairro'] ?? '', 60);
 $funcoes  = funcoes_validas(is_array($bruto['funcoes'] ?? null) ? $bruto['funcoes'] : []);
 
@@ -89,7 +91,7 @@ if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
     recusar('Esse e-mail parece incompleto.');
 }
 if ($cidade === '' || $bairro === '') {
-    recusar('Diga sua cidade e seu bairro.');
+    recusar('Escolha sua cidade na lista e diga seu bairro.');
 }
 /* Função é OPCIONAL. Quem chegou disposto e ainda não sabe onde encaixa é
    militante do mesmo jeito — recusar aqui trocaria um militante novo por uma

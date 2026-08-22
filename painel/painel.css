@@ -842,6 +842,50 @@ input[type=file]::file-selector-button {
   font-family:var(--corpo); font-size:12px;
 }
 
+/* ---- abas ----
+   Prima do `.secoes`, e a diferença é o que cada uma faz: a seção é âncora
+   dentro de uma tela longa (tudo continua na página, o link rola até lá); a
+   aba TROCA o que está desenhado, e por isso precisa dizer qual está aberta.
+
+   São links de verdade (`?aba=...`), não botões de JavaScript: cada aba tem
+   URL própria, o botão Voltar do navegador funciona e dá para mandar no grupo
+   o link já na aba certa. A aba aberta perde o `href` — vira <span>, porque
+   link que leva ao lugar onde já se está é ruído para quem navega por teclado. */
+.abas {
+  display:flex; flex-wrap:wrap; gap:8px; margin:0 0 20px;
+  border-bottom:2px solid var(--linha); padding-bottom:12px;
+}
+.abas a, .abas span {
+  display:inline-flex; align-items:center; gap:7px; min-height:44px; padding:8px 14px;
+  font:400 12px/1 var(--etiqueta); letter-spacing:1.3px; text-transform:uppercase;
+  border:2px solid var(--linha); color:var(--texto-fraco); text-decoration:none;
+}
+.abas a:hover { border-color:var(--ouro); color:var(--texto); }
+/* A aba aberta é preenchimento de ouro com tinta escura por cima — no tema
+   claro o ouro NÃO pode ser cor de texto (1,29:1 sobre o papel), então quem
+   escreve aqui é a tinta e quem carrega o ouro é o fundo. */
+.abas span[aria-current] {
+  background:var(--ouro); border-color:var(--ink); color:var(--ink);
+  font-weight:700;
+}
+.abas a span, .abas span span {
+  min-width:20px; padding:0 5px; background:var(--realce-3); color:var(--acento);
+  font-family:var(--corpo); font-size:12px; border:0; min-height:0;
+}
+.abas span[aria-current] span {
+  background:rgba(24,18,3,.22); color:var(--ink);
+}
+
+/* Barra de filtro em cima de uma lista: procurar, recortar, ordenar.
+   Some a moldura de fieldset porque ela já vive DENTRO de um, e duas molduras
+   encaixadas viram um degrau de dois pixels que não quer dizer nada. */
+.filtros {
+  display:grid; gap:12px; align-items:end; margin:0 0 18px;
+  grid-template-columns:repeat(auto-fit, minmax(160px, 1fr));
+}
+.filtros .campo { margin:0; }
+.filtros .acoes { margin:0; }
+
 /* ---- quadro de produção ----
    Quatro colunas no desktop; no celular vira uma pilha, porque rolar de lado
    entre colunas briga com a rolagem da página no dedo. */
