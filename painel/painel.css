@@ -55,9 +55,18 @@
   --papel:#FFFDF7;          /* a caixa levantada sobre ele */
   --texto:#181203;
   --titulo:#181203;         /* no escuro vira ouro */
-  --elo:#8A6508;            /* link: ouro escurecido, para se ler no papel */
-  --acento:#8A6508;         /* o ouro quando é texto ou ícone, não bloco */
-  --texto-fraco:#55503F; --texto-min:#6B6450;
+  /* O ouro escurecido: é ele que escreve quando o papel é o fundo.
+     Era #8A6508, que dá 4,52:1 sobre o papel — passa raspando, e SÓ sobre o
+     papel: na pílula do contador (fundo `--realce-3`, mais escuro que o papel)
+     caía para 3,36:1, e o número da aba era o que menos se lia numa tela feita
+     de números. Medido com o painel renderizado, não no olho.
+     Este valor dá 6,56:1 no papel e 4,88:1 na pílula, e continua sendo ouro
+     queimado — a identidade é a mesma, o que muda é conseguir ler. */
+  --elo:#6B4E06;            /* link: ouro escurecido, para se ler no papel */
+  --acento:#6B4E06;         /* o ouro quando é texto ou ícone, não bloco */
+  /* #6B6450 dava 4,23:1 sobre o creme dos cartões de aviso — a `.dica` some
+     justamente no cartão que está chamando atenção para alguma coisa. */
+  --texto-fraco:#55503F; --texto-min:#635C49;
   --texto-apagado:#8A8371; --rotulo:#3A3527; --placeholder:#918A76;
 
   /* superfícies */
@@ -598,9 +607,19 @@ input[type=file]::file-selector-button {
   .barra-baixo > a > span:last-child, .mais > summary > span:last-child {
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%;
   }
-  .barra-baixo a[aria-current="page"] { color:var(--titulo); }
+  /* `>` E NÃO DESCENDENTE: a gaveta do "Mais" vive DENTRO da barra, e ela
+     desenha o menu inteiro outra vez. Sem o `>`, esta regra alcançava também o
+     item atual lá de dentro — que já é bloco de ouro cheio (`.nav-areas
+     a[aria-current]`) — e pintava a letra de ouro por cima do ouro, com a mesma
+     especificidade e mais abaixo no arquivo. O resultado era um retângulo
+     dourado vazio no topo da gaveta, no lugar da área em que a pessoa está.
+
+     Aqui o ouro é TEXTO porque o fundo da barra é o papel escuro; lá dentro o
+     ouro é BLOCO e quem escreve é a tinta. As duas coisas não podem se
+     encontrar. */
+  .barra-baixo > a[aria-current="page"] { color:var(--titulo); }
   /* o traço em cima marca a aba atual sem repintar a barra inteira */
-  .barra-baixo a[aria-current="page"] .baixo-icone::after {
+  .barra-baixo > a[aria-current="page"] .baixo-icone::after {
     content:''; position:absolute; left:50%; top:-9px; transform:translateX(-50%);
     width:26px; height:3px; background:var(--ouro);
   }
