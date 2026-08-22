@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Icon, IconName } from "@/components/icons";
 import { C, FONT_ALFA, FONT_ELITE, FONT_BITTER } from "@/lib/theme";
 import { escada, times, semana, fases, regras } from "./data";
+import { GRUPO_GERAL } from "@/lib/contato";
 
 /* hachuras de xilogravura sobre o papel (mesma textura da página de heróis) */
 const HATCH =
@@ -582,7 +583,7 @@ const PlanoClient: React.FC = () => {
             <div style={caminho}>
               <span style={caminhoTag}>✦ quem vai construir</span>
               <span style={caminhoTxt}>
-                Manda <strong>EQUIPE</strong> pro Levi e aparece na{" "}
+                <strong>Entra no grupo</strong> e aparece na{" "}
                 <strong>primeira reunião, quarta às 19h30</strong> — é ali que cada
                 um sai com time e a primeira tarefa.
               </span>
@@ -601,8 +602,8 @@ const PlanoClient: React.FC = () => {
               <span style={caminhoTag}>✦ quem só tem o celular</span>
               <span style={caminhoTxt}>
                 Pega a arte e o texto prontos no{" "}
-                <Link href="/kit" style={{ color: C.gold2, fontWeight: 700 }}>
-                  kit de compartilhamento
+                <Link href="/municao" style={{ color: C.gold2, fontWeight: 700 }}>
+                  Munição
                 </Link>{" "}
                 e publica. Põe seu nome lá e a coordenação vê quem você trouxe.
               </span>
@@ -610,7 +611,7 @@ const PlanoClient: React.FC = () => {
           </div>
 
           <a
-            href="https://wa.me/5585981872972?text=EQUIPE"
+            href={GRUPO_GERAL}
             target="_blank"
             rel="noopener noreferrer"
             className="p-cta"
@@ -628,11 +629,11 @@ const PlanoClient: React.FC = () => {
           >
             <Icon name="whatsapp" size={26} />
             <span style={{ fontFamily: FONT_ALFA, fontSize: "clamp(15px, 4vw, 18px)", letterSpacing: 0.5 }}>
-              Manda a palavra EQUIPE
+              Entrar no grupo
             </span>
           </a>
           <p style={{ fontFamily: FONT_ELITE, fontSize: 12, letterSpacing: 2, margin: "16px 0 0", opacity: 0.9, textShadow: "0 1px 5px rgba(0,0,0,.5)" }}>
-            uma palavra · uma conversa de 3 minutos · um time esperando você
+            um toque · sem formulário · um time esperando você
           </p>
         </div>
 

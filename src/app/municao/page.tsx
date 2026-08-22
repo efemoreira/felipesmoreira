@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import KitClient from "@/features/kit/KitClient";
+import MunicaoClient from "@/features/kit/KitClient";
 
 /* Ferramenta da militância, não peça de captação: circula por link no grupo,
-   e um kit indexado só serviria para o adversário saber o que vem antes. */
+   e uma lista indexada do que vem por aí só serviria ao adversário. */
 export const metadata: Metadata = {
-  title: "Kit de compartilhamento",
+  title: "Munição",
   robots: {
     index: false,
     follow: false,
@@ -13,6 +13,6 @@ export const metadata: Metadata = {
   alternates: { canonical: null },
 };
 
-export default function KitPage() {
-  return <KitClient />;
+export default function MunicaoPage() {
+  return <MunicaoClient />;
 }

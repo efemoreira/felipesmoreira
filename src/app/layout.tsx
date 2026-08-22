@@ -6,6 +6,7 @@ import {
   Bitter,
 } from "next/font/google";
 import "./globals.css";
+import { TELEFONE_E164 } from "@/lib/contato";
 
 /* Só a mono: o `font-mono` do Estúdio depende dela. A Geist Sans estava
    declarada e nenhum componente a usava — não chegava a baixar, mas convidava
@@ -142,8 +143,10 @@ export default function RootLayout({
     jobTitle: "Candidato a Vice-Governador do Ceará",
     description:
       "De militante de internet no MBL Ceará a militante de rua. Ex-líder de jovens que abraçou a Missão Ceará para devolver aos jovens a liberdade tomada pelo crime organizado. Candidato a Vice-Governador do Ceará.",
-    email: "contato@felipesmoreira.com",
-    telephone: "+55 85 99722-3863",
+    /* Sem e-mail de propósito: o único canal é o WhatsApp. Deixar o endereço
+       aqui, em dado estruturado, seria tirá-lo da tela e mantê-lo justamente
+       onde raspador lê. */
+    telephone: TELEFONE_E164,
     areaServed: "BR",
     homeLocation: {
       "@type": "AdministrativeArea",
@@ -156,7 +159,7 @@ export default function RootLayout({
     },
     contactPoint: {
       "@type": "ContactPoint",
-      telephone: "+55 85 99722-3863",
+      telephone: TELEFONE_E164,
       contactType: "Customer Support",
       areaServed: "BR",
       availableLanguage: ["pt-BR"],

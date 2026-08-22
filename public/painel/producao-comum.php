@@ -152,18 +152,23 @@ function novo_id_card(): string
 /* ===================== o card nasce do fato ===================== */
 
 /**
- * Fato aprovado vira card de roteiro em "A fazer".
+ * Fato aprovado vira card em "A fazer", na etapa que a Checagem escolheu.
  *
- * Só o roteiro nasce automático: a arte e o vídeo dependem do que o roteiro
- * pedir, e abrir os três de uma vez encheria o quadro de card que ninguém pediu.
+ * A etapa é parâmetro, e não mais fixa em roteiro: um fato pode render só uma
+ * arte, ou só um vídeo, ou os três, ou nada. Antes toda aprovação abria um card
+ * de roteiro, então o quadro enchia de card que ninguém tinha pedido — e não
+ * havia como registrar "este aqui não vira peça".
  */
-function card_do_fato(array $fato, array $quem): array
+function card_do_fato(array $fato, array $quem, string $etapa = 'roteiro'): array
 {
+    if (!isset(ETAPAS[$etapa])) {
+        $etapa = 'roteiro';
+    }
     return [
         'id'          => novo_id_card(),
         'fatoId'      => $fato['id'],
         'titulo'      => $fato['oQue'],
-        'etapa'       => 'roteiro',
+        'etapa'       => $etapa,
         'coluna'      => 'a-fazer',
         'donoId'      => '',
         'donoNome'    => '',
@@ -176,9 +181,28 @@ function card_do_fato(array $fato, array $quem): array
         'historico'   => [[
             'quando' => date('c'),
             'quem'   => $quem['nome'],
-            'texto'  => 'Fato aprovado na Checagem — card aberto.',
+            'texto'  => 'Fato aprovado na Checagem — card de ' . ETAPAS[$etapa] . ' aberto.',
         ]],
     ];
+}
+
+/**
+ * O que um fato virou — os cards nascidos dele, na ordem das etapas.
+ *
+ * Varre os cards em vez de guardar a lista no fato porque o elo já existe do
+ * lado certo (`fatoId` no card) desde que a ligação foi criada. Guardar dos
+ * dois lados seria a primeira coisa a divergir quando alguém apagasse um card.
+ */
+function saidas_do_fato(string $fatoId): array
+{
+    if ($fatoId === '') {
+        return [];
+    }
+    $achados = array_values(array_filter(ler_cards(), fn ($c) => $c['fatoId'] === $fatoId));
+
+    $ordem = array_flip(array_keys(ETAPAS));
+    usort($achados, fn ($a, $b) => ($ordem[$a['etapa']] ?? 9) <=> ($ordem[$b['etapa']] ?? 9));
+    return $achados;
 }
 
 /* ===================== consultas ===================== */

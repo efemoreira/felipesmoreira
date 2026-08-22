@@ -13,434 +13,124 @@ declare(strict_types=1);
  */
 
 require_once __DIR__ . '/layout.php';
+require_once __DIR__ . '/agenda-comum.php';
+require_once __DIR__ . '/eventos-comum.php';  // a lista da programação vem dos encontros
 exigir_area('agenda');
 
-const ARQ_AGENDA  = PASTA_DADOS . '/agenda.json';
-const ARQ_SEMENTE = __DIR__ . '/../dados-semente.json'; // cópia do build, só p/ preencher na 1ª vez
-
-const MAX_BACKUPS = 12;
-const MAX_UPLOAD  = 8388608; // 8 MB — foto de celular passa folgado
-const LARGURA_MAX = 1000;    // a miniatura aparece com ~240px; 1000 cobre telas retina
-
-const CORES = ['ouro' => 'Ouro', 'milho' => 'Milho', 'azul' => 'Azul', 'escuro' => 'Escuro', 'papel' => 'Papel'];
-const PLATAFORMAS = [
-    ''          => 'nenhuma',
-    'youtube'   => 'YouTube',
-    'instagram' => 'Instagram',
-    'twitch'    => 'Twitch',
-    'kick'      => 'Kick',
-    'tiktok'    => 'TikTok',
-    'x'         => 'X / Twitter',
-    'whatsapp'  => 'WhatsApp',
-    'video'     => 'Kwai / vídeo',
-];
-const DIAS = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
-
-/* As mesmas cores de src/app/programacao/tipos.ts — a prévia tem de mostrar o
-   cartão como ele vai sair na página, não uma aproximação. */
-const TEMAS = [
-    'ouro'   => ['bg' => '#FFCB05', 'fg' => '#181203', 'sub' => 'rgba(24,18,3,.72)',   'claro' => false],
-    'milho'  => ['bg' => '#F7E463', 'fg' => '#181203', 'sub' => 'rgba(24,18,3,.72)',   'claro' => false],
-    'azul'   => ['bg' => 'linear-gradient(105deg,#1B4FD8 0%,#2E7BE8 100%)', 'fg' => '#F6F5EF', 'sub' => 'rgba(246,245,239,.82)', 'claro' => true],
-    'escuro' => ['bg' => '#1C1710', 'fg' => '#F6F5EF', 'sub' => 'rgba(246,245,239,.72)', 'claro' => true],
-    'papel'  => ['bg' => '#F3ECDA', 'fg' => '#181203', 'sub' => 'rgba(24,18,3,.7)',    'claro' => false],
-];
-const CANAIS_PADRAO = [
-    ['nome' => 'YouTube',   'icone' => 'youtube',   'url' => 'https://youtube.com/@moreiramissao'],
-    ['nome' => 'Instagram', 'icone' => 'instagram', 'url' => 'https://instagram.com/moreiramissao'],
-    ['nome' => 'Twitch',    'icone' => 'twitch',    'url' => 'https://twitch.tv/moreiramissao'],
-    ['nome' => 'Kick',      'icone' => 'kick',      'url' => 'https://kick.com/moreiramissao'],
-    ['nome' => 'TikTok',    'icone' => 'tiktok',    'url' => 'https://tiktok.com/@moreiramissao'],
-];
-
-/* ===================== dados da agenda ===================== */
-
-function agenda_atual(): array
-{
-    foreach ([ARQ_AGENDA, ARQ_SEMENTE] as $arquivo) {
-        if (is_file($arquivo)) {
-            $dados = json_decode((string) @file_get_contents($arquivo), true);
-            if (is_array($dados) && isset($dados['programacao'])) {
-                return $dados;
-            }
-        }
-    }
-    return [
-        'titulo'       => 'Agenda da Semana',
-        'periodo'      => '',
-        'chamada'      => '',
-        'disponivelEm' => CANAIS_PADRAO,
-        'programacao'  => [],
-    ];
-}
-
-/* limpar_texto() agora mora no sessao.php: o formulário público de inscrição
-   precisa dela e não pode incluir este arquivo (que exige área 'agenda'). */
-
-/** Só http(s), caminho interno ou mailto/tel — nada de javascript: no href. */
-/**
- * O fuso do Ceará. Fixo de propósito: o estado não tem horário de verão, e
- * gravar o deslocamento junto da data é o que faz o "está ao vivo agora?" dar
- * a mesma resposta no celular de Fortaleza e no de quem abriu de outro estado.
- */
-const FUSO_CEARA = '-03:00';
 
 /**
- * O <input type="datetime-local"> devolve "2026-10-04T19:00" (sem fuso).
- * Guardamos com o deslocamento para a data virar um instante sem ambiguidade.
+ * A capa da programação, a partir do formulário.
  *
- * Devolve '' quando não reconhece — item sem horário continua válido, só não
- * entra na ordenação nem pode ser marcado como ao vivo.
+ * Só a capa: título, período, chamada e os canais. A LISTA vem dos encontros
+ * (`itens_publicos()`), e não daqui — antes cada item era digitado nesta tela,
+ * com data própria, enquanto o mesmo encontro era cadastrado de novo em
+ * Encontros. Duas fichas para a mesma coisa é duas datas que divergem.
  */
-function inicio_iso($bruto): string
-{
-    $v = limpar_texto($bruto, 25);
-    if ($v === '') {
-        return '';
-    }
-    if (preg_match('/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/', $v, $m) !== 1) {
-        return '';
-    }
-    if (!checkdate((int) $m[2], (int) $m[3], (int) $m[1])) {
-        return '';
-    }
-    if ((int) $m[4] > 23 || (int) $m[5] > 59) {
-        return '';
-    }
-    return "{$m[1]}-{$m[2]}-{$m[3]}T{$m[4]}:{$m[5]}:00" . FUSO_CEARA;
-}
-
-/** ISO -> o que o <input type="datetime-local"> sabe reler. */
-function inicio_para_campo(string $iso): string
-{
-    return $iso === '' ? '' : substr($iso, 0, 16);
-}
-
-/**
- * Dia, data e hora para mostrar — **derivados** do início, nunca digitados.
- *
- * Eram três campos de texto livre, e era por isso que a página não conseguia
- * ordenar nem saber o que já tinha passado: "29/07" não diz o ano e "19H" não
- * é hora. Continuam no arquivo porque o cartão e o pôster leem eles, mas agora
- * saem todos da mesma data — não há como divergirem.
- */
-function partes_de_exibicao(string $iso): array
-{
-    if ($iso === '') {
-        return ['dia' => '', 'data' => '', 'hora' => ''];
-    }
-    /* Formatar no fuso do Ceará, e não no do servidor. A Hostinger roda em UTC:
-       com `date()` puro, um evento marcado para 19h aparecia como 22H no site.
-       O erro é silencioso — a hora está lá, só está errada. */
-    try {
-        $d = (new DateTimeImmutable($iso))->setTimezone(new DateTimeZone('America/Fortaleza'));
-    } catch (Exception $e) {
-        return ['dia' => '', 'data' => '', 'hora' => ''];
-    }
-
-    // format('w') devolve 0 para domingo; DIAS começa na segunda
-    $w = (int) $d->format('w');
-    $minuto = (int) $d->format('i');
-
-    return [
-        'dia'  => DIAS[($w + 6) % 7],
-        'data' => $d->format('d/m'),
-        'hora' => $minuto === 0 ? $d->format('G') . 'H' : $d->format('G:i'),
-    ];
-}
-
-function limpar_link($v): string
-{
-    $s = limpar_texto($v, 300);
-    if ($s === '') {
-        return '';
-    }
-    if (preg_match('#^(https?://|/|mailto:|tel:)#i', $s)) {
-        return $s;
-    }
-    // qualquer outro esquema (javascript:, data:, file:...) é descartado
-    if (preg_match('#^[a-z][a-z0-9+.\-]*:#i', $s)) {
-        return '';
-    }
-    return 'https://' . ltrim($s, '/'); // digitou "youtube.com/..." sem o https
-}
-
-/* ---- imagens enviadas pelo painel ---- */
-
-/** Apaga um arquivo só se ele for mesmo da nossa pasta de imagens. */
-function apagar_imagem(string $caminhoPublico): void
-{
-    if (strpos($caminhoPublico, URL_IMAGENS . '/') !== 0) {
-        return; // link externo ou caminho do repositório: não é nosso para apagar
-    }
-    $arquivo = PASTA_IMAGENS . '/' . basename($caminhoPublico);
-    if (is_file($arquivo)) {
-        @unlink($arquivo);
-    }
-}
-
-/** Com name="imagem[N]", o PHP entrega $_FILES['imagem']['name'][N]; aqui vira um array normal. */
-function arquivo_enviado($indice): ?array
-{
-    $f = $_FILES['imagem'] ?? null;
-    if (!is_array($f) || !isset($f['error'][$indice]) || is_array($f['error'][$indice])) {
-        return null;
-    }
-    return [
-        'tmp_name' => (string) ($f['tmp_name'][$indice] ?? ''),
-        'error'    => (int) $f['error'][$indice],
-        'size'     => (int) ($f['size'][$indice] ?? 0),
-    ];
-}
-
-/**
- * Valida, corrige a rotação (foto de celular) e grava redimensionada.
- * Devolve ['ok' => bool, 'caminho' => string, 'erro' => string].
- */
-function guardar_upload(array $arquivo): array
-{
-    $erro = (int) ($arquivo['error'] ?? UPLOAD_ERR_NO_FILE);
-    if ($erro === UPLOAD_ERR_NO_FILE) {
-        return ['ok' => false, 'caminho' => '', 'erro' => ''];
-    }
-    if ($erro === UPLOAD_ERR_INI_SIZE || $erro === UPLOAD_ERR_FORM_SIZE) {
-        return ['ok' => false, 'caminho' => '', 'erro' => 'imagem maior que o limite do servidor'];
-    }
-    if ($erro !== UPLOAD_ERR_OK || !is_uploaded_file($arquivo['tmp_name'] ?? '')) {
-        return ['ok' => false, 'caminho' => '', 'erro' => 'falha no envio da imagem'];
-    }
-    if (((int) ($arquivo['size'] ?? 0)) > MAX_UPLOAD) {
-        return ['ok' => false, 'caminho' => '', 'erro' => 'imagem acima de 8 MB'];
-    }
-
-    // o que manda é o conteúdo do arquivo, não a extensão nem o content-type do navegador
-    $info = @getimagesize($arquivo['tmp_name']);
-    $tipos = [IMAGETYPE_JPEG, IMAGETYPE_PNG, IMAGETYPE_WEBP, IMAGETYPE_GIF];
-    if (!$info || !in_array($info[2], $tipos, true)) {
-        return ['ok' => false, 'caminho' => '', 'erro' => 'formato não aceito (use JPG, PNG ou WEBP)'];
-    }
-
-    preparar_pastas();
-    $nome = date('Ymd-His') . '-' . bin2hex(random_bytes(3)) . '.jpg';
-    $destino = PASTA_IMAGENS . '/' . $nome;
-
-    if (!function_exists('imagecreatetruecolor')) {
-        // sem GD: guarda como veio (já validada), mas com a extensão certa
-        $ext = [IMAGETYPE_PNG => '.png', IMAGETYPE_WEBP => '.webp', IMAGETYPE_GIF => '.gif'][$info[2]] ?? '.jpg';
-        $nome = substr($nome, 0, -4) . $ext;
-        $destino = PASTA_IMAGENS . '/' . $nome;
-        return @move_uploaded_file($arquivo['tmp_name'], $destino)
-            ? ['ok' => true, 'caminho' => URL_IMAGENS . '/' . $nome, 'erro' => '']
-            : ['ok' => false, 'caminho' => '', 'erro' => 'não consegui gravar a imagem'];
-    }
-
-    $origem = criar_imagem($arquivo['tmp_name'], $info[2]);
-    if (!$origem) {
-        return ['ok' => false, 'caminho' => '', 'erro' => 'não consegui ler a imagem'];
-    }
-    $origem = corrigir_rotacao($origem, $arquivo['tmp_name'], $info[2]);
-
-    $lo = imagesx($origem);
-    $al = imagesy($origem);
-    $escala = $lo > LARGURA_MAX ? LARGURA_MAX / $lo : 1.0;
-    $nl = max(1, (int) round($lo * $escala));
-    $na = max(1, (int) round($al * $escala));
-
-    $saida = imagecreatetruecolor($nl, $na);
-    // fundo escuro no lugar da transparência (o cartão é escuro)
-    imagefill($saida, 0, 0, imagecolorallocate($saida, 0x14, 0x11, 0x0C));
-    imagecopyresampled($saida, $origem, 0, 0, 0, 0, $nl, $na, $lo, $al);
-
-    $gravou = imagejpeg($saida, $destino, 82);
-    imagedestroy($saida);
-    imagedestroy($origem);
-
-    if (!$gravou) {
-        return ['ok' => false, 'caminho' => '', 'erro' => 'não consegui gravar a imagem'];
-    }
-    @chmod($destino, 0644);
-    return ['ok' => true, 'caminho' => URL_IMAGENS . '/' . $nome, 'erro' => ''];
-}
-
-function criar_imagem(string $arquivo, int $tipo)
-{
-    switch ($tipo) {
-        case IMAGETYPE_JPEG: return @imagecreatefromjpeg($arquivo);
-        case IMAGETYPE_PNG:  return @imagecreatefrompng($arquivo);
-        case IMAGETYPE_GIF:  return @imagecreatefromgif($arquivo);
-        case IMAGETYPE_WEBP: return function_exists('imagecreatefromwebp') ? @imagecreatefromwebp($arquivo) : false;
-    }
-    return false;
-}
-
-/** Foto tirada de lado no celular chega deitada; o EXIF diz como endireitar. */
-function corrigir_rotacao($imagem, string $arquivo, int $tipo)
-{
-    if ($tipo !== IMAGETYPE_JPEG || !function_exists('exif_read_data')) {
-        return $imagem;
-    }
-    $exif = @exif_read_data($arquivo);
-    $orientacao = (int) ($exif['Orientation'] ?? 0);
-    $graus = [3 => 180, 6 => -90, 8 => 90][$orientacao] ?? 0;
-    if ($graus === 0) {
-        return $imagem;
-    }
-    $girada = @imagerotate($imagem, $graus, 0);
-    if ($girada) {
-        imagedestroy($imagem);
-        return $girada;
-    }
-    return $imagem;
-}
-
-function slug(string $s, int $i): string
-{
-    $t = iconv('UTF-8', 'ASCII//TRANSLIT', $s) ?: $s;
-    $t = strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', $t) ?? '');
-    $t = trim($t, '-');
-    return $t !== '' ? $t : 'item-' . $i;
-}
-
 function montar_agenda_do_post(array $post, array &$recados): array
 {
-    $itens = [];
-    $linhas = is_array($post['item'] ?? null) ? $post['item'] : [];
-    $chaves = array_keys($linhas); // os índices do formulário, para casar com $_FILES
-
-    foreach (array_values($linhas) as $i => $linha) {
-        if (!is_array($linha)) {
-            continue;
-        }
-        $titulo = limpar_texto($linha['titulo'] ?? '', 120);
-        if ($titulo === '') {
-            continue; // linha em branco: some
-        }
-        $cor = (string) ($linha['cor'] ?? 'ouro');
-        $plataforma = (string) ($linha['plataforma'] ?? '');
-        $link = limpar_link($linha['link'] ?? '');
-
-        /* imagem: upload novo > pedido de remoção > o que já estava lá */
-        $imagem = limpar_texto($linha['imagem'] ?? '', 300);
-        $enviado = arquivo_enviado($chaves[$i]);
-
-        if ($enviado !== null) {
-            $r = guardar_upload($enviado);
-            if ($r['ok']) {
-                apagar_imagem($imagem); // a que estava no lugar não serve mais
-                $imagem = $r['caminho'];
-            } elseif ($r['erro'] !== '') {
-                $recados[] = 'Item “' . $titulo . '”: ' . $r['erro'] . '.';
-            }
-        }
-        if (!empty($linha['remover_imagem'])) {
-            apagar_imagem($imagem);
-            $imagem = '';
-        }
-
-        /* O início é a fonte; dia, data e hora saem dele. Item antigo (gravado
-           antes deste campo existir) fica sem início e mantém o texto que já
-           tinha — continua aparecendo, só não entra na ordem nem pode ser
-           marcado ao vivo, até alguém abrir e escolher a data. */
-        $inicio = inicio_iso($linha['inicio'] ?? '');
-        if ($inicio !== '') {
-            $exib = partes_de_exibicao($inicio);
-        } else {
-            $exib = [
-                'dia'  => limpar_texto($linha['dia'] ?? '', 20),
-                'data' => limpar_texto($linha['data'] ?? '', 20),
-                'hora' => limpar_texto($linha['hora'] ?? '', 20),
-            ];
-        }
-
-        $itens[] = [
-            'id'         => limpar_texto($linha['id'] ?? '', 60) ?: slug($titulo, $i),
-            'titulo'     => $titulo,
-            'subtitulo'  => limpar_texto($linha['subtitulo'] ?? '', 160),
-            'inicio'     => $inicio,
-            'dia'        => $exib['dia'],
-            'data'       => $exib['data'],
-            'hora'       => $exib['hora'],
-            'aoVivo'     => !empty($linha['aoVivo']),
-            // isset() não funciona sobre constante — array_key_exists resolve
-            'cor'        => array_key_exists($cor, CORES) ? $cor : 'ouro',
-            'plataforma' => array_key_exists($plataforma, PLATAFORMAS) ? $plataforma : '',
-            'imagem'     => $imagem,
-            'link'       => $link,
-            'interno'    => $link !== '' && $link[0] === '/', // link do próprio site
-        ];
-    }
-
-    $canaisMarcados = is_array($post['canal'] ?? null) ? $post['canal'] : [];
     $canais = [];
-    foreach (CANAIS_PADRAO as $c) {
-        if (in_array($c['icone'], $canaisMarcados, true)) {
-            $canais[] = $c;
+    $marcados = is_array($post['canal'] ?? null) ? $post['canal'] : [];
+    foreach (CANAIS_PADRAO as $canal) {
+        if (in_array($canal['icone'], $marcados, true)) {
+            $canais[] = $canal;
         }
     }
 
     return [
-        'titulo'       => limpar_texto($post['titulo'] ?? '', 60) ?: 'Agenda da Semana',
-        'periodo'      => limpar_texto($post['periodo'] ?? '', 60),
+        'titulo'       => limpar_texto($post['titulo'] ?? '', 80) ?: 'Agenda da Semana',
+        'periodo'      => limpar_texto($post['periodo'] ?? '', 80),
         'chamada'      => limpar_texto($post['chamada'] ?? '', 200),
         'disponivelEm' => $canais,
-        'programacao'  => $itens,
+        'programacao'  => [],  // preenchida por quem chama, com itens_publicos()
         'atualizadoEm' => date('c'),
         'atualizadoPor' => (usuario_atual()['nome'] ?? ''),
     ];
 }
 
-function publicar(array $agenda): bool
-{
-    preparar_pastas();
-    if (is_file(ARQ_AGENDA)) {
-        @copy(ARQ_AGENDA, PASTA_BACKUP . '/agenda-' . date('Ymd-His') . '.json');
-        $antigos = glob(PASTA_BACKUP . '/agenda-*.json') ?: [];
-        if (count($antigos) > MAX_BACKUPS) {
-            sort($antigos);
-            foreach (array_slice($antigos, 0, count($antigos) - MAX_BACKUPS) as $velho) {
-                @unlink($velho);
-            }
-        }
-    }
-    $json = json_encode($agenda, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-    if ($json === false || !gravar_atomico(ARQ_AGENDA, $json)) {
-        return false;
-    }
-    varrer_imagens_orfas($agenda);
-    return true;
-}
-
-/**
- * Apaga imagens que nenhum item usa mais — sobra de item removido, por exemplo.
- * Só mexe em arquivo com mais de 7 dias, para não atropelar um upload recente
- * nem uma imagem que ainda apareça em algum backup próximo.
- */
-function varrer_imagens_orfas(array $agenda): void
-{
-    if (!is_dir(PASTA_IMAGENS)) {
-        return;
-    }
-    $usadas = [];
-    foreach (($agenda['programacao'] ?? []) as $item) {
-        if (!empty($item['imagem'])) {
-            $usadas[basename((string) $item['imagem'])] = true;
-        }
-    }
-    $limite = time() - 7 * 86400;
-    foreach ((glob(PASTA_IMAGENS . '/*.{jpg,jpeg,png,webp,gif}', GLOB_BRACE) ?: []) as $arquivo) {
-        if (!isset($usadas[basename($arquivo)]) && @filemtime($arquivo) < $limite) {
-            @unlink($arquivo);
-        }
-    }
-}
 
 /* ===================== fluxo ===================== */
 
 $aviso = null;
 $sucesso = null;
+$recadoSessao = $_SESSION['recado'] ?? null;
+unset($_SESSION['recado']);
+if (($recadoSessao['tipo'] ?? '') === 'erro') {
+    $aviso = $recadoSessao['texto'];
+} elseif (($recadoSessao['tipo'] ?? '') === 'ok') {
+    $sucesso = $recadoSessao['texto'];
+}
 $acao = (string) ($_POST['acao'] ?? '');
 /* o que foi digitado, para devolver ao formulário quando a gravação falha */
 $rascunho = null;
+
+if ($acao === 'importar') {
+    if (!token_valido()) {
+        derrubar_sessao();
+        header('Location: /painel/', true, 302);
+        exit;
+    }
+    /* Traz para Encontros o que já estava no agenda.json e nunca teve encontro.
+       Roda uma vez: cada importado leva `importadoDe` com o id antigo, e o
+       botão só aparece enquanto sobrar alguma linha sem par. Os backups
+       rotativos do publicar() cobrem o desfazer. */
+    $eventos = ler_eventos();
+    /* Conhecido = o id É de um encontro (item que esta tela gerou a partir dele),
+       ou já foi importado por um. Olhar só para `importadoDe` reimportaria tudo
+       na segunda vez: depois da primeira importação o agenda.json é regerado com
+       os ids dos ENCONTROS, e nenhum `importadoDe` aponta para eles. */
+    $jaVeio = [];
+    foreach ($eventos as $e) {
+        $jaVeio[$e['id']] = true;
+        if (($e['importadoDe'] ?? '') !== '') {
+            $jaVeio[$e['importadoDe']] = true;
+        }
+    }
+
+    $quantos = 0;
+    foreach (agenda_atual()['programacao'] ?? [] as $it) {
+        $id = (string) ($it['id'] ?? '');
+        if ($id === '' || isset($jaVeio[$id])) {
+            continue;
+        }
+        $inicio = inicio_iso(substr((string) ($it['inicio'] ?? ''), 0, 16));
+        $eventos[] = [
+            'id'      => novo_id_evento(),
+            'titulo'  => (string) ($it['titulo'] ?? 'Sem nome'),
+            /* Com plataforma é transmissão; sem, é ato de rua. É o palpite certo
+               na maioria dos casos, e a coordenação corrige em dois cliques —
+               melhor que deixar tudo em "militância" e esconder da agenda. */
+            'familia' => ($it['plataforma'] ?? '') !== '' ? 'digital' : 'publico',
+            'inicio'  => $inicio,
+            'data'    => (string) ($it['data'] ?? ''),
+            'hora'    => (string) ($it['hora'] ?? ''),
+            'subtitulo'  => (string) ($it['subtitulo'] ?? ''),
+            'cor'        => (string) ($it['cor'] ?? 'ouro'),
+            'plataforma' => (string) ($it['plataforma'] ?? ''),
+            'aoVivo'     => !empty($it['aoVivo']),
+            'link'       => (string) ($it['link'] ?? ''),
+            'imagem'     => (string) ($it['imagem'] ?? ''),
+            'naAgenda'   => true,
+            'status'  => estado_do_evento($inicio) === 'passado' ? 'realizado' : 'planejado',
+            'token'   => bin2hex(random_bytes(10)),
+            'tokenConfirmacao' => bin2hex(random_bytes(10)),
+            'importadoDe' => $id,
+            'criadoEm'  => date('c'),
+            'criadoPor' => (usuario_atual()['nome'] ?? ''),
+        ];
+        $quantos++;
+    }
+
+    if ($quantos > 0 && gravar_eventos($eventos)) {
+        republicar_agenda();
+        $_SESSION['recado'] = ['tipo' => 'ok', 'texto' => $quantos . ' item(ns) viraram encontros. Confira a família de cada um.'];
+    } elseif ($quantos === 0) {
+        $_SESSION['recado'] = ['tipo' => 'ok', 'texto' => 'Nada a importar — tudo que estava na agenda já tem encontro.'];
+    } else {
+        $_SESSION['recado'] = ['tipo' => 'erro', 'texto' => 'Não consegui gravar em /dados.'];
+    }
+    header('Location: /painel/agenda.php', true, 302);
+    exit;
+}
 
 if ($acao === 'salvar') {
     if (!token_valido()) {
@@ -451,8 +141,12 @@ if ($acao === 'salvar') {
     }
     $recados = [];
     $nova = montar_agenda_do_post($_POST, $recados);
+    /* A capa é o que se edita aqui; a lista sai sempre dos encontros. Deixar o
+       formulário mandar a lista abriria caminho para uma tela desatualizada
+       sobrescrever o que outra pessoa acabou de marcar em Encontros. */
+    $nova['programacao'] = itens_publicos();
     if (publicar($nova)) {
-        $sucesso = count($nova['programacao']) . ' item(ns) publicado(s). A página já está mostrando a nova agenda.';
+        $sucesso = 'Capa publicada. A página já está mostrando o texto novo.';
         if ($recados) {
             $aviso = implode(' ', $recados) . ' O resto foi salvo normalmente.';
         }
@@ -468,15 +162,49 @@ if ($acao === 'salvar') {
 }
 
 $agenda = $rascunho ?? agenda_atual();
+/* A lista vem dos ENCONTROS, e não do que estiver gravado no agenda.json: se
+   alguém editou um encontro e a regravação falhou, a tela tem de mostrar a
+   verdade (o que existe), não o retrato velho do arquivo. */
+$itens = itens_publicos();
+
+/* Sobrou item no agenda.json que nunca virou encontro? Só então o botão de
+   importar aparece — o site rodou meses com a agenda digitada aqui, e esses
+   itens precisam de um encontro para continuarem existindo. */
+$orfas = 0;
+/* Conhecido = o id É de um encontro (item que esta tela mesma gerou), ou já foi
+   importado por um. Comparar só com `importadoDe` marcaria como órfão todo item
+   regerado depois da importação: o id dele passa a ser o do encontro, e nenhum
+   `importadoDe` aponta para ele. O botão então nunca sumia. */
+$conhecidos = [];
+foreach (ler_eventos() as $e) {
+    $conhecidos[$e['id']] = true;
+    if ($e['importadoDe'] !== '') {
+        $conhecidos[$e['importadoDe']] = true;
+    }
+}
+foreach (($agenda['programacao'] ?? []) as $it) {
+    if (($it['id'] ?? '') !== '' && !isset($conhecidos[$it['id']])) {
+        $orfas++;
+    }
+}
 $canaisAtivos = array_column($agenda['disponivelEm'] ?? CANAIS_PADRAO, 'icone');
 
 abrir_pagina('Agenda da semana');
 ?>
 <div class="capa">
-  <h1>Programação da semana</h1>
-  <p class="sub">
-    Edite, salve e a página <a href="/programacao" target="_blank" rel="noopener">/programacao</a> muda na hora.
-  </p>
+  <?php cabecalho_pagina(
+      'Programação da semana',
+      'Edite, salve e a página <a href="/programacao" target="_blank" rel="noopener">/programacao</a> '
+      . 'muda na hora — sem publicar o site de novo.',
+      null,
+      null,
+      [
+          'Cada item tem UM horário; o dia, a data e a hora que aparecem no site saem dele.',
+          'A hora é sempre a do Ceará, não a do servidor — digite o horário local e pronto.',
+          'Item sem horário continua valendo: cai no fim da lista, sem “ao vivo”.',
+          'A imagem é opcional; sem ela o cartão desenha a hachura do cordel.',
+      ]
+  ); ?>
 
   <?php recado($aviso, $sucesso); ?>
 
@@ -517,143 +245,76 @@ abrir_pagina('Agenda da semana');
     </fieldset>
 
     <fieldset>
-      <legend>Itens da semana</legend>
-      <p class="dica" style="margin:0 0 12px">
-        Arraste pelo ⠿ para reordenar, ou use ↑ ↓. Clique no cabeçalho para recolher um item.
+<legend>O que está no ar (<?= count($itens) ?>)</legend>
+      <p class="dica" style="margin:0 0 14px">
+        Esta lista não se edita aqui. <strong>Cada linha é um encontro</strong> —
+        marcado em <a href="/painel/eventos.php">Encontros</a>, com a chave “aparecer
+        na programação” ligada. Era o contrário antes: a live se cadastrava aqui e o
+        encontro lá, os dois com data própria, e a mesma coisa existia duas vezes com
+        duas datas que divergiam.
       </p>
-      <div id="itens">
-        <?php
-        $itens = $agenda['programacao'] ?? [];
-        if (!$itens) {
-            $itens = [[]];
-        }
-        /* itens já preenchidos nascem recolhidos: com 7 na semana, tudo aberto
-           vira uma parede de campos em que ninguém acha o que veio editar */
-        $recolher = count($itens) > 2;
-        foreach (array_values($itens) as $n => $it):
-            $cor = $it['cor'] ?? 'ouro';
-            $plat = $it['plataforma'] ?? '';
-            $temTitulo = !empty($it['titulo']);
-        ?>
-        <details class="item" <?= ($recolher && $temTitulo) ? '' : 'open' ?>>
-          <summary class="item-topo">
-            <span class="pega" title="Arraste para reordenar" aria-hidden="true">⠿</span>
-            <span class="item-num">Item <?= $n + 1 ?></span>
-            <span class="item-resumo"></span>
-            <span class="acoes">
-              <button class="btn btn-mini" type="button" data-mover="-1" title="Subir" aria-label="Subir item">↑</button>
-              <button class="btn btn-mini" type="button" data-mover="1" title="Descer" aria-label="Descer item">↓</button>
-              <button class="btn btn-mini" type="button" data-duplicar title="Duplicar">⧉</button>
-              <button class="btn btn-mini btn-risco" type="button" data-remover>Remover</button>
-            </span>
-          </summary>
 
-          <div class="item-corpo">
-            <!-- desenhada pelo JS a cada tecla; some se o navegador não rodar script -->
-            <div class="previa" hidden>
-              <span class="previa-rotulo">Como vai aparecer na página</span>
-              <div class="cartao">
-                <div class="cartao-thumb"><span class="sigla"></span></div>
-                <div class="cartao-texto">
-                  <strong class="cartao-titulo"></strong>
-                  <span class="cartao-sub"></span>
-                </div>
-                <div class="cartao-meta">
-                  <span class="cartao-data"></span>
-                  <span class="cartao-dia"></span>
-                </div>
-              </div>
-            </div>
+      <?php if ($orfas > 0): ?>
+        <form method="post" class="msg msg-erro" style="margin:0 0 16px">
+          <input type="hidden" name="csrf" value="<?= h(token()) ?>">
+          <input type="hidden" name="acao" value="importar">
+          <p style="margin:0 0 10px">
+            <strong><?= $orfas ?> item(ns) da agenda antiga</strong> ainda não têm encontro.
+            Eles foram digitados nesta tela quando a programação vivia aqui. Importe-os
+            para continuarem aparecendo no site — depois confira a família de cada um.
+          </p>
+          <button class="btn" type="submit">Importar a agenda antiga</button>
+        </form>
+      <?php endif; ?>
 
-            <input type="hidden" name="item[<?= $n ?>][id]" value="<?= h($it['id'] ?? '') ?>">
-            <div class="campo">
-              <label for="it<?= $n ?>-titulo">Título</label>
-              <input id="it<?= $n ?>-titulo" data-papel="titulo" type="text" name="item[<?= $n ?>][titulo]" value="<?= h($it['titulo'] ?? '') ?>" maxlength="120">
-            </div>
-            <div class="campo">
-              <label for="it<?= $n ?>-subtitulo">Subtítulo</label>
-              <input id="it<?= $n ?>-subtitulo" type="text" name="item[<?= $n ?>][subtitulo]" value="<?= h($it['subtitulo'] ?? '') ?>" maxlength="160">
-            </div>
-            <div class="linha g4">
-              <div class="campo" style="grid-column:span 2">
-                <label for="it<?= $n ?>-inicio">Quando começa</label>
-                <input id="it<?= $n ?>-inicio" data-papel="inicio" type="datetime-local"
-                       name="item[<?= $n ?>][inicio]"
-                       value="<?= h(inicio_para_campo((string) ($it['inicio'] ?? ''))) ?>">
-                <?php if (($it['inicio'] ?? '') === '' && ($it['data'] ?? '') !== ''): ?>
-                  <p class="dica" style="margin:6px 0 0">
-                    Este evento é de antes deste campo existir — está gravado como
-                    <strong><?= h(trim(($it['dia'] ?? '') . ' ' . ($it['data'] ?? '') . ' ' . ($it['hora'] ?? ''))) ?></strong>.
-                    Escolha a data aqui e ele passa a saber se já aconteceu.
-                  </p>
-                <?php else: ?>
-                  <p class="dica" style="margin:6px 0 0">
-                    O dia da semana e a hora que aparecem no site saem daqui — não se digita mais separado.
-                  </p>
-                <?php endif; ?>
-              </div>
-              <div class="campo">
-                <label for="it<?= $n ?>-cor">Cor</label>
-                <select id="it<?= $n ?>-cor" data-papel="cor" name="item[<?= $n ?>][cor]">
-                  <?php foreach (CORES as $v => $rotulo): ?>
-                    <option value="<?= h($v) ?>" <?= $cor === $v ? 'selected' : '' ?>><?= h($rotulo) ?></option>
-                  <?php endforeach; ?>
-                </select>
-              </div>
-            </div>
-            <div class="linha g2">
-              <div class="campo">
-                <label for="it<?= $n ?>-plataforma">Plataforma (selo)</label>
-                <select id="it<?= $n ?>-plataforma" data-papel="plataforma" name="item[<?= $n ?>][plataforma]">
-                  <?php foreach (PLATAFORMAS as $v => $rotulo): ?>
-                    <option value="<?= h($v) ?>" <?= $plat === $v ? 'selected' : '' ?>><?= h($rotulo) ?></option>
-                  <?php endforeach; ?>
-                </select>
-              </div>
-              <div class="campo">
-                <label for="it<?= $n ?>-link">Link</label>
-                <input id="it<?= $n ?>-link" type="text" name="item[<?= $n ?>][link]" value="<?= h($it['link'] ?? '') ?>" maxlength="300" placeholder="https://youtube.com/@moreiramissao">
-              </div>
-            </div>
-            <div class="campo">
-              <label class="check">
-                <input type="checkbox" data-papel="aoVivo" name="item[<?= $n ?>][aoVivo]" value="1" <?= !empty($it['aoVivo']) ? 'checked' : '' ?>>
-                Ao vivo
-              </label>
-            </div>
-            <div class="campo">
-              <label for="it<?= $n ?>-arquivo">Imagem (opcional)</label>
-              <div class="imagem">
-                <?php $temImagem = !empty($it['imagem']); ?>
-                <label for="it<?= $n ?>-arquivo" class="miniatura<?= $temImagem ? '' : ' vazia' ?>" title="Solte uma imagem aqui, cole com Ctrl+V ou clique para escolher">
-                  <?php if ($temImagem): ?>
-                    <img src="<?= h($it['imagem']) ?>" alt="">
-                  <?php else: ?>
-                    <span>solte<br>a imagem</span>
-                  <?php endif; ?>
-                </label>
-                <div class="imagem-acoes">
-                  <input id="it<?= $n ?>-arquivo" type="file" name="imagem[<?= $n ?>]" accept="image/jpeg,image/png,image/webp,image/gif">
-                  <input type="hidden" name="item[<?= $n ?>][imagem]" value="<?= h($it['imagem'] ?? '') ?>">
-                  <?php if ($temImagem): ?>
-                    <label class="check">
-                      <input type="checkbox" name="item[<?= $n ?>][remover_imagem]" value="1">
-                      Remover a imagem atual
-                    </label>
-                  <?php endif; ?>
-                  <p class="dica">JPG, PNG ou WEBP até 8 MB. Arraste para a miniatura, ou clique nela e escolha. Ela é reduzida e cortada em 16:9 no cartão; sem imagem, entra o fundo hachurado com a sigla do dia.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </details>
-        <?php endforeach; ?>
-      </div>
-      <button class="btn" type="button" id="add">+ Adicionar item</button>
+      <?php if ($itens === []): ?>
+        <p class="dica" style="margin:0">
+          Nada na programação ainda. <a href="/painel/eventos.php">Marque um encontro</a> —
+          ele entra aqui sozinho, porque o padrão é aparecer.
+        </p>
+      <?php else: ?>
+        <div class="rolagem">
+          <table class="tabela">
+            <thead><tr><th>Quando</th><th>O quê</th><th>Onde</th><th></th></tr></thead>
+            <tbody>
+              <?php foreach ($itens as $it): ?>
+                <tr>
+                  <td>
+                    <?php if (($it['inicio'] ?? '') !== ''): ?>
+                      <strong><?= h($it['dia']) ?></strong><br>
+                      <span class="dica"><?= h($it['data']) ?> · <?= h($it['hora']) ?></span>
+                    <?php else: ?>
+                      <span class="selo selo-cinza">sem horário</span>
+                    <?php endif; ?>
+                  </td>
+                  <td>
+                    <strong><?= h($it['titulo']) ?></strong>
+                    <?php if (($it['subtitulo'] ?? '') !== ''): ?>
+                      <br><span class="dica"><?= h($it['subtitulo']) ?></span>
+                    <?php endif; ?>
+                    <?php if (!empty($it['aoVivo'])): ?>
+                      <span class="selo">ao vivo</span>
+                    <?php endif; ?>
+                  </td>
+                  <td>
+                    <?php if (($it['plataforma'] ?? '') !== ''): ?>
+                      <span class="selo"><?= h(PLATAFORMAS[$it['plataforma']] ?? $it['plataforma']) ?></span>
+                    <?php endif; ?>
+                    <?php if (!empty($it['confirmar'])): ?>
+                      <span class="selo selo-ok">aceita “Vou”</span>
+                    <?php endif; ?>
+                  </td>
+                  <td><a class="btn btn-mini" href="/painel/eventos.php?e=<?= h($it['id']) ?>">Abrir</a></td>
+                </tr>
+              <?php endforeach; ?>
+            </tbody>
+          </table>
+        </div>
+      <?php endif; ?>
     </fieldset>
 
     <div class="barra acoes">
-      <button class="btn btn-ouro" type="submit">Publicar agenda</button>
+      <button class="btn btn-ouro" type="submit">Publicar</button>
       <a class="btn" href="/programacao" target="_blank" rel="noopener">Ver a página</a>
       <?php if (pode('estudio')): ?>
         <a class="btn" href="/painel/estudio.php">Estúdio de artes</a>

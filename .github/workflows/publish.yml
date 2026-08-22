@@ -54,10 +54,27 @@ jobs:
           RewriteRule ^painel/aulas/?$ /painel/aulas.php [L]
           RewriteRule ^painel/fatos/?$ /painel/fatos.php [L]
           RewriteRule ^painel/producao/?$ /painel/producao.php [L]
+          RewriteRule ^painel/municao/?$ /painel/municao.php [L]
           RewriteRule ^painel/eventos/?$ /painel/eventos.php [L]
           RewriteRule ^painel/inscricoes/?$ /painel/inscricoes.php [L]
+          RewriteRule ^painel/candidatos/?$ /painel/candidatos.php [L]
           RewriteRule ^painel/usuarios/?$ /painel/usuarios.php [L]
           RewriteRule ^painel/conta/?$ /painel/conta.php [L]
+          # Rotas antigas, com hífen. Elas estão no sitemap e circulam em link de
+          # WhatsApp: sem o 301 elas cairiam no fallback lá embaixo e devolveriam
+          # a HOME com status 200 — um soft 404, que para buscador é pior que o
+          # 404 honesto.
+          #
+          # O QSA é o que quebra em silêncio se faltar: /quero-ajudar?funcao=
+          # olheiro&de=joao-silva tem que chegar do outro lado com os dois
+          # parâmetros, senão o formulário abre em branco e o crédito de quem
+          # trouxe a pessoa se perde.
+          RewriteRule ^quero-ajudar/?$    /queroajudar   [R=301,L,QSA]
+          RewriteRule ^a-missao/?$        /amissao       [R=301,L,QSA]
+          RewriteRule ^herois-do-ceara/?$ /heroisdoceara [R=301,L,QSA]
+          # O kit virou Munição, e o nome mudou nos dois lados. O link antigo
+          # circula em grupo de WhatsApp desde antes — ele continua chegando.
+          RewriteRule ^kit/?$             /municao       [R=301,L,QSA]
           # /rota -> /rota.html, e o .html GANHA de uma pasta de mesmo nome.
           #
           # Isto não é detalhe: rota com imagem de compartilhamento própria

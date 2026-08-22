@@ -18,6 +18,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/sessao.php';
 require_once __DIR__ . '/checklists.php';
+require_once __DIR__ . '/agenda-comum.php';  // o relógio, as cores e a publicação
 
 const ARQ_EVENTOS = PASTA_DADOS . '/eventos.php';
 const ARQ_LEADS   = PASTA_DADOS . '/leads.php';
@@ -151,12 +152,48 @@ function normalizar_evento($e): ?array
         sort($feitos[$peca]);
     }
 
+    /* O INSTANTE MORA EM `inicio`, E O RESTO É DERIVADO DELE.
+       `data` e `hora` continuam gravados porque o cartão da /programacao e o
+       pôster os desenham — mas ninguém os digita: saem daqui, da mesma fonte,
+       e por isso não há como divergirem. Encontro antigo, gravado antes de
+       `inicio` existir, mantém o que tinha e cai no fim da lista. */
+    $inicio = inicio_iso($e['inicio'] ?? '');
+    if ($inicio !== '') {
+        $partes = partes_de_exibicao($inicio);
+        $data = $partes['data'];
+        $hora = $partes['hora'];
+    } else {
+        $data = limpar_texto($e['data'] ?? '', 20);
+        $hora = limpar_texto($e['hora'] ?? '', 10);
+    }
+
+    $cor = (string) ($e['cor'] ?? 'ouro');
+    if (!isset(CORES[$cor])) {
+        $cor = 'ouro';
+    }
+    $plataforma = (string) ($e['plataforma'] ?? '');
+    if (!isset(PLATAFORMAS[$plataforma])) {
+        $plataforma = '';
+    }
+
     return [
         'id'      => limpar_texto($e['id'], 40),
         'titulo'  => limpar_texto($e['titulo'], 120),
         'familia' => $familia,
-        'data'    => limpar_texto($e['data'] ?? '', 20),
-        'hora'    => limpar_texto($e['hora'] ?? '', 10),
+        'inicio'  => $inicio,
+        'data'    => $data,
+        'hora'    => $hora,
+        /* Vai para a /programacao? O padrão é SIM: o normal é o encontro ser
+           público, e a exceção — a reunião fechada, o jantar com liderança — é
+           quem desmarca. Padrão invertido faria a coordenação cadastrar o
+           encontro e ele não aparecer, sem ninguém entender por quê. */
+        'naAgenda'   => !isset($e['naAgenda']) || !empty($e['naAgenda']),
+        'subtitulo'  => limpar_texto($e['subtitulo'] ?? '', 120),
+        'cor'        => $cor,
+        'plataforma' => $plataforma,
+        'aoVivo'     => !empty($e['aoVivo']),
+        'link'       => limpar_link($e['link'] ?? ''),
+        'imagem'     => limpar_texto($e['imagem'] ?? '', 300),
         'local'   => limpar_texto($e['local'] ?? '', 120),
         'endereco' => limpar_texto($e['endereco'] ?? '', 200),
         'publicoEsperado' => max(0, (int) ($e['publicoEsperado'] ?? 0)),
@@ -164,11 +201,24 @@ function normalizar_evento($e): ?array
         'observacoes' => limpar_texto($e['observacoes'] ?? '', 600),
         'responsaveis' => $responsaveis,
         'feitos'       => $feitos,
-        // usado na URL pública de presença; não é segredo, mas não é adivinhável
+        /* DOIS TOKENS, E NÃO UM.
+           `token` é o da CHEGADA: vive só no QR impresso na mesa da recepção e
+           grava "compareceu". `tokenConfirmacao` é o do "vou": circula no grupo
+           e na /programacao, e grava só "confirmou".
+
+           Um token para os dois faria qualquer pessoa com o link do grupo se
+           marcar presente sem sair de casa — e é a lista de presença que
+           alimenta o funil D+0/D+3/D+7. Nenhum dos dois é segredo; os dois são
+           inadivinháveis. */
         'token'    => preg_replace('/[^a-f0-9]/', '', (string) ($e['token'] ?? '')) ?: '',
+        'tokenConfirmacao' => preg_replace('/[^a-f0-9]/', '', (string) ($e['tokenConfirmacao'] ?? '')) ?: '',
         'status'   => $status,
         'criadoEm'  => limpar_texto($e['criadoEm'] ?? '', 40),
         'criadoPor' => limpar_texto($e['criadoPor'] ?? '', 60),
+        /* O id do item de agenda que virou este encontro, na importação única.
+           Serve só para a importação não rodar duas vezes — o array é literal,
+           e campo fora dele some na próxima gravação. */
+        'importadoDe' => limpar_texto($e['importadoDe'] ?? '', 60),
     ];
 }
 
@@ -236,6 +286,21 @@ function evento_por_token(string $token): ?array
     return null;
 }
 
+/** O evento de um token de CONFIRMAÇÃO. Token vazio nunca casa. */
+function evento_por_confirmacao(string $token): ?array
+{
+    $token = preg_replace('/[^a-f0-9]/', '', $token) ?? '';
+    if ($token === '') {
+        return null;
+    }
+    foreach (ler_eventos() as $e) {
+        if ($e['tokenConfirmacao'] === $token) {
+            return $e;
+        }
+    }
+    return null;
+}
+
 function novo_id_evento(): string
 {
     return bin2hex(random_bytes(8));
@@ -249,38 +314,78 @@ function novo_id_evento(): string
  * nenhum. O host vem da requisição para o link funcionar igual no domínio de
  * verdade e no servidor de teste.
  */
+function raiz_do_site(): string
+{
+    $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
+    $host = (string) ($_SERVER['HTTP_HOST'] ?? 'felipesmoreira.com');
+
+    return ($https ? 'https' : 'http') . '://' . $host;
+}
+
 function url_presenca(array $evento): string
 {
     if ($evento['token'] === '') {
         return '';
     }
-    $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
-        || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
-    $host = (string) ($_SERVER['HTTP_HOST'] ?? 'felipesmoreira.com');
+    return raiz_do_site() . '/presenca?e=' . $evento['token'];
+}
 
-    return ($https ? 'https' : 'http') . '://' . $host . '/presenca?e=' . $evento['token'];
+/**
+ * A chave de ordenação de um encontro.
+ *
+ * Comparar `data` como texto ("29/07") era o defeito antigo da agenda: sem ano,
+ * sem hora, e dois encontros no mesmo dia saíam em ordem aleatória. Agora sai do
+ * instante. Encontro velho sem `inicio` cai no fim (a data mais alta possível),
+ * que é onde ele já ficava.
+ */
+function quando_do_evento(array $e): int
+{
+    if ($e['inicio'] !== '' && ($t = strtotime($e['inicio'])) !== false) {
+        return $t;
+    }
+    if ($e['data'] !== '' && ($t = strtotime($e['data'])) !== false) {
+        return $t;
+    }
+    return PHP_INT_MAX;
+}
+
+/**
+ * O link de "vou" — o que circula no grupo e sai na /programacao.
+ *
+ * Absoluto pela mesma razão do QR: ele vai colado numa mensagem de WhatsApp,
+ * fora de qualquer página nossa, e caminho relativo ali não leva a lugar nenhum.
+ */
+function url_confirmacao(array $evento): string
+{
+    if ($evento['tokenConfirmacao'] === '') {
+        return '';
+    }
+    return raiz_do_site() . '/presenca?c=' . $evento['tokenConfirmacao'];
 }
 
 /** Eventos que ainda vão acontecer, do mais próximo para o mais distante. */
 function eventos_proximos(): array
 {
-    $hoje = date('Y-m-d');
     $lista = array_values(array_filter(
         ler_eventos(),
-        fn ($e) => $e['status'] !== 'cancelado' && ($e['data'] === '' || $e['data'] >= $hoje)
+        fn ($e) => $e['status'] !== 'cancelado'
+            && estado_do_evento($e['inicio']) !== 'passado'
+            && ($e['inicio'] !== '' || $e['data'] === '' || $e['data'] >= date('Y-m-d'))
     ));
-    usort($lista, fn ($a, $b) => strcmp($a['data'], $b['data']));
+    usort($lista, fn ($a, $b) => quando_do_evento($a) <=> quando_do_evento($b));
     return $lista;
 }
 
 function eventos_passados(): array
 {
-    $hoje = date('Y-m-d');
     $lista = array_values(array_filter(
         ler_eventos(),
-        fn ($e) => $e['status'] === 'cancelado' || ($e['data'] !== '' && $e['data'] < $hoje)
+        fn ($e) => $e['status'] === 'cancelado'
+            || estado_do_evento($e['inicio']) === 'passado'
+            || ($e['inicio'] === '' && $e['data'] !== '' && $e['data'] < date('Y-m-d'))
     ));
-    usort($lista, fn ($a, $b) => strcmp($b['data'], $a['data']));
+    usort($lista, fn ($a, $b) => quando_do_evento($b) <=> quando_do_evento($a));
     return $lista;
 }
 
@@ -301,6 +406,86 @@ function preparo_do_evento(array $evento): array
         ));
     }
     return ['feito' => $feito, 'total' => $total];
+}
+
+/* ===================== o que vai para o site ===================== */
+
+/**
+ * O encontro visto de fora — o item que entra no `dados/agenda.json`.
+ *
+ * **Lista de permissão, e não de bloqueio.** O `agenda.json` é o ÚNICO arquivo
+ * de /dados liberado pelo .htaccess: qualquer campo que caia aqui fica aberto
+ * na internet. Enumerar o que sai (e não o que fica) é o que garante que um
+ * campo novo no encontro nunca vaze por esquecimento — ele simplesmente não
+ * aparece até alguém escrevê-lo nesta lista, de propósito.
+ *
+ * Por isso `endereco`, `orcamento`, `observacoes`, `responsaveis` e
+ * `publicoEsperado` não estão aqui, e `local` está: o local é o nome público do
+ * lugar ("Praça do Ferreira"), que é a informação de que o eleitor precisa; o
+ * endereço completo pode ser a casa de alguém.
+ */
+function item_publico(array $e): array
+{
+    $item = [
+        'id'         => $e['id'],
+        'titulo'     => $e['titulo'],
+        'subtitulo'  => $e['subtitulo'] !== '' ? $e['subtitulo'] : $e['local'],
+        'inicio'     => $e['inicio'],
+        'dia'        => '',
+        'data'       => $e['data'],
+        'hora'       => $e['hora'],
+        'aoVivo'     => $e['aoVivo'],
+        'cor'        => $e['cor'],
+        'plataforma' => $e['plataforma'],
+        'imagem'     => $e['imagem'],
+        'link'       => $e['link'],
+        'interno'    => $e['link'] !== '' && $e['link'][0] === '/',
+    ];
+    if ($e['inicio'] !== '') {
+        $item['dia'] = partes_de_exibicao($e['inicio'])['dia'];
+    }
+
+    /* O "Vou" do cartão público. Só em encontro presencial que ainda vai
+       acontecer: numa live o botão útil é o link da transmissão, que já está
+       ali, e num encontro que passou confirmar presença não quer dizer nada. */
+    if ($e['familia'] !== 'digital'
+        && $e['tokenConfirmacao'] !== ''
+        && estado_do_evento($e['inicio']) === 'futuro') {
+        $item['confirmar'] = $e['tokenConfirmacao'];
+    }
+    return $item;
+}
+
+/** Os encontros que a /programacao mostra, na ordem. */
+function itens_publicos(): array
+{
+    $lista = array_values(array_filter(
+        ler_eventos(),
+        fn ($e) => $e['naAgenda'] && $e['status'] !== 'cancelado'
+    ));
+    usort($lista, fn ($a, $b) => quando_do_evento($a) <=> quando_do_evento($b));
+    return array_map('item_publico', $lista);
+}
+
+/**
+ * Regrava o `dados/agenda.json` a partir dos encontros.
+ *
+ * Chamado a cada gravação de encontro, e não por um botão "publicar": editar o
+ * encontro já exige coordenação, então não há revisão a mais para fazer — e
+ * "esqueci de publicar" deixa de ser um jeito de o site ficar desatualizado.
+ * A capa (título, período, chamada, canais) continua vindo do agenda.php.
+ */
+function republicar_agenda(): bool
+{
+    $agenda = agenda_atual();
+    $agenda['programacao'] = itens_publicos();
+    if (!publicar($agenda)) {
+        return false;
+    }
+    /* A varredura olha TODOS os encontros, não só os publicados: o encontro
+       fechado não entra no agenda.json e tem imagem do mesmo jeito. */
+    varrer_imagens_orfas(array_column(ler_eventos(), 'imagem'));
+    return true;
 }
 
 /* ===================== pessoas do evento ===================== */
@@ -334,6 +519,7 @@ function normalizar_lead($l): ?array
         'nome'     => limpar_texto($l['nome'], 80),
         'telefone' => so_digitos($l['telefone'] ?? ''),
         'bairro'   => limpar_texto($l['bairro'] ?? '', 60),
+        'cidade'   => limpar_texto($l['cidade'] ?? '', 60),
         'convidadoPor' => limpar_texto($l['convidadoPor'] ?? '', 60),
         'classe'   => $classe,
         'observacao' => limpar_texto($l['observacao'] ?? '', 300),
@@ -400,6 +586,23 @@ function novo_id_lead(): string
     return bin2hex(random_bytes(8));
 }
 
+/**
+ * Todas as fichas daquele telefone, de QUALQUER encontro.
+ *
+ * `lead_por_telefone()` só olha dentro de um evento, que é o certo para o
+ * dedupe. Esta olha o histórico inteiro — é o que permite a pessoa que já veio
+ * a cinco encontros digitar só o WhatsApp e não redigitar nome, bairro e cidade
+ * pela sexta vez.
+ */
+function presencas_por_telefone(string $telefone): array
+{
+    $telefone = so_digitos($telefone);
+    if ($telefone === '') {
+        return [];
+    }
+    return array_values(array_filter(ler_leads(), fn ($l) => $l['telefone'] === $telefone));
+}
+
 /** Mesmo telefone não entra duas vezes no mesmo evento. */
 function lead_por_telefone(string $eventoId, string $telefone): ?array
 {
@@ -413,6 +616,97 @@ function lead_por_telefone(string $eventoId, string $telefone): ?array
         }
     }
     return null;
+}
+
+/**
+ * A ficha DAQUELA PESSOA neste encontro — telefone e nome juntos.
+ *
+ * `lead_por_telefone()` responde "este número já está aqui?", que é a pergunta
+ * certa para não duplicar. Mas quando duas pessoas dividem o celular (casa,
+ * casal), ela devolve a primeira das duas — e marcar presença pela escolha da
+ * tela acabava marcando a pessoa errada. Aqui o nome entra na chave.
+ */
+function lead_da_pessoa(string $eventoId, string $telefone, string $nome): ?array
+{
+    $telefone = so_digitos($telefone);
+    $alvo = mb_strtolower(sem_acento($nome));
+    if ($telefone === '' || $alvo === '') {
+        return null;
+    }
+    foreach (ler_leads() as $l) {
+        if ($l['eventoId'] === $eventoId
+            && $l['telefone'] === $telefone
+            && mb_strtolower(sem_acento($l['nome'])) === $alvo) {
+            return $l;
+        }
+    }
+    return null;
+}
+
+/**
+ * As pessoas do movimento vistas de cima, agrupadas por telefone.
+ *
+ * A lista por encontro responde "quem veio nesse". Esta responde as perguntas
+ * que só existem no conjunto: quem nunca falta, quem confirma e não aparece,
+ * quem veio uma vez e sumiu. São elas que dizem em quem investir o convite.
+ *
+ * O agrupamento é por telefone + nome, e não só por telefone: casa que divide
+ * celular tem duas pessoas no mesmo número, e somá-las inventaria um militante
+ * que vai a tudo.
+ */
+function pessoas_agrupadas(): array
+{
+    $eventos = [];
+    foreach (ler_eventos() as $e) {
+        $eventos[$e['id']] = $e;
+    }
+
+    $por = [];
+    foreach (ler_leads() as $l) {
+        $evento = $eventos[$l['eventoId']] ?? null;
+        if ($evento === null || $evento['status'] === 'cancelado') {
+            continue;
+        }
+        $chave = $l['telefone'] . '|' . mb_strtolower(sem_acento($l['nome']));
+        if (!isset($por[$chave])) {
+            $por[$chave] = [
+                'nome' => $l['nome'], 'telefone' => $l['telefone'],
+                'bairro' => $l['bairro'], 'cidade' => $l['cidade'],
+                'classe' => $l['classe'], 'criadoPorId' => $l['criadoPorId'],
+                'veio' => 0, 'confirmou' => 0, 'faltou' => 0, 'convites' => 0,
+                'ultimo' => '',
+            ];
+        }
+        $r = &$por[$chave];
+        $r['convites']++;
+        if ($l['compareceu']) {
+            $r['veio']++;
+            /* O último em que ela apareceu, para saber há quanto tempo sumiu. */
+            $quando = $evento['inicio'] !== '' ? $evento['inicio'] : $evento['data'];
+            if ($quando > $r['ultimo']) {
+                $r['ultimo'] = $quando;
+            }
+        } elseif ($l['confirmou']) {
+            $r['faltou']++;
+        }
+        if ($l['confirmou']) {
+            $r['confirmou']++;
+        }
+        /* A ficha mais recente manda no bairro/cidade: se a pessoa se mudou, foi
+           na última vez que ela disse onde mora. */
+        if ($l['bairro'] !== '') {
+            $r['bairro'] = $l['bairro'];
+        }
+        if ($l['cidade'] !== '') {
+            $r['cidade'] = $l['cidade'];
+        }
+        unset($r);
+    }
+
+    /* Quem mais vem primeiro; empate desempata por quem mais faltou, que é
+       quem a coordenação precisa ligar. */
+    uasort($por, fn ($a, $b) => [$b['veio'], $b['faltou']] <=> [$a['veio'], $a['faltou']]);
+    return array_values($por);
 }
 
 /* ===================== funil de follow-up ===================== */
@@ -469,7 +763,7 @@ function pode_ver_telefone(array $lead, ?array $eu): bool
     return pode('agenda') || ($lead['criadoPorId'] !== '' && $lead['criadoPorId'] === $eu['id']);
 }
 
-/** 85997223863 -> (85) 9••••-••63 */
+/** 85912345678 -> (85) 9••••-••78 */
 function telefone_encoberto(string $telefone): string
 {
     $d = so_digitos($telefone);

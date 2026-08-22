@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   title: "Quero ajudar",
   description:
     "Inscreva-se para ajudar a militância da Missão Ceará. Escolha como quer contribuir — comunicação, eventos ou onde precisar — e a coordenação entra em contato.",
-  alternates: { canonical: "https://felipesmoreira.com/quero-ajudar" },
+  alternates: { canonical: "https://felipesmoreira.com/queroajudar" },
   openGraph: {
     title: "Quero ajudar — Missão Ceará",
     description:

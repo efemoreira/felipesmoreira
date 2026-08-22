@@ -14,6 +14,9 @@ import {
   validarNome,
   validarTelefone,
 } from "./validacao";
+import { GRUPO_GERAL, WHATSAPP_COORDENACAO, TELEFONE_COORDENACAO } from "@/lib/contato";
+import { compartilharTexto } from "@/lib/compartilhar";
+import { slugDe, SITE, CHAVE_NOME } from "@/features/kit/data";
 
 const CATALOGO = catalogo as CatalogoFuncoes;
 const ORDEM_GRUPOS: GrupoFuncao[] = ["comunicacao", "eventos", "outro"];
@@ -39,6 +42,17 @@ const ROTULOS: Record<CampoTexto, string> = {
   cidade: "Cidade",
   bairro: "Bairro",
 };
+
+/**
+ * O rascunho dos campos, na sessão da aba.
+ *
+ * Exportado porque a página de presença grava nesta MESMA chave para mandar
+ * quem confirmou presença ao formulário sem redigitar nada (ver
+ * `levarParaAjudar()` em PresencaClient). Duas cópias da string divergiriam na
+ * primeira vez que alguém a renomeasse, e o defeito seria silencioso: o
+ * formulário simplesmente abriria vazio.
+ */
+export const CHAVE_RASCUNHO = "inscricao-campos";
 
 export default function InscricaoClient() {
   const [passo, setPasso] = useState(1);
@@ -81,10 +95,39 @@ export default function InscricaoClient() {
     if (daUrl) {
       origem.current = daUrl;
       try { sessionStorage.setItem("de", daUrl); } catch { /* aba anônima */ }
-      return;
+    } else {
+      try { origem.current = sessionStorage.getItem("de") ?? ""; } catch { /* idem */ }
     }
-    try { origem.current = sessionStorage.getItem("de") ?? ""; } catch { /* idem */ }
+
+    /* O que a pessoa já digitou também sobrevive ao F5, pela mesma razão que o
+       `de` sobrevive: recarregar no passo 2 apagava tudo e ela recomeçava do
+       zero — em pé, no celular, isso é a inscrição que não acontece.
+       `sessionStorage` e não `localStorage`: some ao fechar a aba, que é o
+       certo para dado de gente num celular que pode ser emprestado.
+
+       Vem também da ponte da presença (`/presenca` → "quer ajudar?"), que
+       grava a mesma chave para a pessoa não redigitar o que acabou de dizer
+       na porta do encontro. */
+    try {
+      const guardado = sessionStorage.getItem(CHAVE_RASCUNHO);
+      if (guardado) {
+        const d = JSON.parse(guardado) as Partial<Record<CampoTexto, string>>;
+        setCampos((c) => {
+          const novo = { ...c };
+          for (const k of Object.keys(c) as CampoTexto[]) {
+            if (typeof d[k] === "string") novo[k] = d[k] as string;
+          }
+          return novo;
+        });
+      }
+    } catch { /* json torto ou aba anônima: começa em branco, sem quebrar */ }
   }, []);
+
+  /* Grava a cada tecla. É barato (um JSON de cinco campos curtos) e é o único
+     jeito de não perder o que foi digitado desde o último passo. */
+  useEffect(() => {
+    try { sessionStorage.setItem(CHAVE_RASCUNHO, JSON.stringify(campos)); } catch { /* idem */ }
+  }, [campos]);
 
   const tituloRef = useRef<HTMLHeadingElement>(null);
   const refs = useRef<Partial<Record<CampoTexto, HTMLInputElement | null>>>({});
@@ -156,11 +199,10 @@ export default function InscricaoClient() {
   const avancar = () => {
     setErroGeral(null);
     if (passo === 1) {
-      if (funcoes.length === 0) {
-        setErroGeral("Escolha pelo menos uma forma de ajudar. Se estiver em dúvida, marque “Onde precisar”.");
-        listaFuncoesRef.current?.focus();
-        return;
-      }
+      /* Escolher função é OPCIONAL de propósito. Quem chegou disposto e ainda
+         não sabe onde encaixa é militante do mesmo jeito — barrar a inscrição
+         por causa de uma linha de relatório troca um militante novo por um
+         campo preenchido. Sem escolha, a aprovação assume "Onde precisar". */
       setPasso(2);
       return;
     }
@@ -205,6 +247,10 @@ export default function InscricaoClient() {
         setErroGeral(json?.erro ?? "Não deu para enviar agora. Confira sua internet e tente de novo.");
         return;
       }
+      /* Inscrição feita: o rascunho não tem mais razão de existir, e deixá-lo
+         faria a próxima pessoa a usar o mesmo celular abrir o formulário com os
+         dados de quem veio antes. */
+      try { sessionStorage.removeItem(CHAVE_RASCUNHO); } catch { /* aba anônima */ }
       setEnvio("pronto");
     } catch {
       setEnvio("erro");
@@ -268,6 +314,10 @@ export default function InscricaoClient() {
               Não precisa ter experiência: o movimento ensina quem chega. Toque
               em <strong>ver detalhes</strong> pra entender o que cada função faz no dia a dia.
             </p>
+            <p className="in-ajuda in-ajuda-pular">
+              <strong>Não sabe ainda?</strong> Pode seguir sem marcar nada — a coordenação
+              conversa com você e encaixa onde fizer sentido.
+            </p>
 
             {ORDEM_GRUPOS.map((g) => {
               const lista = porGrupo.get(g) ?? [];
@@ -311,7 +361,7 @@ export default function InscricaoClient() {
             />
             <Campo
               campo="telefone" valor={campos.telefone} erro={tocado.telefone ? erros.telefone : ""}
-              dica="Com DDD. Exemplo: (85) 99722-3863"
+              dica="Com DDD. Exemplo: (85) 91234-5678"
               tipo="tel" autoComplete="tel-national" inputMode="numeric"
               aoMudar={mudar} aoSair={aoSair} refs={refs}
             />
@@ -340,17 +390,26 @@ export default function InscricaoClient() {
         {passo === 3 && (
           <div className="in-confirma">
             <div className="in-resumo">
-              <h3 className="in-resumo-titulo">Você escolheu ajudar em</h3>
-              <ul className="in-resumo-funcoes">
-                {escolhidas.map((f) => (
-                  <li key={f.id}>
-                    <Icon name={f.icone as IconName} size={18} />
-                    <span>{f.nome}</span>
-                  </li>
-                ))}
-              </ul>
+              <h3 className="in-resumo-titulo">
+                {escolhidas.length > 0 ? "Você escolheu ajudar em" : "Onde você vai ajudar"}
+              </h3>
+              {escolhidas.length > 0 ? (
+                <ul className="in-resumo-funcoes">
+                  {escolhidas.map((f) => (
+                    <li key={f.id}>
+                      <Icon name={f.icone as IconName} size={18} />
+                      <span>{f.nome}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="in-ajuda" style={{ margin: "10px 0 0" }}>
+                  Você não escolheu função — tudo bem. A coordenação conversa com você
+                  e encaixa onde fizer sentido.
+                </p>
+              )}
               <button type="button" className="in-editar" onClick={() => setPasso(1)}>
-                Mudar as funções
+                {escolhidas.length > 0 ? "Mudar as funções" : "Escolher uma função"}
               </button>
             </div>
 
@@ -394,11 +453,10 @@ export default function InscricaoClient() {
                 <li>
                   <strong>Você manda neles:</strong> pode pedir pra ver, corrigir ou
                   apagar tudo, e pode desistir quando quiser — é só falar no{" "}
-                  <a href="https://wa.me/5585981872972" target="_blank" rel="noopener noreferrer">
-                    WhatsApp
-                  </a>{" "}
-                  ou mandar e-mail pra{" "}
-                  <a href="mailto:contato@felipesmoreira.com">contato@felipesmoreira.com</a>.
+                  <a href={WHATSAPP_COORDENACAO} target="_blank" rel="noopener noreferrer">
+                    WhatsApp {TELEFONE_COORDENACAO}
+                  </a>
+                  .
                 </li>
               </ul>
               <p className="in-lgpd-link">
@@ -597,6 +655,30 @@ const Campo: React.FC<{
  */
 const Sucesso: React.FC<{ nome: string; escolhidas: Funcao[] }> = ({ nome, escolhidas }) => {
   const primeiro = nome.trim().split(" ")[0] || "companheiro";
+  const [convite, setConvite] = useState("Mandar o convite");
+
+  /* A pessoa acabou de digitar o nome dela no formulário: o crédito sai daqui
+     sem pedir nada de novo. E fica guardado para o mutirão não perguntar de
+     novo depois — era o mesmo nome, digitado duas vezes, em duas páginas. */
+  const slug = slugDe(nome);
+  useEffect(() => {
+    if (slug === "") return;
+    try { localStorage.setItem(CHAVE_NOME, nome.trim()); } catch { /* aba anônima */ }
+  }, [nome, slug]);
+
+  const convidar = async () => {
+    const url = `${SITE}/queroajudar${slug === "" ? "" : `?de=${slug}`}`;
+    const texto =
+      "Entrei na militância da Missão no Ceará. É gente organizada de verdade, " +
+      "com plano de governo escrito e função pra cada um. Dá uma olhada:";
+    const r = await compartilharTexto(texto, url);
+    if (r === "copiou") setConvite("Link copiado!");
+    else if (r === "falhou") setConvite("Não deu — copie o link da barra");
+    if (r === "copiou" || r === "falhou") {
+      window.setTimeout(() => setConvite("Mandar o convite"), 4000);
+    }
+  };
+
   return (
     <div className="in-fundo">
       <main className="in-main in-sucesso">
@@ -609,12 +691,12 @@ const Sucesso: React.FC<{ nome: string; escolhidas: Funcao[] }> = ({ nome, escol
             <>
               Sua inscrição para{" "}
               <strong>{escolhidas.map((f) => f.nome).join(" e ")}</strong> está com a
-              coordenação. Enquanto ela confere, tem três coisas que você já pode fazer.
+              coordenação. Enquanto ela confere, tem quatro coisas que você já pode fazer.
             </>
           ) : (
             <>
-              Sua inscrição está com a coordenação. Enquanto ela confere, tem três coisas que você
-              já pode fazer.
+              Sua inscrição está com a coordenação. Enquanto ela confere, tem quatro coisas
+              que você já pode fazer.
             </>
           )}
         </p>
@@ -624,16 +706,16 @@ const Sucesso: React.FC<{ nome: string; escolhidas: Funcao[] }> = ({ nome, escol
           <li>
             <b>1</b>
             <span>
-              <strong>Entre no grupo.</strong> Manda a palavra <strong>EQUIPE</strong> no WhatsApp
-              da coordenação — é uma palavra, sem formulário. É ali que sai a convocação da semana.
+              <strong>Entre no grupo.</strong> É onde sai a convocação da semana e o aviso de
+              cada encontro. Entrada direta, sem esperar ninguém aprovar nada.
               <a
                 className="in-passo-link"
-                href="https://wa.me/5585981872972?text=EQUIPE"
+                href={GRUPO_GERAL}
                 target="_blank"
                 rel="noopener noreferrer"
               >
                 <Icon name="whatsapp" size={15} />
-                Mandar EQUIPE agora
+                Entrar no grupo agora
               </a>
             </span>
           </li>
@@ -651,12 +733,24 @@ const Sucesso: React.FC<{ nome: string; escolhidas: Funcao[] }> = ({ nome, escol
           <li>
             <b>3</b>
             <span>
-              <strong>Comece a espalhar.</strong> No kit tem arte e texto prontos, cada um com a
+              <strong>Comece a espalhar.</strong> Na Munição tem arte e texto prontos, cada um com a
               página do plano. Põe seu nome lá e a coordenação vê quem você trouxe.
-              <Link className="in-passo-link" href="/kit">
+              <Link className="in-passo-link" href="/municao">
                 <Icon name="broadcast" size={15} />
-                Abrir o kit
+                Abrir a Munição
               </Link>
+            </span>
+          </li>
+          <li>
+            <b>4</b>
+            <span>
+              <strong>Chame mais gente.</strong> Manda o link pra quem você sabe que ia
+              querer estar junto. Ele já vai com o seu nome — a coordenação vê quem
+              trouxe cada pessoa.
+              <button type="button" className="in-passo-link" onClick={convidar}>
+                <Icon name="whatsapp" size={15} />
+                {convite}
+              </button>
             </span>
           </li>
         </ol>
@@ -671,7 +765,7 @@ const Sucesso: React.FC<{ nome: string; escolhidas: Funcao[] }> = ({ nome, escol
         <div className="in-acoes">
           <a
             className="in-btn in-btn-principal"
-            href="https://wa.me/5585981872972?text=EQUIPE"
+            href={GRUPO_GERAL}
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -778,6 +872,11 @@ const css = `
     padding: 12px 14px;
   }
   .in-erro-geral svg { flex: 0 0 auto; margin-top: 2px; }
+
+  .in-ajuda-pular {
+    border-left: 3px solid ${C.goldDim};
+    padding-left: 12px;
+  }
 
   /* ---- passo 1: funções ---- */
   .in-grupos { outline: none; }
@@ -991,6 +1090,11 @@ const css = `
     min-height: 44px; margin-top: 6px; font-family: ${FONT_ELITE}; font-size: 12px;
     letter-spacing: 1.2px; text-transform: uppercase;
     color: ${C.ink}; text-decoration: underline; text-underline-offset: 3px;
+  }
+  /* O passo 4 é <button> (chama a Web Share API), os outros são <a>. Sem este
+     reset o navegador desenha caixa cinza de botão no meio de três links. */
+  button.in-passo-link {
+    background: none; border: 0; padding: 0; cursor: pointer; text-align: left;
   }
   .in-aviso { font-size: 14px; line-height: 1.6; opacity: .8; margin: 20px 0 0; }
   .in-sucesso .in-acoes { justify-content: center; }

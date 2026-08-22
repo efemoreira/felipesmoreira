@@ -23,6 +23,12 @@ const ARQ_FUNCOES    = __DIR__ . '/../funcoes.json';
 const VERSAO_CONSENTIMENTO = '1';
 
 /** Teto por IP: segura enxurrada sem atrapalhar a família que se inscreve junta. */
+/* A mesa da recepção: uma fila inteira sai do mesmo Wi‑Fi do local, em minutos.
+   Alto o bastante para um encontro de verdade caber, baixo o bastante para
+   quem quisesse varrer faixas de telefone não ter tentativa infinita. */
+const LIMITE_PRESENCA_HORA = 60;
+const LIMITE_PRESENCA_DIA  = 400;
+
 const LIMITE_POR_HORA = 5;
 const LIMITE_POR_DIA  = 20;
 
@@ -91,7 +97,7 @@ function areas_sugeridas(array $funcoes): array
 /* ===================== inscrições ===================== */
 
 /**
- * De onde veio a inscrição — o `?de=` da URL de /quero-ajudar.
+ * De onde veio a inscrição — o `?de=` da URL de /queroajudar.
  *
  * Carrega duas perguntas no mesmo campo, porque na prática são a mesma:
  * `?de=joao-silva` diz **quem trouxe**, `?de=live-domingo` diz **de onde veio**.
@@ -372,24 +378,38 @@ function estado_limite(): array
     return is_array($v) ? $v : [];
 }
 
-/** true quando o visitante já passou do teto e deve ser barrado. */
-function passou_do_limite(): bool
+/**
+ * true quando o visitante já passou do teto e deve ser barrado.
+ *
+ * O ESCOPO existe porque os dois usos não se parecem em nada.
+ *
+ * A inscrição é uma vez na vida por pessoa: cinco por hora do mesmo endereço já
+ * é comportamento estranho. A presença é uma fila numa porta — trinta pessoas
+ * lendo o mesmo QR, quase todas no mesmo Wi‑Fi do local, no mesmo quarto de
+ * hora. Com o teto da inscrição, a sexta pessoa da fila levaria "você já se
+ * cadastrou há pouco" e iria embora sem entrar na lista.
+ *
+ * O teto da presença continua existindo (a busca por telefone devolve nome, e
+ * sem teto isso seria um oráculo para varrer faixas de número), só é alto o
+ * bastante para caber um evento de verdade.
+ */
+function passou_do_limite(string $escopo = 'inscricao', int $porHora = LIMITE_POR_HORA, int $porDia = LIMITE_POR_DIA): bool
 {
     $agora = time();
-    $reg = estado_limite()[chave_visitante()] ?? null;
+    $reg = estado_limite()[chave_visitante() . ':' . $escopo] ?? null;
     if (!is_array($reg)) {
         return false;
     }
     $hora = array_filter((array) ($reg['envios'] ?? []), fn ($t) => $t > $agora - 3600);
     $dia  = array_filter((array) ($reg['envios'] ?? []), fn ($t) => $t > $agora - 86400);
-    return count($hora) >= LIMITE_POR_HORA || count($dia) >= LIMITE_POR_DIA;
+    return count($hora) >= $porHora || count($dia) >= $porDia;
 }
 
-function registrar_envio(): void
+function registrar_envio(string $escopo = 'inscricao'): void
 {
     preparar_pastas();
     $agora = time();
-    $chave = chave_visitante();
+    $chave = chave_visitante() . ':' . $escopo;
     $tudo = estado_limite();
 
     $envios = (array) ($tudo[$chave]['envios'] ?? []);

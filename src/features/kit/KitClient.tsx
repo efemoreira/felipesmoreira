@@ -7,14 +7,12 @@ import { canvasParaBlob } from "@/lib/cordelCanvas";
 import { faseEm } from "@/lib/eleicao";
 import { RECADOS } from "./calendario";
 import { comoPeca, obterPecasDoPainel } from "@/lib/api/kit";
-import { pecas as pecasFixas, slugDe, type Peca } from "./data";
+import { pecas as pecasFixas, slugDe, type Peca, SITE, CHAVE_NOME } from "./data";
 import { FORMATOS, gerarCartao, nomeArquivo, type Formato } from "./cartao";
 
-const SITE = "https://felipesmoreira.com";
-const CHAVE_NOME = "kit-nome";
 
 /**
- * O kit do mutirão digital.
+ * A Munição do mutirão digital — o antigo “kit de compartilhamento”.
  *
  * O manual (§5.5) descreve o mutirão como coordenação manual no WhatsApp:
  * alguém posta a arte no grupo, todo mundo baixa e cola o texto na mão. Esta
@@ -33,7 +31,7 @@ export default function KitClient() {
   const urlPreview = useRef<Map<string, string>>(new Map());
 
   /* A fase da eleição é lida no navegador, nunca no build: num export estático
-     a data de compilação ficaria congelada, e no dia 4 de outubro o kit ainda
+     a data de compilação ficaria congelada, e no dia 4 de outubro a página ainda
      estaria dizendo o que dizia em agosto. Começa em null para o HTML gerado e
      o primeiro render do cliente baterem. */
   const [recado, setRecado] = useState<(typeof RECADOS)[keyof typeof RECADOS]>(null);
@@ -184,7 +182,7 @@ export default function KitClient() {
               textWrap: "balance",
             }}
           >
-            Kit de compartilhamento
+            Munição
           </h1>
           <p style={{ fontSize: 16.5, lineHeight: 1.6, margin: 0, maxWidth: "58ch", opacity: 0.92 }}>
             {recado?.bloqueiaPecas ? (

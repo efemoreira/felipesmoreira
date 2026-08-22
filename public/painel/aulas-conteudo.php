@@ -6,7 +6,7 @@ declare(strict_types=1);
  *
  * Traduzido do update/Manual-da-Militancia.md para linguagem de quem está
  * chegando, do mesmo jeito que o funcoes.json traduz o jargão interno para o
- * formulário de /quero-ajudar.
+ * formulário de /queroajudar.
  *
  * ORGANIZAÇÃO — Pista Rápida e Pista Lenta:
  *   Cada Dia abre com UMA aula de Pista Rápida (pista => 'rapida'), que é o

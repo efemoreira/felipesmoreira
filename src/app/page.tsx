@@ -4,6 +4,8 @@ import Link from "next/link";
 import { Icon, IconName } from "@/components/icons";
 import { C, FONT_ALFA, FONT_ELITE, FONT_BITTER } from "@/lib/theme";
 import { FaixaEleicao } from "@/components/FaixaEleicao";
+import { SigaCandidatos } from "@/features/candidatos/SigaCandidatos";
+import { GRUPO_GERAL } from "@/lib/contato";
 
 const profile = {
   name: "Felipe Moreira",
@@ -25,14 +27,17 @@ type LinkCard = {
 };
 
 /**
- * O primeiro degrau da escada: uma palavra no privado, sem formulário nenhum.
+ * O primeiro degrau da escada: entrar no grupo, sem formulário nenhum.
  *
- * É o mesmo destino do passo 2 do /plano — a conversa de três minutos com a
- * coordenação. Provisório de propósito: assim que a Comunidade do WhatsApp
- * tiver link de convite, **troque só esta constante** por ele. O degrau de
- * entrada não deve depender de uma pessoa estar disponível pra responder.
+ * Era "manda a palavra EQUIPE" para o WhatsApp da coordenação — o degrau
+ * dependia de uma pessoa estar disponível pra responder, e quem chegava de
+ * madrugada esperava até o dia seguinte. Agora é o link do grupo, que resolve
+ * na hora.
+ *
+ * É o **geral**, e não o de trabalho: quem clica aqui ainda não decidiu nada, e
+ * o grupo de trabalho é de quem já tem conta no painel. Ver `@/lib/contato`.
  */
-const PRIMEIRO_DEGRAU = "https://wa.me/5585981872972?text=EQUIPE";
+const PRIMEIRO_DEGRAU = GRUPO_GERAL;
 
 /**
  * Um cartão em destaque, não três.
@@ -47,9 +52,9 @@ const links: LinkCard[] = [
   {
     icon: "bolt",
     title: "Entrar pro grupo",
-    subtitle: "Manda a palavra EQUIPE e a gente te chama",
+    subtitle: "O grupo de quem acompanha a Missão no Ceará",
     description:
-      "O primeiro passo é uma palavra no WhatsApp da coordenação. Sem formulário, sem link, sem burocracia",
+      "O primeiro passo é entrar no grupo do WhatsApp. Sem formulário, sem cadastro, sem esperar ninguém responder",
     href: PRIMEIRO_DEGRAU,
     accent: true,
   },
@@ -59,7 +64,7 @@ const links: LinkCard[] = [
     subtitle: "Quem eu sou e por que me candidatei",
     description:
       "De militante de internet no MBL a candidato a Vice-Governador do Ceará: a trajetória e o motivo",
-    href: "/a-missao",
+    href: "/amissao",
     internal: true,
   },
   {
@@ -86,7 +91,7 @@ const links: LinkCard[] = [
     subtitle: "Escolha sua função na militância",
     description:
       "Escolha como quer ajudar o movimento no Ceará — comunicação, eventos ou onde precisar — e a coordenação entra em contato",
-    href: "/quero-ajudar",
+    href: "/queroajudar",
     internal: true,
   },
   {
@@ -104,15 +109,8 @@ const links: LinkCard[] = [
     subtitle: "Cordel dos que fizeram nossa história",
     description:
       "Conheça os heróis históricos do Ceará, suas histórias, legados e impactos na formação cultural do estado",
-    href: "/herois-do-ceara",
+    href: "/heroisdoceara",
     internal: true,
-  },
-  {
-    icon: "mail",
-    title: "E-mail",
-    subtitle: "contato@felipesmoreira.com",
-    description: "Envie um e-mail para contato@felipesmoreira.com com suas mensagens e propostas",
-    href: "mailto:contato@felipesmoreira.com",
   },
 ];
 
@@ -251,6 +249,13 @@ const Home: React.FC = () => {
           <FaixaEleicao />
         </div>
 
+        {/* Quem são os candidatos e em que número votar. Vem logo depois da
+            faixa e antes dos cartões porque responde a mesma pergunta que ela —
+            e some sozinho enquanto não houver ninguém publicado no painel. */}
+        <div style={{ marginBottom: 20 }}>
+          <SigaCandidatos />
+        </div>
+
         {/* Cartões de links */}
         <nav
           style={{ display: "flex", flexDirection: "column", gap: 14 }}
@@ -347,10 +352,10 @@ const Home: React.FC = () => {
               decidindo por onde eles podem ou não andar. Ali entendi que não bastava reclamar
               pela tela.
             </p>
-            {/* O resto da história mora em /a-missao, e só lá. Texto repetido em
+            {/* O resto da história mora em /amissao, e só lá. Texto repetido em
                 dois lugares é texto que diverge na terceira alteração. */}
             <Link
-              href="/a-missao"
+              href="/amissao"
               style={{
                 display: "inline-flex",
                 alignItems: "center",

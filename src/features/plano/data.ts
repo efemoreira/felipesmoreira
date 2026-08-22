@@ -4,7 +4,7 @@ import type { IconName } from "@/components/icons";
 
 export const escada: { icon: IconName; passo: string; titulo: string; detalhe: string }[] = [
   { icon: "flag",           passo: "Passo 1", titulo: "Reagir com 🚩",              detalhe: "Um clique na mensagem do grupo. É o primeiro sinal de vida." },
-  { icon: "bolt",           passo: "Passo 2", titulo: "Mandar a palavra EQUIPE",     detalhe: "Uma palavra no privado do Levi. Sem link, sem formulário, sem burocracia." },
+  { icon: "bolt",           passo: "Passo 2", titulo: "Entrar no grupo",             detalhe: "Um toque no link e você está dentro. Sem formulário, sem esperar ninguém responder." },
   { icon: "whatsapp",       passo: "Passo 3", titulo: "Conversar 3 minutos",         detalhe: "O Levi conversa com você: cidade, tempo disponível, o que você sabe fazer. Quem anota é ele." },
   { icon: "users",          passo: "Passo 4", titulo: "Aparecer numa atividade",     detalhe: "Live conta. Presencial vale o dobro. É onde você conhece o seu time." },
   { icon: "star",           passo: "Passo 5", titulo: "Receber a primeira tarefa",   detalhe: "Pequena e específica, com prazo. A partir daqui você não é seguidor — é militante com função." },
@@ -12,7 +12,7 @@ export const escada: { icon: IconName; passo: string; titulo: string; detalhe: s
 
 export const times: { icon: IconName; nome: string; desc: string }[] = [
   { icon: "flag",       nome: "Rua",         desc: "Cara a cara, bairro a bairro. Adesivo, conversa e presença — sempre em dupla, nunca sozinho." },
-  { icon: "video",      nome: "Comunicação", desc: "Edits, cards, vídeo e o kit da semana. A linha de maior alcance do movimento." },
+  { icon: "video",      nome: "Comunicação", desc: "Edits, cards, vídeo e a munição da semana. A linha de maior alcance do movimento." },
   { icon: "ticket",     nome: "Eventos",     desc: "Encontros que enchem e acolhem. Presença física retém; tela não." },
   { icon: "microscope", nome: "Bastidor",    desc: "Dados, checagem, organização. Quem faz acontecer sem precisar aparecer." },
 ];

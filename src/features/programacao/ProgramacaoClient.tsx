@@ -225,6 +225,19 @@ const ProgramacaoClient: React.FC<{ semente: Agenda }> = ({ semente }) => {
                   destaque={item.id === destaque}
                   aoVivoAgora={agora ? estaAoVivo(item, agora) : false}
                 />
+                {/* O "Vou" fica FORA do cartão, e não dentro: o cartão inteiro já
+                    é um link quando o item tem link, e botão dentro de link é
+                    interativo aninhado — HTML inválido, e no leitor de tela os
+                    dois viram um alvo só.
+
+                    Só aparece em encontro presencial futuro; quem decide é o
+                    painel, ao gerar o agenda.json. */}
+                {item.confirmar && (
+                  <a className="ag-vou" href={`/presenca?c=${item.confirmar}`}>
+                    <Icon name="flag" size={15} />
+                    <span>Vou nesse</span>
+                  </a>
+                )}
               </li>
             ))}
           </ol>
@@ -365,6 +378,18 @@ const restoDoTitulo = (t: string) => t.split(" ").slice(1).join(" ");
 
 /* ===== estilos ===== */
 const css = `
+  /* o botão de confirmar presença, abaixo do cartão */
+  .ag-vou {
+    display: inline-flex; align-items: center; gap: 7px;
+    min-height: 44px; margin: 8px 0 0; padding: 0 16px;
+    font-family: ${FONT_ELITE}; font-size: 12px; letter-spacing: 1.6px; text-transform: uppercase;
+    color: ${C.ink}; background: ${C.gold2};
+    border: 3px solid ${C.ink}; box-shadow: 3px 3px 0 ${C.ink};
+    text-decoration: none;
+  }
+  .ag-vou:hover { background: ${C.gold}; }
+  .ag-vou:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 ${C.ink}; }
+
   .ag-topo {
     display: flex; align-items: center; justify-content: space-between;
     gap: 12px; flex-wrap: wrap; margin-bottom: 26px;

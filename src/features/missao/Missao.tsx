@@ -301,7 +301,7 @@ export default function Missao() {
             coordenação conversa com você e te encaixa.
           </p>
           <Link
-            href="/quero-ajudar"
+            href="/queroajudar"
             style={{
               display: "inline-flex",
               alignItems: "center",

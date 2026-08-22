@@ -558,7 +558,7 @@ export default function PropostasClient() {
             escolha por onde começar.
           </p>
           <Link
-            href="/quero-ajudar"
+            href="/queroajudar"
             style={{
               display: "inline-flex",
               alignItems: "center",

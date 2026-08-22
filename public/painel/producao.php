@@ -16,7 +16,6 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/layout.php';
 require_once __DIR__ . '/producao-comum.php';
-require_once __DIR__ . '/kit-comum.php';
 exigir_area('producao');
 
 $eu = usuario_atual();
@@ -50,61 +49,6 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     }
 
     $acao = (string) ($_POST['acao'] ?? '');
-
-    /* ---- peças do kit ----
-       Ficam antes da busca do card: elas não têm card, e a checagem abaixo
-       derrubaria toda ação do kit com "Card não encontrado". */
-    if ($acao === 'kit-nova' || $acao === 'kit-publicar' || $acao === 'kit-apagar') {
-        $pecas = ler_pecas();
-
-        if ($acao === 'kit-nova') {
-            $u = usuario_atual();
-            $nova = [
-                'id'        => normalizar_id_peca($_POST['numero'] ?? '') . '-' . substr(bin2hex(random_bytes(2)), 0, 4),
-                'tema'      => $_POST['tema'] ?? '',
-                'numero'    => $_POST['numero'] ?? '',
-                'frase'     => $_POST['frase'] ?? '',
-                'fonte'     => $_POST['fonte'] ?? '',
-                'legenda'   => $_POST['legenda'] ?? '',
-                'destino'   => $_POST['destino'] ?? '',
-                'publicada' => false,
-                'criadaEm'  => date('c'),
-                'criadaPor' => (string) ($u['nome'] ?? ''),
-            ];
-            if (normalizar_peca($nova) === null) {
-                avisar('erro', 'A peça precisa de número, frase e fonte — sem fonte ela não entra.');
-                voltar();
-            }
-            $pecas[] = $nova;
-            avisar('ok', 'Peça criada. Publique quando quiser que ela apareça no kit.');
-        } else {
-            $id = normalizar_id_peca($_POST['id'] ?? '');
-            $achou = false;
-            foreach ($pecas as $i => $pc) {
-                if ($pc['id'] !== $id) {
-                    continue;
-                }
-                $achou = true;
-                if ($acao === 'kit-apagar') {
-                    unset($pecas[$i]);
-                    avisar('ok', 'Peça apagada.');
-                } else {
-                    $pecas[$i]['publicada'] = !$pc['publicada'];
-                    avisar('ok', $pecas[$i]['publicada'] ? 'Peça no ar.' : 'Peça recolhida.');
-                }
-                break;
-            }
-            if (!$achou) {
-                avisar('erro', 'Peça não encontrada.');
-                voltar();
-            }
-        }
-
-        if (!gravar_pecas(array_values($pecas))) {
-            avisar('erro', 'Não consegui gravar as peças do kit.');
-        }
-        voltar();
-    }
 
     $alvo = achar_card(limpar_texto($_POST['id'] ?? '', 40));
 
@@ -257,95 +201,17 @@ abrir_pagina('Produção');
       'Do fato checado ao post publicado. O card nasce quando a Checagem aprova — '
       . 'com a fonte e o responsável já colados nele.',
       null,
-      '/painel/producao'
+      '/painel/producao',
+      [
+          'Assumir um card é dizer que ele é seu — sem dono, ninguém sabe quem está devendo.',
+          'Publicar pede o link do post: é ele que fecha o ciclo e alimenta o Acervo.',
+          'O nome do arquivo é gerado, não digitado — o Estúdio gera o mesmo.',
+          'Mesmo alvo duas vezes em 48h avisa e pede ciência. Avisa, não bloqueia.',
+      ]
   ); ?>
 
   <?php recado($erro, $ok); ?>
 
-  <?php $pecasKit = ler_pecas(); $noAr = count(array_filter($pecasKit, fn ($p) => $p['publicada'])); ?>
-  <details class="decidir" style="margin-bottom:22px">
-    <summary class="btn">Peças do kit do mutirão (<?= $noAr ?> no ar)</summary>
-    <div class="decidir-corpo">
-      <p class="dica" style="margin:0 0 14px">
-        O <a href="/kit" target="_blank">kit</a> já vem com as peças fixas do plano de governo.
-        Aqui entra o que é da semana — o fato que acabou de sair, o número novo. Só aparece no
-        site depois de publicada, e <strong>peça sem fonte não é aceita</strong>: ela circula muito
-        mais longe que um post.
-      </p>
-
-      <?php if ($pecasKit !== []): ?>
-        <div class="rolagem">
-          <table class="tabela">
-            <thead><tr><th>Peça</th><th>Fonte</th><th>Estado</th><th></th></tr></thead>
-            <tbody>
-              <?php foreach ($pecasKit as $pc): ?>
-                <tr>
-                  <td>
-                    <strong><?= h($pc['numero']) ?></strong><br>
-                    <span class="dica"><?= h($pc['frase']) ?></span>
-                  </td>
-                  <td><span class="selo"><?= h($pc['fonte']) ?></span></td>
-                  <td>
-                    <span class="selo <?= $pc['publicada'] ? 'selo-ok' : 'selo-cinza' ?>">
-                      <?= $pc['publicada'] ? 'no ar' : 'rascunho' ?>
-                    </span>
-                  </td>
-                  <td>
-                    <form method="post" style="display:inline">
-                      <input type="hidden" name="csrf" value="<?= h(token()) ?>">
-                      <input type="hidden" name="id" value="<?= h($pc['id']) ?>">
-                      <button class="btn" name="acao" value="kit-publicar" type="submit">
-                        <?= $pc['publicada'] ? 'Recolher' : 'Publicar' ?>
-                      </button>
-                    </form>
-                    <form method="post" style="display:inline"
-                          onsubmit="return confirm('Apagar esta peça do kit?')">
-                      <input type="hidden" name="csrf" value="<?= h(token()) ?>">
-                      <input type="hidden" name="id" value="<?= h($pc['id']) ?>">
-                      <button class="btn" name="acao" value="kit-apagar" type="submit">Apagar</button>
-                    </form>
-                  </td>
-                </tr>
-              <?php endforeach; ?>
-            </tbody>
-          </table>
-        </div>
-      <?php endif; ?>
-
-      <form method="post" style="margin-top:18px">
-        <input type="hidden" name="csrf" value="<?= h(token()) ?>">
-        <label for="kit-numero">O número, curto (é o que fica grande no cartão)</label>
-        <input id="kit-numero" name="numero" type="text" maxlength="20" required placeholder="64 mil">
-
-        <label for="kit-frase">A frase que explica o número</label>
-        <input id="kit-frase" name="frase" type="text" maxlength="160" required
-               placeholder="pessoas esperando na fila da regulação.">
-
-        <label for="kit-fonte">A fonte, com página ou data</label>
-        <input id="kit-fonte" name="fonte" type="text" maxlength="80" required
-               placeholder="Plano de Governo, p. 31">
-
-        <label for="kit-tema">Tema</label>
-        <select id="kit-tema" name="tema">
-          <?php foreach (TEMAS_KIT as $t): ?>
-            <option value="<?= h($t) ?>"><?= h($t) ?></option>
-          <?php endforeach; ?>
-        </select>
-
-        <label for="kit-destino">Para onde o link leva</label>
-        <input id="kit-destino" name="destino" type="text" maxlength="120" value="/propostas"
-               placeholder="/propostas#saude-que-chega">
-
-        <label for="kit-legenda">O texto pronto pra colar</label>
-        <textarea id="kit-legenda" name="legenda" rows="5" maxlength="900"
-                  placeholder="64 mil cearenses esperando na fila da regulação..."></textarea>
-
-        <div class="acoes" style="margin-top:12px">
-          <button class="btn btn-ouro" name="acao" value="kit-nova" type="submit">Criar peça</button>
-        </div>
-      </form>
-    </div>
-  </details>
 
   <?php /* No celular o quadro vira uma pilha de quatro colunas: sem esta faixa,
            chegar em "Revisão" é rolar às cegas. */ ?>

@@ -43,8 +43,10 @@ const AREAS = [
     'aulas'      => 'Formação da militância',
     'fatos'      => 'Fatos do dia',
     'producao'   => 'Produção',
+    'municao'    => 'Munição',
     'eventos'    => 'Encontros',
     'inscricoes' => 'Inscrições da militância',
+    'candidatos' => 'Candidatos',
 ];
 
 /**
@@ -56,7 +58,7 @@ const AREAS = [
  * não pertence a uma função, e o Olheiro que quiser entender o quadro de
  * Produção deve conseguir abrir. Quem cria o usuário desmarca o que não quiser.
  */
-const AREAS_FERRAMENTA = ['aulas', 'fatos', 'producao', 'eventos'];
+const AREAS_FERRAMENTA = ['aulas', 'fatos', 'producao', 'municao', 'eventos'];
 
 const PAPEIS = [
     'admin'  => 'Administrador',
@@ -70,9 +72,23 @@ const DESTINO_AREA = [
     'aulas'      => ['url' => '/painel/aulas.php', 'resumo' => 'Pendurar o vídeo de cada aula e ver quem já estudou'],
     'fatos'      => ['url' => '/painel/fatos.php', 'resumo' => 'Trazer o fato do dia com fonte e conferir o que chegou'],
     'producao'   => ['url' => '/painel/producao.php', 'resumo' => 'O quadro do roteiro à publicação: quem faz o quê, e onde travou'],
+    'municao'    => ['url' => '/painel/municao.php', 'resumo' => 'As peças do mutirão: o número do plano com a fonte, pronto pra mandar no grupo'],
     'eventos'    => ['url' => '/painel/eventos.php', 'resumo' => 'Preparar o encontro, confirmar presença e receber quem chega'],
-    'inscricoes' => ['url' => '/painel/inscricoes.php', 'resumo' => 'Aprovar quem se inscreveu em /quero-ajudar e mandar o acesso'],
+    'inscricoes' => ['url' => '/painel/inscricoes.php', 'resumo' => 'Aprovar quem se inscreveu em /queroajudar e mandar o acesso'],
+    'candidatos' => ['url' => '/painel/candidatos.php', 'resumo' => 'Nome de urna, número e @ de cada candidato — a colinha que o eleitor leva'],
 ];
+
+/**
+ * O grupo de trabalho — o par PHP de `GRUPO_TRABALHO` em `src/lib/contato.ts`.
+ *
+ * Só aqui dentro. O site público divulga o grupo GERAL; este é de quem já tem
+ * conta, e entrar nele é a primeira obrigação de quem chega (ver index.php e
+ * agora.php). Mexeu num arquivo, mexa no outro.
+ */
+const GRUPO_TRABALHO = 'https://chat.whatsapp.com/C8rQeoCzJpz6vObwyRFAbt';
+
+/** O contato oficial. Não existe e-mail: este é o único canal. */
+const WHATSAPP_COORDENACAO = 'https://wa.me/5585981872972';
 
 header('X-Robots-Tag: noindex, nofollow');
 header('Referrer-Policy: same-origin');
@@ -252,7 +268,7 @@ function sem_acento(string $texto): string
 }
 
 /**
- * 85997223863 -> (85) 99722-3863. Guardamos só dígitos; ler assim é humano.
+ * 85912345678 -> (85) 91234-5678. Guardamos só dígitos; ler assim é humano.
  *
  * Mora aqui, e não no inscricoes-comum.php onde nasceu, porque a lista de
  * presença dos encontros também precisa e não tem por que arrastar junto toda
@@ -354,7 +370,7 @@ function normalizar_usuario($u): ?array
         'criadoEm'     => (string) ($u['criadoEm'] ?? ''),
         'ultimoAcesso' => (string) ($u['ultimoAcesso'] ?? ''),
 
-        /* Vindos da inscrição em /quero-ajudar. Este array é literal de
+        /* Vindos da inscrição em /queroajudar. Este array é literal de
            propósito: campo que não estiver aqui some na próxima gravação. */
         'telefone'     => so_digitos($u['telefone'] ?? ''),
         'email'        => limpar_texto($u['email'] ?? '', 120),
@@ -367,6 +383,11 @@ function normalizar_usuario($u): ?array
             $funcoes
         ))),
         'origem'       => ($u['origem'] ?? '') === 'inscricao' ? 'inscricao' : 'painel',
+        /* Marcado quando a pessoa diz "já entrei" no grupo de trabalho. É a
+           primeira obrigação de quem chega, e por isso ela vira TAREFA no hub
+           (agora.php) até estar marcada — banner some da vista em três dias.
+           Guardar a marca é o que a impede de cobrar para sempre. */
+        'entrouNoGrupo'       => !empty($u['entrouNoGrupo']),
         'consentimentoEm'     => limpar_texto($u['consentimentoEm'] ?? '', 40),
         'consentimentoVersao' => limpar_texto($u['consentimentoVersao'] ?? '', 20),
     ];
@@ -634,6 +655,28 @@ function entrar_como(array $u): void
  * Quem está logado agora — relido do disco a cada requisição, de propósito:
  * tirar a permissão de alguém tem efeito na hora, sem esperar a sessão vencer.
  */
+/**
+ * A conta de um telefone, ou null.
+ *
+ * Existe para a página pública de presença reconhecer quem já é do time sem ter
+ * que perguntar de novo o nome, o bairro e a cidade. Só o telefone casa: é a
+ * única chave que as três listas (usuários, inscrições e presenças) têm em
+ * comum, e é a que a pessoa digita na porta do encontro.
+ */
+function usuario_por_telefone(string $telefone): ?array
+{
+    $telefone = so_digitos($telefone);
+    if ($telefone === '') {
+        return null;
+    }
+    foreach (ler_usuarios() as $u) {
+        if (so_digitos($u['telefone'] ?? '') === $telefone) {
+            return $u;
+        }
+    }
+    return null;
+}
+
 function usuario_atual(): ?array
 {
     static $memo = false;

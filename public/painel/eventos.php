@@ -61,7 +61,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
 
         $titulo  = limpar_texto($_POST['titulo'] ?? '', 120);
         $familia = limpar_texto($_POST['familia'] ?? '', 20);
-        $data    = limpar_texto($_POST['data'] ?? '', 20);
+        $inicio  = inicio_iso($_POST['inicio'] ?? '');
 
         if ($titulo === '') {
             avisar('erro', 'Dê um nome ao encontro.');
@@ -71,8 +71,11 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             avisar('erro', 'Escolha a família do evento — é ela que traz o playbook e as travas.');
             voltar();
         }
-        if ($data === '' || strtotime($data) === false) {
-            avisar('erro', 'Informe a data do encontro.');
+        /* Um campo só, com data E hora, gravado com o fuso do Ceará junto. Eram
+           dois campos de texto — "29/07" sem ano e "19H" — e por isso a página
+           não conseguia ordenar nem saber o que já tinha passado. */
+        if ($inicio === '') {
+            avisar('erro', 'Informe o dia e a hora do encontro.');
             voltar();
         }
 
@@ -81,12 +84,13 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             'id'      => novo_id_evento(),
             'titulo'  => $titulo,
             'familia' => $familia,
-            'data'    => $data,
-            'hora'    => limpar_texto($_POST['hora'] ?? '', 10),
+            'inicio'  => $inicio,
             'local'   => limpar_texto($_POST['local'] ?? '', 120),
             'endereco' => limpar_texto($_POST['endereco'] ?? '', 200),
             'publicoEsperado' => (int) ($_POST['publicoEsperado'] ?? 0),
+            'naAgenda' => !empty($_POST['naAgenda']),
             'token'   => bin2hex(random_bytes(10)),
+            'tokenConfirmacao' => bin2hex(random_bytes(10)),
             'status'  => 'planejado',
             'criadoEm'  => date('c'),
             'criadoPor' => $eu['nome'],
@@ -97,6 +101,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             avisar('erro', 'Não consegui gravar em /dados.');
             voltar();
         }
+        republicar_agenda();
         avisar('ok', 'Encontro criado. Agora escale as cinco peças.');
         voltar($novo['id']);
     }
@@ -124,13 +129,19 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 }
             } else {
                 $e['titulo']   = limpar_texto($_POST['titulo'] ?? $e['titulo'], 120);
-                $e['data']     = limpar_texto($_POST['data'] ?? '', 20);
-                $e['hora']     = limpar_texto($_POST['hora'] ?? '', 10);
+                $e['inicio']   = inicio_iso($_POST['inicio'] ?? '');
                 $e['local']    = limpar_texto($_POST['local'] ?? '', 120);
                 $e['endereco'] = limpar_texto($_POST['endereco'] ?? '', 200);
                 $e['publicoEsperado'] = (int) ($_POST['publicoEsperado'] ?? 0);
                 $e['orcamento']   = limpar_texto($_POST['orcamento'] ?? '', 60);
                 $e['observacoes'] = limpar_texto($_POST['observacoes'] ?? '', 600);
+                /* o que o site mostra */
+                $e['naAgenda']   = !empty($_POST['naAgenda']);
+                $e['subtitulo']  = limpar_texto($_POST['subtitulo'] ?? '', 120);
+                $e['cor']        = (string) ($_POST['cor'] ?? 'ouro');
+                $e['plataforma'] = (string) ($_POST['plataforma'] ?? '');
+                $e['aoVivo']     = !empty($_POST['aoVivo']);
+                $e['link']       = limpar_link($_POST['link'] ?? '');
                 foreach (array_keys(PECAS) as $peca) {
                     $e['responsaveis'][$peca] = limpar_texto($_POST['resp'][$peca] ?? '', 40);
                 }
@@ -141,6 +152,11 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         if (!gravar_eventos($eventos)) {
             avisar('erro', 'Não consegui gravar em /dados.');
         }
+        /* Regrava o agenda.json na hora, e não por um botão "publicar": editar o
+           encontro já exige coordenação, então não há revisão a mais para fazer
+           — e "esqueci de publicar" deixa de ser um jeito de o site ficar
+           desatualizado sem ninguém perceber. */
+        republicar_agenda();
         voltar($alvo['id']);
     }
 
@@ -197,6 +213,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             'nome'     => $nome,
             'telefone' => $telefone,
             'bairro'   => limpar_texto($_POST['bairro'] ?? '', 60),
+            'cidade'   => limpar_texto($_POST['cidade'] ?? '', 60),
             'convidadoPor' => limpar_texto($_POST['convidadoPor'] ?? '', 60),
             'classe'     => limpar_texto($_POST['classe'] ?? 'curioso', 20),
             'confirmou'  => !empty($_POST['confirmou']),
@@ -204,6 +221,12 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             'origem'     => 'painel',
             'criadoPorId' => $eu['id'],
             'criadoEm'    => date('c'),
+            /* Quem digita aqui é da Recepção, com a pessoa na frente: o
+               consentimento é verbal, mas fica registrado com versão e data
+               como o do QR. Sem isto a lista mistura ficha com e sem base legal
+               anotada, e não há como saber qual é qual depois. */
+            'consentimentoEm'     => date('c'),
+            'consentimentoVersao' => VERSAO_CONSENTIMENTO_PRESENCA,
         ];
 
         if (!gravar_leads($leads)) {
@@ -290,10 +313,71 @@ if ($aberto === null) {
           'Encontros',
           'As cinco peças de cada encontro, a lista de presença e o follow-up de quem veio.',
           null,
-          '/painel/eventos'
+          '/painel/eventos',
+          [
+              'Cada encontro tem cinco peças com checklist — Local & Hora, Logística, Divulgação, Gravação, Recepção.',
+              'O QR da mesa deixa quem chega se cadastrar sozinho, em vez de fazer fila.',
+              'Quem compareceu entra no funil D+0 · D+3 · D+7: agradecer, mandar conteúdo, chamar para o próximo.',
+              'Criar, cancelar e ver telefone é da coordenação; executar e receber é de quem está escalado.',
+          ]
       ); ?>
 
       <?php recado($erro, $ok); ?>
+
+      <?php /* ===== quem é do movimento, olhando todos os encontros juntos =====
+               Exige 'agenda' porque é a lista de contatos inteira, com telefone.
+               Fica recolhida: a pauta desta tela é o encontro que vem, não o
+               histórico — mas a pergunta "quem nunca falta" só tem resposta
+               aqui. */ ?>
+      <?php if ($coordena): ?>
+        <?php $todas = pessoas_agrupadas(); ?>
+        <?php if ($todas !== []): ?>
+          <details class="decidir" style="margin-bottom:22px">
+            <summary class="btn">As pessoas, somando todos os encontros (<?= count($todas) ?>)</summary>
+            <div class="decidir-corpo">
+              <p class="dica" style="margin:0 0 12px">
+                Quem mais aparece vem primeiro. <strong>Confirmou e faltou</strong> é o
+                número que mais importa aqui: é a diferença entre o que a Divulgação
+                prometeu e quem chegou na porta.
+              </p>
+              <div class="rolagem">
+                <table class="tabela">
+                  <thead><tr><th>Quem</th><th>Veio</th><th>Faltou</th><th>Convites</th></tr></thead>
+                  <tbody>
+                    <?php foreach ($todas as $pes): ?>
+                      <tr>
+                        <td>
+                          <strong><?= h($pes['nome']) ?></strong><br>
+                          <span class="dica">
+                            <?php $onde = trim($pes['bairro'] . ($pes['cidade'] !== '' ? ', ' . $pes['cidade'] : ''), ', '); ?>
+                            <?= $onde !== '' ? h($onde) . ' · ' : '' ?>
+                            <?php if ($pes['telefone'] !== ''): ?>
+                              <a href="https://wa.me/55<?= h($pes['telefone']) ?>" target="_blank" rel="noopener">
+                                <?= h(telefone_bonito($pes['telefone'])) ?>
+                              </a>
+                            <?php endif; ?>
+                          </span>
+                        </td>
+                        <td>
+                          <?php if ($pes['veio'] === 0): ?>
+                            <span class="selo selo-off">nunca veio</span>
+                          <?php elseif ($pes['veio'] === $pes['convites']): ?>
+                            <span class="selo selo-ok">foi a todos (<?= $pes['veio'] ?>)</span>
+                          <?php else: ?>
+                            <span class="selo"><?= $pes['veio'] ?></span>
+                          <?php endif; ?>
+                        </td>
+                        <td><?= $pes['faltou'] > 0 ? '<span class="selo selo-off">' . $pes['faltou'] . '</span>' : '—' ?></td>
+                        <td><?= $pes['convites'] ?></td>
+                      </tr>
+                    <?php endforeach; ?>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </details>
+        <?php endif; ?>
+      <?php endif; ?>
 
       <?php foreach ([['Próximos', eventos_proximos()], ['Já aconteceram', eventos_passados()]] as [$titulo, $lista]): ?>
         <fieldset>
@@ -348,16 +432,23 @@ if ($aberto === null) {
               </select>
               <p class="dica">A família traz o playbook, as travas e o material específico.</p>
             </div>
-            <div class="linha g2">
-              <div class="campo">
-                <label for="data">Data</label>
-                <input id="data" type="date" name="data" required>
-              </div>
-              <div class="campo">
-                <label for="hora">Hora</label>
-                <input id="hora" type="time" name="hora">
-              </div>
+            <div class="campo">
+              <label for="inicio">Quando começa</label>
+              <input id="inicio" type="datetime-local" name="inicio" required>
+              <p class="dica">
+                Dia e hora juntos, no horário do Ceará. É deste campo que saem o dia,
+                a data e a hora que o site mostra — nenhum dos três se digita.
+              </p>
             </div>
+            <label class="check">
+              <input type="checkbox" name="naAgenda" value="1" checked>
+              Aparecer na programação pública
+            </label>
+            <p class="dica">
+              Marcado, o encontro entra em <a href="/programacao" target="_blank">/programacao</a>
+              assim que você salvar. Desmarque para reunião fechada, jantar com liderança
+              e o que mais não deva ser divulgado.
+            </p>
             <div class="acoes">
               <button type="submit" class="btn btn-ouro">Criar encontro</button>
             </div>
@@ -476,7 +567,82 @@ abrir_pagina($aberto['titulo']);
       </div>
     <?php endif; ?>
 
+    <?php /* ===== o link de "vou", que circula ANTES do encontro ===== */ ?>
+    <?php if ($aberto['tokenConfirmacao'] !== ''): ?>
+      <?php $urlConfirma = url_confirmacao($aberto); ?>
+      <details class="decidir" style="margin:0 0 22px">
+        <summary class="btn">Link de confirmação, para mandar no grupo</summary>
+        <div class="decidir-corpo">
+          <p class="dica" style="margin:0 0 12px">
+            <strong>É um link diferente do QR da mesa</strong>, de propósito. Este só
+            marca “vou”; o do QR marca “cheguei”. Com um link só, quem recebesse a
+            mensagem no grupo se marcaria como presente sem sair de casa — e é a lista
+            de presença que alimenta o follow-up.
+          </p>
+          <p class="dica" style="margin:0 0 12px">
+            Quem já veio a algum encontro, já se inscreveu ou já tem conta digita
+            <strong>só o WhatsApp</strong> e pronto — nome, bairro e cidade a gente já tem.
+            Quem é novo preenche quatro campos.
+          </p>
+          <p class="provisoria card-arquivo"><?= h($urlConfirma) ?></p>
+
+          <p class="dica" style="margin:14px 0 6px"><strong>Mensagem pronta para colar:</strong></p>
+          <p class="provisoria" style="white-space:pre-wrap"><?php
+            $quando = trim($aberto['data'] . ($aberto['hora'] !== '' ? ' às ' . $aberto['hora'] : ''));
+            echo h(
+                $aberto['titulo']
+                . ($quando !== '' ? "\n" . $quando : '')
+                . ($aberto['local'] !== '' ? "\n" . $aberto['local'] : '')
+                . "\n\nConfirma sua presença aqui: " . $urlConfirma
+            );
+          ?></p>
+
+          <?php if (!$aberto['naAgenda']): ?>
+            <p class="dica">
+              Este encontro <strong>não está na programação pública</strong>, então o link
+              só chega a quem você mandar.
+            </p>
+          <?php else: ?>
+            <p class="dica">
+              O botão “Vou nesse” também aparece sozinho no cartão deste encontro em
+              <a href="/programacao" target="_blank">/programacao</a>.
+            </p>
+          <?php endif; ?>
+        </div>
+      </details>
+    <?php endif; ?>
+
     <?php if ($pessoas !== []): ?>
+      <?php
+        /* Os quatro estados saem de `confirmou` × `compareceu`, sem campo novo.
+           O que mais interessa é o terceiro: confirmou e faltou é a diferença
+           entre o que a Divulgação prometeu e o que apareceu na porta, e é o
+           número que diz se o convite está funcionando. */
+        $contas = ['convidado' => 0, 'confirmou' => 0, 'veio' => 0, 'faltou' => 0];
+        foreach ($pessoas as $l) {
+            if ($l['compareceu']) {
+                $contas['veio']++;
+            } elseif ($l['confirmou']) {
+                $contas['faltou']++;
+            } else {
+                $contas['convidado']++;
+            }
+            if ($l['confirmou']) {
+                $contas['confirmou']++;
+            }
+        }
+      ?>
+      <p style="margin:0 0 14px">
+        <span class="selo selo-ok"><?= $contas['veio'] ?> vieram</span>
+        <span class="selo"><?= $contas['confirmou'] ?> confirmaram</span>
+        <?php if ($contas['faltou'] > 0): ?>
+          <span class="selo selo-off"><?= $contas['faltou'] ?> confirmaram e faltaram</span>
+        <?php endif; ?>
+        <?php if ($contas['convidado'] > 0): ?>
+          <span class="selo selo-cinza"><?= $contas['convidado'] ?> só convidados</span>
+        <?php endif; ?>
+      </p>
+
       <div class="rolagem">
         <table class="tabela">
           <thead>
@@ -488,7 +654,8 @@ abrir_pagina($aberto['titulo']);
                 <td>
                   <strong><?= h($l['nome']) ?></strong><br>
                   <span class="dica">
-                    <?= $l['bairro'] !== '' ? h($l['bairro']) . ' · ' : '' ?>
+                    <?php $onde = trim($l['bairro'] . ($l['cidade'] !== '' ? ', ' . $l['cidade'] : ''), ', '); ?>
+                    <?= $onde !== '' ? h($onde) . ' · ' : '' ?>
                     <?php if ($l['telefone'] === ''): ?>
                       sem telefone
                     <?php elseif (pode_ver_telefone($l, $eu)): ?>
@@ -551,9 +718,13 @@ abrir_pagina($aberto['titulo']);
               <input id="p-tel" type="tel" name="telefone" maxlength="20" inputmode="numeric" placeholder="85 99999-9999">
             </div>
             <div class="campo">
-              <label for="p-bairro">Bairro</label>
-              <input id="p-bairro" type="text" name="bairro" maxlength="60">
+              <label for="p-cidade">Cidade</label>
+              <input id="p-cidade" type="text" name="cidade" maxlength="60">
             </div>
+          </div>
+          <div class="campo">
+            <label for="p-bairro">Bairro</label>
+            <input id="p-bairro" type="text" name="bairro" maxlength="60">
           </div>
           <div class="campo">
             <label for="p-conv">Convidado por</label>
@@ -629,24 +800,89 @@ abrir_pagina($aberto['titulo']);
           <label for="e-titulo">Nome</label>
           <input id="e-titulo" type="text" name="titulo" maxlength="120" value="<?= h($aberto['titulo']) ?>">
         </div>
+        <div class="campo">
+          <label for="e-inicio">Quando começa</label>
+          <input id="e-inicio" type="datetime-local" name="inicio"
+                 value="<?= h(inicio_para_campo($aberto['inicio'])) ?>">
+          <?php if ($aberto['inicio'] === '' && $aberto['data'] !== ''): ?>
+            <p class="dica">
+              Este encontro é anterior ao campo de horário e guardava
+              “<?= h(trim($aberto['data'] . ' ' . $aberto['hora'])) ?>” como texto.
+              Preencha acima para ele voltar a ordenar e a saber quando acabou.
+            </p>
+          <?php else: ?>
+            <p class="dica">Dia e hora juntos, no horário do Ceará.</p>
+          <?php endif; ?>
+        </div>
+        <?php $ehDigital = $aberto['familia'] === 'digital'; ?>
+        <?php if (!$ehDigital): ?>
+          <div class="campo">
+            <label for="e-local">Local</label>
+            <input id="e-local" type="text" name="local" maxlength="120" value="<?= h($aberto['local']) ?>">
+            <p class="dica">O nome público do lugar. É o que vai para o site.</p>
+          </div>
+          <div class="campo">
+            <label for="e-end">Endereço</label>
+            <input id="e-end" type="text" name="endereco" maxlength="200" value="<?= h($aberto['endereco']) ?>">
+            <p class="dica">
+              Este <strong>não</strong> vai para o site — pode ser a casa de alguém.
+              Serve para quem está escalado achar o lugar.
+            </p>
+          </div>
+        <?php else: ?>
+          <input type="hidden" name="local" value="<?= h($aberto['local']) ?>">
+          <input type="hidden" name="endereco" value="<?= h($aberto['endereco']) ?>">
+        <?php endif; ?>
+
+        <?php /* ===== o que o site mostra ===== */ ?>
+        <label class="check">
+          <input type="checkbox" name="naAgenda" value="1" <?= $aberto['naAgenda'] ? 'checked' : '' ?>>
+          Aparecer na programação pública
+        </label>
+        <p class="dica">
+          Marcado, ele está em <a href="/programacao" target="_blank">/programacao</a>.
+          O que sai daqui é o nome, o subtítulo, o horário, o local e a imagem — nunca o
+          endereço, o orçamento nem as observações.
+        </p>
+
+        <div class="campo">
+          <label for="e-sub">Subtítulo no cartão</label>
+          <input id="e-sub" type="text" name="subtitulo" maxlength="120" value="<?= h($aberto['subtitulo']) ?>">
+          <p class="dica">Vazio, o cartão usa o local.</p>
+        </div>
         <div class="linha g2">
           <div class="campo">
-            <label for="e-data">Data</label>
-            <input id="e-data" type="date" name="data" value="<?= h($aberto['data']) ?>">
+            <label for="e-cor">Cor do cartão</label>
+            <select id="e-cor" name="cor">
+              <?php foreach (CORES as $chave => $nome): ?>
+                <option value="<?= h($chave) ?>" <?= $aberto['cor'] === $chave ? 'selected' : '' ?>><?= h($nome) ?></option>
+              <?php endforeach; ?>
+            </select>
           </div>
           <div class="campo">
-            <label for="e-hora">Hora</label>
-            <input id="e-hora" type="time" name="hora" value="<?= h($aberto['hora']) ?>">
+            <label for="e-plat">Plataforma</label>
+            <select id="e-plat" name="plataforma">
+              <?php foreach (PLATAFORMAS as $chave => $nome): ?>
+                <option value="<?= h($chave) ?>" <?= $aberto['plataforma'] === $chave ? 'selected' : '' ?>><?= h($nome) ?></option>
+              <?php endforeach; ?>
+            </select>
+            <p class="dica"><?= $ehDigital ? 'Onde a transmissão acontece.' : 'Só para encontro digital.' ?></p>
           </div>
         </div>
         <div class="campo">
-          <label for="e-local">Local</label>
-          <input id="e-local" type="text" name="local" maxlength="120" value="<?= h($aberto['local']) ?>">
+          <label for="e-link">Link</label>
+          <input id="e-link" type="text" name="link" maxlength="300" value="<?= h($aberto['link']) ?>"
+                 placeholder="<?= $ehDigital ? 'https://youtube.com/...' : '/propostas' ?>">
         </div>
-        <div class="campo">
-          <label for="e-end">Endereço</label>
-          <input id="e-end" type="text" name="endereco" maxlength="200" value="<?= h($aberto['endereco']) ?>">
-        </div>
+        <label class="check">
+          <input type="checkbox" name="aoVivo" value="1" <?= $aberto['aoVivo'] ? 'checked' : '' ?>>
+          É transmissão ao vivo
+        </label>
+        <p class="dica">
+          O selo “AO VIVO” só acende com esta marca <strong>e</strong> dentro da janela de
+          <?= DURACAO_PADRAO_MIN ?> minutos do início. Só a marca é o que fazia o selo ficar
+          aceso por treze dias.
+        </p>
         <div class="linha g2">
           <div class="campo">
             <label for="e-pub">Público esperado</label>

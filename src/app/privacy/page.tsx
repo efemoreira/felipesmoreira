@@ -13,7 +13,7 @@ const secoes: Secao[] = [
     titulo: "Quem é o responsável pelos seus dados",
     blocos: [
       "Este site é de Felipe Moreira, e os dados coletados aqui são tratados pela coordenação da Missão Ceará. Somos nós que decidimos o que é guardado e para quê — em linguagem de lei, somos o controlador dos dados.",
-      "Para falar sobre seus dados, use contato@felipesmoreira.com ou o WhatsApp (85) 98187-2972. A mesma pessoa que cuida da coordenação responde por isso.",
+      "Para falar sobre seus dados, chame no WhatsApp (85) 98187-2972 — é o nosso canal de contato. A mesma pessoa que cuida da coordenação responde por isso.",
     ],
   },
   {
@@ -93,7 +93,7 @@ const secoes: Secao[] = [
         "Retirar o consentimento a qualquer momento.",
         "Saber com quem compartilhamos (a resposta é: ninguém de fora).",
       ],
-      "É só pedir por e-mail ou WhatsApp. A gente responde em até 15 dias e não cobra nada por isso. Para confirmar que é você mesmo, podemos fazer uma pergunta simples de conferência.",
+      "É só pedir pelo WhatsApp. A gente responde em até 15 dias e não cobra nada por isso. Para confirmar que é você mesmo, podemos fazer uma pergunta simples de conferência.",
     ],
   },
   {

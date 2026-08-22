@@ -2,6 +2,7 @@ import React from "react";
 import Link from "next/link";
 import { Icon } from "@/components/icons";
 import { C, FONT_ALFA, FONT_ELITE, FONT_BITTER } from "@/lib/theme";
+import { WHATSAPP_COORDENACAO, TELEFONE_COORDENACAO } from "@/lib/contato";
 
 export interface Secao {
   titulo: string;
@@ -59,11 +60,9 @@ const PaginaLegal: React.FC<{
 
       <footer className="lg-rodape">
         <p>
-          Dúvida sobre este texto? Fale com a gente:{" "}
-          <a href="mailto:contato@felipesmoreira.com">contato@felipesmoreira.com</a>{" "}
-          ou{" "}
-          <a href="https://wa.me/5585981872972" target="_blank" rel="noopener noreferrer">
-            WhatsApp
+          Dúvida sobre este texto? Fale com a gente no{" "}
+          <a href={WHATSAPP_COORDENACAO} target="_blank" rel="noopener noreferrer">
+            WhatsApp {TELEFONE_COORDENACAO}
           </a>
           .
         </p>

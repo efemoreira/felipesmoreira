@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 /**
- * Recebe o formulário de /quero-ajudar — felipesmoreira.com/painel/api/inscricao.php
+ * Recebe o formulário de /queroajudar — felipesmoreira.com/painel/api/inscricao.php
  *
  * É o ÚNICO ponto do sistema aberto sem login, então a proteção aqui não é
  * CSRF (visitante anônimo não tem sessão para proteger) e sim: armadilha de
@@ -91,9 +91,10 @@ if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
 if ($cidade === '' || $bairro === '') {
     recusar('Diga sua cidade e seu bairro.');
 }
-if ($funcoes === []) {
-    recusar('Escolha pelo menos uma forma de ajudar.');
-}
+/* Função é OPCIONAL. Quem chegou disposto e ainda não sabe onde encaixa é
+   militante do mesmo jeito — recusar aqui trocaria um militante novo por uma
+   linha de relatório, o mesmo erro que a `origem` evita logo acima. Sem
+   escolha, a aprovação assume "onde-precisar" (ver inscricoes.php). */
 
 /* ---- mesmo telefone não entra duas vezes ---- */
 if (($ja = inscricao_por_telefone($telefone)) !== null) {

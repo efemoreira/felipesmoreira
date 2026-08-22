@@ -30,6 +30,20 @@ export interface ItemAgenda {
   imagem?: string;
   link?: string;
   interno?: boolean;
+  /**
+   * O token de "vou" do encontro, quando ele aceita confirmação de presença.
+   *
+   * Só vem em encontro presencial que ainda vai acontecer — numa live o botão
+   * útil é o link da transmissão, que já está no cartão, e num encontro que
+   * passou confirmar presença não quer dizer nada. O painel decide isso ao
+   * gerar o `agenda.json` (`item_publico()` em eventos-comum.php); aqui só se
+   * desenha o botão quando o campo veio.
+   *
+   * É um token diferente do que está no QR da mesa: este circula em grupo de
+   * WhatsApp, e com um token só qualquer pessoa se marcaria como presente sem
+   * sair de casa.
+   */
+  confirmar?: string;
 }
 
 export interface Canal {

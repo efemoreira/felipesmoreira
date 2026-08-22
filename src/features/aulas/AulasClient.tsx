@@ -398,7 +398,7 @@ const Recado: React.FC<{ fase: "carregando" | "sem-login" | "sem-acesso" | "erro
     "sem-login": {
       titulo: "Entre para estudar",
       corpo:
-        "A formação é para quem já tem conta no painel. Se você se inscreveu em /quero-ajudar e ainda não recebeu o acesso, a coordenação chama você no WhatsApp.",
+        "A formação é para quem já tem conta no painel. Se você se inscreveu em /queroajudar e ainda não recebeu o acesso, a coordenação chama você no WhatsApp.",
       entrar: true,
     },
     "sem-acesso": {

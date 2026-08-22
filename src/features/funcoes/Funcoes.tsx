@@ -12,7 +12,7 @@ import type { CatalogoFuncoes, Funcao, GrupoFuncao } from "@/features/inscricao/
  * diferença é que aqui ele é indexável e dá pra mandar por link: "olha, tem uma
  * função que é a sua cara" com âncora direta.
  *
- * Cada ficha leva para `/quero-ajudar?funcao=<id>`, que abre o formulário com
+ * Cada ficha leva para `/queroajudar?funcao=<id>`, que abre o formulário com
  * ela já marcada. Quem leu a descrição inteira e decidiu não deve ter que
  * procurar de novo numa lista de doze.
  */
@@ -121,7 +121,7 @@ const Ficha: React.FC<{ f: Funcao }> = ({ f }) => (
     </details>
 
     <Link
-      href={`/quero-ajudar?funcao=${f.id}`}
+      href={`/queroajudar?funcao=${f.id}`}
       style={{
         display: "inline-flex",
         alignItems: "center",
@@ -259,7 +259,7 @@ export default function Funcoes() {
             formulário.
           </p>
           <Link
-            href="/quero-ajudar"
+            href="/queroajudar"
             style={{
               display: "inline-flex",
               alignItems: "center",

@@ -94,7 +94,7 @@ Endpoint de referência: `public/painel/api/sessao.php` +
 
 ### Endpoints públicos (sem login)
 
-`public/painel/api/inscricao.php` (formulário de `/quero-ajudar`) e
+`public/painel/api/inscricao.php` (formulário de `/queroajudar`) e
 `public/painel/api/presenca.php` (lista de presença dos encontros, o QR da mesa
 de recepção) são os **únicos dois** abertos para a internet, e por isso seguem
 regras próprias — as mesmas para os dois:
@@ -132,7 +132,7 @@ Ao precisar de um arquivo novo em `/dados` legível pela web, acrescente um
 Felipe é **candidato a Vice-Governador do Ceará**, na chapa do **Delegado Huggo
 Leonardo**, pelo **Partido Missão**. Como vice, ele **não tem número de urna
 próprio** — o voto vai no número do candidato a governador, e a página
-`/a-missao` diz isso com todas as letras, porque é a dúvida mais comum.
+`/amissao` diz isso com todas as letras, porque é a dúvida mais comum.
 
 `/propostas` (`src/features/propostas/`) traz o plano de governo da chapa,
 **"Retomar para Reconstruir"**, organizado como o próprio documento: por
@@ -151,15 +151,21 @@ entra. Número sem página aqui é o bug.
 > que virão. **Nada disso vai para o site.** Ao atualizar `/propostas`, copie
 > apenas proposta, meta, custeio e prazo.
 
-## O kit do mutirão (`/kit`)
+## A Munição (`/municao`)
 
 A ferramenta que o manual (§5.5) descreve como coordenação manual no WhatsApp.
 Cada peça é **um número do plano com a página**, mais o texto pronto pra colar,
 mais a arte gerada no canvas — e o botão usa a Web Share API, que no celular
 abre o WhatsApp direto com imagem e texto juntos.
 
-`noindex`: é ferramenta de militante, circula por link no grupo. Kit indexado só
-serviria pro adversário saber o que vem antes.
+`noindex`: é ferramenta de militante, circula por link no grupo. Lista indexada
+do que vem por aí só serviria pro adversário.
+
+> **Chamava-se "kit" e virou "Munição".** A rota antiga `/kit` continua
+> respondendo, por `RewriteRule ... [R=301,L,QSA]` — o link circula em grupo de
+> WhatsApp desde antes. Os ARQUIVOS continuam com o nome antigo de propósito:
+> `kit-comum.php`, `api/kit.php` e `dados/kit.php` são contrato interno e
+> arquivo em produção, e renomeá-los é risco sem ganho.
 
 **É aqui que a atribuição fecha o ciclo.** O militante digita o nome uma vez (fica
 no `localStorage`, não no servidor), e todo link das peças sai com o `?de=<slug>`
@@ -191,6 +197,32 @@ internet é proibido nesse dia) → `depois`. Quem escreve o recado de cada fase
 > se quem vai publicar está no kit, com o botão na mão — é a mesma lógica da
 > Parte 0 do manual.
 
+### Os candidatos e a colinha (`/candidatos`)
+
+A área `candidatos` do painel guarda nome, nome de urna, cargo, **número**, @ e
+os grupos de cada um; `api/candidatos.php` entrega só os publicados, e
+`/candidatos` desenha a lista e gera a **colinha** no canvas
+(`src/features/candidatos/colinha.ts`, com os traços de `cordelCanvas.ts`).
+
+- **Não é lista no código.** Nome de urna e número saem do registro no TSE e
+  mudam até a véspera; lista no repositório é lista que exige um deploy para
+  corrigir um dígito.
+- **Sem número não publica.** Colinha com número errado é pior que colinha
+  nenhuma.
+- **Os grupos são múltiplos** (`presidente`, `governador`, `federais`,
+  `estaduais`, `mulheres`, `escolhidos`): uma candidata a federal é federal *e*
+  mulher, e um grupo só por pessoa obrigaria a escolher entre duas coisas que
+  não se excluem. `escolhidos` é a curadoria — são eles que aparecem na home.
+- **Sem candidato publicado, o bloco da home não aparece.** Mesmo padrão de
+  `CHAPA.numero`: melhor não dizer nada do que deixar um buraco onde o eleitor
+  espera um número.
+
+> **A trava do TSE mora no botão.** Compartilhar arte com número é propaganda:
+> no dia da votação o botão fecha (publicar propaganda nova na internet é
+> proibido) e depois da eleição também. **A lista continua visível nos dois
+> casos** — consultar não é publicar, e quem abrir a página no domingo precisa
+> achar o número. Mesma `faseEm()` de `src/lib/eleicao.ts` que a Munição usa.
+
 ### Em que número votar
 
 `CHAPA.numero` em `src/features/missao/data.ts` guarda o número que se digita na
@@ -200,7 +232,7 @@ fala de voto — é melhor não dizer nada do que deixar um buraco onde o eleito
 espera o número.
 
 **A faixa é carimbo, não explicação.** Ela diz o número e a data, e mais nada;
-quem explica que o vice não tem número de urna é `/a-missao`, que existe para
+quem explica que o vice não tem número de urna é `/amissao`, que existe para
 isso. Texto de esclarecimento repetido dentro da faixa disputa espaço com o
 número, que é a única coisa que precisa ser lida de longe.
 
@@ -219,11 +251,15 @@ significa "aperte aqui", e ela fica logo acima do cartão de entrar no grupo, qu
 
 ### Peça nova sem deploy
 
-As oito peças fixas do kit vêm do plano e não envelhecem, mas o fato da semana
-não viraria peça sem um build. `public/painel/kit-comum.php` +
-`api/kit.php` resolvem: a coordenação cria a peça pela tela de **Produção**
-(dentro da permissão que ela já tem — nenhuma área nova, nenhum `RewriteRule`
-novo no `publish.yml`), e o site mescla as publicadas **antes** das fixas.
+As oito peças fixas vêm do plano e não envelhecem, mas o fato da semana não
+viraria peça sem um build. `public/painel/kit-comum.php` + `api/kit.php`
+resolvem: a coordenação cria a peça em **`/painel/municao`**, e o site mescla as
+publicadas **antes** das fixas.
+
+> Isto já morou dentro do quadro de Produção, num `<details>` no meio das quatro
+> colunas — a ferramenta mais usada do movimento escondida atrás de um triângulo,
+> numa tela que fala de outra coisa. Virou área própria (`municao`, em
+> `AREAS_FERRAMENTA`), com nome próprio, no grupo Comunicação do menu.
 
 - **Peça sem fonte não é aceita.** É a Parte 0 aplicada à ferramenta: peça
   circula muito mais longe que um post.
@@ -241,11 +277,47 @@ continua no arquivo dela.
 
 ## A agenda (`/programacao`)
 
-A coordenação preenche em `/painel/agenda`, o build não sabe de nada e o
-visitante recebe `dados/agenda.json` pela rede — é a única página do site cujo
-conteúdo muda sem deploy.
+**Um encontro se cadastra UMA vez.** A coordenação marca em `/painel/eventos`, e
+`dados/agenda.json` é **gerado** dali a cada gravação; o visitante recebe o JSON
+pela rede — é a única página do site cujo conteúdo muda sem deploy.
 
-**O instante mora em `inicio`, e o resto é derivado dele.** Um campo só,
+Eram duas metades que não se conheciam: a mesma live era digitada em
+`/painel/agenda` (com data própria, para o site) e cadastrada de novo em
+`/painel/eventos` (com outra data, para as cinco peças e a presença). Duas fichas
+para a mesma coisa é duas datas que divergem na terceira alteração.
+
+- **`naAgenda` no encontro, padrão `true`.** O normal é o encontro ser público; a
+  exceção — reunião fechada, jantar com liderança — é quem desmarca. Padrão
+  invertido faria a coordenação cadastrar e o encontro não aparecer, sem ninguém
+  entender por quê.
+- **A live é um encontro da família `digital`.** O formulário troca `local` e
+  `endereco` por `plataforma` e `link`.
+- **`agenda.php` ficou com a capa** (título, período, chamada, canais) e a lista
+  em modo leitura, apontando para cada encontro. Ela também tem o botão de
+  importação única da agenta antiga, que aparece só enquanto sobrar item sem
+  encontro.
+- **`item_publico()` é lista de permissão, não de bloqueio.** O `agenda.json` é
+  o único arquivo de `/dados` liberado à web: campo que caia nele fica aberto na
+  internet. Enumerar o que SAI garante que um campo novo no encontro nunca vaze
+  por esquecimento. Por isso `local` sai (é o nome público do lugar) e `endereco`
+  não (pode ser a casa de alguém), junto com `orcamento`, `observacoes`,
+  `responsaveis` e `publicoEsperado`.
+- **Publica ao gravar, não por botão.** Editar o encontro já exige coordenação —
+  não há revisão a mais para fazer, e "esqueci de publicar" deixa de existir.
+
+> **`estado_do_evento()` (PHP, em `agenda-comum.php`) e `estadoDe()` (TS, em
+> `programacao/tempo.ts`) têm de concordar,** inclusive no
+> `DURACAO_PADRAO_MIN = 120`. Se divergirem, o painel diz que o encontro acabou
+> enquanto o site ainda mostra "AO VIVO". Mesmo pacto de `slugDe()` ↔
+> `normalizar_origem()`.
+
+> **`agenda-comum.php` existe porque `agenda.php` faz `exigir_area('agenda')` na
+> primeira linha** — nada mais no painel conseguia usar o relógio, as cores nem
+> o caminho de imagem que moravam lá dentro. Segue a convenção dos outros
+> `*-comum.php`: só define, e quem inclui decide se exige login.
+
+**O instante mora em `inicio`, e o resto é derivado dele.** Vale para o item de
+agenda e para o encontro, que agora são a mesma coisa. Um campo só,
 `datetime-local`, gravado como ISO com fuso fixo do Ceará
 (`2026-10-04T19:00-03:00`); `dia`, `data` e `hora` saem dele na hora de gravar e
 continuam no JSON porque o pôster e o cartão os desenham. Antes eram três
@@ -331,7 +403,7 @@ de recrutamento — o texto vem de `update/Manual-da-Militancia.md`, traduzido d
 jargão interno.
 
 Uma fonte só para os dois lados: o Next importa no build (formulário
-`/quero-ajudar`) e o PHP lê o mesmo arquivo (`out/funcoes.json`, copiado pelo
+`/queroajudar`) e o PHP lê o mesmo arquivo (`out/funcoes.json`, copiado pelo
 `publish.yml`) para validar o que chega e sugerir as áreas na aprovação.
 
 **Não confunda `funcoes` com `areas`:** `funcoes` é o papel da pessoa no
@@ -344,7 +416,7 @@ sugestão de áreas e a página `/funcoes` seguem sozinhos.
 
 `/funcoes` é o mesmo catálogo em página pública e indexável, com âncora por
 função (`/funcoes#olheiro`) para mandar por link. Cada ficha leva para
-`/quero-ajudar?funcao=<id>`, que abre o formulário **com ela já marcada** — quem
+`/queroajudar?funcao=<id>`, que abre o formulário **com ela já marcada** — quem
 leu a descrição inteira e decidiu não deve ter que procurar de novo numa lista
 de doze. O id é conferido contra o catálogo antes de marcar: parâmetro é texto
 que vem de fora.
@@ -355,9 +427,35 @@ que vem de fora.
 > rota aninhada seria preciso mexer no `publish.yml`, que é da lista do "não
 > mexer sem perguntar".
 
+## Os canais de contato
+
+Fonte única em `src/lib/contato.ts`, com o par PHP em `sessao.php`. **São dois
+grupos, e a linha divisória é a conta, não a intenção:**
+
+- **`GRUPO_GERAL`** — quem só quer acompanhar. É o **único** grupo que o site
+  público divulga: home, `/plano`, e a tela de confirmação da inscrição.
+- **`GRUPO_TRABALHO`** — quem já tem conta. Só dentro do painel. Se ele
+  circulasse no site, encheria de gente que a coordenação ainda não conferiu e
+  viraria grupo de recados.
+
+> `grep -rn "chat.whatsapp.com/C8rQ" src` tem de voltar **vazio**: o grupo de
+> trabalho não pode existir no bundle público.
+
+**Não há e-mail.** `contato@felipesmoreira.com` saiu do site inteiro, inclusive
+do `email` do JSON-LD — tirar da tela e deixar no dado estruturado, que é
+justamente o que raspador lê, não tira de lugar nenhum. A LGPD exige um canal
+para a pessoa exercer os direitos dela, não exige que seja e-mail: o canal é o
+WhatsApp da coordenação, e é isso que `/privacy` diz. O que **não** pode
+acontecer é sobrar página legal sem canal nenhum.
+
+**Entrar no grupo de trabalho é a primeira obrigação de quem chega**, e por isso
+é tarefa em `agora.php` — não banner. Banner some da vista em três dias. Some
+quando a pessoa marca "já entrei" (`entrouNoGrupo` no usuário); o cartão fixo
+continua na coluna da direita do hub, que é o endereço permanente do link.
+
 ## Fluxo de entrada de militante
 
-1. Pessoa preenche `/quero-ajudar` (3 passos, com consentimento LGPD).
+1. Pessoa preenche `/queroajudar` (3 passos, com consentimento LGPD).
 2. `api/inscricao.php` valida e grava em `dados/inscricoes.php` com status
    `nova`. **Não cria conta** — o formulário é público.
 3. Coordenação abre `/painel/inscricoes`, confere e aprova.
@@ -401,6 +499,75 @@ e, de quebra, zera os contadores do teto de envios, o que é inofensivo.
 > do currículo pela rede, nunca uma cópia local. O POST de progresso continua
 > exigindo login — sem conta não há onde gravar.
 
+### A presença nos encontros
+
+Dois links por encontro, e **dois tokens**:
+
+| token | onde vive | grava |
+|---|---|---|
+| `token` | só no QR impresso na mesa | `compareceu` |
+| `tokenConfirmacao` | no grupo e no botão "Vou nesse" da `/programacao` | `confirmou` |
+
+Um token para os dois faria qualquer pessoa que recebesse o link no grupo se
+marcar como presente sem sair de casa — e é a lista de presença que alimenta o
+funil D+0/D+3/D+7.
+
+**A pessoa digita só o WhatsApp.** `api/presenca.php` procura em três lugares
+pelo mesmo número — presenças de qualquer encontro, `inscricao_por_telefone()` e
+`usuario_por_telefone()` — e:
+
+- **um achado** → grava e responde com o **primeiro nome**. Nem a ficha inteira
+  (um número alheio digitado por engano viraria um jeito de ler o cadastro de
+  outra pessoa) nem nada (quem erra um dígito confirmaria a pessoa errada em
+  silêncio, sem descobrir);
+- **dois ou mais** (casa que divide celular) → mostra os nomes completos para a
+  pessoa escolher. Sem isso não há como desempatar;
+- **nenhum** → a ficha curta, com o telefone já preenchido.
+
+> **A `ref` da escolha nunca é o id.** É `hash_hmac` do telefone com o id e o
+> `segredo()` do site: o servidor recalcula em vez de guardar, e uma ref só
+> serve para o telefone que a gerou. Id que sai de endpoint público é
+> identificador estável, e identificador estável é coisa que se coleciona.
+
+> **O dedupe do encontro é por telefone; o da ESCOLHA é por telefone + nome.**
+> `lead_por_telefone()` responde "este número já está aqui?", que é o certo para
+> não duplicar — mas quando duas pessoas dividem o celular ela devolve a
+> primeira, e marcar pela escolha da tela acabava marcando a pessoa errada.
+> `lead_da_pessoa()` é a versão com o nome na chave.
+
+**O teto tem escopo.** A inscrição é uma vez na vida por pessoa (5/h); a presença
+é uma fila numa porta, com trinta celulares no mesmo Wi‑Fi do local
+(`LIMITE_PRESENCA_HORA = 60`). Com o teto da inscrição, a sexta pessoa da fila
+levava "você já se cadastrou há pouco" e ia embora sem entrar na lista. **A busca
+conta no teto** — sem isso o endpoint vira um oráculo de "digita número, recebe
+nome".
+
+**Quem confirma presença e não é do movimento recebe o convite de `/queroajudar`
+com os dados já preenchidos**, por `sessionStorage` (`CHAVE_RASCUNHO`) e nunca
+por querystring: telefone em URL entra no histórico, no referrer e no log do
+servidor. O `?de=encontro-<slug>` fica na URL porque não é dado pessoal — é ele
+que responde "quantos militantes saíram do encontro X".
+
+### Quatro campos obrigatórios, e só quatro
+
+**WhatsApp · nome completo · bairro · cidade** — iguais em `/queroajudar` e em
+`/presenca`. Todo o resto (e-mail, função, quem convidou) é opcional.
+
+Não é simetria: é o que faz o retrabalho sumir. É por esses quatro campos que a
+presença consegue preencher uma inscrição inteira e a inscrição consegue
+reconhecer quem chega na porta. Campo que existe de um lado só é campo que a
+pessoa digita duas vezes.
+
+> **Escolher função deixou de ser obrigatório.** O servidor recusava a inscrição
+> de quem não marcasse nenhuma; quem chegou disposto e ainda não sabe onde
+> encaixa é militante do mesmo jeito, e barrar por causa de uma linha de
+> relatório troca um militante novo por um campo preenchido. Sem escolha, a
+> aprovação assume `onde-precisar`, que já existia no catálogo para isso.
+
+A régua de validação é uma só: `src/features/inscricao/validacao.ts` (máscara,
+DDD de verdade, exigência de sobrenome). Duas réguas divergem na terceira
+alteração.
+
 ### Conferência de origem
 
 `origem_confere()` (em `sessao.php`) é a única cópia da checagem que a
@@ -412,7 +579,7 @@ isso que só seria descoberto tarde.
 
 ### De onde a pessoa veio (`origem`)
 
-`/quero-ajudar?de=<slug>` grava a origem na inscrição, e ela aparece na ficha
+`/queroajudar?de=<slug>` grava a origem na inscrição, e ela aparece na ficha
 da fila. Um campo só para as duas perguntas, porque na prática são a mesma:
 `?de=joao-silva` diz **quem trouxe**, `?de=live-domingo` diz **por qual canal**.
 Sem isso não dá para saber qual militante recruta nem qual link converte.
@@ -497,6 +664,16 @@ sem saber qual era o menu. Hoje o corpo de cada tela só tem trabalho.
   menu — a permissão sozinha não basta.
 - Grupo sem nenhuma área liberada não é renderizado.
 
+**Toda tela se explica.** `cabecalho_pagina()` recebe um quinto parâmetro,
+`$comoUsar`: 3–4 frases num `<details class="explicacao">` "O que dá para fazer
+aqui", fechado por padrão. Sem JavaScript e sem estado de "já vi" — quem conhece
+a ferramenta nunca abre, quem chegou hoje abre uma vez, e ninguém tem um banner
+para dispensar errado. O `$sub` de cada área sai do `resumo` de `DESTINO_AREA`,
+que estava escrito e não era renderizado em lugar nenhum.
+
+> Divisão de texto, para não duplicar: o `<details>` diz **o que** a tela faz; o
+> "Como se faz →" que o mesmo cabeçalho anexa leva para a aula, que diz **como**.
+
 **Cuidado com especificidade em cartão:** uma regra como `.mesa span` (0,1,1)
 vence `.mesa-icone` (0,1,0) e repinta o ícone. Ao estilizar filhos de um cartão,
 escreva o seletor com a classe junto (`.mesa .mesa-icone`) ou mire o filho
@@ -514,7 +691,11 @@ Uma funcionalidade nova para usuários que já têm conta no painel é **mais um
 2) entrada em `DESTINO_AREA` apontando pra página de gestão em PHP, 3) `RewriteRule`
 no `publish.yml`, 4) ícone em `icones.php`, 5) endpoint(s) JSON se o Next
 precisar consumir os dados, 6) se a área tem fila, um bloco em `agora.php`,
-7) entrada em `GRUPOS_NAV` (`layout.php`), senão ela não aparece no menu.
+7) entrada em `GRUPOS_NAV` e em `ROTULO_CURTO` (`layout.php`), senão ela não
+aparece no menu nem na barra do celular.
+
+Feito duas vezes recentemente: `municao` (ferramenta, em `AREAS_FERRAMENTA`) e
+`candidatos` (coordenação).
 
 **O que está pendente se declara em `agora.php`, e só lá.** `tarefas_de()` monta a
 fila do hub e `contagens_por_area()` alimenta o número ao lado do nome no menu —
@@ -525,15 +706,16 @@ saber dizer o que estava esperando por ela.
 As áreas se dividem em duas naturezas — a distinção não é técnica (a permissão é
 a mesma caixa marcada no usuário), é sobre o que vem marcado por padrão:
 
-- **Ferramentas do dia** — `aulas`, `fatos`, `producao`, `eventos`. Listadas em
+- **Ferramentas do dia** — `aulas`, `fatos`, `producao`, `municao`, `eventos`. Listadas em
   `AREAS_FERRAMENTA`. O padrão é liberar todas: ferramenta **não pertence a uma
   função**, e o Olheiro que quiser entender o quadro de Produção deve conseguir
   abrir.
-- **Decisão e dado pessoal** — `agenda`, `estudio`, `inscricoes`. O que vai ao
-  ar, quem entra no movimento, a lista de contatos com telefone.
+- **Decisão e dado pessoal** — `agenda`, `estudio`, `inscricoes`, `candidatos`.
+  O que vai ao ar, quem entra no movimento, a lista de contatos com telefone, o
+  número que o eleitor vai digitar.
 
 **A função da pessoa não limita acesso.** Ela define só o atalho no topo do hub
-(`FERRAMENTA_DA_FUNCAO` em `index.php`). O `areas` de cada função no
+(`MESA_DA_FUNCAO` em `agora.php`). O `areas` de cada função no
 `funcoes.json` é *sugestão* de marcação na hora de aprovar a inscrição — a
 primeira da lista é a que vira o atalho.
 
@@ -546,6 +728,26 @@ manual para dentro do código:
   link de fonte primária, e sem declarar a exceção quando a publicação tem mais
   de 48h. A fila é ordenada do mais antigo para o mais novo, porque a meta é
   "nada dorme sem status".
+
+  **Quem traz o fato não checa o fato.** Checagem que o próprio autor faz não é
+  checagem — é a mesma pessoa conferindo a si mesma, e o passo inteiro vira
+  carimbo. O `autorId` já estava gravado desde sempre; faltava a regra. Admin
+  destrava, mas caro: escreve o porquê, e o porquê fica na ficha, visível ao
+  lado de quem checou. Mesmo desenho da regra do ledger. `agora.php` também não
+  conta o fato próprio como pendência da pessoa — mandaria alguém para uma tela
+  onde a única coisa a fazer é esperar.
+
+  **O fato pode virar roteiro, arte, vídeo, qualquer combinação — ou nada.** Ao
+  aprovar, a Checagem marca as saídas; um card por saída, via `card_do_fato()`,
+  que agora recebe a etapa. Antes toda aprovação abria um card de roteiro, e o
+  quadro enchia de card que ninguém tinha pedido.
+
+  **"Nada" é uma resposta legítima, e fica registrada.** O status `arquivado`
+  exige motivo: sem ele, fato aprovado que ninguém aproveitou fica idêntico a
+  fato esquecido, e a pergunta *o que foi feito com aquele fato* não tem
+  resposta. `saidas_do_fato()` (em `producao-comum.php`, varrendo `fatoId`)
+  monta o rastro na tela; fato `ok-checado` há mais de `HORAS_SEM_SAIDA` (48)
+  sem nenhuma saída vira pendência no hub.
 - **Produção** (`producao.php`) — o quadro. O card **nasce da aprovação do
   fato**, já com fonte e responsável colados; é essa ligação que justifica não
   usar Trello. Publicar exige o link do post e passa pela **regra do ledger**
@@ -612,7 +814,7 @@ eleitoral.
 
 ## Convenção de nomes
 
-- Rotas e conteúdo: **português** (`/programacao`, `/herois-do-ceara`,
+- Rotas e conteúdo: **português** (`/programacao`, `/heroisdoceara`,
   `/aulas`), consistente com o público do site. Nos componentes, o sufixo
   `Client` (`ProgramacaoClient.tsx`) marca onde `"use client"` começa — e por
   isso **página sem hook não leva o sufixo** (`Missao.tsx`, `Funcoes.tsx`): elas
@@ -646,6 +848,16 @@ eleitoral.
   >    o navegador guarda a cópia e só é obrigado a conferir antes de usar, o
   >    que devolve **304 sem corpo** quando nada mudou.
   >
+  > 4. **Os `RewriteRule ... [R=301,L,QSA]` das rotas renomeadas.** `/quero-ajudar`
+  >    virou `/queroajudar`, `/a-missao` virou `/amissao`, `/herois-do-ceara`
+  >    virou `/heroisdoceara` e `/kit` virou `/municao` — link se dita em voz
+  >    alta, e hífen não. Sem o 301 a URL antiga cairia no *SPA fallback* e
+  >    devolveria **a home com status 200**, um soft 404 (pior que o 404
+  >    honesto). **O `QSA` é o que quebra em silêncio se faltar:**
+  >    `/quero-ajudar?funcao=olheiro&de=joao-silva` tem de chegar do outro lado
+  >    com os dois parâmetros, senão o formulário abre em branco e o crédito de
+  >    quem trouxe a pessoa se perde.
+  >
   > Ao mexer no `.htaccess`, teste servindo o `out/` com Apache local
   > (`httpd -f`). O `python -m http.server` e o `php -S` **ignoram
   > `.htaccess`** e não pegam nada disso — foi por isso que a quebra das quatro
@@ -670,7 +882,7 @@ comandos exatos para refazer cada um.
 > celular, por link de WhatsApp.
 
 **A foto é da home; a marca é dos ícones.** O retrato aparece só no cabeçalho
-da home, no `/a-missao` e no `Person.image` do schema. Todo ícone — favicon,
+da home, no `/amissao` e no `Person.image` do schema. Todo ícone — favicon,
 ícone do Android (manifest), ícone do iOS (`apple-icon.png`) — sai da marca das
 onças em `src/app/icon.png`. Eram três desenhos diferentes antes: o iOS chegou a
 ter um monograma "FM" próprio, que já não existe.

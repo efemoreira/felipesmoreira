@@ -9,7 +9,7 @@
 export const soDigitos = (v: string) => v.replace(/\D/g, "");
 
 /**
- * Máscara brasileira conforme a pessoa digita: (85) 99722-3863.
+ * Máscara brasileira conforme a pessoa digita: (85) 91234-5678.
  * Aceita 10 dígitos (fixo) e 11 (celular).
  */
 export function mascararTelefone(bruto: string): string {
@@ -38,7 +38,7 @@ const DDDS_VALIDOS = new Set([
 export function validarTelefone(valor: string): string {
   const d = soDigitos(valor);
   if (d === "") return "Coloque seu WhatsApp — é por ele que a gente vai te mandar o acesso.";
-  if (d.length < 10) return "Faltam números. Use DDD + número, como (85) 99722-3863.";
+  if (d.length < 10) return "Faltam números. Use DDD + número, como (85) 91234-5678.";
   if (d.length > 11) return "Número comprido demais. Use DDD + número, sem o 55 do Brasil.";
   if (!DDDS_VALIDOS.has(Number(d.slice(0, 2)))) return `${d.slice(0, 2)} não é um DDD do Brasil. Confira os dois primeiros números.`;
   if (d.length === 11 && d[2] !== "9") return "Celular com 11 números começa com 9 depois do DDD.";

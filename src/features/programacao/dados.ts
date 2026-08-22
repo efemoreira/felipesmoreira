@@ -48,6 +48,11 @@ export function normalizarAgenda(bruto: unknown): Agenda | null {
         imagem: caminhoSeguro(texto(i.imagem, 300)),
         link: caminhoSeguro(texto(i.link, 300)),
         interno: i.interno === true,
+        /* Só hexadecimal: o valor vira querystring de /presenca, e o que chega
+           pela rede é texto de fora até prova em contrário. */
+        confirmar: /^[a-f0-9]{8,64}$/.test(texto(i.confirmar, 64))
+          ? texto(i.confirmar, 64)
+          : undefined,
       };
     })
     .filter((i) => i.titulo && i.dia);
