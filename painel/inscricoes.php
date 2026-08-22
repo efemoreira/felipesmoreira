@@ -17,6 +17,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/layout.php';
 require_once __DIR__ . '/inscricoes-comum.php';
+require_once __DIR__ . '/pessoas-comum.php';  // a fila é gente com status pendente
 exigir_area('inscricoes');
 
 $eu = usuario_atual();
@@ -32,43 +33,6 @@ function voltar(): void
     exit;
 }
 
-/**
- * Login a partir do nome: "Maria de Sousa Lima" -> "maria.lima".
- * Acrescenta número se já existir, e completa se ficar curto demais para a
- * regra de validar_nome_usuario() (mínimo 3 caracteres).
- */
-function login_sugerido(string $nome): string
-{
-    /* `sem_acento()` e não `iconv('ASCII//TRANSLIT')`: o TRANSLIT depende da
-       libc, e "Antônio" vira "antonio" no Linux da Hostinger e "antnio" no
-       macOS. Login é identificador permanente de uma pessoa — não pode depender
-       da máquina em que a inscrição foi aprovada. */
-    $ascii = strtolower(preg_replace('/[^a-zA-Z ]/', '', sem_acento($nome)) ?? '');
-
-    $partes = array_values(array_filter(explode(' ', $ascii)));
-    // ignora as partículas do meio (de, da, dos…) na hora de montar o login
-    $uteis = array_values(array_filter($partes, fn ($p) => !in_array($p, ['de', 'da', 'do', 'das', 'dos', 'e'], true)));
-    if ($uteis === []) {
-        $uteis = $partes;
-    }
-
-    $base = $uteis[0] ?? 'militante';
-    if (count($uteis) > 1) {
-        $base .= '.' . end($uteis);
-    }
-    $base = substr($base, 0, 20);
-    while (strlen($base) < 3) {
-        $base .= 'x';
-    }
-
-    $tentativa = $base;
-    $n = 2;
-    while (achar_usuario($tentativa) !== null) {
-        $tentativa = substr($base, 0, 20) . $n;
-        $n++;
-    }
-    return $tentativa;
-}
 
 /** Número no formato que o wa.me espera: 55 + DDD + número. */
 function numero_whatsapp(string $telefone): string
@@ -88,22 +52,25 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     }
 
     $acao = (string) ($_POST['acao'] ?? '');
-    $alvo = achar_inscricao((string) ($_POST['id'] ?? ''));
+    $alvo = achar_pessoa(limpar_texto($_POST['id'] ?? '', 40));
 
     if ($alvo === null) {
-        avisar('erro', 'Inscrição não encontrada — talvez alguém já tenha decidido.');
+        avisar('erro', 'Pessoa não encontrada — talvez alguém já tenha decidido.');
         voltar();
     }
-    if ($alvo['status'] !== 'nova') {
+    if ($alvo['status'] !== 'pendente') {
         avisar('erro', 'Essa inscrição já foi decidida.');
         voltar();
     }
 
-    $inscricoes = ler_inscricoes();
+    $pessoas = ler_pessoas();
 
     if ($acao === 'aprovar') {
         $login = mb_strtolower(trim((string) ($_POST['usuario'] ?? '')));
-        $papel = (($_POST['papel'] ?? 'editor') === 'admin') ? 'admin' : 'editor';
+        $capacidades = array_values(array_intersect(
+            array_keys(CAPACIDADES),
+            is_array($_POST['capacidades'] ?? null) ? $_POST['capacidades'] : []
+        ));
         $areas = array_values(array_intersect(
             array_keys(AREAS),
             is_array($_POST['areas'] ?? null) ? $_POST['areas'] : []
@@ -113,53 +80,44 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             avisar('erro', $erro);
             voltar();
         }
-        if (achar_usuario($login) !== null) {
+        if (pessoa_por_usuario($login) !== null) {
             avisar('erro', 'Já existe alguém com o login “' . $login . '”. Escolha outro.');
             voltar();
         }
 
+        /* Aprovar NÃO cria uma segunda ficha: dá conta à que já existe. Antes a
+           inscrição virava um usuário novo e a inscrição ficava para trás, então
+           a mesma pessoa passava a existir duas vezes — e o histórico de
+           encontros dela ficava preso na ficha antiga. */
         $provisoria = senha_provisoria();
-        $usuarios = ler_usuarios();
-        $novoId = novo_id_usuario();
-        $usuarios[] = [
-            'id'          => $novoId,
-            'usuario'     => $login,
-            'nome'        => $alvo['nome'],
-            'hash'        => password_hash($provisoria, PASSWORD_DEFAULT),
-            'papel'       => $papel,
-            'areas'       => $areas,
-            'ativo'       => true,
-            'trocarSenha' => true,
-            'criadoEm'    => date('c'),
-            // o que veio da inscrição segue junto do acesso
-            'telefone'    => $alvo['telefone'],
-            'email'       => $alvo['email'],
-            'cidade'      => $alvo['cidade'],
-            'bairro'      => $alvo['bairro'],
+        foreach ($pessoas as &$p) {
+            if ($p['id'] !== $alvo['id']) {
+                continue;
+            }
+            $p['usuario'] = $login;
+            $p['hash']    = password_hash($provisoria, PASSWORD_DEFAULT);
+            $p['ativo']   = true;
+            $p['trocarSenha'] = true;
+            $p['capacidades'] = $capacidades;
+            $p['areas']   = $areas;
+            $p['status']  = 'aprovada';
+            $p['tipo']    = (in_array('coordenacao', $capacidades, true)
+                || in_array('adm', $capacidades, true)) ? 'coordenador' : 'militante';
+            $p['decididoEm']  = date('c');
+            $p['decididoPor'] = $eu['nome'];
             /* Inscrição sem função é válida (o formulário deixou de exigir).
                "onde-precisar" existe no catálogo exatamente para isso — deixar
                o array vazio faria o hub não ter atalho nenhum para a pessoa. */
-            'funcoes'     => $alvo['funcoes'] !== [] ? $alvo['funcoes'] : ['onde-precisar'],
-            'origem'      => 'inscricao',
-            'consentimentoEm'     => $alvo['consentimentoEm'],
-            'consentimentoVersao' => $alvo['consentimentoVersao'],
-        ];
+            if ($p['funcoes'] === []) {
+                $p['funcoes'] = ['onde-precisar'];
+            }
+        }
+        unset($p);
 
-        if (!gravar_usuarios($usuarios)) {
+        if (!gravar_pessoas($pessoas)) {
             avisar('erro', 'Não consegui gravar em /dados. Confira as permissões no hPanel.');
             voltar();
         }
-
-        foreach ($inscricoes as &$i) {
-            if ($i['id'] === $alvo['id']) {
-                $i['status'] = 'aprovada';
-                $i['decididoEm'] = date('c');
-                $i['decididoPor'] = $eu['nome'];
-                $i['usuarioId'] = $novoId;
-            }
-        }
-        unset($i);
-        gravar_inscricoes($inscricoes);
 
         // some da sessão assim que for mostrada uma vez
         $_SESSION['acesso_novo'] = [
@@ -173,22 +131,25 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     }
 
     if ($acao === 'recusar') {
-        foreach ($inscricoes as &$i) {
-            if ($i['id'] === $alvo['id']) {
-                $i['status'] = 'recusada';
-                $i['decididoEm'] = date('c');
-                $i['decididoPor'] = $eu['nome'];
+        foreach ($pessoas as &$p) {
+            if ($p['id'] === $alvo['id']) {
+                $p['status'] = 'recusada';
+                $p['decididoEm'] = date('c');
+                $p['decididoPor'] = $eu['nome'];
             }
         }
-        unset($i);
-        if (gravar_inscricoes($inscricoes)) {
-            avisar('ok', 'Inscrição de ' . $alvo['nome'] . ' recusada.');
+        unset($p);
+        /* A pessoa NÃO é apagada: ela pode ter aparecido num encontro, e apagar
+           levaria a presença junto. Fica com status "recusada", fora da fila. */
+        if (gravar_pessoas($pessoas)) {
+            avisar('ok', 'Inscrição de ' . $alvo['nome'] . ' recusada. Ela continua na lista de pessoas.');
         } else {
             avisar('erro', 'Não consegui gravar a decisão.');
         }
         voltar();
     }
 
+    avisar('erro', 'Ação desconhecida.');
     voltar();
 }
 
@@ -202,12 +163,13 @@ $ok   = ($recado['tipo'] ?? '') === 'ok'   ? $recado['texto'] : null;
 $acesso = $_SESSION['acesso_novo'] ?? null;
 unset($_SESSION['acesso_novo']);
 
-$todas = ler_inscricoes();
-$novas = array_values(array_filter($todas, fn ($i) => $i['status'] === 'nova'));
-$decididas = array_values(array_filter($todas, fn ($i) => $i['status'] !== 'nova'));
+$todas = ler_pessoas();
+$novas = fila_de_entrada();
+$decididas = array_values(array_filter($todas, fn ($i) => in_array($i['status'], ['aprovada', 'recusada'], true)));
 
 // mais recentes primeiro
-usort($novas, fn ($a, $b) => strcmp($b['criadoEm'], $a['criadoEm']));
+/* `fila_de_entrada()` já ordena do mais antigo para o mais novo, que é o
+   certo: quem esperou mais é quem está mais perto de desistir. */
 usort($decididas, fn ($a, $b) => strcmp($b['decididoEm'], $a['decididoEm']));
 
 $formatar = function (string $iso): string {
@@ -410,20 +372,31 @@ abrir_pagina('Inscrições');
                          value="<?= h(login_sugerido($i['nome'])) ?>" maxlength="24" required>
                   <p class="dica">Sugerido a partir do nome. Pode trocar.</p>
                 </div>
-                <div class="campo">
-                  <label for="p-<?= h($i['id']) ?>">Papel</label>
-                  <select id="p-<?= h($i['id']) ?>" name="papel">
-                    <?php foreach (PAPEIS as $chave => $rotulo): ?>
-                      <option value="<?= h($chave) ?>"<?= $chave === 'editor' ? ' selected' : '' ?>><?= h($rotulo) ?></option>
-                    <?php endforeach; ?>
-                  </select>
-                  <p class="dica">Administrador mexe em usuários. Na dúvida, deixe Editor.</p>
-                </div>
               </div>
 
               <div class="campo">
-                <label>Áreas liberadas</label>
-                <div class="canais">
+                <label>O que ela vai abrir no painel</label>
+                <?php foreach (CAPACIDADES as $chave => $cap): ?>
+                  <label class="check">
+                    <input type="checkbox" name="capacidades[]" value="<?= h($chave) ?>">
+                    <strong><?= h($cap['nome']) ?></strong>
+                    <span class="dica"><?= h($cap['resumo']) ?></span>
+                  </label>
+                <?php endforeach; ?>
+                <p class="dica">
+                  Na dúvida, não marque nenhuma: a pessoa entra, faz a formação e recebe
+                  a ferramenta quando assumir a função. <strong>Estudar não pede
+                  permissão</strong> — a formação já é de todo mundo que tem conta.
+                </p>
+              </div>
+
+              <details class="decidir">
+                <summary class="btn">Ajuste fino por ferramenta</summary>
+                <div class="decidir-corpo">
+                  <p class="dica" style="margin:0 0 10px">
+                    Já vem marcado conforme as funções que a pessoa escolheu. É para a
+                    exceção — dar uma ferramenta solta sem a capacidade inteira.
+                  </p>
                   <?php foreach (AREAS as $chave => $rotulo): ?>
                     <label class="check">
                       <input type="checkbox" name="areas[]" value="<?= h($chave) ?>"
@@ -432,8 +405,7 @@ abrir_pagina('Inscrições');
                     </label>
                   <?php endforeach; ?>
                 </div>
-                <p class="dica">Já vem marcado conforme as funções que a pessoa escolheu. Dá para mudar depois em Usuários.</p>
-              </div>
+              </details>
 
               <div class="acoes">
                 <button class="btn btn-ouro" type="submit">Aprovar e criar acesso</button>

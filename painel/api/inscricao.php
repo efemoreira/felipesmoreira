@@ -97,34 +97,74 @@ if ($cidade === '' || $bairro === '') {
    escolha, a aprovação assume "onde-precisar" (ver inscricoes.php). */
 
 /* ---- mesmo telefone não entra duas vezes ---- */
-if (($ja = inscricao_por_telefone($telefone)) !== null) {
-    if ($ja['status'] === 'nova') {
+$ja = inscricao_por_telefone($telefone);
+if ($ja !== null) {
+    if ($ja['status'] === 'pendente') {
         recusar('Sua inscrição já está com a gente — a coordenação vai te chamar no WhatsApp.', 409);
     }
-    if ($ja['status'] === 'aprovada') {
+    if (tem_conta($ja)) {
         recusar('Esse número já tem acesso. Se você perdeu a senha, chame a coordenação no WhatsApp.', 409);
     }
-    recusar('Não foi possível registrar essa inscrição. Fale com a coordenação no WhatsApp.', 409);
+    if ($ja['status'] === 'recusada') {
+        recusar('Não foi possível registrar essa inscrição. Fale com a coordenação no WhatsApp.', 409);
+    }
+    /* Já conhecida sem estar na fila: apareceu num encontro, foi cadastrada pela
+       coordenação. Ela não vira uma segunda ficha — entra na fila a ficha que já
+       existe, com o que ela acabou de dizer por cima. Antes isso criava uma
+       inscrição paralela, e a mesma pessoa passava a existir duas vezes. */
+    $pessoas = ler_pessoas();
+    foreach ($pessoas as &$p) {
+        if ($p['id'] !== $ja['id']) {
+            continue;
+        }
+        $p['nome']   = $nome;
+        $p['status'] = 'pendente';
+        $p['criadoEm'] = date('c');   // o relógio da fila começa agora
+        foreach (['email' => $email, 'cidade' => $cidade, 'bairro' => $bairro] as $campo => $valor) {
+            if ($valor !== '') {
+                $p[$campo] = $valor;
+            }
+        }
+        if ($funcoes !== []) {
+            $p['funcoes'] = $funcoes;
+        }
+        if ($origem !== '' && $p['origem'] === '') {
+            $p['origem'] = $origem;
+        }
+        $p['consentimentoEm'] = date('c');
+        $p['consentimentoVersao'] = VERSAO_CONSENTIMENTO;
+    }
+    unset($p);
+
+    if (!gravar_pessoas($pessoas)) {
+        recusar('Não consegui guardar sua inscrição agora. Tente de novo em alguns minutos.', 500);
+    }
+    registrar_envio();
+    responder(200, ['ok' => true]);
 }
 
 /* ---- grava ---- */
-$inscricoes = ler_inscricoes();
-$inscricoes[] = [
-    'id'       => novo_id_inscricao(),
+$pessoas = ler_pessoas();
+$pessoas[] = [
+    'id'       => novo_id_pessoa(),
     'nome'     => $nome,
+    /* Entra como eleitor: militante é o que ela vira quando a coordenação
+       aprova. Chamar de militante quem ainda não foi conferido inflaria a
+       contagem do movimento com quem só preencheu um formulário. */
+    'tipo'     => 'eleitor',
     'telefone' => $telefone,
     'email'    => $email,
     'cidade'   => $cidade,
     'bairro'   => $bairro,
     'funcoes'  => $funcoes,
     'origem'   => $origem,
-    'status'   => 'nova',
+    'status'   => 'pendente',
     'criadoEm' => date('c'),
     'consentimentoEm'     => date('c'),
     'consentimentoVersao' => VERSAO_CONSENTIMENTO,
 ];
 
-if (!gravar_inscricoes($inscricoes)) {
+if (!gravar_pessoas($pessoas)) {
     recusar('Não consegui guardar sua inscrição agora. Tente de novo em alguns minutos.', 500);
 }
 

@@ -138,13 +138,19 @@ if (strlen($telefone) < 10 || strlen($telefone) > 11) {
     recusar('Confira o WhatsApp: use DDD + número.');
 }
 
-/** Grava a presença numa ficha que já existe, e devolve a resposta pronta. */
-function marcar(array $evento, array $lead, string $modo, bool $novoNoEncontro): void
+/**
+ * Marca a presença desta pessoa neste encontro, e devolve a resposta pronta.
+ *
+ * A presença é uma RELAÇÃO: a pessoa existe uma vez só, e cada encontro em que
+ * ela aparece é uma linha apontando para ela. Antes cada ficha repetia nome,
+ * telefone e bairro — quem foi a cinco encontros tinha cinco cópias de si.
+ */
+function marcar(array $evento, array $pessoa, string $modo): void
 {
-    $leads = ler_leads();
+    $presencas = ler_presencas();
     $achou = false;
-    foreach ($leads as &$l) {
-        if ($l['id'] === $lead['id']) {
+    foreach ($presencas as &$l) {
+        if ($l['eventoId'] === $evento['id'] && $l['pessoaId'] === $pessoa['id']) {
             $l['confirmou'] = true;
             if ($modo === 'chegada') {
                 $l['compareceu'] = true;
@@ -155,24 +161,33 @@ function marcar(array $evento, array $lead, string $modo, bool $novoNoEncontro):
     unset($l);
 
     if (!$achou) {
-        $leads[] = $lead;
+        $presencas[] = [
+            'id'       => novo_id_presenca(),
+            'eventoId' => $evento['id'],
+            'pessoaId' => $pessoa['id'],
+            'confirmou'  => true,
+            'compareceu' => $modo === 'chegada',  // quem lê o QR na porta está na porta
+            'origem'     => 'qr',
+            'criadoPorId' => '',
+            'criadoEm'    => date('c'),
+        ];
     }
-    if (!gravar_leads($leads)) {
+    if (!gravar_presencas($presencas)) {
         recusar('Não consegui guardar agora. Procure alguém da recepção.', 500);
     }
     registrar_envio('presenca');
 
     responder(200, [
         'ok'       => true,
-        'jaEstava' => !$novoNoEncontro,
+        'jaEstava' => $achou,
         /* Só o primeiro nome. Devolver a ficha inteira faria de um número
            alheio digitado por engano um jeito de ler o cadastro de outra
            pessoa; devolver NADA faria quem errou um dígito confirmar a pessoa
            errada em silêncio, sem nunca descobrir. O primeiro nome é o
            suficiente para a pessoa se reconhecer — ou perceber que não é ela. */
-        'nome'     => explode(' ', $lead['nome'])[0],
-        'inscrito' => inscricao_por_telefone($lead['telefone']) !== null
-            || usuario_por_telefone($lead['telefone']) !== null,
+        'nome'     => explode(' ', $pessoa['nome'])[0],
+        /* Já é do movimento? Quem não é recebe o convite de /queroajudar. */
+        'inscrito' => $pessoa['status'] !== '' || tem_conta($pessoa),
     ]);
 }
 
@@ -181,35 +196,9 @@ function marcar(array $evento, array $lead, string $modo, bool $novoNoEncontro):
 if ($acao === 'procurar') {
     registrar_envio('presenca');  // a tentativa conta, ache ou não ache
 
-    /* Três fontes, uma chave. O telefone é a única coisa que as três listas têm
-       em comum, e é o que a pessoa digita na porta. */
-    $candidatos = [];
-    $visto = [];
-
-    foreach (presencas_por_telefone($telefone) as $l) {
-        $chave = mb_strtolower(sem_acento($l['nome']));
-        if (isset($visto[$chave])) {
-            continue;
-        }
-        $visto[$chave] = true;
-        $candidatos[] = ['nome' => $l['nome'], 'bairro' => $l['bairro'], 'cidade' => $l['cidade'], 'de' => 'presenca'];
-    }
-    foreach ([inscricao_por_telefone($telefone), usuario_por_telefone($telefone)] as $achado) {
-        if ($achado === null) {
-            continue;
-        }
-        $chave = mb_strtolower(sem_acento($achado['nome']));
-        if (isset($visto[$chave])) {
-            continue;
-        }
-        $visto[$chave] = true;
-        $candidatos[] = [
-            'nome'   => $achado['nome'],
-            'bairro' => (string) ($achado['bairro'] ?? ''),
-            'cidade' => (string) ($achado['cidade'] ?? ''),
-            'de'     => 'cadastro',
-        ];
-    }
+    /* UMA fonte agora, e não três. Antes era preciso varrer presenças, inscrições
+       e contas separadamente, porque a mesma pessoa vivia em três arquivos. */
+    $candidatos = pessoas_por_telefone($telefone);
 
     if ($candidatos === []) {
         responder(200, ['ok' => true, 'achou' => 0]);
@@ -218,25 +207,7 @@ if ($acao === 'procurar') {
     /* UM candidato: confirma na hora, sem mais uma tela. É o caso normal, e a
        pessoa está em pé na porta. */
     if (count($candidatos) === 1) {
-        $c = $candidatos[0];
-        $jaNoEncontro = lead_por_telefone($evento['id'], $telefone);
-        $lead = $jaNoEncontro ?? [
-            'id'       => novo_id_lead(),
-            'eventoId' => $evento['id'],
-            'nome'     => $c['nome'],
-            'telefone' => $telefone,
-            'bairro'   => $c['bairro'],
-            'cidade'   => $c['cidade'],
-            'classe'   => 'curioso',
-            'confirmou'  => true,
-            'compareceu' => $modo === 'chegada',
-            'origem'     => 'qr',
-            'criadoPorId' => '',
-            'criadoEm'    => date('c'),
-            'consentimentoEm'     => date('c'),
-            'consentimentoVersao' => VERSAO_CONSENTIMENTO_PRESENCA,
-        ];
-        marcar($evento, $lead, $modo, $jaNoEncontro === null);
+        marcar($evento, $candidatos[0], $modo);
     }
 
     /* DOIS OU MAIS: um número de casa, um casal que divide o celular. Aí o nome
@@ -247,7 +218,7 @@ if ($acao === 'procurar') {
         'ok'    => true,
         'achou' => count($candidatos),
         'pessoas' => array_map(fn ($c) => [
-            'ref'  => ref_de($telefone, $c['nome']),
+            'ref'  => ref_de($telefone, $c['id']),
             'nome' => $c['nome'],
         ], $candidatos),
     ]);
@@ -257,56 +228,11 @@ if ($acao === 'procurar') {
 
 if ($acao === 'confirmar') {
     $ref = limpar_texto($bruto['ref'] ?? '', 40);
-
-    foreach (presencas_por_telefone($telefone) as $l) {
-        if (ref_de($telefone, $l['nome']) !== $ref) {
-            continue;
+    foreach (pessoas_por_telefone($telefone) as $p) {
+        if (ref_de($telefone, $p['id']) === $ref) {
+            marcar($evento, $p, $modo);
         }
-        /* Por telefone E nome: duas pessoas dividindo o celular é exatamente o
-           caso que trouxe a tela de escolha até aqui, e procurar só pelo número
-           marcaria a presença da outra. */
-        $jaNoEncontro = lead_da_pessoa($evento['id'], $telefone, $l['nome']);
-        marcar($evento, $jaNoEncontro ?? [
-            'id'       => novo_id_lead(),
-            'eventoId' => $evento['id'],
-            'nome'     => $l['nome'],
-            'telefone' => $telefone,
-            'bairro'   => $l['bairro'],
-            'cidade'   => $l['cidade'],
-            'classe'   => 'curioso',
-            'confirmou'  => true,
-            'compareceu' => $modo === 'chegada',
-            'origem'     => 'qr',
-            'criadoPorId' => '',
-            'criadoEm'    => date('c'),
-            'consentimentoEm'     => date('c'),
-            'consentimentoVersao' => VERSAO_CONSENTIMENTO_PRESENCA,
-        ], $modo, $jaNoEncontro === null);
     }
-    /* Também procura no cadastro, para quem foi achado por lá e não por presença */
-    foreach ([inscricao_por_telefone($telefone), usuario_por_telefone($telefone)] as $achado) {
-        if ($achado === null || ref_de($telefone, $achado['nome']) !== $ref) {
-            continue;
-        }
-        $jaNoEncontro = lead_da_pessoa($evento['id'], $telefone, $achado['nome']);
-        marcar($evento, $jaNoEncontro ?? [
-            'id'       => novo_id_lead(),
-            'eventoId' => $evento['id'],
-            'nome'     => $achado['nome'],
-            'telefone' => $telefone,
-            'bairro'   => (string) ($achado['bairro'] ?? ''),
-            'cidade'   => (string) ($achado['cidade'] ?? ''),
-            'classe'   => 'curioso',
-            'confirmou'  => true,
-            'compareceu' => $modo === 'chegada',
-            'origem'     => 'qr',
-            'criadoPorId' => '',
-            'criadoEm'    => date('c'),
-            'consentimentoEm'     => date('c'),
-            'consentimentoVersao' => VERSAO_CONSENTIMENTO_PRESENCA,
-        ], $modo, $jaNoEncontro === null);
-    }
-
     recusar('Não achei esse cadastro. Preencha os dados abaixo.', 404);
 }
 
@@ -335,27 +261,45 @@ if ($bairro === '' || $cidade === '') {
     recusar('Diga seu bairro e sua cidade.');
 }
 
-/* Mesmo número não entra duas vezes no mesmo encontro — e responde ok, porque
-   quem tocou duas vezes no botão já está na lista e não tem o que corrigir. */
-$ja = lead_por_telefone($evento['id'], $telefone);
-if ($ja !== null) {
-    marcar($evento, $ja, $modo, false);
-}
-
-marcar($evento, [
-    'id'       => novo_id_lead(),
-    'eventoId' => $evento['id'],
+$pessoas = ler_pessoas();
+$nova = [
+    'id'       => novo_id_pessoa(),
     'nome'     => $nome,
+    /* Eleitor: quem apareceu num encontro ainda não é militante. Vira quando
+       assumir função — e a ponte para /queroajudar, no fim desta tela, é
+       exatamente o convite para isso. */
+    'tipo'     => 'eleitor',
     'telefone' => $telefone,
     'bairro'   => $bairro,
     'cidade'   => $cidade,
-    'convidadoPor' => $convidadoPor,
-    'classe'     => 'curioso',
-    'confirmou'  => true,
-    'compareceu' => $modo === 'chegada',  // quem lê o QR na porta está na porta
-    'origem'     => 'qr',
-    'criadoPorId' => '',
-    'criadoEm'    => date('c'),
+    'criadoEm' => date('c'),
     'consentimentoEm'     => date('c'),
     'consentimentoVersao' => VERSAO_CONSENTIMENTO_PRESENCA,
-], $modo, true);
+];
+$pessoas[] = $nova;
+if (!gravar_pessoas($pessoas)) {
+    recusar('Não consegui guardar agora. Procure alguém da recepção.', 500);
+}
+
+/* Quem convidou fica na PRESENÇA, e não na pessoa: é informação daquele
+   encontro. A mesma pessoa pode ter sido trazida por gente diferente. */
+if ($convidadoPor !== '') {
+    $presencas = ler_presencas();
+    $presencas[] = [
+        'id'       => novo_id_presenca(),
+        'eventoId' => $evento['id'],
+        'pessoaId' => $nova['id'],
+        'convidadoPor' => $convidadoPor,
+        'confirmou'  => true,
+        'compareceu' => $modo === 'chegada',
+        'origem'     => 'qr',
+        'criadoEm'   => date('c'),
+    ];
+    if (!gravar_presencas($presencas)) {
+        recusar('Não consegui guardar agora. Procure alguém da recepção.', 500);
+    }
+    registrar_envio('presenca');
+    responder(200, ['ok' => true, 'jaEstava' => false, 'nome' => explode(' ', $nome)[0], 'inscrito' => false]);
+}
+
+marcar($evento, normalizar_pessoa($nova), $modo);

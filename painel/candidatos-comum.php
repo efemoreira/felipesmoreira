@@ -31,46 +31,12 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/sessao.php';
 
-const ARQ_CANDIDATOS = PASTA_DADOS . '/candidatos.php';
+/* O candidato é uma PESSOA com `tipo = 'candidato'` — não há mais um cadastro
+   à parte. Nome de urna, cargo, número, @ e foto são campos da ficha dela, e é
+   por isso que dá para saber que o candidato também esteve num encontro.
+   Aqui ficam só as LISTAS, que são curadoria e não identidade. */
+
 const ARQ_LISTAS = PASTA_DADOS . '/listas.php';
-
-/**
- * Um candidato só entra com NOME e NÚMERO.
- *
- * Número é o que a pessoa digita na urna: publicar ficha sem ele seria pedir
- * para o eleitor procurar sozinho, e colinha com número errado é pior que
- * colinha nenhuma. O @ é opcional — nem todo candidato tem perfil.
- */
-function normalizar_candidato($c): ?array
-{
-    if (!is_array($c) || empty($c['id'])) {
-        return null;
-    }
-    $nome = limpar_texto($c['nome'] ?? '', 80);
-    $numero = preg_replace('/\D/', '', (string) ($c['numero'] ?? '')) ?? '';
-    if ($nome === '' || $numero === '') {
-        return null;
-    }
-
-    return [
-        'id'     => limpar_texto($c['id'], 40),
-        'nome'   => $nome,
-        /* O nome que está na urna, quando é diferente do nome de registro. É o
-           que o eleitor procura, então é ele que aparece grande no cartão. */
-        'urna'   => limpar_texto($c['urna'] ?? '', 60),
-        'cargo'  => limpar_texto($c['cargo'] ?? '', 60),
-        'numero' => mb_substr($numero, 0, 6),
-        'partido' => limpar_texto($c['partido'] ?? '', 40),
-        'instagram' => normalizar_arroba($c['instagram'] ?? ''),
-        /* O rosto, opcional. Candidato sem foto é candidato válido — muita gente
-           entra na chapa antes de ter material pronto, e travar o cadastro nisso
-           seria deixar o número fora do ar esperando um JPG. */
-        'imagem' => limpar_texto($c['imagem'] ?? '', 300),
-        'ordem'  => (int) ($c['ordem'] ?? 0),
-        'publicado' => !empty($c['publicado']),
-        'criadoEm'  => limpar_texto($c['criadoEm'] ?? '', 40),
-    ];
-}
 
 /** "@moreiramissao", "instagram.com/x/" e "X" viram todos "x". */
 function normalizar_arroba($bruto): string
@@ -83,71 +49,24 @@ function normalizar_arroba($bruto): string
     return mb_substr($v, 0, 40);
 }
 
-function ler_candidatos(bool $recarregar = false): array
+/** Todo mundo com `tipo = candidato`, na ordem em que se quer ver. */
+function ler_candidatos(): array
 {
-    static $cache = null;
-    if ($cache !== null && !$recarregar) {
-        return $cache;
-    }
-    $cache = [];
-    if (is_file(ARQ_CANDIDATOS)) {
-        $bruto = @include ARQ_CANDIDATOS;
-        if (is_array($bruto)) {
-            foreach ($bruto as $c) {
-                if ($limpo = normalizar_candidato($c)) {
-                    $cache[] = $limpo;
-                }
-            }
-        }
-    }
-    /* Ordem manual primeiro, nome depois: a coordenação decide quem abre a
-       lista, e o resto sai em ordem previsível em vez de ordem de cadastro. */
-    usort($cache, fn ($a, $b) => [$a['ordem'], $a['nome']] <=> [$b['ordem'], $b['nome']]);
-    return $cache;
-}
-
-function gravar_candidatos(array $candidatos): bool
-{
-    preparar_pastas();
-    $limpos = [];
-    $vistos = [];
-    foreach ($candidatos as $c) {
-        $limpo = normalizar_candidato($c);
-        if ($limpo === null || isset($vistos[$limpo['id']])) {
-            continue;
-        }
-        $vistos[$limpo['id']] = true;
-        $limpos[] = $limpo;
-    }
-    $conteudo = "<?php\n// Gerado pelo painel. Não versionar, não editar à mão.\nreturn "
-        . var_export($limpos, true) . ";\n";
-
-    if (!gravar_atomico(ARQ_CANDIDATOS, $conteudo)) {
-        return false;
-    }
-    ler_candidatos(true);
-    return true;
+    $lista = array_values(array_filter(ler_pessoas(), fn ($p) => $p['tipo'] === 'candidato'));
+    usort($lista, fn ($a, $b) => [$a['ordem'] ?? 0, sem_acento($a['nome'])] <=> [$b['ordem'] ?? 0, sem_acento($b['nome'])]);
+    return $lista;
 }
 
 function achar_candidato(string $id): ?array
 {
-    foreach (ler_candidatos() as $c) {
-        if ($c['id'] === $id) {
-            return $c;
-        }
-    }
-    return null;
-}
-
-function novo_id_candidato(): string
-{
-    return bin2hex(random_bytes(6));
+    $p = achar_pessoa($id);
+    return $p !== null && $p['tipo'] === 'candidato' ? $p : null;
 }
 
 /** Só o que está no ar — é isto que o site recebe. */
 function candidatos_publicados(): array
 {
-    return array_values(array_filter(ler_candidatos(), fn ($c) => $c['publicado']));
+    return array_values(array_filter(ler_candidatos(), fn ($c) => $c['publicado'] && $c['numero'] !== ''));
 }
 
 /* ===================== as listas ===================== */

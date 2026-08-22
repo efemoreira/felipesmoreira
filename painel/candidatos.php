@@ -21,6 +21,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/layout.php';
 require_once __DIR__ . '/candidatos-comum.php';
+require_once __DIR__ . '/pessoas-comum.php';
 require_once __DIR__ . '/agenda-comum.php';  // o pipeline de imagem (upload, corte, apagar)
 exigir_area('candidatos');
 
@@ -51,11 +52,11 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
 
     /* ---------- candidatos ---------- */
     if (str_starts_with($acao, 'cand-')) {
-        $lista = ler_candidatos();
+        $pessoas = ler_pessoas();
 
         if ($acao === 'cand-novo' || $acao === 'cand-salvar') {
-            $id = $acao === 'cand-novo' ? novo_id_candidato() : limpar_texto($_POST['id'] ?? '', 40);
-            $atual = achar_candidato($id);
+            $id = $acao === 'cand-novo' ? novo_id_pessoa() : limpar_texto($_POST['id'] ?? '', 40);
+            $atual = achar_pessoa($id);
 
             /* A foto é opcional e não pode derrubar o cadastro: número certo no
                ar vale mais que rosto. Falha de upload avisa e segue. */
@@ -73,50 +74,57 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 $imagem = '';
             }
 
-            $ficha = [
-                'id'     => $id,
-                'nome'   => $_POST['nome'] ?? '',
-                'urna'   => $_POST['urna'] ?? '',
-                'cargo'  => $_POST['cargo'] ?? '',
-                'numero' => $_POST['numero'] ?? '',
-                'partido' => $_POST['partido'] ?? '',
-                'instagram' => $_POST['instagram'] ?? '',
-                'imagem' => $imagem,
-                'ordem'  => $_POST['ordem'] ?? 0,
-                'publicado' => $atual['publicado'] ?? false,
-                'criadoEm'  => $atual['criadoEm'] ?? date('c'),
-            ];
-            if (normalizar_candidato($ficha) === null) {
+            /* Parte da ficha que JÁ EXISTE: um candidato pode ser alguém que já
+               estava na lista (apareceu num encontro, tem conta). Sobrescrever a
+               ficha inteira apagaria o telefone e o histórico dela. */
+            $ficha = $atual ?? ['id' => $id, 'criadoEm' => date('c')];
+            $ficha['tipo']   = 'candidato';
+            $ficha['nome']   = $_POST['nome'] ?? ($ficha['nome'] ?? '');
+            $ficha['urna']   = $_POST['urna'] ?? '';
+            $ficha['cargo']  = $_POST['cargo'] ?? '';
+            $ficha['numero'] = $_POST['numero'] ?? '';
+            $ficha['partido'] = $_POST['partido'] ?? '';
+            $ficha['instagram'] = normalizar_arroba($_POST['instagram'] ?? '');
+            $ficha['imagem'] = $imagem;
+            $ficha['ordem']  = $_POST['ordem'] ?? 0;
+
+            if (normalizar_pessoa($ficha) === null || trim((string) $ficha['numero']) === '') {
                 avisar('erro', 'Precisa de nome e número — sem o número não dá para votar, e a colinha existe para isso.');
                 voltar('cadastro');
             }
 
-            if ($atual === null) {
-                $lista[] = $ficha;
-                avisar('ok', 'Cadastrado. Publique quando o número estiver conferido.');
-            } else {
-                foreach ($lista as $i => $c) {
-                    if ($c['id'] === $id) {
-                        $lista[$i] = $ficha;
-                    }
+            $achou = false;
+            foreach ($pessoas as $i => $c) {
+                if ($c['id'] === $id) {
+                    $pessoas[$i] = $ficha;
+                    $achou = true;
                 }
-                avisar('ok', 'Alterado.');
             }
+            if (!$achou) {
+                $pessoas[] = $ficha;
+            }
+            avisar('ok', $atual === null ? 'Cadastrado. Publique quando o número estiver conferido.' : 'Alterado.');
         } else {
             $id = limpar_texto($_POST['id'] ?? '', 40);
             $achou = false;
-            foreach ($lista as $i => $c) {
+            foreach ($pessoas as $i => $c) {
                 if ($c['id'] !== $id) {
                     continue;
                 }
                 $achou = true;
                 if ($acao === 'cand-apagar') {
+                    /* NÃO apaga a pessoa: ela pode ter presença em encontro e um
+                       histórico inteiro. Deixa de ser candidata, e é só. Quem
+                       quiser sumir com ela de vez faz isso em /painel/pessoas. */
                     apagar_imagem($c['imagem']);
-                    unset($lista[$i]);
-                    avisar('ok', 'Candidato apagado. Ele sai das listas junto.');
+                    $pessoas[$i]['tipo'] = 'apoiador';
+                    $pessoas[$i]['publicado'] = false;
+                    $pessoas[$i]['imagem'] = '';
+                    $pessoas[$i]['numero'] = '';
+                    avisar('ok', 'Deixou de ser candidato. A pessoa continua na lista, com o histórico dela.');
                 } elseif ($acao === 'cand-publicar') {
-                    $lista[$i]['publicado'] = !$c['publicado'];
-                    avisar('ok', $lista[$i]['publicado'] ? 'No ar em /candidatos.' : 'Recolhido do site.');
+                    $pessoas[$i]['publicado'] = !$c['publicado'];
+                    avisar('ok', $pessoas[$i]['publicado'] ? 'No ar em /candidatos.' : 'Recolhido do site.');
                 }
                 break;
             }
@@ -126,7 +134,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             }
         }
 
-        if (!gravar_candidatos(array_values($lista))) {
+        if (!gravar_pessoas(array_values($pessoas))) {
             avisar('erro', 'Não consegui gravar em /dados.');
         }
         voltar('cadastro');
@@ -428,10 +436,10 @@ abrir_pagina('Candidatos');
                     </button>
                   </form>
                   <form method="post" style="display:inline"
-                        onsubmit="return confirm('Apagar <?= h($c['nome']) ?>?')">
+                        onsubmit="return confirm('Tirar <?= h($c['nome']) ?> da chapa? A pessoa continua na lista, com o histórico dela.')">
                     <input type="hidden" name="csrf" value="<?= h(token()) ?>">
                     <input type="hidden" name="id" value="<?= h($c['id']) ?>">
-                    <button class="btn btn-mini btn-risco" name="acao" value="cand-apagar" type="submit">Apagar</button>
+                    <button class="btn btn-mini btn-risco" name="acao" value="cand-apagar" type="submit">Tirar da chapa</button>
                   </form>
                 </td>
               </tr>

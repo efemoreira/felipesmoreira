@@ -182,15 +182,23 @@ function tarefas_de(array $u): array
         }
 
         /* O funil D+0 / D+3 / D+7. Lead sem segunda mensagem é lead perdido, e
-           é a única parte do manual que vence sozinha com o relógio. */
+           é a única parte do manual que vence sozinha com o relógio.
+
+           O nome vem da PESSOA, não da presença: a presença é só a relação entre
+           as duas pontas, e quem tem nome é gente. */
+        $quem = [];
+        foreach (ler_pessoas() as $pp) {
+            $quem[$pp['id']] = $pp;
+        }
         $vencidos = [];
-        foreach (ler_leads() as $lead) {
+        foreach (ler_presencas() as $lead) {
             $evento = $eventos[$lead['eventoId']] ?? null;
-            if ($evento === null) {
+            if ($evento === null || !isset($quem[$lead['pessoaId']])) {
                 continue;
             }
             $etapa = etapa_vencida($lead, $evento);
             if ($etapa !== null) {
+                $lead['pessoa'] = $quem[$lead['pessoaId']];
                 $vencidos[] = ['lead' => $lead, 'etapa' => $etapa];
             }
         }
@@ -202,7 +210,7 @@ function tarefas_de(array $u): array
                 'icone'   => 'whatsapp',
                 'urgente' => true,
                 'texto'   => $quantos === 1
-                    ? 'Falar com ' . explode(' ', $primeiro['lead']['nome'])[0]
+                    ? 'Falar com ' . explode(' ', $primeiro['lead']['pessoa']['nome'])[0]
                     : "Fazer o follow-up de {$quantos} pessoas",
                 'porque'  => mb_strtolower(ROTULO_FUNIL[$primeiro['etapa']])
                     . ' — o passo venceu e lead sem segunda mensagem é lead perdido',
@@ -238,15 +246,14 @@ function tarefas_de(array $u): array
     /* ---------- Inscrições: quem está na porta ---------- */
     if (pode('inscricoes')) {
         require_once __DIR__ . '/inscricoes-comum.php';
+        require_once __DIR__ . '/pessoas-comum.php';
 
-        $novas = 0;
+        $fila = fila_de_entrada();
+        $novas = count($fila);
         $horas = 0;
-        foreach (ler_inscricoes() as $i) {
-            if ($i['status'] === 'nova') {
-                $novas++;
-                // a mais antiga manda no recado: é ela que está perdendo a pessoa
-                $horas = max($horas, horas_na_fila($i));
-            }
+        foreach ($fila as $i) {
+            // a mais antiga manda no recado: é ela que está perdendo a pessoa
+            $horas = max($horas, horas_na_fila($i));
         }
         if ($novas > 0) {
             /* Passou de 48h, o recado sobe para urgente. Não é burocracia de

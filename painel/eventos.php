@@ -229,32 +229,21 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             voltar($alvo['id'], 'pessoas');
         }
 
-        $leads = ler_leads();
+        $presencas = ler_presencas();
         $quantos = 0;
-        foreach (time_fora_do_evento($alvo['id']) as $u) {
+        foreach (pessoas_fora_do_evento($alvo['id']) as $u) {
             if (!in_array($u['id'], $ids, true)) {
                 continue;
             }
-            $leads[] = [
-                'id'       => novo_id_lead(),
+            $presencas[] = [
+                'id'       => novo_id_presenca(),
                 'eventoId' => $alvo['id'],
-                'nome'     => $u['nome'],
-                'telefone' => so_digitos($u['telefone'] ?? ''),
-                'bairro'   => (string) ($u['bairro'] ?? ''),
-                'cidade'   => (string) ($u['cidade'] ?? ''),
-                /* Quem é do time não é "curioso": já assumiu função no
-                   movimento, e classificá-lo como lead novo sujaria o funil. */
-                'classe'   => 'militante',
+                'pessoaId' => $u['id'],
                 'confirmou'  => true,
                 'compareceu' => false,   // marca-se quando o encontro acontece
                 'origem'     => 'painel',
-                'usuarioId'  => $u['id'],
                 'criadoPorId' => $eu['id'],
                 'criadoEm'    => date('c'),
-                /* O consentimento é o do cadastro dele no painel, que já existe
-                   — não se pede de novo a quem já é do time. */
-                'consentimentoEm'     => (string) ($u['consentimentoEm'] ?? ''),
-                'consentimentoVersao' => (string) ($u['consentimentoVersao'] ?? ''),
             ];
             $quantos++;
         }
@@ -263,7 +252,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             avisar('erro', 'Ninguém novo para escalar.');
             voltar($alvo['id'], 'pessoas');
         }
-        if (!gravar_leads($leads)) {
+        if (!gravar_presencas($presencas)) {
             avisar('erro', 'Não consegui gravar em /dados.');
             voltar($alvo['id'], 'pessoas');
         }
@@ -284,50 +273,77 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             avisar('erro', 'Confira o WhatsApp: use DDD + número.');
             voltar($alvo['id'], 'pessoas');
         }
-        if ($telefone !== '' && lead_por_telefone($alvo['id'], $telefone) !== null) {
-            avisar('erro', 'Esse número já está na lista deste encontro.');
+        /* Já conhecemos este número? Então NÃO se cria outra pessoa — entra
+           uma presença apontando para quem já existe. Antes cada encontro
+           guardava uma cópia da pessoa, e quem veio a cinco tinha cinco fichas
+           com o nome escrito de jeitos diferentes. */
+        $jaExiste = $telefone !== '' ? (pessoas_por_telefone($telefone)[0] ?? null) : null;
+
+        if ($jaExiste !== null && presenca_de($alvo['id'], $jaExiste['id']) !== null) {
+            avisar('erro', 'Essa pessoa já está na lista deste encontro.');
             voltar($alvo['id'], 'pessoas');
         }
 
-        $leads = ler_leads();
-        $leads[] = [
-            'id'       => novo_id_lead(),
+        $pessoaId = $jaExiste['id'] ?? '';
+        if ($jaExiste === null) {
+            $pessoas = ler_pessoas();
+            $nova = [
+                'id'       => novo_id_pessoa(),
+                'nome'     => $nome,
+                'tipo'     => limpar_texto($_POST['tipo'] ?? 'eleitor', 20),
+                'telefone' => $telefone,
+                'bairro'   => limpar_texto($_POST['bairro'] ?? '', 60),
+                'cidade'   => limpar_texto($_POST['cidade'] ?? '', 60),
+                'criadoEm' => date('c'),
+                /* Quem digita aqui é da Recepção, com a pessoa na frente: o
+                   consentimento é verbal, mas fica registrado com versão e data
+                   como o do QR. Sem isto a lista mistura ficha com e sem base
+                   legal anotada, e não há como saber qual é qual depois. */
+                'consentimentoEm'     => date('c'),
+                'consentimentoVersao' => VERSAO_CONSENTIMENTO_PRESENCA,
+            ];
+            $pessoas[] = $nova;
+            if (!gravar_pessoas($pessoas)) {
+                avisar('erro', 'Não consegui gravar em /dados.');
+                voltar($alvo['id'], 'pessoas');
+            }
+            $pessoaId = $nova['id'];
+        }
+
+        $presencas = ler_presencas();
+        $presencas[] = [
+            'id'       => novo_id_presenca(),
             'eventoId' => $alvo['id'],
-            'nome'     => $nome,
-            'telefone' => $telefone,
-            'bairro'   => limpar_texto($_POST['bairro'] ?? '', 60),
-            'cidade'   => limpar_texto($_POST['cidade'] ?? '', 60),
+            'pessoaId' => $pessoaId,
             'convidadoPor' => limpar_texto($_POST['convidadoPor'] ?? '', 60),
-            'classe'     => limpar_texto($_POST['classe'] ?? 'curioso', 20),
             'confirmou'  => !empty($_POST['confirmou']),
             'compareceu' => !empty($_POST['compareceu']),
             'origem'     => 'painel',
             'criadoPorId' => $eu['id'],
             'criadoEm'    => date('c'),
-            /* Quem digita aqui é da Recepção, com a pessoa na frente: o
-               consentimento é verbal, mas fica registrado com versão e data
-               como o do QR. Sem isto a lista mistura ficha com e sem base legal
-               anotada, e não há como saber qual é qual depois. */
-            'consentimentoEm'     => date('c'),
-            'consentimentoVersao' => VERSAO_CONSENTIMENTO_PRESENCA,
         ];
 
-        if (!gravar_leads($leads)) {
+        if (!gravar_presencas($presencas)) {
             avisar('erro', 'Não consegui gravar em /dados.');
             voltar($alvo['id'], 'pessoas');
         }
-        avisar('ok', $nome . ' entrou na lista.');
+        avisar('ok', $nome . ($jaExiste !== null ? ' (já cadastrada) entrou na lista.' : ' entrou na lista.'));
         voltar($alvo['id'], 'pessoas');
     }
 
     /* ---------- confirmar presença, classificar, andar no funil ---------- */
     if (in_array($acao, ['confirmou', 'compareceu', 'classificar', 'funil'], true)) {
-        $leadId = limpar_texto($_POST['lead'] ?? '', 40);
-        $leads  = ler_leads();
+        $presencaId = limpar_texto($_POST['lead'] ?? '', 40);
+        $presencas  = ler_presencas();
         $achou  = false;
+        /* O TIPO mudou de lugar: era `classe` na ficha do encontro, agora é da
+           pessoa — ela é militante em todo lugar, não só naquele sábado. Por
+           isso "classificar" grava em dois arquivos. */
+        $tipoNovo = limpar_texto($_POST['tipo'] ?? '', 20);
+        $pessoaDoTipo = '';
 
-        foreach ($leads as &$l) {
-            if ($l['id'] !== $leadId || $l['eventoId'] !== $alvo['id']) {
+        foreach ($presencas as &$l) {
+            if ($l['id'] !== $presencaId || $l['eventoId'] !== $alvo['id']) {
                 continue;
             }
             $achou = true;
@@ -337,10 +353,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             } elseif ($acao === 'compareceu') {
                 $l['compareceu'] = !$l['compareceu'];
             } elseif ($acao === 'classificar') {
-                $classe = limpar_texto($_POST['classe'] ?? '', 20);
-                if (isset(CLASSES_LEAD[$classe])) {
-                    $l['classe'] = $classe;
-                }
+                $pessoaDoTipo = $l['pessoaId'];
                 $l['observacao'] = limpar_texto($_POST['observacao'] ?? '', 300);
             } else {
                 // o funil é cobrança da coordenação
@@ -360,7 +373,18 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             avisar('erro', 'Pessoa não encontrada neste encontro.');
             voltar($alvo['id'], 'pessoas');
         }
-        if (!gravar_leads($leads)) {
+        if ($pessoaDoTipo !== '' && isset(TIPOS_PESSOA[$tipoNovo])) {
+            $pessoas = ler_pessoas();
+            foreach ($pessoas as &$p) {
+                if ($p['id'] === $pessoaDoTipo) {
+                    $p['tipo'] = $tipoNovo;
+                }
+            }
+            unset($p);
+            gravar_pessoas($pessoas);
+        }
+
+        if (!gravar_presencas($presencas)) {
             avisar('erro', 'Não consegui gravar em /dados.');
         }
         voltar($alvo['id'], $acao === 'funil' ? 'funil' : 'pessoas');
@@ -412,64 +436,17 @@ if ($aberto === null) {
           <a class="btn btn-ouro" id="abrir-novo" href="?novo=1">Novo encontro</a>
         </div>
       <?php endif; ?>
-
-      <?php /* ===== quem é do movimento, olhando todos os encontros juntos =====
-               Exige 'agenda' porque é a lista de contatos inteira, com telefone.
-               Fica recolhida: a pauta desta tela é o encontro que vem, não o
-               histórico — mas a pergunta "quem nunca falta" só tem resposta
-               aqui. */ ?>
-      <?php if ($coordena): ?>
-        <?php $todas = pessoas_agrupadas(); ?>
-        <?php if ($todas !== []): ?>
-          <details class="decidir" style="margin-bottom:22px">
-            <summary class="btn">As pessoas, somando todos os encontros (<?= count($todas) ?>)</summary>
-            <div class="decidir-corpo">
-              <p class="dica" style="margin:0 0 12px">
-                Quem mais aparece vem primeiro. <strong>Confirmou e faltou</strong> é o
-                número que mais importa aqui: é a diferença entre o que a Divulgação
-                prometeu e quem chegou na porta.
-              </p>
-              <div class="rolagem">
-                <table class="tabela">
-                  <thead><tr><th>Quem</th><th>Veio</th><th>Faltou</th><th>Convites</th></tr></thead>
-                  <tbody>
-                    <?php foreach ($todas as $pes): ?>
-                      <tr>
-                        <td>
-                          <strong><?= h($pes['nome']) ?></strong>
-                          <?php if ($pes['usuarioId'] !== ''): ?>
-                            <span class="selo selo-cinza">do time</span>
-                          <?php endif; ?>
-                          <br>
-                          <span class="dica">
-                            <?php $onde = trim($pes['bairro'] . ($pes['cidade'] !== '' ? ', ' . $pes['cidade'] : ''), ', '); ?>
-                            <?= $onde !== '' ? h($onde) . ' · ' : '' ?>
-                            <?php if ($pes['telefone'] !== ''): ?>
-                              <a href="https://wa.me/55<?= h($pes['telefone']) ?>" target="_blank" rel="noopener">
-                                <?= h(telefone_bonito($pes['telefone'])) ?>
-                              </a>
-                            <?php endif; ?>
-                          </span>
-                        </td>
-                        <td>
-                          <?php if ($pes['veio'] === 0): ?>
-                            <span class="selo selo-off">nunca veio</span>
-                          <?php elseif ($pes['veio'] === $pes['convites']): ?>
-                            <span class="selo selo-ok">foi a todos (<?= $pes['veio'] ?>)</span>
-                          <?php else: ?>
-                            <span class="selo"><?= $pes['veio'] ?></span>
-                          <?php endif; ?>
-                        </td>
-                        <td><?= $pes['faltou'] > 0 ? '<span class="selo selo-off">' . $pes['faltou'] . '</span>' : '—' ?></td>
-                        <td><?= $pes['convites'] ?></td>
-                      </tr>
-                    <?php endforeach; ?>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </details>
-        <?php endif; ?>
+      <?php /* A lista de todo mundo do movimento mudou de casa: mora em
+               /painel/pessoas, que é a tela com a ficha completa — em que
+               encontros cada um esteve, o que faz, o que abre no painel. Aqui
+               ficaria uma segunda lista de pessoas, sempre um passo atrás da
+               verdadeira. */ ?>
+      <?php if (pode('pessoas')): ?>
+        <p class="dica" style="margin:0 0 22px">
+          Procurando alguém específico, ou querendo saber quem nunca falta?
+          <a href="/painel/pessoas.php">Abra a lista de pessoas</a> — ela mostra a
+          ficha completa e todos os encontros de cada um.
+        </p>
       <?php endif; ?>
 
       <?php foreach ([['Próximos', eventos_proximos()], ['Já aconteceram', eventos_passados()]] as [$titulo, $lista]): ?>
@@ -487,7 +464,7 @@ if ($aberto === null) {
             <p class="dica" style="margin:0">Nada por aqui.</p>
           <?php endif; ?>
           <?php foreach ($lista as $e): ?>
-            <?php $p = preparo_do_evento($e); $presentes = count(array_filter(leads_do_evento($e['id']), fn ($l) => $l['compareceu'])); ?>
+            <?php $p = preparo_do_evento($e); $presentes = count(array_filter(presencas_do_evento($e['id']), fn ($l) => $l['compareceu'])); ?>
             <a class="area-cartao" href="?e=<?= h($e['id']) ?>">
               <span class="area-icone"><?= icone('ticket') ?></span>
               <span class="area-texto">
@@ -602,9 +579,9 @@ if ($aberto === null) {
 /* ---------------- um encontro ---------------- */
 
 $familia   = FAMILIAS[$aberto['familia']];
-$pessoas   = leads_do_evento($aberto['id']);
+$pessoas   = presencas_do_evento($aberto['id']);
 $preparo   = preparo_do_evento($aberto);
-$time      = array_values(array_filter(ler_usuarios(), fn ($u) => $u['ativo']));
+$time      = array_values(array_filter(ler_pessoas(), fn ($u) => $u['ativo']));
 
 /* Calculado aqui em cima porque a barra de seções, lá no topo, precisa do
    número — e o bloco do funil só aparece bem mais abaixo. */
@@ -671,7 +648,7 @@ abrir_pagina($aberto['titulo']);
       <?php
         $lista = checklist($peca['checklist']);
         $marcados = $aberto['feitos'][$chave] ?? [];
-        $responsavel = achar_usuario_por_id($aberto['responsaveis'][$chave]);
+        $responsavel = achar_pessoa($aberto['responsaveis'][$chave]);
       ?>
       <details class="item" id="peca-<?= h($chave) ?>" <?= count($marcados) < count($lista['itens']) ? 'open' : '' ?>>
         <summary class="item-topo">
@@ -774,7 +751,7 @@ abrir_pagina($aberto['titulo']);
     <?php endif; ?>
 
     <?php /* ===== escalar o time ===== */ ?>
-    <?php $doTime = time_fora_do_evento($aberto['id']); ?>
+    <?php $doTime = pessoas_fora_do_evento($aberto['id']); ?>
     <?php if ($doTime !== []): ?>
       <details class="decidir" style="margin:0 0 22px">
         <summary class="btn">Escalar o time (<?= count($doTime) ?> ainda fora da lista)</summary>
@@ -840,27 +817,33 @@ abrir_pagina($aberto['titulo']);
       <div class="rolagem">
         <table class="tabela">
           <thead>
-            <tr><th>Quem</th><th>Confirmou</th><th>Compareceu</th><th>Classe</th></tr>
+            <tr><th>Quem</th><th>Confirmou</th><th>Compareceu</th><th>O que é</th></tr>
           </thead>
           <tbody>
             <?php foreach ($pessoas as $l): ?>
+              <?php $q = $l['pessoa']; ?>
               <tr>
                 <td>
-                  <strong><?= h($l['nome']) ?></strong><br>
+                  <?php if (pode('pessoas')): ?>
+                    <a href="/painel/pessoas.php?p=<?= h($q['id']) ?>"><strong><?= h($q['nome']) ?></strong></a>
+                  <?php else: ?>
+                    <strong><?= h($q['nome']) ?></strong>
+                  <?php endif; ?>
+                  <br>
                   <span class="dica">
-                    <?php $onde = trim($l['bairro'] . ($l['cidade'] !== '' ? ', ' . $l['cidade'] : ''), ', '); ?>
+                    <?php $onde = trim($q['bairro'] . ($q['cidade'] !== '' ? ', ' . $q['cidade'] : ''), ', '); ?>
                     <?= $onde !== '' ? h($onde) . ' · ' : '' ?>
-                    <?php if ($l['telefone'] === ''): ?>
+                    <?php if ($q['telefone'] === ''): ?>
                       sem telefone
                     <?php elseif (pode_ver_telefone($l, $eu)): ?>
-                      <a href="https://wa.me/55<?= h($l['telefone']) ?>" target="_blank" rel="noopener">
-                        <?= h(telefone_bonito($l['telefone'])) ?>
+                      <a href="https://wa.me/55<?= h($q['telefone']) ?>" target="_blank" rel="noopener">
+                        <?= h(telefone_bonito($q['telefone'])) ?>
                       </a>
                     <?php else: ?>
-                      <?= h(telefone_encoberto($l['telefone'])) ?>
+                      <?= h(telefone_encoberto($q['telefone'])) ?>
                     <?php endif; ?>
                     <?= $l['origem'] === 'qr' ? ' · cadastro no celular' : '' ?>
-                    <?= $l['usuarioId'] !== '' ? ' · <span class="selo selo-cinza">do time</span>' : '' ?>
+                    <?= tem_conta($q) ? ' · <span class="selo selo-cinza">do time</span>' : '' ?>
                   </span>
                 </td>
                 <?php foreach (['confirmou', 'compareceu'] as $campo): ?>
@@ -881,9 +864,11 @@ abrir_pagina($aberto['titulo']);
                     <input type="hidden" name="id" value="<?= h($aberto['id']) ?>">
                     <input type="hidden" name="lead" value="<?= h($l['id']) ?>">
                     <input type="hidden" name="acao" value="classificar">
-                    <select name="classe" onchange="this.form.submit()">
-                      <?php foreach (CLASSES_LEAD as $chave => $nome): ?>
-                        <option value="<?= h($chave) ?>" <?= $l['classe'] === $chave ? 'selected' : '' ?>><?= h($nome) ?></option>
+                    <?php /* Grava no cadastro DA PESSOA, e não nesta linha: ela é
+                             militante em todo lugar, não só neste sábado. */ ?>
+                    <select name="tipo" onchange="this.form.submit()">
+                      <?php foreach (TIPOS_PESSOA as $chave => $nome): ?>
+                        <option value="<?= h($chave) ?>" <?= $q['tipo'] === $chave ? 'selected' : '' ?>><?= h($nome) ?></option>
                       <?php endforeach; ?>
                     </select>
                     <noscript><button type="submit" class="btn btn-mini">ok</button></noscript>
@@ -949,15 +934,15 @@ abrir_pagina($aberto['titulo']);
           <article class="ficha">
             <header class="ficha-topo">
               <span class="ficha-quem">
-                <strong><?= h($l['nome']) ?></strong>
-                <span><?= h(CLASSES_LEAD[$l['classe']]) ?> · <?= h(ROTULO_FUNIL[$etapa]) ?></span>
+                <strong><?= h($l['pessoa']['nome']) ?></strong>
+                <span><?= h(TIPOS_PESSOA[$l['pessoa']['tipo']]) ?> · <?= h(ROTULO_FUNIL[$etapa]) ?></span>
               </span>
               <span class="selo selo-off"><?= h(strtoupper($etapa)) ?></span>
             </header>
             <div class="acoes">
-              <?php if ($l['telefone'] !== '' && pode_ver_telefone($l, $eu)): ?>
+              <?php if ($l['pessoa']['telefone'] !== '' && pode_ver_telefone($l, $eu)): ?>
                 <a class="btn btn-mini" target="_blank" rel="noopener"
-                   href="https://wa.me/55<?= h($l['telefone']) ?>">Abrir WhatsApp</a>
+                   href="https://wa.me/55<?= h($l['pessoa']['telefone']) ?>">Abrir WhatsApp</a>
               <?php endif; ?>
               <form method="post" style="display:inline">
                 <input type="hidden" name="csrf" value="<?= h(token()) ?>">

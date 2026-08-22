@@ -224,7 +224,7 @@ abrir_pagina('Aulas em vídeo');
     <legend>Quem estudou</legend>
     <?php
       $progresso = ler_progresso();
-      $pessoas = array_values(array_filter(ler_usuarios(), fn ($u) => $u['ativo'] && in_array('aulas', $u['areas'], true)));
+      $pessoas = array_values(array_filter(ler_pessoas(), fn ($u) => $u['ativo'] && in_array('aulas', $u['areas'], true)));
       usort($pessoas, function ($a, $b) use ($progresso) {
           $qa = count($progresso[$a['id']] ?? []);
           $qb = count($progresso[$b['id']] ?? []);

@@ -57,9 +57,12 @@ if ($u === null && $metodo === 'GET' && convite_valido((string) ($_GET['convite'
 if ($u === null) {
     responder(['autenticado' => false]);
 }
-if (!pode('aulas')) {
-    responder(['autenticado' => true, 'pode' => false]);
-}
+/* ESTUDAR NÃO PEDE PERMISSÃO. Quem tem conta abre a formação inteira — ela é a
+   obrigação de quem chega, não um privilégio que se concede. A área 'aulas'
+   existe para EDITAR (pendurar o vídeo, ver quem estudou) e mora no
+   /painel/aulas, não aqui. Antes esta linha exigia a área, e o resultado era
+   militante novo com a formação trancada justamente na semana em que ela mais
+   importa. */
 
 /* ---------------- marcar aula ---------------- */
 

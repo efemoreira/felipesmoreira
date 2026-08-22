@@ -19,9 +19,10 @@ declare(strict_types=1);
 require_once __DIR__ . '/sessao.php';
 require_once __DIR__ . '/checklists.php';
 require_once __DIR__ . '/agenda-comum.php';  // o relógio, as cores e a publicação
+require_once __DIR__ . '/pessoas-comum.php';  // a presença aponta para uma pessoa
 
 const ARQ_EVENTOS = PASTA_DADOS . '/eventos.php';
-const ARQ_LEADS   = PASTA_DADOS . '/leads.php';
+const ARQ_PRESENCAS = PASTA_DADOS . '/presencas.php';
 
 /** Versão do texto de consentimento da página pública de presença. */
 const VERSAO_CONSENTIMENTO_PRESENCA = '1';
@@ -118,13 +119,6 @@ const STATUS_EVENTO = [
     'cancelado'  => 'Cancelado',
 ];
 
-/** As classes de lead do funil (Parte 6). */
-const CLASSES_LEAD = [
-    'curioso'      => 'Curioso',
-    'simpatizante' => 'Simpatizante',
-    'militante'    => 'Militante',
-    'apoiador'     => 'Apoiador ou liderança',
-];
 
 /* ===================== eventos ===================== */
 
@@ -492,24 +486,25 @@ function republicar_agenda(): bool
     return true;
 }
 
-/* ===================== pessoas do evento ===================== */
+/* ===================== presenças ===================== */
 
 /**
- * Uma lista só por evento, e não duas.
+ * Quem esteve — ou disse que vem — em cada encontro.
  *
- * O manual tem duas planilhas — RSVP (da Divulgação) e leads (da Recepção) —
- * mas elas descrevem a mesma pessoa em dois momentos: convidada e depois
- * presente. Duas listas viram trabalho dobrado e nome repetido; aqui a mesma
- * ficha ganha "confirmou" e "compareceu".
+ * É uma RELAÇÃO entre pessoa e evento, e não uma cópia da pessoa. Antes cada
+ * ficha repetia nome, telefone, bairro e cidade: quem foi a cinco encontros
+ * tinha cinco cópias de si, e corrigir um telefone errado exigia achar as cinco.
+ * Agora aponta para `pessoaId` e o resto vem de lá.
+ *
+ * Uma lista só por evento, e não duas. O manual tem duas planilhas — RSVP (da
+ * Divulgação) e leads (da Recepção) —, mas elas descrevem a mesma pessoa em dois
+ * momentos: convidada e depois presente. Duas listas viram trabalho dobrado e
+ * nome repetido; aqui a mesma linha ganha "confirmou" e "compareceu".
  */
-function normalizar_lead($l): ?array
+function normalizar_presenca($l): ?array
 {
-    if (!is_array($l) || empty($l['id']) || empty($l['nome'])) {
+    if (!is_array($l) || empty($l['id']) || empty($l['pessoaId']) || empty($l['eventoId'])) {
         return null;
-    }
-    $classe = (string) ($l['classe'] ?? 'curioso');
-    if (!isset(CLASSES_LEAD[$classe])) {
-        $classe = 'curioso';
     }
 
     $funil = [];
@@ -519,44 +514,39 @@ function normalizar_lead($l): ?array
 
     return [
         'id'       => limpar_texto($l['id'], 40),
-        'eventoId' => limpar_texto($l['eventoId'] ?? '', 40),
-        'nome'     => limpar_texto($l['nome'], 80),
-        'telefone' => so_digitos($l['telefone'] ?? ''),
-        'bairro'   => limpar_texto($l['bairro'] ?? '', 60),
-        'cidade'   => limpar_texto($l['cidade'] ?? '', 60),
+        'eventoId' => limpar_texto($l['eventoId'], 40),
+        'pessoaId' => limpar_texto($l['pessoaId'], 40),
         'convidadoPor' => limpar_texto($l['convidadoPor'] ?? '', 60),
-        'classe'   => $classe,
+        /* A anotação é DESTE encontro ("chegou atrasado", "quer ajudar na
+           próxima"), não da pessoa — por isso mora aqui e não na ficha dela. */
         'observacao' => limpar_texto($l['observacao'] ?? '', 300),
         'confirmou'  => !empty($l['confirmou']),
         'compareceu' => !empty($l['compareceu']),
-        // 'qr' quando a pessoa se cadastrou sozinha na porta; 'painel' quando alguém digitou
-        'origem'   => in_array($l['origem'] ?? 'painel', ['qr', 'painel'], true) ? $l['origem'] : 'painel',
-        /* Quando a ficha é de alguém que TEM conta no painel.
-           Sem isto, o militante escalado para trabalhar no encontro não
-           aparecia na lista de quem foi — ele não lê o QR da mesa, ele está
-           atrás dela. E aí o relatório dizia que o encontro teve menos gente do
-           que teve, justamente esquecendo quem fez o encontro acontecer. */
-        'usuarioId'   => limpar_texto($l['usuarioId'] ?? '', 40),
+        /* 'qr' quando a pessoa se cadastrou sozinha; 'painel' quando alguém
+           digitou. O `??` tem de estar nos DOIS lados: sem ele, uma ficha sem
+           `origem` passava no in_array (pelo padrão) e depois lia a chave que
+           não existe. */
+        'origem'   => in_array($l['origem'] ?? 'painel', ['qr', 'painel'], true)
+            ? ($l['origem'] ?? 'painel')
+            : 'painel',
         'criadoPorId' => limpar_texto($l['criadoPorId'] ?? '', 40),
         'criadoEm'    => limpar_texto($l['criadoEm'] ?? '', 40),
-        'consentimentoEm'     => limpar_texto($l['consentimentoEm'] ?? '', 40),
-        'consentimentoVersao' => limpar_texto($l['consentimentoVersao'] ?? '', 20),
         'funil'    => $funil,
     ];
 }
 
-function ler_leads(bool $recarregar = false): array
+function ler_presencas(bool $recarregar = false): array
 {
     static $cache = null;
     if ($cache !== null && !$recarregar) {
         return $cache;
     }
     $cache = [];
-    if (is_file(ARQ_LEADS)) {
-        $bruto = @include ARQ_LEADS;
+    if (is_file(ARQ_PRESENCAS)) {
+        $bruto = @include ARQ_PRESENCAS;
         if (is_array($bruto)) {
             foreach ($bruto as $l) {
-                if ($limpo = normalizar_lead($l)) {
+                if ($limpo = normalizar_presenca($l)) {
                     $cache[] = $limpo;
                 }
             }
@@ -565,196 +555,118 @@ function ler_leads(bool $recarregar = false): array
     return $cache;
 }
 
-function gravar_leads(array $leads): bool
+function gravar_presencas(array $presencas): bool
 {
     preparar_pastas();
     $limpos = [];
-    foreach ($leads as $l) {
-        if ($limpo = normalizar_lead($l)) {
+    foreach ($presencas as $l) {
+        if ($limpo = normalizar_presenca($l)) {
             $limpos[] = $limpo;
         }
     }
-    $conteudo = "<?php\n// Gerado pelo site. Dado pessoal — não versionar, não editar à mão.\nreturn "
+    $conteudo = "<?php\n// Gerado pelo site. Não versionar, não editar à mão.\nreturn "
         . var_export($limpos, true) . ";\n";
 
-    if (!gravar_atomico(ARQ_LEADS, $conteudo)) {
+    if (!gravar_atomico(ARQ_PRESENCAS, $conteudo)) {
         return false;
     }
-    ler_leads(true);
+    ler_presencas(true);
     return true;
 }
 
-function leads_do_evento(string $eventoId): array
+/**
+ * As presenças de um encontro, já com a ficha da pessoa junto.
+ *
+ * Cada linha traz `pessoa` resolvida — quem desenha a tela não deveria ter que
+ * cruzar dois arrays para escrever um nome. Presença cuja pessoa sumiu é
+ * descartada em silêncio: é resto de fusão de duplicata, não informação.
+ */
+function presencas_do_evento(string $eventoId): array
 {
-    $lista = array_values(array_filter(ler_leads(), fn ($l) => $l['eventoId'] === $eventoId));
-    usort($lista, fn ($a, $b) => strcmp($a['nome'], $b['nome']));
+    $porId = [];
+    foreach (ler_pessoas() as $p) {
+        $porId[$p['id']] = $p;
+    }
+
+    $lista = [];
+    foreach (ler_presencas() as $l) {
+        if ($l['eventoId'] !== $eventoId || !isset($porId[$l['pessoaId']])) {
+            continue;
+        }
+        $l['pessoa'] = $porId[$l['pessoaId']];
+        $lista[] = $l;
+    }
+    usort($lista, fn ($a, $b) => strcmp($a['pessoa']['nome'], $b['pessoa']['nome']));
     return $lista;
 }
 
-function novo_id_lead(): string
-{
-    return bin2hex(random_bytes(8));
-}
-
-/**
- * Todas as fichas daquele telefone, de QUALQUER encontro.
- *
- * `lead_por_telefone()` só olha dentro de um evento, que é o certo para o
- * dedupe. Esta olha o histórico inteiro — é o que permite a pessoa que já veio
- * a cinco encontros digitar só o WhatsApp e não redigitar nome, bairro e cidade
- * pela sexta vez.
- */
-function presencas_por_telefone(string $telefone): array
-{
-    $telefone = so_digitos($telefone);
-    if ($telefone === '') {
-        return [];
-    }
-    return array_values(array_filter(ler_leads(), fn ($l) => $l['telefone'] === $telefone));
-}
-
-/** Mesmo telefone não entra duas vezes no mesmo evento. */
-function lead_por_telefone(string $eventoId, string $telefone): ?array
-{
-    $telefone = so_digitos($telefone);
-    if ($telefone === '') {
-        return null;
-    }
-    foreach (ler_leads() as $l) {
-        if ($l['eventoId'] === $eventoId && $l['telefone'] === $telefone) {
-            return $l;
-        }
-    }
-    return null;
-}
-
-/**
- * A ficha DAQUELA PESSOA neste encontro — telefone e nome juntos.
- *
- * `lead_por_telefone()` responde "este número já está aqui?", que é a pergunta
- * certa para não duplicar. Mas quando duas pessoas dividem o celular (casa,
- * casal), ela devolve a primeira das duas — e marcar presença pela escolha da
- * tela acabava marcando a pessoa errada. Aqui o nome entra na chave.
- */
-function lead_da_pessoa(string $eventoId, string $telefone, string $nome): ?array
-{
-    $telefone = so_digitos($telefone);
-    $alvo = mb_strtolower(sem_acento($nome));
-    if ($telefone === '' || $alvo === '') {
-        return null;
-    }
-    foreach (ler_leads() as $l) {
-        if ($l['eventoId'] === $eventoId
-            && $l['telefone'] === $telefone
-            && mb_strtolower(sem_acento($l['nome'])) === $alvo) {
-            return $l;
-        }
-    }
-    return null;
-}
-
-/**
- * As pessoas do movimento vistas de cima, agrupadas por telefone.
- *
- * A lista por encontro responde "quem veio nesse". Esta responde as perguntas
- * que só existem no conjunto: quem nunca falta, quem confirma e não aparece,
- * quem veio uma vez e sumiu. São elas que dizem em quem investir o convite.
- *
- * O agrupamento é por telefone + nome, e não só por telefone: casa que divide
- * celular tem duas pessoas no mesmo número, e somá-las inventaria um militante
- * que vai a tudo.
- */
-function pessoas_agrupadas(): array
+/** Os encontros em que uma pessoa esteve — a pergunta da ficha dela. */
+function encontros_da_pessoa(string $pessoaId): array
 {
     $eventos = [];
     foreach (ler_eventos() as $e) {
         $eventos[$e['id']] = $e;
     }
 
-    $por = [];
-    foreach (ler_leads() as $l) {
-        $evento = $eventos[$l['eventoId']] ?? null;
-        if ($evento === null || $evento['status'] === 'cancelado') {
+    $lista = [];
+    foreach (ler_presencas() as $l) {
+        if ($l['pessoaId'] !== $pessoaId || !isset($eventos[$l['eventoId']])) {
             continue;
         }
-        $chave = $l['telefone'] . '|' . mb_strtolower(sem_acento($l['nome']));
-        if (!isset($por[$chave])) {
-            $por[$chave] = [
-                'nome' => $l['nome'], 'telefone' => $l['telefone'],
-                'bairro' => $l['bairro'], 'cidade' => $l['cidade'],
-                'classe' => $l['classe'], 'criadoPorId' => $l['criadoPorId'],
-                'usuarioId' => $l['usuarioId'],
-                'veio' => 0, 'confirmou' => 0, 'faltou' => 0, 'convites' => 0,
-                'ultimo' => '',
-            ];
-        }
-        $r = &$por[$chave];
-        $r['convites']++;
-        if ($l['compareceu']) {
-            $r['veio']++;
-            /* O último em que ela apareceu, para saber há quanto tempo sumiu. */
-            $quando = $evento['inicio'] !== '' ? $evento['inicio'] : $evento['data'];
-            if ($quando > $r['ultimo']) {
-                $r['ultimo'] = $quando;
-            }
-        } elseif ($l['confirmou']) {
-            $r['faltou']++;
-        }
-        if ($l['confirmou']) {
-            $r['confirmou']++;
-        }
-        /* A ficha mais recente manda no bairro/cidade: se a pessoa se mudou, foi
-           na última vez que ela disse onde mora. */
-        if ($l['bairro'] !== '') {
-            $r['bairro'] = $l['bairro'];
-        }
-        if ($l['cidade'] !== '') {
-            $r['cidade'] = $l['cidade'];
-        }
-        if ($l['usuarioId'] !== '') {
-            $r['usuarioId'] = $l['usuarioId'];
-        }
-        unset($r);
+        $l['evento'] = $eventos[$l['eventoId']];
+        $lista[] = $l;
     }
+    usort($lista, fn ($a, $b) => quando_do_evento($b['evento']) <=> quando_do_evento($a['evento']));
+    return $lista;
+}
 
-    /* Quem mais vem primeiro; empate desempata por quem mais faltou, que é
-       quem a coordenação precisa ligar. */
-    uasort($por, fn ($a, $b) => [$b['veio'], $b['faltou']] <=> [$a['veio'], $a['faltou']]);
-    return array_values($por);
+function novo_id_presenca(): string
+{
+    return bin2hex(random_bytes(8));
 }
 
 /**
- * O time que ainda não está na lista deste encontro.
+ * Quem ainda não está na lista deste encontro.
  *
- * Militante com conta não lê o QR da mesa — ele está atrás dela, recebendo os
- * outros. Escalar em bloco é o que faz a lista do encontro contar as pessoas
- * que efetivamente estiveram lá, e não só as que chegaram pela porta.
+ * Serve para escalar em bloco: militante com conta **não lê o QR da mesa** —
+ * está atrás dela, recebendo os outros. Sem escalar, a lista contaria só quem
+ * entrou pela porta, e o relatório esqueceria quem fez o encontro acontecer.
+ *
+ * `$soContas` separa as duas perguntas: "quem do TIME falta?" (a escalação) e
+ * "quem do movimento falta?" (convidar alguém que já está cadastrado).
  */
-function time_fora_do_evento(string $eventoId): array
+function pessoas_fora_do_evento(string $eventoId, bool $soContas = true): array
 {
     $dentro = [];
-    foreach (leads_do_evento($eventoId) as $l) {
-        if ($l['usuarioId'] !== '') {
-            $dentro[$l['usuarioId']] = true;
-        }
-        if ($l['telefone'] !== '') {
-            $dentro['tel:' . $l['telefone']] = true;
+    foreach (ler_presencas() as $l) {
+        if ($l['eventoId'] === $eventoId) {
+            $dentro[$l['pessoaId']] = true;
         }
     }
 
     $fora = [];
-    foreach (ler_usuarios() as $u) {
-        if (empty($u['ativo'])) {
+    foreach (ler_pessoas() as $p) {
+        if (isset($dentro[$p['id']])) {
             continue;
         }
-        $tel = so_digitos($u['telefone'] ?? '');
-        if (isset($dentro[$u['id']]) || ($tel !== '' && isset($dentro['tel:' . $tel]))) {
+        if ($soContas && (!tem_conta($p) || !$p['ativo'])) {
             continue;
         }
-        $fora[] = $u;
+        $fora[] = $p;
     }
-    usort($fora, fn ($a, $b) => strcmp($a['nome'], $b['nome']));
+    usort($fora, fn ($a, $b) => strcmp(sem_acento($a['nome']), sem_acento($b['nome'])));
     return $fora;
+}
+
+/** A linha desta pessoa neste encontro, ou null. */
+function presenca_de(string $eventoId, string $pessoaId): ?array
+{
+    foreach (ler_presencas() as $l) {
+        if ($l['eventoId'] === $eventoId && $l['pessoaId'] === $pessoaId) {
+            return $l;
+        }
+    }
+    return null;
 }
 
 /* ===================== funil de follow-up ===================== */
@@ -772,15 +684,15 @@ function dias_desde(string $referencia): int
  * D+0 agradecer · D+3 mandar conteúdo · D+7 convidar para o próximo.
  * Só conta quem compareceu: quem foi convidado e não veio não entra no funil.
  */
-function etapa_vencida(array $lead, array $evento): ?string
+function etapa_vencida(array $presenca, array $evento): ?string
 {
-    if (!$lead['compareceu']) {
+    if (!$presenca['compareceu']) {
         return null;
     }
-    $dias = dias_desde($evento['data'] !== '' ? $evento['data'] : $lead['criadoEm']);
+    $dias = dias_desde($evento['data'] !== '' ? $evento['data'] : $presenca['criadoEm']);
 
     foreach (['d0' => 0, 'd3' => 3, 'd7' => 7] as $etapa => $quando) {
-        if ($dias >= $quando && $lead['funil'][$etapa] === '') {
+        if ($dias >= $quando && $presenca['funil'][$etapa] === '') {
             return $etapa;
         }
     }
@@ -796,19 +708,21 @@ const ROTULO_FUNIL = [
 /* ===================== privacidade ===================== */
 
 /**
- * Quem enxerga o telefone: a coordenação (área 'agenda') e quem cadastrou.
+ * Quem enxerga o telefone: quem coordena o encontro e quem cadastrou a pessoa.
  *
  * Esconder de quem digitou o número não protegeria ninguém — a pessoa acabou de
  * ver o telefone para escrevê-lo. O que a regra evita é a lista inteira de
  * contatos ficar aberta para todo mundo que tem conta, e crescer junto com o
- * time.
+ * time. A lista COMPLETA, de todo mundo, é outra coisa: mora em /painel/pessoas
+ * e pede a capacidade de administração.
  */
-function pode_ver_telefone(array $lead, ?array $eu): bool
+function pode_ver_telefone(array $presenca, ?array $eu): bool
 {
     if ($eu === null) {
         return false;
     }
-    return pode('agenda') || ($lead['criadoPorId'] !== '' && $lead['criadoPorId'] === $eu['id']);
+    return pode('agenda')
+        || ($presenca['criadoPorId'] !== '' && $presenca['criadoPorId'] === $eu['id']);
 }
 
 /** 85912345678 -> (85) 9••••-••78 */

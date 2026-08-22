@@ -33,14 +33,15 @@ const VERSAO_ESTILO = '11';
  * não do modelo de permissão — é assim que o time já fala de si mesmo.
  *
  * Início e Formação ficam fora de grupo, soltos no topo: são de todo mundo e
- * não pertencem a uma frente. Usuários entra em Coordenação, só para admin.
+ * não pertencem a uma frente. Pessoas é área como as outras, e só a
+ * capacidade de administração a libera — é a tela com dado pessoal.
  *
  * ÁREA NOVA precisa entrar em um destes grupos, senão não aparece no menu.
  */
 const GRUPOS_NAV = [
     'Comunicação' => ['fatos', 'producao', 'municao', 'estudio'],
     'Encontros'   => ['eventos', 'agenda'],
-    'Coordenação' => ['inscricoes', 'candidatos'],
+    'Coordenação' => ['inscricoes', 'candidatos', 'aulas', 'pessoas'],
 ];
 
 /** Rótulos curtos, para caber na barra do celular. */
@@ -52,6 +53,7 @@ const ROTULO_CURTO = [
     'eventos'    => 'Encontros',
     'agenda'     => 'Agenda',
     'aulas'      => 'Aulas',
+    'pessoas'    => 'Pessoas',
     'inscricoes' => 'Inscrições',
     'candidatos' => 'Candidatos',
 ];
@@ -132,16 +134,21 @@ function menu_do_painel(array $u, array $pendencias): array
         'url' => '/painel/', 'arquivo' => 'index.php', 'rotulo' => 'Início',
         'curto' => 'Início', 'icone' => 'home', 'conta' => $pendencias['index'] ?? 0, 'marca' => '',
     ]];
-    if (in_array('aulas', $areas, true)) {
-        $aulas = $item('aulas');
+    /* Formação para TODO MUNDO que tem conta: estudar não pede permissão, é a
+       obrigação de quem chega. Vai para /aulas (a página que o militante lê),
+       e não para /painel/aulas, que é onde se pendura o vídeo — essa sim pede a
+       área e aparece no grupo Coordenação. */
+    $formacao = [
+        'url' => '/aulas', 'arquivo' => '', 'rotulo' => 'Formação',
+        'curto' => 'Formação', 'icone' => 'play', 'conta' => 0, 'marca' => '',
+    ];
+    $f = formacao_de($u);
+    if ($f !== null) {
         /* A formação não tem fila, tem caminho: o número dela é o progresso nas
            Pistas Rápidas, não uma pendência vermelha. */
-        $f = formacao_de($u);
-        if ($f !== null) {
-            $aulas['marca'] = $f['rapidasFeitas'] . '/' . $f['rapidas'];
-        }
-        $soltos[] = $aulas;
+        $formacao['marca'] = $f['rapidasFeitas'] . '/' . $f['rapidas'];
     }
+    $soltos[] = $formacao;
 
     $grupos = [];
     foreach (GRUPOS_NAV as $rotulo => $doGrupo) {
@@ -150,13 +157,6 @@ function menu_do_painel(array $u, array $pendencias): array
             if (in_array($area, $areas, true)) {
                 $itens[] = $item($area);
             }
-        }
-        if ($rotulo === 'Coordenação' && e_admin()) {
-            $itens[] = [
-                'url' => '/painel/usuarios.php', 'arquivo' => 'usuarios.php',
-                'rotulo' => 'Usuários', 'curto' => 'Usuários', 'icone' => 'users',
-                'conta' => 0, 'marca' => '',
-            ];
         }
         if ($itens !== []) {
             $grupos[$rotulo] = $itens;
@@ -204,7 +204,7 @@ function desenhar_utilidades(array $u, string $aqui, string $onde): void
     $temas = ['claro' => ['sol', 'Claro'], 'escuro' => ['lua', 'Escuro'], 'sistema' => ['dispositivo', 'Sistema']];
     ?>
     <div class="lateral-pe">
-      <p class="quem"><strong><?= h($u['nome']) ?></strong><span><?= h(PAPEIS[$u['papel']]) ?></span></p>
+      <p class="quem"><strong><?= h($u['nome']) ?></strong><span><?= h(rotulo_do_acesso($u)) ?></span></p>
 
       <form class="tema" method="post" action="/painel/tema.php">
         <input type="hidden" name="csrf" value="<?= h(token()) ?>">
@@ -255,7 +255,7 @@ function desenhar_barra_celular(array $u, array $menu, string $aqui): void
     foreach (mesas_de($u) as $mesa) {
         $ordem[] = $mesa['area'];
     }
-    foreach (['eventos', 'aulas', 'fatos', 'municao', 'producao', 'inscricoes', 'agenda', 'candidatos', 'estudio'] as $a) {
+    foreach (['eventos', 'fatos', 'municao', 'producao', 'inscricoes', 'agenda', 'pessoas', 'candidatos', 'aulas', 'estudio'] as $a) {
         $ordem[] = $a;
     }
 
