@@ -475,6 +475,22 @@ if ($aberto === null) {
          desenhar nenhuma das duas. */
       $proximos = eventos_proximos();
       $passados = eventos_passados();
+      $quantosTem = count($proximos) + count($passados);
+
+      /* A busca recorta as DUAS listas antes de a aba escolher uma. Sem isso o
+         contador da aba fechada mentiria — diria quantos existem, e não quantos
+         casam com o que foi digitado —, e quem procurasse "Juazeiro" na aba
+         errada veria um zero sem entender que o encontro estava na outra. */
+      $buscaEv = limpar_texto($_GET['q'] ?? '', 60);
+      if ($buscaEv !== '') {
+          $recorte = fn (array $e) => combina_com(
+              [$e['titulo'], $e['local'], $e['subtitulo'], $e['data'], FAMILIAS[$e['familia']]['nome']],
+              $buscaEv
+          );
+          $proximos = array_values(array_filter($proximos, $recorte));
+          $passados = array_values(array_filter($passados, $recorte));
+      }
+
       $abaEv = ($_GET['aba'] ?? '') === 'passados' ? 'passados' : 'proximos';
       barra_abas([
           'proximos' => ['nome' => 'Próximos',       'conta' => count($proximos)],
@@ -484,16 +500,25 @@ if ($aberto === null) {
       $lista  = $abaEv === 'passados' ? $passados : $proximos;
       ?>
         <fieldset>
-          <legend><?= h($titulo) ?> (<?= count($lista) ?>)</legend>
-          <?php if ($lista === [] && $titulo === 'Próximos'): ?>
+          <legend>
+            <?= h($titulo) ?> (<?= count($lista) ?><?= $buscaEv !== '' ? ' de ' . $quantosTem : '' ?>)
+          </legend>
+
+          <?php /* Só aparece quando há o que procurar: com três encontros a caixa
+                   é um controle em cima de uma lista que já cabe na tela. */ ?>
+          <?php if ($quantosTem > 6 || $buscaEv !== ''): ?>
+            <?php barra_busca($buscaEv, 'nome, local, cidade ou data', ['aba' => $abaEv]); ?>
+          <?php endif; ?>
+          <?php if ($lista === [] && $buscaEv !== ''): ?>
+            <?php nada_encontrado($buscaEv, '/painel/eventos.php?aba=' . urlencode($abaEv)); ?>
+          <?php elseif ($lista === [] && $titulo === 'Próximos'): ?>
             <p class="dica" style="margin:0 0 8px">
               Nenhum encontro marcado. O primeiro passo é <strong>Local &amp; Hora</strong>: três
               opções avaliadas (capacidade, custo, acesso, energia, som) antes de fechar qualquer
               coisa — e a reserva confirmada por escrito. Toque em <strong>Novo encontro</strong>
               lá em cima e as cinco peças aparecem prontas para dividir.
             </p>
-          <?php endif; ?>
-          <?php if ($lista === []): ?>
+          <?php elseif ($lista === []): ?>
             <p class="dica" style="margin:0">Nada por aqui.</p>
           <?php endif; ?>
           <?php foreach ($lista as $e): ?>

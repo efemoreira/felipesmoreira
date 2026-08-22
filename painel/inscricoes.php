@@ -166,6 +166,20 @@ unset($_SESSION['acesso_novo']);
 $todas = ler_pessoas();
 $novas = fila_de_entrada();
 $decididas = array_values(array_filter($todas, fn ($i) => in_array($i['status'], ['aprovada', 'recusada'], true)));
+$quantasTem = count($novas) + count($decididas);
+
+/* Recorta as DUAS abas antes de qualquer uma ser desenhada: a pergunta que
+   traz alguém aqui com um nome na mão é "essa pessoa já foi decidida?", e ela
+   se responde olhando o número das duas ao mesmo tempo. */
+$buscaIn = limpar_texto($_GET['q'] ?? '', 60);
+if ($buscaIn !== '') {
+    $recorteIn = fn (array $i) => combina_com(
+        [$i['nome'], $i['cidade'], $i['bairro'], $i['email'], $i['origem'], $i['telefone']],
+        $buscaIn
+    ) || ($i['telefone'] !== '' && str_contains($i['telefone'], so_digitos($buscaIn)) && so_digitos($buscaIn) !== '');
+    $novas = array_values(array_filter($novas, $recorteIn));
+    $decididas = array_values(array_filter($decididas, $recorteIn));
+}
 
 // mais recentes primeiro
 /* `fila_de_entrada()` já ordena do mais antigo para o mais novo, que é o
@@ -314,12 +328,16 @@ abrir_pagina('Inscrições');
   ], $abaIn, 'aba', 'Inscrições');
   ?>
 
+  <?php if ($quantasTem > 6 || $buscaIn !== ''): ?>
+    <?php barra_busca($buscaIn, 'nome, telefone, cidade ou quem trouxe', ['aba' => $abaIn]); ?>
+  <?php endif; ?>
+
   <?php if ($abaIn === 'fila'): ?>
   <fieldset>
     <legend>Esperando decisão (<?= count($novas) ?>)</legend>
 
     <?php if ($novas === []): ?>
-      <p class="dica" style="margin:0">Nenhuma inscrição nova por enquanto.</p>
+      <?php nada_encontrado($buscaIn, '/painel/inscricoes.php?aba=fila', 'Nenhuma inscrição nova por enquanto.'); ?>
     <?php endif; ?>
 
     <?php foreach ($novas as $i): ?>
@@ -447,6 +465,9 @@ abrir_pagina('Inscrições');
   <?php if ($abaIn === 'decididas'): ?>
     <fieldset>
       <legend>Já decididas (<?= count($decididas) ?>)</legend>
+      <?php if ($decididas === []): ?>
+        <?php nada_encontrado($buscaIn, '/painel/inscricoes.php?aba=decididas', 'Nada decidido ainda.'); ?>
+      <?php else: ?>
       <div class="rolagem">
         <table class="tabela">
           <thead>
@@ -478,6 +499,7 @@ abrir_pagina('Inscrições');
           </tbody>
         </table>
       </div>
+      <?php endif; ?>
     </fieldset>
   <?php endif; ?>
 

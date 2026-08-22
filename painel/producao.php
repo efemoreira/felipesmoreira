@@ -212,18 +212,49 @@ abrir_pagina('Produção');
 
   <?php recado($erro, $ok); ?>
 
+  <?php
+  /* O quadro inteiro é peneirado de uma vez, e não coluna por coluna: procurar
+     um card é procurar em que coluna ele está — se a busca recortasse só a
+     coluna aberta, a resposta seria "não achei" justamente quando ele existe.
+     As colunas vazias continuam desenhadas, com o número em zero: é a moldura
+     do quadro que diz onde o card não está. */
+  $buscaPr = limpar_texto($_GET['q'] ?? '', 60);
+  $porColuna = [];
+  $quantosCards = 0;
+  foreach (COLUNAS as $chave => $nome) {
+      $daColuna = cards_da_coluna($chave);
+      $quantosCards += count($daColuna);
+      $porColuna[$chave] = $buscaPr === '' ? $daColuna : array_values(array_filter(
+          $daColuna,
+          fn ($c) => combina_com([$c['titulo'], $c['donoNome'], $c['fonteUrl'], nome_de_arquivo($c)], $buscaPr)
+      ));
+  }
+  $achados = array_sum(array_map('count', $porColuna));
+  ?>
+
+  <?php if ($quantosCards > 6 || $buscaPr !== ''): ?>
+    <?php barra_busca($buscaPr, 'título, dono, fonte ou nome do arquivo'); ?>
+    <?php if ($buscaPr !== ''): ?>
+      <p class="dica" style="margin:-6px 0 18px">
+        <?= $achados ?> de <?= $quantosCards ?> no quadro.
+        <?php if ($achados === 0): ?>
+          Confira a grafia — a busca ignora acento e maiúscula, mas não adivinha.
+        <?php endif; ?>
+      </p>
+    <?php endif; ?>
+  <?php endif; ?>
 
   <?php /* No celular o quadro vira uma pilha de quatro colunas: sem esta faixa,
            chegar em "Revisão" é rolar às cegas. */ ?>
   <nav class="atalho-colunas" aria-label="Colunas do quadro">
     <?php foreach (COLUNAS as $chave => $nome): ?>
-      <a href="#coluna-<?= h($chave) ?>"><?= h($nome) ?> <span><?= count(cards_da_coluna($chave)) ?></span></a>
+      <a href="#coluna-<?= h($chave) ?>"><?= h($nome) ?> <span><?= count($porColuna[$chave]) ?></span></a>
     <?php endforeach; ?>
   </nav>
 
   <div class="quadro">
     <?php foreach (COLUNAS as $chave => $nome): ?>
-      <?php $daColuna = cards_da_coluna($chave); ?>
+      <?php $daColuna = $porColuna[$chave]; ?>
       <section class="coluna" id="coluna-<?= h($chave) ?>">
         <h2 class="coluna-topo">
           <?= h($nome) ?>
@@ -232,8 +263,12 @@ abrir_pagina('Produção');
 
         <?php if ($daColuna === []): ?>
           <?php /* Tela vazia é onboarding: dizer o que vai cair aqui e quem põe
-                   ensina o fluxo do manual sem obrigar ninguém a decorá-lo. */ ?>
-          <p class="dica coluna-vazia"><?= h(COLUNA_VAZIA[$chave] ?? 'Vazio.') ?></p>
+                   ensina o fluxo do manual sem obrigar ninguém a decorá-lo. Com
+                   busca ligada a coluna não está vazia, está recortada — e dizer
+                   ali o texto de onboarding seria mentir sobre o quadro. */ ?>
+          <p class="dica coluna-vazia">
+            <?= $buscaPr !== '' ? 'Nada com esse texto.' : h(COLUNA_VAZIA[$chave] ?? 'Vazio.') ?>
+          </p>
         <?php endif; ?>
 
         <?php foreach ($daColuna as $c): ?>
