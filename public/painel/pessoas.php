@@ -2,39 +2,54 @@
 declare(strict_types=1);
 
 /**
- * Usuários do painel — felipesmoreira.com/painel/usuarios.php
+ * Pessoas — felipesmoreira.com/painel/pessoas
  *
- * Só administrador entra. Aqui se cria quem acessa, se diz quais áreas cada um
- * abre e se reseta senha esquecida — que é o único caminho, porque só o hash
- * fica guardado e hash não volta a ser senha.
+ * Todo mundo do movimento numa lista só: quem tem conta, quem se inscreveu, quem
+ * apareceu num encontro e quem é candidato. Antes eram quatro cadastros que não
+ * se conheciam, e não dava para responder as perguntas óbvias — "em que
+ * encontros o Fulano esteve?", "esse número já é do time?", "quem está
+ * duplicado?".
  *
- * Toda ação termina em redirecionamento (POST-redirect-GET) para o F5 não
- * repetir o que já foi feito.
+ * **Só a capacidade de administração entra.** É a tela com telefone, e-mail e
+ * endereço de todo mundo: acesso a dado pessoal não acompanha o trabalho do dia,
+ * acompanha a responsabilidade sobre ele.
+ *
+ * Toda ação termina em redirecionamento (POST-redirect-GET).
  */
 
 require_once __DIR__ . '/layout.php';
-exigir_admin();
+require_once __DIR__ . '/pessoas-comum.php';
+require_once __DIR__ . '/eventos-comum.php';   // em que encontros ela esteve
+require_once __DIR__ . '/inscricoes-comum.php'; // nome_funcao()
+exigir_area('pessoas');
 
 $eu = usuario_atual();
 
-/** Guarda o recado para depois do redirecionamento. */
 function avisar(string $tipo, string $texto): void
 {
     $_SESSION['recado'] = ['tipo' => $tipo, 'texto' => $texto];
 }
 
-function voltar(): void
+function voltar(string $qs = ''): void
 {
-    header('Location: /painel/usuarios.php', true, 302);
+    header('Location: /painel/pessoas.php' . $qs, true, 302);
     exit;
 }
 
-/** As áreas marcadas no formulário, filtradas contra as que existem. */
+/** As áreas marcadas à mão — o ajuste fino por cima das capacidades. */
 function areas_do_post(): array
 {
     $pedidas = is_array($_POST['areas'] ?? null) ? $_POST['areas'] : [];
     return array_values(array_intersect(array_keys(AREAS), $pedidas));
 }
+
+function capacidades_do_post(): array
+{
+    $pedidas = is_array($_POST['capacidades'] ?? null) ? $_POST['capacidades'] : [];
+    return array_values(array_intersect(array_keys(CAPACIDADES), $pedidas));
+}
+
+/* ===================== ações ===================== */
 
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     if (!token_valido()) {
@@ -45,285 +60,581 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     }
 
     $acao = (string) ($_POST['acao'] ?? '');
-    $alvoId = (string) ($_POST['id'] ?? '');
-    $usuarios = ler_usuarios();
-    $alvo = $alvoId !== '' ? achar_usuario_por_id($alvoId) : null;
+    $alvo = achar_pessoa(limpar_texto($_POST['id'] ?? '', 40));
 
-    if ($acao === 'criar') {
-        $login = mb_strtolower(trim((string) ($_POST['usuario'] ?? '')));
-        $nome  = trim((string) ($_POST['nome'] ?? ''));
-        $papel = ((string) ($_POST['papel'] ?? 'editor')) === 'admin' ? 'admin' : 'editor';
+    /* ---------- cadastrar ou alterar ---------- */
+    if ($acao === 'salvar') {
+        $novo = $alvo === null;
+        $ficha = $alvo ?? [
+            'id' => novo_id_pessoa(),
+            'criadoEm' => date('c'),
+        ];
 
-        if ($erro = validar_nome_usuario($login)) {
-            avisar('erro', $erro);
-        } elseif ($nome === '') {
-            avisar('erro', 'Diga o nome da pessoa.');
-        } elseif (achar_usuario($login) !== null) {
-            avisar('erro', 'Já existe alguém com o login “' . $login . '”.');
-        } else {
-            $provisoria = senha_provisoria();
-            $usuarios[] = [
-                'id'          => novo_id_usuario(),
-                'usuario'     => $login,
-                'nome'        => mb_substr($nome, 0, 60),
-                'hash'        => password_hash($provisoria, PASSWORD_DEFAULT),
-                'papel'       => $papel,
-                'areas'       => areas_do_post(),
-                'ativo'       => true,
-                'trocarSenha' => true,   // troca obrigatória no primeiro login
-                'criadoEm'    => date('c'),
-            ];
-            if (gravar_usuarios($usuarios)) {
-                $_SESSION['provisoria'] = ['usuario' => $login, 'senha' => $provisoria];
-                avisar('ok', 'Usuário “' . $login . '” criado.');
-            } else {
-                avisar('erro', 'Não consegui gravar em /dados. Confira as permissões no hPanel.');
-            }
+        $ficha['nome']   = $_POST['nome'] ?? ($ficha['nome'] ?? '');
+        $ficha['tipo']   = $_POST['tipo'] ?? 'eleitor';
+        $ficha['telefone'] = $_POST['telefone'] ?? '';
+        $ficha['email']  = $_POST['email'] ?? '';
+        $ficha['cidade'] = $_POST['cidade'] ?? '';
+        $ficha['bairro'] = $_POST['bairro'] ?? '';
+        $ficha['observacao'] = $_POST['observacao'] ?? '';
+        $ficha['funcoes'] = (array) ($_POST['funcoes'] ?? []);
+        $ficha['capacidades'] = capacidades_do_post();
+        /* As áreas do formulário são só o ajuste fino: normalizar_pessoa()
+           acrescenta por cima o que as capacidades já liberam. */
+        $ficha['areas'] = areas_do_post();
+
+        if (normalizar_pessoa($ficha) === null) {
+            avisar('erro', 'O nome é o mínimo — sem ele não dá para chamar ninguém de nada.');
+            voltar();
         }
-        voltar();
+
+        /* Tirar a administração do último que administra tranca todo mundo para
+           fora de criar contas e mexer em permissão. */
+        if ($alvo !== null && in_array('adm', $alvo['capacidades'], true)
+            && !in_array('adm', $ficha['capacidades'], true)
+            && !tem_admin_ativo($alvo['id'])) {
+            avisar('erro', 'Este é o único administrador ativo. Dê a administração a outra pessoa antes de tirar a dele.');
+            voltar('?p=' . $alvo['id']);
+        }
+
+        $pessoas = [];
+        $achou = false;
+        foreach (ler_pessoas() as $p) {
+            if ($p['id'] === $ficha['id']) {
+                $achou = true;
+                $pessoas[] = $ficha;
+                continue;
+            }
+            $pessoas[] = $p;
+        }
+        if (!$achou) {
+            $pessoas[] = $ficha;
+        }
+
+        if (!gravar_pessoas($pessoas)) {
+            avisar('erro', 'Não consegui gravar em /dados.');
+            voltar();
+        }
+        avisar('ok', $novo ? 'Cadastrada.' : 'Alterada.');
+        voltar('?p=' . $ficha['id']);
     }
 
     if ($alvo === null) {
-        avisar('erro', 'Usuário não encontrado.');
+        avisar('erro', 'Pessoa não encontrada.');
         voltar();
     }
 
-    if ($acao === 'salvar') {
-        $nome  = trim((string) ($_POST['nome'] ?? ''));
-        $papel = ((string) ($_POST['papel'] ?? 'editor')) === 'admin' ? 'admin' : 'editor';
-        $ativo = !empty($_POST['ativo']);
-
-        // ninguém tira o próprio acesso de administrador sem querer
-        if ($alvo['id'] === $eu['id'] && ($papel !== 'admin' || !$ativo)) {
-            avisar('erro', 'Você não pode rebaixar nem desativar a si mesmo. Peça a outro administrador.');
-            voltar();
+    /* ---------- dar acesso ao painel ---------- */
+    if ($acao === 'dar-conta') {
+        if (tem_conta($alvo)) {
+            avisar('erro', 'Essa pessoa já tem conta.');
+            voltar('?p=' . $alvo['id']);
         }
-        // e o painel nunca pode ficar sem nenhum administrador ativo
-        if ($alvo['papel'] === 'admin' && ($papel !== 'admin' || !$ativo) && !tem_admin_ativo($alvo['id'])) {
-            avisar('erro', 'Esse é o último administrador ativo. Promova outra pessoa antes.');
-            voltar();
+        $login = mb_strtolower(trim((string) ($_POST['usuario'] ?? '')));
+        if ($erro = validar_nome_usuario($login)) {
+            avisar('erro', $erro);
+            voltar('?p=' . $alvo['id']);
+        }
+        if (pessoa_por_usuario($login) !== null) {
+            avisar('erro', 'Esse login já está em uso.');
+            voltar('?p=' . $alvo['id']);
         }
 
-        foreach ($usuarios as &$u) {
-            if ($u['id'] === $alvo['id']) {
-                $u['nome']  = mb_substr($nome !== '' ? $nome : $u['nome'], 0, 60);
-                $u['papel'] = $papel;
-                $u['areas'] = areas_do_post();
-                $u['ativo'] = $ativo;
+        $provisoria = senha_provisoria();
+        $pessoas = ler_pessoas();
+        foreach ($pessoas as &$p) {
+            if ($p['id'] === $alvo['id']) {
+                $p['usuario'] = $login;
+                $p['hash'] = password_hash($provisoria, PASSWORD_DEFAULT);
+                $p['ativo'] = true;
+                /* Provisória de verdade: exigir_login() prende a pessoa em
+                   conta.php até ela escolher a própria senha. */
+                $p['trocarSenha'] = true;
+                if ($p['status'] === 'pendente' || $p['status'] === '') {
+                    $p['status'] = 'aprovada';
+                }
             }
         }
-        unset($u);
+        unset($p);
 
-        if (gravar_usuarios($usuarios)) {
-            avisar('ok', 'Acesso de “' . $alvo['usuario'] . '” atualizado.');
-        } else {
-            avisar('erro', 'Não consegui gravar as mudanças.');
+        if (!gravar_pessoas($pessoas)) {
+            avisar('erro', 'Não consegui gravar em /dados.');
+            voltar('?p=' . $alvo['id']);
         }
-        voltar();
+        $_SESSION['senha_nova'] = ['id' => $alvo['id'], 'usuario' => $login, 'senha' => $provisoria];
+        avisar('ok', 'Conta criada.');
+        voltar('?p=' . $alvo['id']);
     }
 
+    /* ---------- resetar senha ---------- */
     if ($acao === 'resetar') {
         $provisoria = senha_provisoria();
-        foreach ($usuarios as &$u) {
-            if ($u['id'] === $alvo['id']) {
-                $u['hash'] = password_hash($provisoria, PASSWORD_DEFAULT);
-                $u['trocarSenha'] = true;
+        $pessoas = ler_pessoas();
+        foreach ($pessoas as &$p) {
+            if ($p['id'] === $alvo['id'] && tem_conta($p)) {
+                $p['hash'] = password_hash($provisoria, PASSWORD_DEFAULT);
+                $p['trocarSenha'] = true;
             }
         }
-        unset($u);
-
-        if (gravar_usuarios($usuarios)) {
-            limpar_falhas($alvo['usuario']);
-            $_SESSION['provisoria'] = ['usuario' => $alvo['usuario'], 'senha' => $provisoria];
-            avisar('ok', 'Senha de “' . $alvo['usuario'] . '” resetada.');
-        } else {
-            avisar('erro', 'Não consegui gravar a senha nova.');
+        unset($p);
+        if (!gravar_pessoas($pessoas)) {
+            avisar('erro', 'Não consegui gravar em /dados.');
+            voltar('?p=' . $alvo['id']);
         }
+        $_SESSION['senha_nova'] = ['id' => $alvo['id'], 'usuario' => $alvo['usuario'], 'senha' => $provisoria];
+        avisar('ok', 'Senha trocada.');
+        voltar('?p=' . $alvo['id']);
+    }
+
+    /* ---------- ativar / desativar a conta ---------- */
+    if ($acao === 'ativar') {
+        if ($alvo['ativo'] && !tem_admin_ativo($alvo['id']) && in_array('adm', $alvo['capacidades'], true)) {
+            avisar('erro', 'Este é o único administrador ativo — desativá-lo tranca todo mundo para fora.');
+            voltar('?p=' . $alvo['id']);
+        }
+        $pessoas = ler_pessoas();
+        foreach ($pessoas as &$p) {
+            if ($p['id'] === $alvo['id']) {
+                $p['ativo'] = !$p['ativo'];
+            }
+        }
+        unset($p);
+        gravar_pessoas($pessoas);
+        avisar('ok', $alvo['ativo'] ? 'Conta desativada. A pessoa continua na lista.' : 'Conta reativada.');
+        voltar('?p=' . $alvo['id']);
+    }
+
+    /* ---------- juntar duplicata ---------- */
+    if ($acao === 'juntar') {
+        $sumir = limpar_texto($_POST['sumir'] ?? '', 40);
+        if (juntar_pessoas($alvo['id'], $sumir)) {
+            avisar('ok', 'Fichas juntadas. As presenças em encontro vieram junto.');
+        } else {
+            avisar('erro', 'Não deu para juntar. Duas contas de painel nunca se fundem — apague uma antes, na mão.');
+        }
+        voltar('?p=' . $alvo['id']);
+    }
+
+    /* ---------- apagar ---------- */
+    if ($acao === 'apagar') {
+        if (in_array('adm', $alvo['capacidades'], true) && !tem_admin_ativo($alvo['id'])) {
+            avisar('erro', 'Não dá para apagar o único administrador ativo.');
+            voltar('?p=' . $alvo['id']);
+        }
+        $restantes = array_values(array_filter(ler_pessoas(), fn ($p) => $p['id'] !== $alvo['id']));
+        if (!gravar_pessoas($restantes)) {
+            avisar('erro', 'Não consegui gravar em /dados.');
+            voltar('?p=' . $alvo['id']);
+        }
+        /* As presenças dela vão junto: presença de quem não existe mais é linha
+           que só atrapalha a contagem do encontro. */
+        gravar_presencas(array_values(array_filter(ler_presencas(), fn ($l) => $l['pessoaId'] !== $alvo['id'])));
+        avisar('ok', $alvo['nome'] . ' foi apagada, e as presenças dela junto.');
         voltar();
     }
 
-    if ($acao === 'remover') {
-        if ($alvo['id'] === $eu['id']) {
-            avisar('erro', 'Você não pode remover a si mesmo.');
-            voltar();
-        }
-        if ($alvo['papel'] === 'admin' && !tem_admin_ativo($alvo['id'])) {
-            avisar('erro', 'Esse é o último administrador. Promova outra pessoa antes de remover.');
-            voltar();
-        }
-        $restantes = array_values(array_filter($usuarios, fn($u) => $u['id'] !== $alvo['id']));
-        if (gravar_usuarios($restantes)) {
-            limpar_falhas($alvo['usuario']);
-            avisar('ok', 'Usuário “' . $alvo['usuario'] . '” removido.');
-        } else {
-            avisar('erro', 'Não consegui gravar a remoção.');
-        }
-        voltar();
-    }
-
+    avisar('erro', 'Ação desconhecida.');
     voltar();
 }
 
-/* ---- recados guardados pelo POST anterior ---- */
+/* ===================== a tela ===================== */
+
 $recado = $_SESSION['recado'] ?? null;
 unset($_SESSION['recado']);
-$provisoria = $_SESSION['provisoria'] ?? null;
-unset($_SESSION['provisoria']);
+$erro = ($recado['tipo'] ?? '') === 'erro' ? $recado['texto'] : null;
+$ok   = ($recado['tipo'] ?? '') === 'ok'   ? $recado['texto'] : null;
 
-$usuarios = ler_usuarios();
-usort($usuarios, fn($a, $b) => [$b['papel'] === 'admin', $a['usuario']] <=> [$a['papel'] === 'admin', $b['usuario']]);
+$senhaNova = $_SESSION['senha_nova'] ?? null;
+unset($_SESSION['senha_nova']);
 
-abrir_pagina('Usuários');
+$aberta = achar_pessoa(limpar_texto($_GET['p'] ?? '', 40));
+$busca  = limpar_texto($_GET['q'] ?? '', 60);
+$filtro = limpar_texto($_GET['tipo'] ?? '', 20);
+
+$todas = ler_pessoas();
+if ($busca !== '') {
+    /* Casa por nome sem acento, por telefone e por login: quem procura tem na
+       mão um desses três, e nunca sabe qual está gravado. */
+    $alvoBusca = mb_strtolower(sem_acento($busca));
+    $digitos = so_digitos($busca);
+    $todas = array_values(array_filter($todas, function ($p) use ($alvoBusca, $digitos) {
+        if (str_contains(mb_strtolower(sem_acento($p['nome'])), $alvoBusca)) {
+            return true;
+        }
+        if ($digitos !== '' && str_contains($p['telefone'], $digitos)) {
+            return true;
+        }
+        return $p['usuario'] !== '' && str_contains($p['usuario'], $alvoBusca);
+    }));
+}
+if (isset(TIPOS_PESSOA[$filtro]) && $filtro !== '') {
+    $todas = array_values(array_filter($todas, fn ($p) => $p['tipo'] === $filtro));
+}
+usort($todas, fn ($a, $b) => strcmp(sem_acento($a['nome']), sem_acento($b['nome'])));
+
+$duplicatas = duplicatas_de_pessoas();
+$porTipo = [];
+foreach (ler_pessoas() as $p) {
+    $porTipo[$p['tipo']] = ($porTipo[$p['tipo']] ?? 0) + 1;
+}
+
+$catalogo = catalogo_funcoes()['lista'] ?? [];
+
+abrir_pagina('Pessoas');
 ?>
 <div class="capa">
   <?php cabecalho_pagina(
-      'Usuários do painel',
-      'Quem entra, o que cada um abre. Senha não se recupera — se alguém esquecer, use “Resetar senha”.',
+      'Pessoas',
+      'Todo mundo do movimento numa lista só — quem tem conta, quem se inscreveu, '
+      . 'quem apareceu num encontro e quem é candidato.',
       null,
       null,
       [
-          'Marcar as áreas de cada pessoa — área é permissão de tela, não a função dela no movimento.',
-          'Resetar a senha de quem perdeu o acesso: a provisória aparece uma vez, na hora.',
-          'Desativar quem saiu, em vez de apagar — o histórico do que a pessoa fez continua fazendo sentido.',
+          'A ficha mostra o que a pessoa é, o que faz, o que abre no painel e em que encontros esteve.',
+          'Capacidade é o jeito normal de dar acesso; as áreas embaixo são para a exceção.',
+          'Dar conta cria o login e mostra a senha provisória uma vez.',
+          'Duplicatas são sugestão, nunca fusão automática — juntar a ficha errada não tem desfazer.',
       ]
   ); ?>
 
-  <?php
-  recado(
-      ($recado['tipo'] ?? '') === 'erro' ? $recado['texto'] : null,
-      ($recado['tipo'] ?? '') === 'ok' ? $recado['texto'] : null
-  );
-  ?>
+  <?php recado($erro, $ok); ?>
 
-  <?php if ($provisoria): ?>
+  <?php if ($senhaNova !== null): ?>
     <div class="msg msg-ok">
-      <strong>Senha provisória de “<?= h($provisoria['usuario']) ?>”</strong> — anote agora, ela não aparece de novo.
-      Quem entrar com ela é obrigado a trocar na hora.
-      <div class="provisoria"><?= h($provisoria['senha']) ?></div>
+      <p style="margin:0 0 8px">
+        <strong>Login:</strong> <span class="provisoria"><?= h($senhaNova['usuario']) ?></span>
+        &nbsp; <strong>Senha provisória:</strong> <span class="provisoria"><?= h($senhaNova['senha']) ?></span>
+      </p>
+      <p class="dica" style="margin:0">
+        Aparece <strong>uma vez só</strong> — só o hash fica guardado, e hash não volta
+        a ser senha. Mande agora; no primeiro acesso a pessoa é obrigada a trocar.
+      </p>
     </div>
   <?php endif; ?>
 
-  <fieldset>
-    <legend>Novo usuário</legend>
+  <?php /* ============ duplicatas ============ */ ?>
+  <?php if ($duplicatas !== []): ?>
+    <fieldset id="duplicatas">
+      <legend>Possíveis duplicatas (<?= count($duplicatas) ?>)</legend>
+      <p class="dica" style="margin:0 0 14px">
+        Mesmo telefone ou mesmo nome. <strong>É sugestão, não certeza</strong> — casa que
+        divide celular tem duas pessoas de verdade no mesmo número. Confira antes: juntar
+        a ficha errada apaga o histórico de alguém, e isso não tem desfazer.
+      </p>
+      <?php foreach ($duplicatas as $d): ?>
+        <article class="ficha">
+          <header class="ficha-topo">
+            <span class="ficha-quem">
+              <strong><?= h($d['a']['nome']) ?></strong>
+              <span>e <strong><?= h($d['b']['nome']) ?></strong> — <?= h($d['motivo']) ?></span>
+            </span>
+            <span class="selo selo-off"><?= h($d['motivo']) ?></span>
+          </header>
+          <dl class="ficha-dados">
+            <?php foreach (['a', 'b'] as $lado): ?>
+              <?php $x = $d[$lado]; ?>
+              <div>
+                <dt><?= h($x['nome']) ?></dt>
+                <dd>
+                  <?= h(TIPOS_PESSOA[$x['tipo']]) ?>
+                  <?= $x['telefone'] !== '' ? ' · ' . h(telefone_bonito($x['telefone'])) : '' ?>
+                  <?= tem_conta($x) ? ' · <span class="selo">tem conta</span>' : '' ?>
+                  <br><span class="dica"><?= count(encontros_da_pessoa($x['id'])) ?> encontro(s)</span>
+                </dd>
+              </div>
+            <?php endforeach; ?>
+          </dl>
+          <div class="acoes">
+            <?php foreach ([['a', 'b'], ['b', 'a']] as [$fica, $vai]): ?>
+              <form method="post" style="display:inline"
+                    onsubmit="return confirm('Juntar tudo em “<?= h($d[$fica]['nome']) ?>” e apagar a outra ficha?')">
+                <input type="hidden" name="csrf" value="<?= h(token()) ?>">
+                <input type="hidden" name="acao" value="juntar">
+                <input type="hidden" name="id" value="<?= h($d[$fica]['id']) ?>">
+                <input type="hidden" name="sumir" value="<?= h($d[$vai]['id']) ?>">
+                <button class="btn btn-mini" type="submit">Manter <?= h($d[$fica]['nome']) ?></button>
+              </form>
+            <?php endforeach; ?>
+          </div>
+        </article>
+      <?php endforeach; ?>
+    </fieldset>
+  <?php endif; ?>
+
+  <?php /* ============ a ficha aberta ============ */ ?>
+  <?php if ($aberta !== null): ?>
+    <?php $encontros = encontros_da_pessoa($aberta['id']); ?>
+    <fieldset id="ficha">
+      <legend><?= h($aberta['nome']) ?></legend>
+
+      <p style="margin:0 0 14px">
+        <span class="selo"><?= h(TIPOS_PESSOA[$aberta['tipo']]) ?></span>
+        <?php if (tem_conta($aberta)): ?>
+          <span class="selo <?= $aberta['ativo'] ? 'selo-ok' : 'selo-off' ?>">
+            <?= $aberta['ativo'] ? 'conta ativa' : 'conta desativada' ?> · <?= h($aberta['usuario']) ?>
+          </span>
+        <?php endif; ?>
+        <?php if ($aberta['status'] !== ''): ?>
+          <span class="selo selo-cinza"><?= h(STATUS_PESSOA[$aberta['status']]) ?></span>
+        <?php endif; ?>
+      </p>
+
+      <?php /* ---- em que encontros esteve ---- */ ?>
+      <h3 style="margin:18px 0 10px">Encontros (<?= count($encontros) ?>)</h3>
+      <?php if ($encontros === []): ?>
+        <p class="dica" style="margin:0">Nunca apareceu em encontro nenhum.</p>
+      <?php else: ?>
+        <div class="rolagem">
+          <table class="tabela">
+            <thead><tr><th>Encontro</th><th>Quando</th><th>O que aconteceu</th></tr></thead>
+            <tbody>
+              <?php foreach ($encontros as $en): ?>
+                <tr>
+                  <td>
+                    <a href="/painel/eventos.php?e=<?= h($en['evento']['id']) ?>">
+                      <?= h($en['evento']['titulo']) ?>
+                    </a>
+                  </td>
+                  <td><?= h(trim($en['evento']['data'] . ' ' . $en['evento']['hora'])) ?: '—' ?></td>
+                  <td>
+                    <?php if ($en['compareceu']): ?>
+                      <span class="selo selo-ok">veio</span>
+                    <?php elseif ($en['confirmou']): ?>
+                      <span class="selo selo-off">confirmou e faltou</span>
+                    <?php else: ?>
+                      <span class="selo selo-cinza">convidada</span>
+                    <?php endif; ?>
+                  </td>
+                </tr>
+              <?php endforeach; ?>
+            </tbody>
+          </table>
+        </div>
+      <?php endif; ?>
+
+      <?php /* ---- acesso ao painel ---- */ ?>
+      <h3 style="margin:22px 0 10px">Acesso ao painel</h3>
+      <?php if (!tem_conta($aberta)): ?>
+        <p class="dica">
+          Sem conta. A maioria das pessoas não precisa de uma — quem confirmou presença
+          num encontro está na lista do mesmo jeito.
+        </p>
+        <form method="post">
+          <input type="hidden" name="csrf" value="<?= h(token()) ?>">
+          <input type="hidden" name="acao" value="dar-conta">
+          <input type="hidden" name="id" value="<?= h($aberta['id']) ?>">
+          <div class="campo">
+            <label for="novo-login">Login</label>
+            <input id="novo-login" name="usuario" type="text" maxlength="24" required
+                   value="<?= h(login_sugerido($aberta['nome'])) ?>">
+          </div>
+          <div class="acoes">
+            <button class="btn btn-ouro" type="submit">Criar a conta e gerar senha</button>
+          </div>
+        </form>
+      <?php else: ?>
+        <div class="acoes">
+          <form method="post" style="display:inline">
+            <input type="hidden" name="csrf" value="<?= h(token()) ?>">
+            <input type="hidden" name="acao" value="resetar">
+            <input type="hidden" name="id" value="<?= h($aberta['id']) ?>">
+            <button class="btn" type="submit">Resetar senha</button>
+          </form>
+          <form method="post" style="display:inline">
+            <input type="hidden" name="csrf" value="<?= h(token()) ?>">
+            <input type="hidden" name="acao" value="ativar">
+            <input type="hidden" name="id" value="<?= h($aberta['id']) ?>">
+            <button class="btn" type="submit"><?= $aberta['ativo'] ? 'Desativar a conta' : 'Reativar' ?></button>
+          </form>
+        </div>
+        <p class="dica">
+          Último acesso: <?= $aberta['ultimoAcesso'] !== '' ? h(date('d/m/Y H:i', (int) strtotime($aberta['ultimoAcesso']))) : 'nunca entrou' ?>.
+          Senha não se recupera — só o hash fica guardado.
+        </p>
+      <?php endif; ?>
+    </fieldset>
+  <?php endif; ?>
+
+  <?php /* ============ cadastrar / editar ============ */ ?>
+  <fieldset id="editar">
+    <legend><?= $aberta ? 'Editar ' . h($aberta['nome']) : 'Cadastrar pessoa' ?></legend>
     <form method="post">
-      <input type="hidden" name="acao" value="criar">
       <input type="hidden" name="csrf" value="<?= h(token()) ?>">
-      <div class="linha g3">
+      <input type="hidden" name="acao" value="salvar">
+      <?php if ($aberta): ?>
+        <input type="hidden" name="id" value="<?= h($aberta['id']) ?>">
+      <?php endif; ?>
+
+      <div class="linha g2">
         <div class="campo">
-          <label for="n-nome">Nome</label>
-          <input id="n-nome" type="text" name="nome" maxlength="60" required>
+          <label for="f-nome">Nome completo</label>
+          <input id="f-nome" name="nome" type="text" maxlength="80" required value="<?= h($aberta['nome'] ?? '') ?>">
         </div>
         <div class="campo">
-          <label for="n-login">Login</label>
-          <input id="n-login" type="text" name="usuario" maxlength="24" required autocomplete="off">
-        </div>
-        <div class="campo">
-          <label for="n-papel">Papel</label>
-          <select id="n-papel" name="papel">
-            <?php foreach (PAPEIS as $v => $rotulo): ?>
-              <option value="<?= h($v) ?>" <?= $v === 'editor' ? 'selected' : '' ?>><?= h($rotulo) ?></option>
+          <label for="f-tipo">O que ela é para o movimento</label>
+          <select id="f-tipo" name="tipo">
+            <?php foreach (TIPOS_PESSOA as $chave => $rotulo): ?>
+              <option value="<?= h($chave) ?>" <?= ($aberta['tipo'] ?? 'eleitor') === $chave ? 'selected' : '' ?>><?= h($rotulo) ?></option>
             <?php endforeach; ?>
           </select>
         </div>
       </div>
-      <div class="campo">
-        <label>Áreas liberadas</label>
-        <div class="canais">
-          <?php foreach (AREAS as $chave => $rotulo): ?>
-            <label class="check">
-              <input type="checkbox" name="areas[]" value="<?= h($chave) ?>">
-              <?= h($rotulo) ?>
-            </label>
-          <?php endforeach; ?>
+
+      <div class="linha g3">
+        <div class="campo">
+          <label for="f-tel">WhatsApp</label>
+          <input id="f-tel" name="telefone" type="tel" inputmode="numeric" maxlength="20" value="<?= h($aberta['telefone'] ?? '') ?>">
         </div>
-        <p class="dica">Administrador abre tudo, marcado ou não. Para editor, vale só o que estiver marcado.</p>
+        <div class="campo">
+          <label for="f-cidade">Cidade</label>
+          <input id="f-cidade" name="cidade" type="text" maxlength="60" value="<?= h($aberta['cidade'] ?? '') ?>">
+        </div>
+        <div class="campo">
+          <label for="f-bairro">Bairro</label>
+          <input id="f-bairro" name="bairro" type="text" maxlength="60" value="<?= h($aberta['bairro'] ?? '') ?>">
+        </div>
       </div>
-      <button class="btn btn-ouro" type="submit">Criar e gerar senha provisória</button>
+
+      <div class="campo">
+        <label for="f-email">E-mail <span class="dica">— opcional</span></label>
+        <input id="f-email" name="email" type="email" maxlength="120" value="<?= h($aberta['email'] ?? '') ?>">
+      </div>
+
+      <p class="dica" style="margin:16px 0 6px"><strong>O que ela faz</strong> — as funções na militância:</p>
+      <div class="linha g3">
+        <?php foreach ($catalogo as $f): ?>
+          <label class="check">
+            <input type="checkbox" name="funcoes[]" value="<?= h($f['id']) ?>"
+                   <?= in_array($f['id'], $aberta['funcoes'] ?? [], true) ? 'checked' : '' ?>>
+            <?= h($f['nome']) ?>
+          </label>
+        <?php endforeach; ?>
+      </div>
+
+      <p class="dica" style="margin:18px 0 6px">
+        <strong>O que ela abre no painel</strong> — marque a capacidade; as áreas vêm junto:
+      </p>
+      <?php foreach (CAPACIDADES as $chave => $cap): ?>
+        <label class="check">
+          <input type="checkbox" name="capacidades[]" value="<?= h($chave) ?>"
+                 <?= in_array($chave, $aberta['capacidades'] ?? [], true) ? 'checked' : '' ?>>
+          <strong><?= h($cap['nome']) ?></strong>
+          <span class="dica"><?= h($cap['resumo']) ?></span>
+        </label>
+      <?php endforeach; ?>
+
+      <details class="decidir" style="margin-top:14px">
+        <summary class="btn">Ajuste fino por ferramenta</summary>
+        <div class="decidir-corpo">
+          <p class="dica" style="margin:0 0 10px">
+            Para a exceção: dar uma ferramenta solta a quem não tem a capacidade inteira.
+            O que a capacidade já libera aparece marcado depois de salvar, e desmarcar
+            aqui não tira o que ela concede.
+          </p>
+          <div class="linha g2">
+            <?php foreach (AREAS as $chave => $rotulo): ?>
+              <label class="check">
+                <input type="checkbox" name="areas[]" value="<?= h($chave) ?>"
+                       <?= in_array($chave, $aberta['areas'] ?? [], true) ? 'checked' : '' ?>>
+                <?= h($rotulo) ?>
+              </label>
+            <?php endforeach; ?>
+          </div>
+        </div>
+      </details>
+
+      <div class="campo" style="margin-top:14px">
+        <label for="f-obs">Anotação <span class="dica">— opcional</span></label>
+        <textarea id="f-obs" name="observacao" rows="2" maxlength="400"><?= h($aberta['observacao'] ?? '') ?></textarea>
+      </div>
+
+      <div class="acoes">
+        <button class="btn btn-ouro" type="submit"><?= $aberta ? 'Salvar' : 'Cadastrar' ?></button>
+        <?php if ($aberta): ?>
+          <a class="btn" href="/painel/pessoas.php">Cancelar</a>
+        <?php endif; ?>
+      </div>
     </form>
+
+    <?php if ($aberta): ?>
+      <form method="post" class="decidir-recusa"
+            onsubmit="return confirm('Apagar <?= h($aberta['nome']) ?> e as presenças dela?')">
+        <input type="hidden" name="csrf" value="<?= h(token()) ?>">
+        <input type="hidden" name="acao" value="apagar">
+        <input type="hidden" name="id" value="<?= h($aberta['id']) ?>">
+        <div class="acoes">
+          <button class="btn btn-risco" type="submit">Apagar esta pessoa</button>
+        </div>
+      </form>
+    <?php endif; ?>
   </fieldset>
 
-  <fieldset>
-    <legend>Quem já tem acesso (<?= count($usuarios) ?>)</legend>
+  <?php /* ============ a lista ============ */ ?>
+  <fieldset id="lista">
+    <legend>Todas (<?= count($todas) ?><?= $busca !== '' || $filtro !== '' ? ' de ' . count(ler_pessoas()) : '' ?>)</legend>
 
-    <?php foreach ($usuarios as $lin): $souEu = $lin['id'] === $eu['id']; ?>
-      <div class="item">
-        <div class="item-topo">
-          <span class="item-num">
-            <?= h($lin['usuario']) ?><?= $souEu ? ' · você' : '' ?>
-          </span>
-          <span>
-            <?php if (!$lin['ativo']): ?><span class="selo selo-off">desativado</span><?php endif; ?>
-            <?php if ($lin['trocarSenha']): ?><span class="selo selo-cinza">senha provisória</span><?php endif; ?>
-            <span class="selo selo-cinza">
-              <?= $lin['ultimoAcesso'] !== ''
-                  ? 'entrou ' . h(date('d/m/Y H:i', (int) strtotime($lin['ultimoAcesso'])))
-                  : 'nunca entrou' ?>
-            </span>
-          </span>
-        </div>
-
-        <form method="post">
-          <input type="hidden" name="acao" value="salvar">
-          <input type="hidden" name="id" value="<?= h($lin['id']) ?>">
-          <input type="hidden" name="csrf" value="<?= h(token()) ?>">
-
-          <div class="linha g2">
-            <div class="campo">
-              <label for="nome-<?= h($lin['id']) ?>">Nome</label>
-              <input id="nome-<?= h($lin['id']) ?>" type="text" name="nome"
-                     value="<?= h($lin['nome']) ?>" maxlength="60">
-            </div>
-            <div class="campo">
-              <label for="papel-<?= h($lin['id']) ?>">Papel</label>
-              <select id="papel-<?= h($lin['id']) ?>" name="papel">
-                <?php foreach (PAPEIS as $v => $rotulo): ?>
-                  <option value="<?= h($v) ?>" <?= $lin['papel'] === $v ? 'selected' : '' ?>><?= h($rotulo) ?></option>
-                <?php endforeach; ?>
-              </select>
-            </div>
-          </div>
-
-          <div class="campo">
-            <label>Áreas liberadas</label>
-            <div class="canais">
-              <?php foreach (AREAS as $chave => $rotulo): ?>
-                <label class="check">
-                  <input type="checkbox" name="areas[]" value="<?= h($chave) ?>"
-                    <?= in_array($chave, $lin['areas'], true) ? 'checked' : '' ?>>
-                  <?= h($rotulo) ?>
-                </label>
-              <?php endforeach; ?>
-              <label class="check">
-                <input type="checkbox" name="ativo" value="1" <?= $lin['ativo'] ? 'checked' : '' ?>>
-                Acesso ativo
-              </label>
-            </div>
-          </div>
-
-          <button class="btn btn-mini btn-ouro" type="submit">Salvar alterações</button>
-        </form>
-
-        <div class="acoes" style="margin-top:12px">
-          <form method="post" onsubmit="return confirm('Gerar uma senha provisória nova para <?= h($lin['usuario']) ?>? A senha atual para de funcionar na hora.')">
-            <input type="hidden" name="acao" value="resetar">
-            <input type="hidden" name="id" value="<?= h($lin['id']) ?>">
-            <input type="hidden" name="csrf" value="<?= h(token()) ?>">
-            <button class="btn btn-mini" type="submit">Resetar senha</button>
-          </form>
-          <?php if (!$souEu): ?>
-            <form method="post" onsubmit="return confirm('Remover <?= h($lin['usuario']) ?> de vez? Isso não tem volta.')">
-              <input type="hidden" name="acao" value="remover">
-              <input type="hidden" name="id" value="<?= h($lin['id']) ?>">
-              <input type="hidden" name="csrf" value="<?= h(token()) ?>">
-              <button class="btn btn-mini btn-risco" type="submit">Remover</button>
-            </form>
-          <?php endif; ?>
-          <span class="dica" style="margin:0">
-            criado em <?= $lin['criadoEm'] !== '' ? h(date('d/m/Y', (int) strtotime($lin['criadoEm']))) : '—' ?>
-          </span>
-        </div>
+    <form method="get" class="linha g3" style="margin-bottom:14px">
+      <div class="campo">
+        <label for="q">Procurar</label>
+        <input id="q" name="q" type="search" maxlength="60" value="<?= h($busca) ?>"
+               placeholder="nome, telefone ou login">
       </div>
-    <?php endforeach; ?>
+      <div class="campo">
+        <label for="t">Tipo</label>
+        <select id="t" name="tipo">
+          <option value="">todos</option>
+          <?php foreach (TIPOS_PESSOA as $chave => $rotulo): ?>
+            <option value="<?= h($chave) ?>" <?= $filtro === $chave ? 'selected' : '' ?>>
+              <?= h($rotulo) ?> (<?= (int) ($porTipo[$chave] ?? 0) ?>)
+            </option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+      <div class="campo" style="align-self:end">
+        <button class="btn" type="submit">Filtrar</button>
+      </div>
+    </form>
+
+    <?php if ($todas === []): ?>
+      <p class="dica" style="margin:0">Ninguém encontrado.</p>
+    <?php else: ?>
+      <div class="rolagem">
+        <table class="tabela">
+          <thead><tr><th>Quem</th><th>Tipo</th><th>Faz</th><th>Painel</th><th>Encontros</th><th></th></tr></thead>
+          <tbody>
+            <?php foreach ($todas as $p): ?>
+              <tr>
+                <td>
+                  <strong><?= h($p['nome']) ?></strong><br>
+                  <span class="dica">
+                    <?php if ($p['telefone'] !== ''): ?>
+                      <a href="https://wa.me/55<?= h($p['telefone']) ?>" target="_blank" rel="noopener"><?= h(telefone_bonito($p['telefone'])) ?></a>
+                    <?php endif; ?>
+                    <?php $onde = trim($p['bairro'] . ($p['cidade'] !== '' ? ', ' . $p['cidade'] : ''), ', '); ?>
+                    <?= $onde !== '' ? ' · ' . h($onde) : '' ?>
+                  </span>
+                </td>
+                <td><span class="selo"><?= h(TIPOS_PESSOA[$p['tipo']]) ?></span></td>
+                <td>
+                  <?php foreach ($p['funcoes'] as $f): ?>
+                    <span class="selo selo-cinza"><?= h(nome_funcao($f)) ?></span>
+                  <?php endforeach; ?>
+                </td>
+                <td>
+                  <?php if (tem_conta($p)): ?>
+                    <span class="selo <?= $p['ativo'] ? 'selo-ok' : 'selo-off' ?>"><?= h(rotulo_do_acesso($p)) ?></span>
+                  <?php else: ?>
+                    <span class="dica">—</span>
+                  <?php endif; ?>
+                </td>
+                <td><?= count(encontros_da_pessoa($p['id'])) ?: '—' ?></td>
+                <td><a class="btn btn-mini" href="?p=<?= h($p['id']) ?>#ficha">Abrir</a></td>
+              </tr>
+            <?php endforeach; ?>
+          </tbody>
+        </table>
+      </div>
+    <?php endif; ?>
   </fieldset>
 </div>
 <?php

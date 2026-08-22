@@ -28,6 +28,6 @@ if ($u === null) {
 echo json_encode([
     'autenticado' => true,
     'login'       => $u['usuario'],
-    'papel'       => $u['papel'],
+    'papel'       => rotulo_do_acesso($u),
     'areas'       => areas_do_usuario(),
 ]);

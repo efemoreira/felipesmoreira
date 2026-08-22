@@ -19,7 +19,10 @@ require_once __DIR__ . '/layout.php';  // puxa o sessao.php junto
 $aviso = null;
 $sucesso = null;
 $acao = (string) ($_POST['acao'] ?? '');
-$primeiroAcesso = ler_usuarios() === [];
+/* Primeiro acesso é NINGUÉM TER CONTA, e não a lista de pessoas estar vazia:
+   depois da unificação a lista tem quem confirmou presença num encontro, e
+   essa gente não abre o painel. */
+$primeiroAcesso = contas() === [];
 
 /* A pessoa diz que já entrou no grupo de trabalho. Não dá para conferir do
    nosso lado — o WhatsApp não conta isso —, e não é para conferir: a marca
@@ -27,14 +30,14 @@ $primeiroAcesso = ler_usuarios() === [];
 if ($acao === 'entrei-no-grupo' && token_valido()) {
     $eu = usuario_atual();
     if ($eu !== null) {
-        $usuarios = ler_usuarios();
+        $usuarios = ler_pessoas();
         foreach ($usuarios as &$linha) {
             if ($linha['id'] === $eu['id']) {
                 $linha['entrouNoGrupo'] = true;
             }
         }
         unset($linha);
-        gravar_usuarios($usuarios);
+        gravar_pessoas($usuarios);
     }
     header('Location: /painel/', true, 302);
     exit;
@@ -61,13 +64,14 @@ if ($acao === 'criar_admin' && $primeiroAcesso) {
     } elseif ($s1 !== $s2) {
         $aviso = 'As duas senhas não são iguais.';
     } else {
-        $ok = gravar_usuarios([[
-            'id'          => novo_id_usuario(),
+        $ok = gravar_pessoas([[
+            'id'          => novo_id_pessoa(),
             'usuario'     => $login,
             'nome'        => mb_substr($nome, 0, 60),
             'hash'        => password_hash($s1, PASSWORD_DEFAULT),
-            'papel'       => 'admin',
-            'areas'       => array_keys(AREAS),
+            'capacidades' => ['adm'],
+            'tipo'        => 'coordenador',
+            'status'      => 'aprovada',
             'ativo'       => true,
             'trocarSenha' => false,
             'criadoEm'    => date('c'),
@@ -88,7 +92,7 @@ if ($acao === 'criar_admin' && $primeiroAcesso) {
     } elseif ($ate = bloqueado_ate($login)) {
         $aviso = 'Muitas tentativas com esse login. Tente de novo às ' . date('H:i', $ate) . '.';
     } else {
-        $u = achar_usuario($login);
+        $u = pessoa_por_usuario($login);
         // password_verify sempre roda, mesmo sem usuário: o tempo de resposta não
         // pode denunciar quais logins existem
         $hash = $u['hash'] ?? '$2y$10$invalidoinvalidoinvalidoinvalidoinvalidoinvalidoinvalidoinva';

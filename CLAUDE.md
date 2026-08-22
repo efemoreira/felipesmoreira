@@ -438,9 +438,10 @@ Uma fonte só para os dois lados: o Next importa no build (formulário
 `/queroajudar`) e o PHP lê o mesmo arquivo (`out/funcoes.json`, copiado pelo
 `publish.yml`) para validar o que chega e sugerir as áreas na aprovação.
 
-**Não confunda `funcoes` com `areas`:** `funcoes` é o papel da pessoa no
-movimento; `areas` é permissão de tela no painel. O `areas` de cada função vive
-no próprio `funcoes.json`.
+**Não confunda os três eixos:** `funcoes` é o que a pessoa faz no movimento;
+`tipo` é o que ela é (eleitor, militante, coordenador…); `areas` e
+`capacidades` são permissão de tela no painel. O `areas` de cada função vive no
+próprio `funcoes.json`, e serve de sugestão na hora de aprovar.
 
 **Ao acrescentar função nova:** entre no `funcoes.json` (o `icone` precisa
 existir em `src/components/icons.tsx`) e pronto — formulário, validação,
@@ -485,15 +486,120 @@ acontecer é sobrar página legal sem canal nenhum.
 quando a pessoa marca "já entrei" (`entrouNoGrupo` no usuário); o cartão fixo
 continua na coluna da direita do hub, que é o endereço permanente do link.
 
+## Uma pessoa, e não quatro cadastros
+
+Havia quatro arquivos que não se conheciam — `usuarios.php`, `inscricoes.php`,
+`leads.php` e `candidatos.php` — e a mesma pessoa aparecia em vários, com o nome
+escrito de três jeitos. Não dava para responder as perguntas óbvias: *em que
+encontros o Fulano esteve? esse número já é do time? quem está duplicado?*
+
+Hoje é `dados/pessoas.php`, um registro por gente, com blocos opcionais:
+
+| bloco | campos | quando |
+|---|---|---|
+| identidade | nome, telefone, e-mail, cidade, bairro | sempre |
+| movimento | `tipo`, `funcoes` | sempre |
+| painel | `usuario`, `hash`, `capacidades`, `areas` | só quem tem conta |
+| candidatura | `urna`, `cargo`, `numero`, `instagram`, `imagem` | só candidato |
+| entrada | `status`, `origem`, consentimento | só quem se inscreveu |
+
+**O modelo mora no `sessao.php`**, e não num `pessoas-comum.php`: é ele que
+autentica, e pôr o registro fora dele criaria include circular. O
+`pessoas-comum.php` tem só o que se pergunta *depois* — duplicatas, fusão, a
+fila de entrada.
+
+**O telefone é a chave natural.** Era a única coisa que as quatro listas tinham
+em comum, é o que a pessoa digita na porta do encontro e é por ele que a
+coordenação fala com ela. Não é chave primária — gente troca de número —, mas é
+por ele que se acha duplicata e que a página de presença reconhece quem chega.
+
+### Três eixos que não se confundem
+
+- **`tipo`** — o que a pessoa **é**: eleitor, apoiador, militante, coordenador,
+  candidato. Substituiu a `classe` do lead (curioso/simpatizante/…), que dizia
+  quase a mesma coisa com outras palavras e vivia num arquivo à parte.
+- **`funcoes`** — o que ela **faz**: Olheiro, Checagem, Design… As doze do
+  `funcoes.json`. Um coordenador tem função; um militante também.
+- **`capacidades`** — o que ela **abre** no painel.
+
+### Capacidades, e as áreas por baixo
+
+Quatro caixas em vez de dez: `comunicacao`, `eventos`, `coordenacao`, `adm`.
+Marcar dez áreas uma a uma é decisão demais para uma pergunta simples ("essa
+pessoa coordena o quê?"), e quem marca acaba dando tudo por preguiça.
+
+As **áreas continuam existindo** por baixo, para a exceção — tirar o Estúdio de
+alguém de Comunicação sem inventar uma capacidade nova. `normalizar_pessoa()`
+grava o resultado das duas coisas somadas.
+
+> **`pessoas` só entra em `adm`.** É a tela com telefone, e-mail e endereço de
+> todo mundo: acesso a dado pessoal não acompanha o trabalho do dia, acompanha a
+> responsabilidade sobre ele. O antigo "papel" (Administrador/Editor) sumiu — era
+> um segundo eixo de permissão ao lado das áreas, dizendo quase o mesmo.
+
+> **Estudar não pede permissão.** A formação é de quem tem conta, e `/aulas` só
+> exige login. A área `aulas` é para **editar** — pendurar o vídeo, ver quem
+> estudou —, e é por isso que ela mora no grupo Coordenação. Antes `api/aulas.php`
+> exigia a área, e militante novo ficava com a formação trancada justamente na
+> semana em que ela mais importa.
+
+### Presença é relação, não cópia
+
+`dados/presencas.php` liga pessoa × encontro (`pessoaId`, `eventoId`,
+`confirmou`, `compareceu`, `funil`). Antes cada ficha de encontro repetia nome,
+telefone e bairro: quem foi a cinco encontros tinha cinco cópias de si, e
+corrigir um telefone errado exigia achar as cinco.
+
+`presencas_do_evento()` devolve cada linha com a `pessoa` já resolvida — quem
+desenha a tela não deveria cruzar dois arrays para escrever um nome.
+`encontros_da_pessoa()` faz o caminho inverso, e é ele que responde "em que
+encontros o Fulano esteve".
+
+### Duplicatas
+
+`duplicatas_de_pessoas()` sugere por **mesmo telefone** ou **mesmo nome** (sem
+acento, sem caixa). É **sugestão que um humano confere, nunca fusão
+automática**: casa que divide celular tem duas pessoas de verdade no mesmo
+número, e juntar a ficha errada apaga o histórico de alguém — isso não tem
+desfazer.
+
+`juntar_pessoas($fica, $some)`:
+
+- campo vazio de quem fica é preenchido por quem some; **o que já está
+  preenchido não é sobrescrito** — quem escolheu manter aquela ficha decidiu que
+  ela é a boa;
+- as presenças mudam de dono, e se as duas estiveram no mesmo encontro sobra uma
+  com o melhor dos dois estados (compareceu > confirmou > convidado);
+- **duas contas de painel nunca se fundem**: escolher qual login sobrevive não é
+  decisão que se toma por inferência.
+
+### A migração
+
+`migrar.php` converte os quatro arquivos antigos na primeira leitura de
+`ler_pessoas()`, e só quando `pessoas.php` ainda não existe. **Roda sozinho, e
+não por um botão** — migração que depende de alguém lembrar de clicar é migração
+que roda no meio do expediente errado.
+
+Casa por telefone e, na falta dele, por nome sem acento. Preserva os ids de
+**conta** (a sessão guarda o id: trocá-lo derrubaria quem estiver logado) e de
+**candidato** (as listas apontam para ele). As áreas viram capacidades: quem
+tinha todas as áreas de uma capacidade ganha a capacidade, e o resto fica como
+ajuste fino.
+
+> Os arquivos antigos **não são apagados**. Se algo saiu errado, o conserto é
+> apagar `pessoas.php` e ajustar o `migrar.php` — o original continua lá.
+
 ## Fluxo de entrada de militante
 
 1. Pessoa preenche `/queroajudar` (3 passos, com consentimento LGPD).
-2. `api/inscricao.php` valida e grava em `dados/inscricoes.php` com status
-   `nova`. **Não cria conta** — o formulário é público.
+2. `api/inscricao.php` valida e grava uma **pessoa** com `status = 'pendente'`.
+   **Não cria conta** — o formulário é público. Se o telefone já for conhecido
+   (ela apareceu num encontro, foi cadastrada pela coordenação), entra na fila a
+   ficha que já existe: a mesma pessoa não passa a existir duas vezes.
 3. Coordenação abre `/painel/inscricoes`, confere e aprova.
-4. A aprovação cria o usuário com `trocarSenha = true` e mostra a senha
-   provisória **uma vez**, com um botão que abre o WhatsApp da pessoa com a
-   mensagem pronta.
+4. A aprovação **dá conta à ficha que já está lá** — não cria uma segunda —, com
+   `trocarSenha = true`, e mostra a senha provisória **uma vez**, com um botão
+   que abre o WhatsApp da pessoa com a mensagem pronta.
 5. `exigir_login()` prende quem entra em `conta.php` até definir a própria
    senha — isso já existia e não precisou de código novo.
 
@@ -768,16 +874,19 @@ os dois saem do mesmo lugar. Não espalhe contador pelo `index.php`: era assim
 antes, e o resultado era um painel que sabia dizer onde a pessoa podia ir sem
 saber dizer o que estava esperando por ela.
 
-As áreas se dividem em duas naturezas — a distinção não é técnica (a permissão é
-a mesma caixa marcada no usuário), é sobre o que vem marcado por padrão:
+**A permissão normal é por CAPACIDADE** (ver "Uma pessoa, e não quatro
+cadastros"); as áreas são o ajuste fino por baixo. As áreas se dividem em duas
+naturezas — a distinção não é técnica (a permissão é a mesma caixa marcada), é
+sobre o que vem marcado por padrão:
 
 - **Ferramentas do dia** — `aulas`, `fatos`, `producao`, `municao`, `eventos`. Listadas em
   `AREAS_FERRAMENTA`. O padrão é liberar todas: ferramenta **não pertence a uma
   função**, e o Olheiro que quiser entender o quadro de Produção deve conseguir
   abrir.
-- **Decisão e dado pessoal** — `agenda`, `estudio`, `inscricoes`, `candidatos`.
-  O que vai ao ar, quem entra no movimento, a lista de contatos com telefone, o
-  número que o eleitor vai digitar.
+- **Decisão e dado pessoal** — `agenda`, `estudio`, `inscricoes`, `candidatos`,
+  `aulas`, `pessoas`. O que vai ao ar, quem entra no movimento, o que o time
+  estuda, o número que o eleitor vai digitar — e `pessoas`, a lista completa com
+  telefone, que **só a capacidade `adm` libera**.
 
 **A função da pessoa não limita acesso.** Ela define só o atalho no topo do hub
 (`MESA_DA_FUNCAO` em `agora.php`). O `areas` de cada função no

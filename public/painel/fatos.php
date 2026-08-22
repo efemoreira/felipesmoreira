@@ -127,7 +127,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
            fica na ficha. É o mesmo desenho da regra do ledger na Produção. */
         $destrava = limpar_texto($_POST['destrava'] ?? '', 300);
         if ($alvo['autorId'] !== '' && $alvo['autorId'] === $eu['id']) {
-            if ($eu['papel'] !== 'admin') {
+            if (!e_admin()) {
                 avisar('erro', 'Você trouxe este fato — quem checa é outra pessoa. Ele fica na fila até alguém do time abrir.');
                 voltar('fila');
             }
@@ -318,7 +318,7 @@ abrir_pagina('Fatos do dia');
              obrigatória junto. */
           $meu = $f['autorId'] !== '' && $f['autorId'] === $eu['id'];
         ?>
-        <?php if ($meu && $eu['papel'] !== 'admin'): ?>
+        <?php if ($meu && !e_admin()): ?>
           <p class="dica">
             <strong>Você trouxe este fato.</strong> Quem checa é outra pessoa — ele fica
             na fila até alguém do time abrir. Checagem que o autor faz é carimbo,
@@ -338,7 +338,7 @@ abrir_pagina('Fatos do dia');
 
             <?php if ($meu): ?>
               <p class="msg msg-erro" style="margin:0 0 14px">
-                Este fato é seu. Como admin você consegue checar assim mesmo, mas
+                Este fato é seu. Como administrador você consegue checar assim mesmo, mas
                 escreva por que não deu para outra pessoa — fica anotado na ficha.
               </p>
             <?php endif; ?>

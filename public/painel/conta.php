@@ -38,7 +38,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && (string) ($_POST['acao'] ??
     } elseif ($nova === $atual) {
         $aviso = 'A senha nova precisa ser diferente da atual.';
     } else {
-        $usuarios = ler_usuarios();
+        $usuarios = ler_pessoas();
         foreach ($usuarios as &$u) {
             if ($u['id'] === $eu['id']) {
                 $u['hash'] = password_hash($nova, PASSWORD_DEFAULT);
@@ -47,10 +47,10 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && (string) ($_POST['acao'] ??
         }
         unset($u);
 
-        if (gravar_usuarios($usuarios)) {
+        if (gravar_pessoas($usuarios)) {
             // sessão nova depois de trocar a senha: o cookie antigo não serve mais
             session_regenerate_id(true);
-            $eu = achar_usuario_por_id($eu['id']) ?? $eu;
+            $eu = achar_pessoa($eu['id']) ?? $eu;
             $obrigatoria = false;
             $sucesso = 'Senha trocada. É essa que vale a partir de agora.';
         } else {

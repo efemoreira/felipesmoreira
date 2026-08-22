@@ -15,7 +15,6 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/sessao.php';
 
-const ARQ_INSCRICOES = PASTA_DADOS . '/inscricoes.php';
 const ARQ_LIMITE     = PASTA_DADOS . '/inscricoes-limite.php';
 const ARQ_FUNCOES    = __DIR__ . '/../funcoes.json';
 
@@ -38,6 +37,44 @@ const LIMITE_POR_DIA  = 20;
  * Lê o funcoes.json que o build copia para a raiz (ver publish.yml).
  * É a mesma fonte que o formulário usa — sem lista repetida em duas linguagens.
  */
+/**
+ * Login a partir do nome: "Maria de Sousa Lima" -> "maria.lima".
+ * Acrescenta número se já existir, e completa se ficar curto demais para a
+ * regra de validar_nome_usuario() (mínimo 3 caracteres).
+ */
+function login_sugerido(string $nome): string
+{
+    /* `sem_acento()` e não `iconv('ASCII//TRANSLIT')`: o TRANSLIT depende da
+       libc, e "Antônio" vira "antonio" no Linux da Hostinger e "antnio" no
+       macOS. Login é identificador permanente de uma pessoa — não pode depender
+       da máquina em que a inscrição foi aprovada. */
+    $ascii = strtolower(preg_replace('/[^a-zA-Z ]/', '', sem_acento($nome)) ?? '');
+
+    $partes = array_values(array_filter(explode(' ', $ascii)));
+    // ignora as partículas do meio (de, da, dos…) na hora de montar o login
+    $uteis = array_values(array_filter($partes, fn ($p) => !in_array($p, ['de', 'da', 'do', 'das', 'dos', 'e'], true)));
+    if ($uteis === []) {
+        $uteis = $partes;
+    }
+
+    $base = $uteis[0] ?? 'militante';
+    if (count($uteis) > 1) {
+        $base .= '.' . end($uteis);
+    }
+    $base = substr($base, 0, 20);
+    while (strlen($base) < 3) {
+        $base .= 'x';
+    }
+
+    $tentativa = $base;
+    $n = 2;
+    while (pessoa_por_usuario($tentativa) !== null) {
+        $tentativa = substr($base, 0, 20) . $n;
+        $n++;
+    }
+    return $tentativa;
+}
+
 function catalogo_funcoes(): array
 {
     static $memo = null;
@@ -121,221 +158,25 @@ function normalizar_origem($bruto): string
 }
 
 /**
- * Há quantas horas esta inscrição está esperando decisão.
+ * Quanto tempo uma inscrição pode dormir antes de virar urgência no hub.
  *
- * Espelha `horas_esperando()` dos fatos de propósito: a fila da Checagem e a
- * fila da porta se cobram do mesmo jeito no `agora.php`.
+ * O vão entre se inscrever e ser aprovado é onde mais se perde gente: ela está
+ * no pico de entusiasmo que vai ter, e depende de um humano decidir.
  */
-function horas_na_fila(array $i): int
-{
-    $t = strtotime((string) ($i['criadoEm'] ?? ''));
-    if ($t === false) {
-        return 0;
-    }
-    return (int) floor(max(0, time() - $t) / 3600);
-}
-
-/** Depois disto a inscrição parada vira recado urgente no hub. */
 const HORAS_LIMITE_INSCRICAO = 48;
 
 /**
- * O placar de quem trouxe quem.
+ * A inscrição deixou de ser um cadastro à parte.
  *
- * Sai das inscrições que já estão gravadas — não há contador, cookie nem
- * rastreador em lugar nenhum. A pergunta que interessa ("qual militante recruta
- * e qual canal converte?") já tem resposta no `origem` de cada inscrição;
- * faltava só somar.
+ * Era `dados/inscricoes.php`, com nome, telefone, cidade e bairro repetidos — os
+ * mesmos campos que a conta do painel e a ficha de presença guardavam, da mesma
+ * pessoa. Quem se inscrevia e depois aparecia num encontro virava duas linhas
+ * que ninguém cruzava.
  *
- * Devolve da maior para a menor, e **não inclui quem chegou sem origem**: essa
- * conta vai separada, porque "veio sozinho" não é um recrutador.
- *
- * @return array{placar: list<array{origem: string, total: int, aprovadas: int}>, semOrigem: int}
+ * Agora a inscrição é um ESTADO da pessoa (`status = 'pendente'`) e as funções
+ * que ela pediu ficam no `funcoes` dela. A fila é `fila_de_entrada()`, em
+ * `pessoas-comum.php`.
  */
-function placar_de_origens(?array $inscricoes = null): array
-{
-    $inscricoes ??= ler_inscricoes();
-
-    $soma = [];
-    $semOrigem = 0;
-    foreach ($inscricoes as $i) {
-        $o = $i['origem'] ?? '';
-        if ($o === '') {
-            $semOrigem++;
-            continue;
-        }
-        if (!isset($soma[$o])) {
-            $soma[$o] = ['origem' => $o, 'total' => 0, 'aprovadas' => 0];
-        }
-        $soma[$o]['total']++;
-        if (($i['status'] ?? '') === 'aprovada') {
-            $soma[$o]['aprovadas']++;
-        }
-    }
-
-    $placar = array_values($soma);
-    // do maior para o menor; empate desempata pelo nome, para a ordem não dançar
-    usort($placar, function (array $a, array $b): int {
-        return $b['total'] <=> $a['total'] ?: strcmp($a['origem'], $b['origem']);
-    });
-
-    return ['placar' => $placar, 'semOrigem' => $semOrigem];
-}
-
-/**
- * Onde a militância mora — cidade, e dentro dela os bairros.
- *
- * O formulário coleta `bairro` e diz por quê ("é assim que a gente monta os
- * times por região"), mas nada no sistema usava esse dado: a promessa ficava
- * só no texto. Este agrupamento é o primeiro passo para cumpri-la — dá para
- * ver onde já tem gente suficiente para um time próprio e onde a pessoa está
- * sozinha na cidade dela.
- *
- * Conta só quem foi **aprovado**: fila de inscrição não é militância, e um
- * mapa que soma quem ainda nem foi decidido promete time que não existe.
- *
- * @return list<array{cidade: string, total: int, bairros: list<array{nome: string, total: int}>}>
- */
-function militancia_por_regiao(?array $inscricoes = null): array
-{
-    $inscricoes ??= ler_inscricoes();
-
-    $mapa = [];
-    foreach ($inscricoes as $i) {
-        if (($i['status'] ?? '') !== 'aprovada') {
-            continue;
-        }
-        $cidade = trim((string) ($i['cidade'] ?? ''));
-        if ($cidade === '') {
-            continue;
-        }
-        /* Agrupa por forma normalizada para "Fortaleza" e "fortaleza" não virarem
-           duas cidades, mas mostra a grafia que a primeira pessoa escreveu. */
-        $chaveC = strtolower(sem_acento($cidade));
-        $bairro = trim((string) ($i['bairro'] ?? ''));
-        $chaveB = $bairro === '' ? '' : strtolower(sem_acento($bairro));
-
-        if (!isset($mapa[$chaveC])) {
-            $mapa[$chaveC] = ['cidade' => $cidade, 'total' => 0, 'bairros' => []];
-        }
-        $mapa[$chaveC]['total']++;
-
-        if ($chaveB !== '') {
-            if (!isset($mapa[$chaveC]['bairros'][$chaveB])) {
-                $mapa[$chaveC]['bairros'][$chaveB] = ['nome' => $bairro, 'total' => 0];
-            }
-            $mapa[$chaveC]['bairros'][$chaveB]['total']++;
-        }
-    }
-
-    $saida = [];
-    foreach ($mapa as $c) {
-        $bairros = array_values($c['bairros']);
-        usort($bairros, fn ($a, $b) => $b['total'] <=> $a['total'] ?: strcmp($a['nome'], $b['nome']));
-        $saida[] = ['cidade' => $c['cidade'], 'total' => $c['total'], 'bairros' => $bairros];
-    }
-    usort($saida, fn ($a, $b) => $b['total'] <=> $a['total'] ?: strcmp($a['cidade'], $b['cidade']));
-
-    return $saida;
-}
-
-function normalizar_inscricao($i): ?array
-{
-    if (!is_array($i) || empty($i['id']) || empty($i['nome'])) {
-        return null;
-    }
-    $status = (string) ($i['status'] ?? 'nova');
-    if (!in_array($status, ['nova', 'aprovada', 'recusada'], true)) {
-        $status = 'nova';
-    }
-
-    return [
-        'id'        => limpar_texto($i['id'], 40),
-        'nome'      => limpar_texto($i['nome'], 80),
-        'telefone'  => so_digitos($i['telefone'] ?? ''),
-        'email'     => limpar_texto($i['email'] ?? '', 120),
-        'cidade'    => limpar_texto($i['cidade'] ?? '', 60),
-        'bairro'    => limpar_texto($i['bairro'] ?? '', 60),
-        'funcoes'   => funcoes_validas(is_array($i['funcoes'] ?? null) ? $i['funcoes'] : []),
-        'origem'    => normalizar_origem($i['origem'] ?? ''),
-        'status'    => $status,
-        'criadoEm'  => limpar_texto($i['criadoEm'] ?? '', 40),
-        'consentimentoEm'     => limpar_texto($i['consentimentoEm'] ?? '', 40),
-        'consentimentoVersao' => limpar_texto($i['consentimentoVersao'] ?? '', 20),
-        'decididoEm'  => limpar_texto($i['decididoEm'] ?? '', 40),
-        'decididoPor' => limpar_texto($i['decididoPor'] ?? '', 60),
-        'usuarioId'   => limpar_texto($i['usuarioId'] ?? '', 40),
-    ];
-}
-
-function ler_inscricoes(bool $recarregar = false): array
-{
-    static $cache = null;
-    if ($cache !== null && !$recarregar) {
-        return $cache;
-    }
-    $cache = [];
-    if (is_file(ARQ_INSCRICOES)) {
-        $bruto = @include ARQ_INSCRICOES;
-        foreach (is_array($bruto) ? $bruto : [] as $i) {
-            if ($limpo = normalizar_inscricao($i)) {
-                $cache[] = $limpo;
-            }
-        }
-    }
-    return $cache;
-}
-
-function gravar_inscricoes(array $inscricoes): bool
-{
-    preparar_pastas();
-    $limpas = [];
-    foreach ($inscricoes as $i) {
-        if ($limpo = normalizar_inscricao($i)) {
-            $limpas[] = $limpo;
-        }
-    }
-    $conteudo = "<?php\n// Gerado pelo site. Não versionar, não editar à mão.\nreturn "
-        . var_export($limpas, true) . ";\n";
-
-    if (!gravar_atomico(ARQ_INSCRICOES, $conteudo)) {
-        return false;
-    }
-    if (function_exists('opcache_invalidate')) {
-        @opcache_invalidate(ARQ_INSCRICOES, true);
-    }
-    ler_inscricoes(true);
-    return true;
-}
-
-function achar_inscricao(string $id): ?array
-{
-    foreach (ler_inscricoes() as $i) {
-        if ($id !== '' && $i['id'] === $id) {
-            return $i;
-        }
-    }
-    return null;
-}
-
-/** Mesmo telefone não entra duas vezes enquanto a primeira não for decidida. */
-function inscricao_por_telefone(string $telefone): ?array
-{
-    $t = so_digitos($telefone);
-    if ($t === '') {
-        return null;
-    }
-    foreach (ler_inscricoes() as $i) {
-        if ($i['telefone'] === $t) {
-            return $i;
-        }
-    }
-    return null;
-}
-
-function novo_id_inscricao(): string
-{
-    return bin2hex(random_bytes(8));
-}
 
 /** As iniciais do nome, para o cartão ter um rosto. */
 function iniciais(string $nome): string
@@ -347,6 +188,84 @@ function iniciais(string $nome): string
     $primeira = mb_strtoupper(mb_substr($partes[0], 0, 1));
     $ultima = count($partes) > 1 ? mb_strtoupper(mb_substr((string) end($partes), 0, 1)) : '';
     return $primeira . $ultima;
+}
+
+/** Há quanto tempo esta pessoa espera a coordenação decidir. */
+function horas_na_fila(array $pessoa): int
+{
+    $t = strtotime($pessoa['criadoEm'] ?? '');
+    return $t === false ? 0 : (int) floor((time() - $t) / 3600);
+}
+
+/**
+ * De onde veio cada pessoa — o `?de=` do link que ela abriu.
+ *
+ * Devolve da maior para a menor, e **não inclui quem chegou sem origem**: essa
+ * conta vai separada, porque "veio sozinho" não é um recrutador.
+ *
+ * Conta o TOTAL e as APROVADAS lado a lado de propósito: origem que traz muita
+ * gente e nenhuma aprovada não é origem que funciona, e o número cru esconderia
+ * isso.
+ *
+ * @return array{placar: list<array{origem: string, total: int, aprovadas: int}>, semOrigem: int}
+ */
+function placar_de_origens(?array $pessoas = null): array
+{
+    $pessoas ??= ler_pessoas();
+
+    $soma = [];
+    $semOrigem = 0;
+    foreach ($pessoas as $p) {
+        /* Só quem passou pelo formulário conta: quem a coordenação cadastrou na
+           mão, ou quem apareceu num encontro, não veio de link nenhum. */
+        if ($p['status'] === '') {
+            continue;
+        }
+        if ($p['origem'] === '') {
+            $semOrigem++;
+            continue;
+        }
+        if (!isset($soma[$p['origem']])) {
+            $soma[$p['origem']] = ['origem' => $p['origem'], 'total' => 0, 'aprovadas' => 0];
+        }
+        $soma[$p['origem']]['total']++;
+        if ($p['status'] === 'aprovada') {
+            $soma[$p['origem']]['aprovadas']++;
+        }
+    }
+
+    usort($soma, fn ($a, $b) => [$b['total'], $b['aprovadas']] <=> [$a['total'], $a['aprovadas']]);
+    return ['placar' => array_values($soma), 'semOrigem' => $semOrigem];
+}
+
+/** Quantos militantes por cidade/bairro — só aprovados, pelo mesmo motivo. */
+function militancia_por_regiao(?array $pessoas = null): array
+{
+    $pessoas ??= ler_pessoas();
+    $mapa = [];
+    foreach ($pessoas as $p) {
+        if ($p['status'] !== 'aprovada' || $p['cidade'] === '') {
+            continue;
+        }
+        $mapa[$p['cidade']][$p['bairro'] !== '' ? $p['bairro'] : '—'] =
+            ($mapa[$p['cidade']][$p['bairro'] !== '' ? $p['bairro'] : '—'] ?? 0) + 1;
+    }
+    ksort($mapa);
+    return $mapa;
+}
+
+/**
+ * Uma pessoa já cadastrada com este telefone, ou null.
+ *
+ * Continua existindo porque o endpoint público precisa saber se o número já é
+ * conhecido antes de criar mais uma ficha. Devolve a primeira: aqui a pergunta
+ * é "esse número já entrou?", e não "qual das duas pessoas do número é você" —
+ * essa é da tela de presença, que usa `pessoas_por_telefone()`.
+ */
+function inscricao_por_telefone(string $telefone): ?array
+{
+    $achadas = pessoas_por_telefone($telefone);
+    return $achadas[0] ?? null;
 }
 
 /* ===================== limite por IP ===================== */

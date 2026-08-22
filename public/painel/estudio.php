@@ -44,7 +44,7 @@ if ($tema !== 'sistema') {
 $dados = json_encode(
     [
         'nome'  => $eu['nome'] ?? '',
-        'papel' => PAPEIS[$eu['papel'] ?? ''] ?? '',
+        'papel' => rotulo_do_acesso($eu),
         'tema'  => $tema,
         // o Sair posta em /painel/ como qualquer outra tela: logout não é GET
         'csrf'  => token(),

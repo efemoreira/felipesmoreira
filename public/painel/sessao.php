@@ -18,7 +18,7 @@ declare(strict_types=1);
 const SESSAO_SEG = 7200;  // 2 h de inatividade
 
 const PASTA_DADOS    = __DIR__ . '/../dados';
-const ARQ_USUARIOS   = PASTA_DADOS . '/usuarios.php';
+const ARQ_PESSOAS    = PASTA_DADOS . '/pessoas.php';
 // .php, e não .json: o arquivo tem os logins de quem errou senha, e em /dados
 // só arquivo .php fica fora do alcance da web.
 const ARQ_TENTATIVAS = PASTA_DADOS . '/tentativas.php';
@@ -36,33 +36,101 @@ const MAX_TENTATIVAS = 5;
 const BLOQUEIO_SEG   = 900;  // 15 min
 const SENHA_MIN      = 8;   // com o bloqueio por login, 8 já segura tentativa às cegas
 
-/** As funcionalidades do painel. A chave entra no usuarios.php. */
+/** As ferramentas do painel. É a permissão fina — ver CAPACIDADES logo abaixo. */
 const AREAS = [
     'agenda'     => 'Agenda e eventos',
     'estudio'    => 'Estúdio de artes',
-    'aulas'      => 'Formação da militância',
+    'aulas'      => 'Editar a formação',
     'fatos'      => 'Fatos do dia',
     'producao'   => 'Produção',
     'municao'    => 'Munição',
     'eventos'    => 'Encontros',
     'inscricoes' => 'Inscrições da militância',
     'candidatos' => 'Candidatos',
+    'pessoas'    => 'Pessoas e dados pessoais',
 ];
 
 /**
- * As ferramentas do trabalho de todo dia, por oposição às áreas de decisão
- * (agenda, estudio, inscricoes) e à de administração (usuários).
+ * O que se dá para alguém — quatro caixas, e não dez.
  *
- * A diferença não é técnica — a permissão continua sendo a mesma caixa marcada
- * no usuário. É só a sugestão do que vem marcado ao criar alguém: ferramenta
- * não pertence a uma função, e o Olheiro que quiser entender o quadro de
- * Produção deve conseguir abrir. Quem cria o usuário desmarca o que não quiser.
+ * Marcar dez áreas uma a uma é decisão demais para uma pergunta simples ("essa
+ * pessoa coordena o quê?"), e quem marca acaba dando tudo por preguiça. As
+ * capacidades são o jeito normal de conceder; as áreas continuam por baixo para
+ * a exceção — tirar o Estúdio de alguém de Comunicação sem inventar uma
+ * capacidade nova.
+ *
+ * **`pessoas` só entra em `adm`, de propósito.** É a tela com telefone, e-mail e
+ * endereço de todo mundo: acesso a dado pessoal não acompanha o trabalho do dia,
+ * acompanha a responsabilidade sobre ele.
+ *
+ * **Ninguém precisa de área para ESTUDAR.** A formação é de todo mundo que tem
+ * conta; a área `aulas` é para *editar* — pendurar o vídeo, ver quem estudou.
  */
-const AREAS_FERRAMENTA = ['aulas', 'fatos', 'producao', 'municao', 'eventos'];
+const CAPACIDADES = [
+    'comunicacao' => [
+        'nome'   => 'Comunicação',
+        'resumo' => 'O que o movimento publica: fato, roteiro, arte, peça do mutirão',
+        'areas'  => ['fatos', 'producao', 'municao', 'estudio'],
+    ],
+    'eventos' => [
+        'nome'   => 'Eventos',
+        'resumo' => 'Os encontros e a programação que aparece no site',
+        'areas'  => ['eventos', 'agenda'],
+    ],
+    'coordenacao' => [
+        'nome'   => 'Coordenação',
+        'resumo' => 'Quem entra no movimento, os candidatos e a formação do time',
+        'areas'  => ['inscricoes', 'candidatos', 'aulas'],
+    ],
+    'adm' => [
+        'nome'   => 'Administração',
+        'resumo' => 'Tudo, inclusive a lista de pessoas com dado pessoal',
+        'areas'  => [],  // vazio: adm enxerga tudo por definição — ver a função
+    ],
+];
 
-const PAPEIS = [
-    'admin'  => 'Administrador',
-    'editor' => 'Editor',
+/** As áreas que uma capacidade libera. `adm` libera todas. */
+function areas_da_capacidade(string $chave): array
+{
+    if ($chave === 'adm') {
+        return array_keys(AREAS);
+    }
+    return CAPACIDADES[$chave]['areas'] ?? [];
+}
+
+/**
+ * As ferramentas do trabalho de todo dia, por oposição às de decisão.
+ *
+ * A diferença não é técnica — a permissão é a mesma caixa marcada. É só a
+ * sugestão do que vem marcado ao cadastrar alguém: ferramenta não pertence a uma
+ * função, e o Olheiro que quiser entender o quadro de Produção deve conseguir
+ * abrir. Quem cadastra desmarca o que não quiser.
+ */
+const AREAS_FERRAMENTA = ['fatos', 'producao', 'municao', 'eventos'];
+
+/**
+ * O que a pessoa É para o movimento.
+ *
+ * Eixo diferente de `funcoes` (o que ela FAZ: Olheiro, Design…) e de
+ * `capacidades` (o que ela ABRE no painel). Um coordenador tem função; um
+ * militante também. Substituiu a antiga `classe` do lead — curioso,
+ * simpatizante, militante, apoiador —, que dizia quase a mesma coisa com outras
+ * palavras e vivia num arquivo à parte.
+ */
+const TIPOS_PESSOA = [
+    'eleitor'     => 'Eleitor',
+    'apoiador'    => 'Apoiador',
+    'militante'   => 'Militante',
+    'coordenador' => 'Coordenador',
+    'candidato'   => 'Candidato',
+];
+
+/** A fila de entrada. Vazio = cadastrada direto pela coordenação. */
+const STATUS_PESSOA = [
+    ''         => 'Cadastrada',
+    'pendente' => 'Esperando aprovação',
+    'aprovada' => 'Aprovada',
+    'recusada' => 'Recusada',
 ];
 
 /** Para onde cada área leva, e uma linha do que ela faz. */
@@ -76,6 +144,7 @@ const DESTINO_AREA = [
     'eventos'    => ['url' => '/painel/eventos.php', 'resumo' => 'Preparar o encontro, confirmar presença e receber quem chega'],
     'inscricoes' => ['url' => '/painel/inscricoes.php', 'resumo' => 'Aprovar quem se inscreveu em /queroajudar e mandar o acesso'],
     'candidatos' => ['url' => '/painel/candidatos.php', 'resumo' => 'Nome de urna, número e @ de cada candidato — a colinha que o eleitor leva'],
+    'pessoas'    => ['url' => '/painel/pessoas.php', 'resumo' => 'Todo mundo do movimento: quem é, o que faz, em que encontros esteve'],
 ];
 
 /**
@@ -345,66 +414,153 @@ function preparar_pastas(): void
 /* ===================== usuários ===================== */
 
 /** Preenche os campos que faltam e descarta registro sem o mínimo. */
-function normalizar_usuario($u): ?array
+/**
+ * UMA pessoa, e não quatro.
+ *
+ * Havia quatro cadastros que não se conheciam — contas do painel, inscrições da
+ * fila, presenças de encontro e candidatos — e a mesma pessoa aparecia nos
+ * quatro, com o nome escrito de três jeitos. Não dava para responder "em que
+ * encontros o Fulano esteve", "esse número já é do time?" nem "quem está
+ * duplicado".
+ *
+ * Agora é um registro só, com blocos opcionais:
+ *
+ *   identidade  nome, telefone, e-mail, onde mora        (sempre)
+ *   movimento   tipo, funções                            (sempre)
+ *   painel      usuário, senha, capacidades, áreas       (só quem tem conta)
+ *   candidatura número de urna, cargo, @, foto           (só candidato)
+ *   entrada     status da fila, origem, consentimento    (só quem se inscreveu)
+ *
+ * **O telefone é a chave natural.** É a única coisa que as quatro listas antigas
+ * tinham em comum, é o que a pessoa digita na porta do encontro e é por ele que
+ * a coordenação fala com ela. Não é chave primária (gente troca de número), mas
+ * é por ele que se acha duplicata.
+ *
+ * O array é literal de propósito: campo que não estiver aqui some na próxima
+ * gravação.
+ */
+function normalizar_pessoa($p): ?array
 {
-    if (!is_array($u) || empty($u['usuario']) || empty($u['hash'])) {
+    /* Antes exigia usuário e hash — porque só existia quem tinha login. Agora a
+       maioria das pessoas NÃO tem conta: quem confirmou presença num encontro é
+       uma pessoa do mesmo jeito. Nome é o mínimo. */
+    if (!is_array($p) || empty($p['nome'])) {
         return null;
     }
-    $papel = (($u['papel'] ?? 'editor') === 'admin') ? 'admin' : 'editor';
-    $pedidas = is_array($u['areas'] ?? null) ? $u['areas'] : [];
 
-    $funcoes = is_array($u['funcoes'] ?? null) ? $u['funcoes'] : [];
+    $tipo = (string) ($p['tipo'] ?? 'eleitor');
+    if (!isset(TIPOS_PESSOA[$tipo])) {
+        $tipo = 'eleitor';
+    }
+    $status = (string) ($p['status'] ?? '');
+    if (!isset(STATUS_PESSOA[$status])) {
+        $status = '';
+    }
+
+    $capacidades = [];
+    foreach ((array) ($p['capacidades'] ?? []) as $c) {
+        if (isset(CAPACIDADES[$c]) && !in_array($c, $capacidades, true)) {
+            $capacidades[] = (string) $c;
+        }
+    }
+
+    /* As áreas são as das capacidades MAIS o ajuste fino gravado. Guardar o
+       resultado, e não recalcular só na leitura, é o que permite tirar uma área
+       de alguém sem ter que inventar uma capacidade nova para isso. */
+    $pedidas = is_array($p['areas'] ?? null) ? $p['areas'] : [];
+    foreach ($capacidades as $c) {
+        $pedidas = array_merge($pedidas, areas_da_capacidade($c));
+    }
+    $areas = in_array('adm', $capacidades, true)
+        ? array_keys(AREAS)
+        : array_values(array_intersect(array_keys(AREAS), array_unique($pedidas)));
+
+    $conta = limpar_texto($p['usuario'] ?? '', 40);
 
     return [
-        'id'           => (string) ($u['id'] ?? ''),
-        'usuario'      => (string) $u['usuario'],
-        'nome'         => (string) ($u['nome'] ?? $u['usuario']),
-        'hash'         => (string) $u['hash'],
-        'papel'        => $papel,
-        // admin não depende de marcação: enxerga tudo por definição
-        'areas'        => $papel === 'admin'
-            ? array_keys(AREAS)
-            : array_values(array_intersect(array_keys(AREAS), $pedidas)),
-        'ativo'        => !empty($u['ativo']),
-        'trocarSenha'  => !empty($u['trocarSenha']),
-        'criadoEm'     => (string) ($u['criadoEm'] ?? ''),
-        'ultimoAcesso' => (string) ($u['ultimoAcesso'] ?? ''),
+        'id'   => (string) ($p['id'] ?? ''),
+        'nome' => limpar_texto($p['nome'], 80),
+        'tipo' => $tipo,
 
-        /* Vindos da inscrição em /queroajudar. Este array é literal de
-           propósito: campo que não estiver aqui some na próxima gravação. */
-        'telefone'     => so_digitos($u['telefone'] ?? ''),
-        'email'        => limpar_texto($u['email'] ?? '', 120),
-        'cidade'       => limpar_texto($u['cidade'] ?? '', 60),
-        'bairro'       => limpar_texto($u['bairro'] ?? '', 60),
-        // as funções no movimento (Olheiro, Design…), diferente de 'areas',
-        // que é permissão de tela no painel
-        'funcoes'      => array_values(array_filter(array_map(
+        /* ---- como falar com ela ---- */
+        'telefone' => so_digitos($p['telefone'] ?? ''),
+        'email'    => limpar_texto($p['email'] ?? '', 120),
+        'cidade'   => limpar_texto($p['cidade'] ?? '', 60),
+        'bairro'   => limpar_texto($p['bairro'] ?? '', 60),
+
+        /* ---- o que ela faz no movimento (Olheiro, Design…) ---- */
+        'funcoes' => array_values(array_filter(array_map(
             fn ($f) => limpar_texto($f, 40),
-            $funcoes
+            is_array($p['funcoes'] ?? null) ? $p['funcoes'] : []
         ))),
-        'origem'       => ($u['origem'] ?? '') === 'inscricao' ? 'inscricao' : 'painel',
+
+        /* ---- conta no painel: tudo vazio quando não tem ---- */
+        'usuario'      => $conta,
+        'hash'         => (string) ($p['hash'] ?? ''),
+        'capacidades'  => $capacidades,
+        'areas'        => $areas,
+        'ativo'        => !empty($p['ativo']),
+        'trocarSenha'  => !empty($p['trocarSenha']),
+        'ultimoAcesso' => (string) ($p['ultimoAcesso'] ?? ''),
         /* Marcado quando a pessoa diz "já entrei" no grupo de trabalho. É a
-           primeira obrigação de quem chega, e por isso ela vira TAREFA no hub
-           (agora.php) até estar marcada — banner some da vista em três dias.
-           Guardar a marca é o que a impede de cobrar para sempre. */
-        'entrouNoGrupo'       => !empty($u['entrouNoGrupo']),
-        'consentimentoEm'     => limpar_texto($u['consentimentoEm'] ?? '', 40),
-        'consentimentoVersao' => limpar_texto($u['consentimentoVersao'] ?? '', 20),
+           primeira obrigação de quem chega, e vira TAREFA no hub até estar
+           marcada — banner some da vista em três dias. */
+        'entrouNoGrupo' => !empty($p['entrouNoGrupo']),
+
+        /* ---- candidatura: vazio para quem não é candidato ---- */
+        'urna'      => limpar_texto($p['urna'] ?? '', 60),
+        'cargo'     => limpar_texto($p['cargo'] ?? '', 60),
+        'numero'    => preg_replace('/\D/', '', (string) ($p['numero'] ?? '')) ?: '',
+        'partido'   => limpar_texto($p['partido'] ?? '', 40),
+        'instagram' => limpar_texto($p['instagram'] ?? '', 40),
+        'imagem'    => limpar_texto($p['imagem'] ?? '', 300),
+        /* Só o que está publicado desce para o site. */
+        'publicado' => !empty($p['publicado']),
+        /* Onde ela aparece na lista de candidatos. Menor primeiro; empate
+           desempata pelo nome. Zero para quem não é candidato. */
+        'ordem'     => (int) ($p['ordem'] ?? 0),
+
+        /* ---- como ela entrou ---- */
+        'status'   => $status,
+        'origem'   => limpar_texto($p['origem'] ?? '', 60),
+        'observacao' => limpar_texto($p['observacao'] ?? '', 400),
+        'criadoEm'   => (string) ($p['criadoEm'] ?? ''),
+        'decididoEm' => limpar_texto($p['decididoEm'] ?? '', 40),
+        'decididoPor' => limpar_texto($p['decididoPor'] ?? '', 60),
+        'consentimentoEm'     => limpar_texto($p['consentimentoEm'] ?? '', 40),
+        'consentimentoVersao' => limpar_texto($p['consentimentoVersao'] ?? '', 20),
     ];
 }
 
-/** Lido uma vez por requisição; gravar_usuarios() manda reler. */
-function ler_usuarios(bool $recarregar = false): array
+/** Tem login? É o que separa quem trabalha no painel de quem só está na lista. */
+function tem_conta(array $p): bool
+{
+    return $p['usuario'] !== '' && $p['hash'] !== '';
+}
+
+function ler_pessoas(bool $recarregar = false): array
 {
     static $cache = null;
     if ($cache !== null && !$recarregar) {
         return $cache;
     }
+
+    /* Converte os quatro cadastros antigos na primeira leitura, e só nela: o
+       migrar.php sai fora sozinho assim que pessoas.php existe. Fica aqui, e não
+       num botão, porque migração que depende de alguém lembrar de clicar é
+       migração que roda no meio do expediente errado. */
+    static $migrou = false;
+    if (!$migrou) {
+        $migrou = true;
+        require_once __DIR__ . '/migrar.php';
+        migrar_para_pessoas();
+    }
+
     $cache = [];
-    if (is_file(ARQ_USUARIOS)) {
-        $bruto = @include ARQ_USUARIOS;
-        foreach (is_array($bruto) ? $bruto : [] as $u) {
-            if ($limpo = normalizar_usuario($u)) {
+    if (is_file(ARQ_PESSOAS)) {
+        $bruto = @include ARQ_PESSOAS;
+        foreach (is_array($bruto) ? $bruto : [] as $p) {
+            if ($limpo = normalizar_pessoa($p)) {
                 $cache[] = $limpo;
             }
         }
@@ -412,53 +568,83 @@ function ler_usuarios(bool $recarregar = false): array
     return $cache;
 }
 
-function gravar_usuarios(array $usuarios): bool
+function gravar_pessoas(array $pessoas): bool
 {
     preparar_pastas();
     $limpos = [];
-    foreach ($usuarios as $u) {
-        if ($limpo = normalizar_usuario($u)) {
+    foreach ($pessoas as $p) {
+        if ($limpo = normalizar_pessoa($p)) {
             $limpos[] = $limpo;
         }
     }
-    $conteudo = "<?php\n// Gerado pelo painel. Não versionar, não editar à mão.\nreturn "
+    $conteudo = "<?php\n// Gerado pelo painel. Dado pessoal — não versionar, não editar à mão.\nreturn "
         . var_export($limpos, true) . ";\n";
 
-    if (!gravar_atomico(ARQ_USUARIOS, $conteudo)) {
+    if (!gravar_atomico(ARQ_PESSOAS, $conteudo)) {
         return false;
     }
-    // o opcache pode continuar servindo a versão antiga do arquivo incluído
     if (function_exists('opcache_invalidate')) {
-        @opcache_invalidate(ARQ_USUARIOS, true);
+        @opcache_invalidate(ARQ_PESSOAS, true);
     }
-    ler_usuarios(true);  // o resto da requisição já enxerga a lista nova
+    ler_pessoas(true);
     return true;
 }
 
-function achar_usuario(string $usuario): ?array
+/** Quem tem login — é isto que a tela de contas e o "primeiro admin" olham. */
+function contas(): array
 {
-    foreach (ler_usuarios() as $u) {
-        if (strcasecmp($u['usuario'], $usuario) === 0) {
-            return $u;
+    return array_values(array_filter(ler_pessoas(), 'tem_conta'));
+}
+
+function achar_pessoa(string $id): ?array
+{
+    foreach (ler_pessoas() as $p) {
+        if ($p['id'] === $id && $id !== '') {
+            return $p;
         }
     }
     return null;
 }
 
-function achar_usuario_por_id(string $id): ?array
+/** Pelo login. Caso-insensível: ninguém lembra se cadastrou com maiúscula. */
+function pessoa_por_usuario(string $usuario): ?array
 {
-    foreach (ler_usuarios() as $u) {
-        if ($id !== '' && $u['id'] === $id) {
-            return $u;
+    $usuario = mb_strtolower(trim($usuario));
+    foreach (ler_pessoas() as $p) {
+        if ($p['usuario'] !== '' && mb_strtolower($p['usuario']) === $usuario) {
+            return $p;
         }
     }
     return null;
 }
 
+/**
+ * Pelo telefone — a chave natural.
+ *
+ * Devolve TODAS, e não a primeira: casa que divide celular tem duas pessoas no
+ * mesmo número, e escolher uma por conta própria foi exatamente o defeito que a
+ * tela de presença teve que consertar.
+ */
+function pessoas_por_telefone(string $telefone): array
+{
+    $telefone = so_digitos($telefone);
+    if ($telefone === '') {
+        return [];
+    }
+    return array_values(array_filter(ler_pessoas(), fn ($p) => $p['telefone'] === $telefone));
+}
+
+/**
+ * Sobrou alguém que administra?
+ *
+ * Chamada antes de tirar a capacidade `adm` de alguém ou desativá-lo: sem esta
+ * checagem dá para o último administrador se rebaixar sozinho e ninguém mais
+ * conseguir criar contas nem mexer em permissão.
+ */
 function tem_admin_ativo(?string $ignorarId = null): bool
 {
-    foreach (ler_usuarios() as $u) {
-        if ($u['papel'] === 'admin' && $u['ativo'] && $u['id'] !== $ignorarId) {
+    foreach (ler_pessoas() as $p) {
+        if (in_array('adm', $p['capacidades'], true) && $p['ativo'] && tem_conta($p) && $p['id'] !== $ignorarId) {
             return true;
         }
     }
@@ -501,7 +687,7 @@ function senha_provisoria(): string
     return $senha;
 }
 
-function novo_id_usuario(): string
+function novo_id_pessoa(): string
 {
     return bin2hex(random_bytes(8));
 }
@@ -656,22 +842,17 @@ function entrar_como(array $u): void
  * tirar a permissão de alguém tem efeito na hora, sem esperar a sessão vencer.
  */
 /**
- * A conta de um telefone, ou null.
+ * A CONTA de um telefone, ou null.
  *
- * Existe para a página pública de presença reconhecer quem já é do time sem ter
- * que perguntar de novo o nome, o bairro e a cidade. Só o telefone casa: é a
- * única chave que as três listas (usuários, inscrições e presenças) têm em
- * comum, e é a que a pessoa digita na porta do encontro.
+ * Diferente de `pessoas_por_telefone()`, que devolve qualquer pessoa: esta só
+ * olha quem tem login. Existe para a página pública de presença reconhecer quem
+ * já é do time sem perguntar de novo nome, bairro e cidade.
  */
 function usuario_por_telefone(string $telefone): ?array
 {
-    $telefone = so_digitos($telefone);
-    if ($telefone === '') {
-        return null;
-    }
-    foreach (ler_usuarios() as $u) {
-        if (so_digitos($u['telefone'] ?? '') === $telefone) {
-            return $u;
+    foreach (pessoas_por_telefone($telefone) as $p) {
+        if (tem_conta($p)) {
+            return $p;
         }
     }
     return null;
@@ -693,7 +874,7 @@ function usuario_atual(): ?array
         derrubar_sessao();
         return null;
     }
-    $u = achar_usuario_por_id($id);
+    $u = achar_pessoa($id);
     if ($u === null || !$u['ativo']) {
         derrubar_sessao();
         return null;
@@ -708,16 +889,49 @@ function autenticado(): bool
     return usuario_atual() !== null;
 }
 
+/**
+ * Como descrever o acesso de alguém em duas palavras — para a lateral e o topo
+ * do Estúdio, onde não cabe a lista de capacidades.
+ *
+ * Substituiu o "papel" (Administrador/Editor), que era um segundo eixo de
+ * permissão vivendo ao lado das áreas e dizendo quase a mesma coisa.
+ */
+function rotulo_do_acesso(array $p): string
+{
+    if (in_array('adm', $p['capacidades'], true)) {
+        return 'Administração';
+    }
+    $nomes = [];
+    foreach ($p['capacidades'] as $c) {
+        $nomes[] = CAPACIDADES[$c]['nome'] ?? $c;
+    }
+    if ($nomes !== []) {
+        return implode(' · ', $nomes);
+    }
+    return TIPOS_PESSOA[$p['tipo']] ?? 'Militante';
+}
+
+/** Administra? É uma capacidade, e não mais um "papel" à parte. */
 function e_admin(): bool
 {
     $u = usuario_atual();
-    return $u !== null && $u['papel'] === 'admin';
+    return $u !== null && in_array('adm', $u['capacidades'], true);
+}
+
+/** Tem a capacidade? `adm` responde sim para todas. */
+function tem_capacidade(string $chave): bool
+{
+    $u = usuario_atual();
+    if ($u === null) {
+        return false;
+    }
+    return in_array('adm', $u['capacidades'], true) || in_array($chave, $u['capacidades'], true);
 }
 
 function pode(string $area): bool
 {
     $u = usuario_atual();
-    return $u !== null && ($u['papel'] === 'admin' || in_array($area, $u['areas'], true));
+    return $u !== null && in_array($area, $u['areas'], true);
 }
 
 /** As áreas que a pessoa logada realmente abre, na ordem da constante. */
@@ -728,11 +942,11 @@ function areas_do_usuario(): array
 
 function marcar_acesso(string $id): void
 {
-    $usuarios = ler_usuarios();
-    foreach ($usuarios as &$u) {
-        if ($u['id'] === $id) {
-            $u['ultimoAcesso'] = date('c');
-            gravar_usuarios($usuarios);
+    $pessoas = ler_pessoas();
+    foreach ($pessoas as &$p) {
+        if ($p['id'] === $id) {
+            $p['ultimoAcesso'] = date('c');
+            gravar_pessoas($pessoas);
             return;
         }
     }
