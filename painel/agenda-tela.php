@@ -134,13 +134,13 @@ function tela_de_agenda(?string $aviso, ?string $sucesso, ?array $rascunho): voi
           ele entra aqui sozinho, porque o padrão é aparecer.
         </p>
       <?php else: ?>
-        <div class="rolagem">
+        <div class="rolagem cartoes">
           <table class="tabela">
             <thead><tr><th>Quando</th><th>O quê</th><th>Onde</th><th></th></tr></thead>
             <tbody>
               <?php foreach ($itens as $it): ?>
                 <tr>
-                  <td>
+                  <td data-rotulo="Quando">
                     <?php if (($it['inicio'] ?? '') !== ''): ?>
                       <strong><?= h($it['dia']) ?></strong><br>
                       <span class="dica"><?= h($it['data']) ?> · <?= h($it['hora']) ?></span>
@@ -157,15 +157,20 @@ function tela_de_agenda(?string $aviso, ?string $sucesso, ?array $rascunho): voi
                       <span class="selo">ao vivo</span>
                     <?php endif; ?>
                   </td>
-                  <td>
-                    <?php if (($it['plataforma'] ?? '') !== ''): ?>
-                      <span class="selo"><?= h(PLATAFORMAS[$it['plataforma']] ?? $it['plataforma']) ?></span>
-                    <?php endif; ?>
-                    <?php if (!empty($it['confirmar'])): ?>
-                      <span class="selo selo-ok">aceita “Vou”</span>
-                    <?php endif; ?>
+                  <?php /* Os dois `if` colados nas bordas do <td>: encontro presencial
+                           sem “Vou” não tem nada a dizer nesta coluna, e é um
+                           <td> vazio de verdade que o `.cartoes td:empty` some
+                           no celular em vez de virar um buraco no cartão. */ ?>
+                  <td><?php if (($it['plataforma'] ?? '') !== ''): ?>
+                    <span class="selo"><?= h(PLATAFORMAS[$it['plataforma']] ?? $it['plataforma']) ?></span>
+                  <?php endif; ?><?php if (!empty($it['confirmar'])): ?>
+                    <span class="selo selo-ok">aceita “Vou”</span>
+                  <?php endif; ?></td>
+                  <td class="rodape">
+                    <div class="acoes-celula">
+                      <a class="btn btn-mini" href="/painel/eventos.php?e=<?= h($it['id']) ?>">Abrir</a>
+                    </div>
                   </td>
-                  <td><a class="btn btn-mini" href="/painel/eventos.php?e=<?= h($it['id']) ?>">Abrir</a></td>
                 </tr>
               <?php endforeach; ?>
             </tbody>

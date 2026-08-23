@@ -37,7 +37,7 @@ function bloco_decididos(array $checados, array $pendentes, array $arquivados, s
     <?php if ($checados === []): ?>
       <p class="dica" style="margin:0">Nenhum fato aprovado ainda.</p>
     <?php else: ?>
-      <div class="rolagem">
+      <div class="rolagem cartoes">
         <table class="tabela">
           <thead><tr><th>O quê</th><th>Virou</th><th>Checado por</th></tr></thead>
           <tbody>
@@ -49,7 +49,7 @@ function bloco_decididos(array $checados, array $pendentes, array $arquivados, s
                   <span class="dica"><?= h($f['quem']) ?></span> ·
                   <a href="<?= h($f['fonteUrl']) ?>" target="_blank" rel="noopener noreferrer">fonte</a>
                 </td>
-                <td>
+                <td data-rotulo="Virou">
                   <?php if ($saidas === []): ?>
                     <span class="selo selo-off">sem peça</span>
                   <?php else: ?>
@@ -68,7 +68,7 @@ function bloco_decididos(array $checados, array $pendentes, array $arquivados, s
                     <?php endforeach; ?>
                   <?php endif; ?>
                 </td>
-                <td>
+                <td data-rotulo="Checado por">
                   <?= h($f['checadoPor']) ?><br>
                   <span class="dica"><?= h($quando($f['checadoEm'])) ?></span>
                   <?php if ($f['destravaMotivo'] !== ''): ?>
@@ -91,14 +91,14 @@ function bloco_decididos(array $checados, array $pendentes, array $arquivados, s
       com aquele fato” ter resposta — decidido, não esquecido.
     </p>
     <?php if ($arquivados !== []): ?>
-      <div class="rolagem">
+      <div class="rolagem cartoes">
         <table class="tabela">
           <thead><tr><th>O quê</th><th>Por que não virou peça</th></tr></thead>
           <tbody>
             <?php foreach ($arquivados as $f): ?>
               <tr>
                 <td><strong><?= h($f['oQue']) ?></strong></td>
-                <td><?= h($f['motivo']) ?></td>
+                <td data-rotulo="Por quê"><?= h($f['motivo']) ?></td>
               </tr>
             <?php endforeach; ?>
           </tbody>
@@ -111,14 +111,14 @@ function bloco_decididos(array $checados, array $pendentes, array $arquivados, s
     <legend>Pendentes (<?= count($pendentes) ?>)</legend>
     <p class="dica">Não confirmaram hoje. Ficam guardados — pode virar pauta quando sair o documento.</p>
     <?php if ($pendentes !== []): ?>
-      <div class="rolagem">
+      <div class="rolagem cartoes">
         <table class="tabela">
           <thead><tr><th>O quê</th><th>Por que ficou pendente</th></tr></thead>
           <tbody>
             <?php foreach ($pendentes as $f): ?>
               <tr>
                 <td><strong><?= h($f['oQue']) ?></strong></td>
-                <td><?= h($f['motivo']) ?></td>
+                <td data-rotulo="Por quê"><?= h($f['motivo']) ?></td>
               </tr>
             <?php endforeach; ?>
           </tbody>

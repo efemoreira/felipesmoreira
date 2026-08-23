@@ -195,7 +195,7 @@ abrir_pagina('Pessoas');
           'Ninguém com esse recorte.'
       ); ?>
     <?php else: ?>
-      <div class="rolagem">
+      <div class="rolagem cartoes">
         <table class="tabela">
           <thead><tr><th>Quem</th><th>Tipo</th><th>Faz</th><th>Painel</th><th>Encontros</th><th></th></tr></thead>
           <tbody>
@@ -211,13 +211,17 @@ abrir_pagina('Pessoas');
                     <?= $onde !== '' ? ' · ' . h($onde) : '' ?>
                   </span>
                 </td>
-                <td><span class="selo"><?= h(TIPOS_PESSOA[$p['tipo']]) ?></span></td>
-                <td>
+                <?php /* No cartão o tipo e o número de encontros sobem lado a lado, e
+                         o resto desce: quem procura alguém na lista procura por
+                         "é apoiador?" e "já apareceu?" — o login e as funções são
+                         a segunda pergunta. */ ?>
+                <td class="meia" data-rotulo="Tipo"><span class="selo"><?= h(TIPOS_PESSOA[$p['tipo']]) ?></span></td>
+                <td class="tarde" data-rotulo="Faz">
                   <?php foreach ($p['funcoes'] as $f): ?>
                     <span class="selo selo-cinza"><?= h(nome_funcao($f)) ?></span>
                   <?php endforeach; ?>
                 </td>
-                <td>
+                <td class="tarde" data-rotulo="Painel">
                   <?php if (tem_conta($p)): ?>
                     <?php /* O LOGIN vem primeiro, e o que a pessoa abre vem embaixo.
                              A pergunta que traz alguém a esta coluna é "qual é o login
@@ -231,10 +235,12 @@ abrir_pagina('Pessoas');
                     <span class="dica">—</span>
                   <?php endif; ?>
                 </td>
-                <td><?= count(encontros_da_pessoa($p['id'])) ?: '—' ?></td>
-                <td>
-                  <a class="btn btn-mini" href="?p=<?= h($p['id']) ?>#ficha">Abrir</a>
-                  <a class="btn btn-mini" data-modal="editar-pessoa" href="?editar=<?= h($p['id']) ?>">Editar</a>
+                <td class="meia" data-rotulo="Encontros"><?= count(encontros_da_pessoa($p['id'])) ?: '—' ?></td>
+                <td class="tarde">
+                  <div class="acoes-celula">
+                    <a class="btn btn-mini" href="?p=<?= h($p['id']) ?>#ficha">Abrir</a>
+                    <a class="btn btn-mini" data-modal="editar-pessoa" href="?editar=<?= h($p['id']) ?>">Editar</a>
+                  </div>
                 </td>
               </tr>
             <?php endforeach; ?>

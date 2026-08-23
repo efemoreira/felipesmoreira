@@ -36,7 +36,7 @@ function aba_das_decididas(array $decididas, string $buscaIn, callable $formatar
       <?php if ($decididas === []): ?>
         <?php nada_encontrado($buscaIn, '/painel/inscricoes.php?aba=decididas', 'Nada decidido ainda.'); ?>
       <?php else: ?>
-      <div class="rolagem">
+      <div class="rolagem cartoes">
         <table class="tabela">
           <thead>
             <tr><th>Nome</th><th>Cidade</th><th>Situação</th><th>Quem decidiu</th><th>Quando</th></tr>
@@ -58,16 +58,16 @@ function aba_das_decididas(array $decididas, string $buscaIn, callable $formatar
                     <?= h($i['nome']) ?>
                   <?php endif; ?>
                 </td>
-                <td><?= h($i['cidade']) ?></td>
-                <td>
+                <td class="meia" data-rotulo="Cidade"><?= h($i['cidade']) ?></td>
+                <td class="meia" data-rotulo="Situação">
                   <?php if ($i['status'] === 'aprovada'): ?>
                     <span class="selo">aprovada</span>
                   <?php else: ?>
                     <span class="selo selo-off">recusada</span>
                   <?php endif; ?>
                 </td>
-                <td><?= h($i['decididoPor']) ?></td>
-                <td><?= h($formatar($i['decididoEm'])) ?></td>
+                <td class="meia" data-rotulo="Quem decidiu"><?= h($i['decididoPor']) ?></td>
+                <td class="meia" data-rotulo="Quando"><?= h($formatar($i['decididoEm'])) ?></td>
               </tr>
             <?php endforeach; ?>
           </tbody>

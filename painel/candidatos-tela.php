@@ -237,18 +237,21 @@ abrir_pagina('Candidatos');
         <?php if ($visiveis === []): ?>
           <?php nada_encontrado($busca, '/painel/candidatos.php?aba=candidatos', 'Nenhum candidato com esse recorte.'); ?>
         <?php else: ?>
-          <div class="rolagem">
+          <div class="rolagem cartoes">
             <table class="tabela">
               <thead><tr><th></th><th>Quem</th><th>Número</th><th>Estado</th><th></th></tr></thead>
               <tbody>
                 <?php foreach ($visiveis as $c): ?>
                   <tr>
-                    <td>
-                      <?php if ($c['imagem'] !== ''): ?>
-                        <img src="<?= h($c['imagem']) ?>" alt="" width="52" height="52"
-                             style="width:52px;height:52px;object-fit:cover;border:2px solid var(--linha-2)">
-                      <?php endif; ?>
-                    </td>
+                    <?php /* O <td> abre e fecha colado no `if`: sem candidato com foto
+                             ele sai VAZIO de verdade, e é isso que deixa o
+                             `.cartoes td:empty` escondê-lo no celular. Com uma
+                             quebra de linha solta aqui, o cartão ganharia um
+                             buraco de 12px onde não há foto nenhuma. */ ?>
+                    <td><?php if ($c['imagem'] !== ''): ?>
+                      <img src="<?= h($c['imagem']) ?>" alt="" width="52" height="52"
+                           style="width:52px;height:52px;object-fit:cover;border:2px solid var(--linha-2)">
+                    <?php endif; ?></td>
                     <td>
                       <strong><?= h($c['urna'] !== '' ? $c['urna'] : $c['nome']) ?></strong><br>
                       <span class="dica">
@@ -256,28 +259,30 @@ abrir_pagina('Candidatos');
                         <?= $c['instagram'] !== '' ? ' · @' . h($c['instagram']) : '' ?>
                       </span>
                     </td>
-                    <td><strong style="font-size:19px"><?= h($c['numero']) ?></strong></td>
-                    <td>
+                    <td class="meia" data-rotulo="Número"><strong style="font-size:19px"><?= h($c['numero']) ?></strong></td>
+                    <td class="meia" data-rotulo="Estado">
                       <span class="selo <?= $c['publicado'] ? 'selo-ok' : 'selo-cinza' ?>">
                         <?= $c['publicado'] ? 'no ar' : 'rascunho' ?>
                       </span>
                     </td>
-                    <td>
-                      <a class="btn btn-mini" data-modal="editar-candidato"
-                         href="?aba=candidatos&c=<?= h($c['id']) ?>">Editar</a>
-                      <form method="post" style="display:inline">
-                        <input type="hidden" name="csrf" value="<?= h(token()) ?>">
-                        <input type="hidden" name="id" value="<?= h($c['id']) ?>">
-                        <button class="btn btn-mini" name="acao" value="cand-publicar" type="submit">
-                          <?= $c['publicado'] ? 'Recolher' : 'Publicar' ?>
-                        </button>
-                      </form>
-                      <form method="post" style="display:inline"
-                            onsubmit="return confirm(<?= texto_js('Tirar ' . $c['nome'] . ' da chapa? A pessoa continua na lista, com o histórico dela.') ?>)">
-                        <input type="hidden" name="csrf" value="<?= h(token()) ?>">
-                        <input type="hidden" name="id" value="<?= h($c['id']) ?>">
-                        <button class="btn btn-mini btn-risco" name="acao" value="cand-apagar" type="submit">Tirar da chapa</button>
-                      </form>
+                    <td class="rodape">
+                      <div class="acoes-celula">
+                        <a class="btn btn-mini" data-modal="editar-candidato"
+                           href="?aba=candidatos&c=<?= h($c['id']) ?>">Editar</a>
+                        <form method="post">
+                          <input type="hidden" name="csrf" value="<?= h(token()) ?>">
+                          <input type="hidden" name="id" value="<?= h($c['id']) ?>">
+                          <button class="btn btn-mini" name="acao" value="cand-publicar" type="submit">
+                            <?= $c['publicado'] ? 'Recolher' : 'Publicar' ?>
+                          </button>
+                        </form>
+                        <form method="post"
+                              onsubmit="return confirm(<?= texto_js('Tirar ' . $c['nome'] . ' da chapa? A pessoa continua na lista, com o histórico dela.') ?>)">
+                          <input type="hidden" name="csrf" value="<?= h(token()) ?>">
+                          <input type="hidden" name="id" value="<?= h($c['id']) ?>">
+                          <button class="btn btn-mini btn-risco" name="acao" value="cand-apagar" type="submit">Tirar da chapa</button>
+                        </form>
+                      </div>
                     </td>
                   </tr>
                 <?php endforeach; ?>

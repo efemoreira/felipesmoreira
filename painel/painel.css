@@ -603,6 +603,70 @@ input[type=file]::file-selector-button {
 .tabela tr:last-child td { border-bottom:0; }
 .rolagem { overflow-x:auto; }
 
+/* ======================================================================
+   A TABELA QUE VIRA CARTÃO NO CELULAR
+
+   `.rolagem` sozinha resolve o layout e não resolve o uso: a tabela cabe
+   porque ganhou uma barra para arrastar, e quem está na porta do encontro —
+   em pé, com o celular numa mão e a fila na frente — não descobre que existe
+   botão do lado direito. Arrastar para o lado é rolagem de sobrevivência.
+
+   `.cartoes`, no mesmo <div> da `.rolagem`, troca a tabela por uma lista
+   vertical abaixo de 700px: cada <tr> vira um cartão e cada <td> vira um
+   bloco rotulado pelo `data-rotulo`, que repete o <th> da coluna — no cartão
+   não sobrou cabeçalho para olhar. Sem o atributo o bloco fica sem rótulo, e
+   é o certo para a célula que só carrega foto ou botão: ali o rótulo seria
+   uma palavra a mais para ler antes de tocar.
+
+   O HTML é UM SÓ, e a semântica de tabela continua inteira no desktop. Quem
+   escreve duas árvores para a mesma lista mantém duas e conserta uma.
+   ====================================================================== */
+@media (max-width:700px) {
+  /* A barra de arrastar não tem mais o que arrastar, e ela cortaria a borda
+     do cartão pelo lado. */
+  .cartoes { overflow-x:visible; }
+  .cartoes thead { display:none; }
+  .cartoes tbody, .cartoes td { display:block; }
+  /* Flex, e não block: é o que deixa `.meia` e `.terco` porem dois ou três
+     blocos lado a lado sem conta de largura, e o `gap` cuida do resto. */
+  .cartoes tbody tr {
+    display:flex; flex-wrap:wrap; gap:12px;
+    border:3px solid var(--linha); background:var(--superficie);
+    padding:14px; margin:0 0 14px;
+  }
+  .cartoes tbody tr:last-child { margin-bottom:0; }
+  .cartoes td { flex:1 1 100%; min-width:0; padding:0; border-bottom:0; }
+  /* Célula vazia no desktop é coluna alinhada; no cartão é um buraco. */
+  .cartoes td:empty { display:none; }
+  .cartoes td[data-rotulo]::before {
+    content:attr(data-rotulo); display:block; margin:0 0 5px;
+    font:400 11px/1.3 var(--etiqueta); letter-spacing:1.6px; text-transform:uppercase;
+    color:var(--texto-min);
+  }
+  /* Número ao lado de número: o par de estados que só se lê junto
+     ("confirmou" e "compareceu"), e a trinca do funil de origens. */
+  .cartoes td.meia  { flex:1 1 calc(50% - 6px); }
+  .cartoes td.terco { flex:1 1 calc(33.333% - 8px); }
+  .cartoes td.meia .btn, .cartoes td.terco .btn { width:100%; }
+  .cartoes td select { width:100%; }
+  /* A ordem da tabela nem sempre é a ordem da leitura no cartão: `.tarde`
+     empurra para o fim o que na linha era só mais uma coluna. */
+  .cartoes td.tarde { order:1; }
+  /* O rodapé do cartão: o que se FAZ fica atrás de uma linha, separado do que
+     se lê — e a ação que não se desfaz longe do polegar que estava marcando
+     presença. */
+  .cartoes td.rodape { order:2; border-top:2px dashed var(--linha); padding-top:12px; }
+  .cartoes .acoes-celula > * { flex:1 1 auto; }
+  .cartoes .acoes-celula .btn { width:100%; }
+}
+
+/* As ações de uma linha de tabela, com o aperto que cabe numa célula: a
+   `.acoes` da página tem gap de 12px, que numa coluna de três botões estica a
+   tabela inteira. O <form> de uma ação só não é um bloco — ele é o botão, e
+   por isso vira item da mesma linha em vez de quebrar sozinho. */
+.acoes-celula { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.acoes-celula form { display:inline-flex; margin:0; }
+
 /* ---- selos ---- */
 .selo {
   display:inline-block; font:400 11px/1.3 var(--etiqueta); letter-spacing:1.3px; text-transform:uppercase;

@@ -284,7 +284,7 @@ abrir_pagina('Aulas em vídeo');
     <?php if ($pessoas === []): ?>
       <p class="dica" style="margin:0">Ninguém com acesso às aulas ainda. Libere a área na ficha da pessoa, em <a href="/painel/pessoas.php">Pessoas</a>.</p>
     <?php else: ?>
-      <div class="rolagem">
+      <div class="rolagem cartoes">
         <table class="tabela">
           <thead>
             <tr><th>Quem</th><th>Pistas Rápidas</th><th>Total</th></tr>
@@ -298,8 +298,8 @@ abrir_pagina('Aulas em vídeo');
             ?>
             <tr>
               <td><strong><?= h($p['nome']) ?></strong></td>
-              <td><?= $rapidas ?> de <?= $totalRapidas ?></td>
-              <td><?= count($feitas) ?> de <?= $total ?> · <?= $pct ?>%</td>
+              <td class="meia" data-rotulo="Pistas Rápidas"><?= $rapidas ?> de <?= $totalRapidas ?></td>
+              <td class="meia" data-rotulo="Total"><?= count($feitas) ?> de <?= $total ?> · <?= $pct ?>%</td>
             </tr>
           <?php endforeach; ?>
           </tbody>
