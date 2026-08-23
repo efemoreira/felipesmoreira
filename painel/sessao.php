@@ -560,8 +560,24 @@ function normalizar_pessoa($p): ?array
 {
     /* Antes exigia usuário e hash — porque só existia quem tinha login. Agora a
        maioria das pessoas NÃO tem conta: quem confirmou presença num encontro é
-       uma pessoa do mesmo jeito. Nome é o mínimo. */
-    if (!is_array($p) || empty($p['nome'])) {
+       uma pessoa do mesmo jeito. Nome é o mínimo.
+
+       NOME SÓ DE ESPAÇO NÃO É NOME, e é preciso limpar ANTES de conferir. Um
+       `empty()` sobre o campo cru deixava passar `"   "` — que é string
+       não-vazia —, e só depois o `limpar_texto()` lá embaixo a reduzia a `''`:
+       a ficha nascia sem nome, sem nenhum erro aparecer. Quem abre a lista de
+       pessoas vê uma linha em branco que não dá para procurar nem identificar,
+       e no cadastro de candidato a mesma brecha punha um número de urna na
+       colinha sem nome nenhum ao lado dele.
+
+       A conferência mora AQUI porque aqui é o portão único: `pessoas.php`,
+       `candidatos.php` e a presença gravam todos por esta função. Os endpoints
+       públicos exigem nome completo por conta própria, com régua mais dura. */
+    if (!is_array($p)) {
+        return null;
+    }
+    $nome = limpar_texto($p['nome'] ?? '', 80);
+    if ($nome === '') {
         return null;
     }
 
@@ -596,7 +612,7 @@ function normalizar_pessoa($p): ?array
 
     return [
         'id'   => (string) ($p['id'] ?? ''),
-        'nome' => limpar_texto($p['nome'], 80),
+        'nome' => $nome,
         'tipo' => $tipo,
 
         /* ---- como falar com ela ---- */

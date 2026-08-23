@@ -81,22 +81,19 @@ $origem   = normalizar_origem($bruto['de'] ?? '');
 
 $nome = preg_replace('/\s+/u', ' ', $nome) ?? $nome;
 
-if (mb_strlen($nome) < 5 || mb_strpos($nome, ' ') === false) {
-    recusar('Escreva seu nome completo.');
+/* A régua mora em `recusa_de_inscricao()` (inscricoes-comum.php), e não aqui,
+   porque ela tem um par em `src/features/inscricao/validacao.ts` que precisa
+   ser conferido — e o que está solto no meio de um endpoint não se chama de
+   fora. Ver `testes/contrato/inscricao.test.ts`. */
+if (($recusa = recusa_de_inscricao([
+    'nome'     => $nome,
+    'telefone' => $telefone,
+    'email'    => $email,
+    'cidade'   => $cidade,
+    'bairro'   => $bairro,
+])) !== '') {
+    recusar($recusa);
 }
-if (strlen($telefone) < 10 || strlen($telefone) > 11) {
-    recusar('Confira o WhatsApp: use DDD + número.');
-}
-if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-    recusar('Esse e-mail parece incompleto.');
-}
-if ($cidade === '' || $bairro === '') {
-    recusar('Escolha sua cidade na lista e diga seu bairro.');
-}
-/* Função é OPCIONAL. Quem chegou disposto e ainda não sabe onde encaixa é
-   militante do mesmo jeito — recusar aqui trocaria um militante novo por uma
-   linha de relatório, o mesmo erro que a `origem` evita logo acima. Sem
-   escolha, a aprovação assume "onde-precisar" (ver inscricoes.php). */
 
 /* ---- mesmo telefone não entra duas vezes ---- */
 $ja = inscricao_por_telefone($telefone);
