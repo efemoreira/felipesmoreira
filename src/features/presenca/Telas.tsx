@@ -1,7 +1,6 @@
 "use client";
 import React from "react";
-import { C, borda } from "@/lib/theme";
-import { Casca, Voltar, textoP, botaoOuro } from "./Pecas";
+import { Casca, Voltar, textoP, botaoOuro, HeroDoEncontro, Painel } from "./Pecas";
 
 /**
  * AS TELAS CURTAS de `/presenca`: o link quebrado e o "pronto".
@@ -41,7 +40,8 @@ export const Pronto: React.FC<{
   jaEstava: boolean;
   ofereceAjudar: boolean;
   aoQuererAjudar: () => void;
-}> = ({ confirmando, reconhecido, jaEstava, ofereceAjudar, aoQuererAjudar }) => (
+  detalhes?: { titulo: string; subtitulo?: string; data: string; hora: string; local: string; imagem?: string } | null;
+}> = ({ confirmando, reconhecido, jaEstava, ofereceAjudar, aoQuererAjudar, detalhes }) => (
   <Casca
     titulo={
       reconhecido
@@ -51,35 +51,40 @@ export const Pronto: React.FC<{
           : "Pronto!"
     }
   >
-    <p style={textoP}>
-      {confirmando ? (
-        <>
-          Anotamos que <strong>você pretende ir</strong>. Se mudar de ideia, tudo
-          bem — é só não aparecer. <strong>No dia, procure o QR na entrada</strong>:
-          é ele que registra que você esteve lá.
-        </>
-      ) : jaEstava ? (
-        "Seu nome já estava na lista de presença. Pode guardar o celular e aproveitar o encontro."
-      ) : (
-        "Você está na lista de presença. Obrigado por estar com a gente."
-      )}
-    </p>
+    {detalhes ? (
+      <HeroDoEncontro
+        titulo={detalhes.titulo}
+        subtitulo={detalhes.subtitulo}
+        data={detalhes.data}
+        hora={detalhes.hora}
+        local={detalhes.local}
+        imagem={detalhes.imagem}
+        confirmando={confirmando}
+      />
+    ) : null}
+
+    <Painel>
+      <p style={{ ...textoP, margin: 0, maxWidth: "none" }}>
+        {confirmando ? (
+          <>
+            Anotamos que <strong>você pretende ir</strong>. Se mudar de ideia, tudo
+            bem — é só não aparecer. <strong>No dia, procure o QR na entrada</strong>:
+            é ele que registra que você esteve lá.
+          </>
+        ) : jaEstava ? (
+          "Seu nome já estava na lista de presença. Pode guardar o celular e aproveitar o encontro."
+        ) : (
+          "Você está na lista de presença. Obrigado por estar com a gente."
+        )}
+      </p>
+    </Painel>
 
     {/* A pessoa apareceu num encontro por vontade própria e ainda não é do
         movimento: é o melhor momento que vai existir para perguntar. Os
         dados vão por sessionStorage e NUNCA pela URL — telefone em
         querystring entra no histórico, no referrer e no log do servidor. */}
     {ofereceAjudar && (
-      <section
-        style={{
-          border: borda(C.gold),
-          background: "rgba(255,203,5,.08)",
-          padding: "18px 18px 20px",
-          margin: "0 auto 22px",
-          maxWidth: 420,
-          textAlign: "left",
-        }}
-      >
+      <Painel>
         <p style={{ margin: "0 0 12px", fontSize: 15.5, lineHeight: 1.65 }}>
           <strong>Quer ajudar de verdade?</strong> Tem função para quem tem uma hora
           por semana e para quem tem o dia. Seus dados já vão preenchidos — é só
@@ -88,7 +93,7 @@ export const Pronto: React.FC<{
         <button type="button" onClick={aoQuererAjudar} style={botaoOuro}>
           Quero ajudar
         </button>
-      </section>
+      </Painel>
     )}
 
     <Voltar />

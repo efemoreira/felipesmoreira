@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { C, FONT_ALFA, FONT_ELITE, borda, TEXTO } from "@/lib/theme";
+import { C, FONT_ELITE, borda, TEXTO } from "@/lib/theme";
 import { obterEncontro, enviarPresenca, procurarPessoa, confirmarPessoa } from "@/lib/api/presenca";
 import {
   mascararTelefone,
@@ -20,13 +20,13 @@ import {
   botaoEscolha,
   botaoEscolhaFraco,
   textoP,
-  Modo,
   ModoExplica,
-  Quando,
   Armadilha,
   Erro,
   Casca,
   Campo,
+  HeroDoEncontro,
+  Painel,
 } from "./Pecas";
 import { SemEncontro, Pronto } from "./Telas";
 
@@ -274,33 +274,141 @@ export default function PresencaClient() {
     return <SemEncontro />;
   }
 
+  const detalhes = encontro?.existe ? encontro : null;
+  const confirmando = detalhes?.modo === "confirmacao";
+
   if (fase === "pronto") {
     return (
       <Pronto
-        confirmando={!!(encontro?.existe && encontro.modo === "confirmacao")}
+        confirmando={confirmando}
         reconhecido={reconhecido}
         jaEstava={jaEstava}
         ofereceAjudar={ofereceAjudar}
         aoQuererAjudar={levarParaAjudar}
+        detalhes={detalhes}
       />
     );
   }
 
-  const detalhes = encontro?.existe ? encontro : null;
-  const confirmando = detalhes?.modo === "confirmacao";
-
   /* ---------- passo 1: o WhatsApp, e mais nada ---------- */
   if (fase === "telefone") {
     return (
-      <Casca titulo={detalhes?.titulo ?? "Presença"}>
-        <Modo confirmando={confirmando} />
-        <Quando detalhes={detalhes} />
+      <Casca titulo={confirmando ? "Confirmar que eu vou" : "Registrar minha presença"}>
+        {detalhes ? (
+          <HeroDoEncontro
+            titulo={detalhes.titulo}
+            subtitulo={detalhes.subtitulo}
+            data={detalhes.data}
+            hora={detalhes.hora}
+            local={detalhes.local}
+            imagem={detalhes.imagem}
+            confirmando={confirmando}
+          />
+        ) : null}
         <ModoExplica confirmando={confirmando} />
-        <form onSubmit={procurar} style={{ textAlign: "left" }}>
-          <p style={{ ...textoP, margin: "0 0 18px" }}>
-            Digite seu <strong>WhatsApp</strong>. Se você já veio a um encontro ou já
-            se inscreveu, acabou aqui — o resto a gente já tem.
+        <Painel>
+          <form onSubmit={procurar} style={{ textAlign: "left" }}>
+            <p style={{ ...textoP, margin: "0 0 18px", maxWidth: "none" }}>
+              Digite seu <strong>WhatsApp</strong>. Se você já veio a um encontro ou já
+              se inscreveu, acabou aqui — o resto a gente já tem.
+            </p>
+            <Campo
+              id="p-tel"
+              rotulo="WhatsApp"
+              valor={telefone}
+              aoMudar={(v) => setTelefone(mascararTelefone(v))}
+              aoSair={() => aoSair("telefone")}
+              erro={tocado.telefone ? erros.telefone : ""}
+              tipo="tel"
+              modo="numeric"
+              dica="Com DDD. Exemplo: (85) 91234-5678"
+              autoComplete="tel-national"
+              autoFoco
+              required
+            />
+            <Armadilha honeypot={honeypot} />
+            {erro && <Erro texto={erro} />}
+            <button type="submit" style={botaoOuro}>
+              {confirmando ? "Continuar — vou nesse" : "Continuar — cheguei"}
+            </button>
+          </form>
+        </Painel>
+      </Casca>
+    );
+  }
+
+  /* ---------- passo 2: dois no mesmo número ---------- */
+  if (fase === "escolher") {
+    return (
+      <Casca titulo="Qual é você?">
+        {detalhes ? (
+          <HeroDoEncontro
+            titulo={detalhes.titulo}
+            subtitulo={detalhes.subtitulo}
+            data={detalhes.data}
+            hora={detalhes.hora}
+            local={detalhes.local}
+            imagem={detalhes.imagem}
+            confirmando={confirmando}
+          />
+        ) : null}
+        <Painel>
+          <p style={{ ...textoP, maxWidth: "none" }}>
+            Esse número está no cadastro de mais de uma pessoa. Toque no seu nome.
           </p>
+          <div style={{ display: "grid", gap: 10, maxWidth: 420, margin: "0 auto 0" }}>
+            {opcoes.map((o) => (
+              <button key={o.ref} type="button" onClick={() => escolher(o.ref)} style={botaoEscolha}>
+                {o.nome}
+              </button>
+            ))}
+            <button type="button" onClick={() => setFase("formulario")} style={botaoEscolhaFraco}>
+              Não sou nenhum desses
+            </button>
+          </div>
+        </Painel>
+        {erro && <Erro texto={erro} />}
+      </Casca>
+    );
+  }
+
+  return (
+    <Casca titulo={confirmando ? "Confirmar que eu vou" : "Registrar minha presença"}>
+      {detalhes ? (
+        <HeroDoEncontro
+          titulo={detalhes.titulo}
+          subtitulo={detalhes.subtitulo}
+          data={detalhes.data}
+          hora={detalhes.hora}
+          local={detalhes.local}
+          imagem={detalhes.imagem}
+          confirmando={confirmando}
+        />
+      ) : null}
+
+      <ModoExplica confirmando={confirmando} />
+
+      <Painel>
+        <form onSubmit={enviar} style={{ textAlign: "left" }}>
+          <p style={{ ...textoP, margin: "0 0 18px", maxWidth: "none" }}>
+            Não conhecemos esse número ainda: quatro campos e acabou. Da próxima
+            vez, só o WhatsApp.
+          </p>
+          <Campo
+            id="p-nome"
+            rotulo="Nome completo"
+            valor={nome}
+            aoMudar={setNome}
+            aoSair={() => aoSair("nome")}
+            erro={tocado.nome ? erros.nome : ""}
+            autoComplete="name"
+            autoFoco
+            required
+          />
+        {/* O WhatsApp já foi digitado no passo anterior: repetir o campo é
+            pedir para a pessoa digitar duas vezes o mesmo número, e é como um
+            deles sai errado. Continua editável — quem errou um dígito conserta
+            aqui em vez de recomeçar. */}
           <Campo
             id="p-tel"
             rotulo="WhatsApp"
@@ -310,200 +418,120 @@ export default function PresencaClient() {
             erro={tocado.telefone ? erros.telefone : ""}
             tipo="tel"
             modo="numeric"
-            dica="Com DDD. Exemplo: (85) 91234-5678"
+            dica="Confira: é por aqui que a coordenação fala com você."
             autoComplete="tel-national"
-            autoFoco
             required
           />
-          <Armadilha honeypot={honeypot} />
-          {erro && <Erro texto={erro} />}
-          <button type="submit" style={botaoOuro}>
-            {confirmando ? "Continuar — vou nesse" : "Continuar — cheguei"}
-          </button>
-        </form>
-      </Casca>
-    );
-  }
-
-  /* ---------- passo 2: dois no mesmo número ---------- */
-  if (fase === "escolher") {
-    return (
-      <Casca titulo="Qual é você?">
-        <Modo confirmando={confirmando} />
-        <Quando detalhes={detalhes} />
-        <p style={textoP}>
-          Esse número está no cadastro de mais de uma pessoa. Toque no seu nome.
-        </p>
-        <div style={{ display: "grid", gap: 10, maxWidth: 420, margin: "0 auto 20px" }}>
-          {opcoes.map((o) => (
-            <button key={o.ref} type="button" onClick={() => escolher(o.ref)} style={botaoEscolha}>
-              {o.nome}
-            </button>
-          ))}
-          <button type="button" onClick={() => setFase("formulario")} style={botaoEscolhaFraco}>
-            Não sou nenhum desses
-          </button>
-        </div>
-        {erro && <Erro texto={erro} />}
-      </Casca>
-    );
-  }
-
-  return (
-    <Casca titulo={detalhes?.titulo ?? "Presença"}>
-      <Modo confirmando={confirmando} />
-      <Quando detalhes={detalhes} />
-
-      <form onSubmit={enviar} style={{ textAlign: "left" }}>
-        <p style={{ ...textoP, margin: "0 0 18px" }}>
-          Não conhecemos esse número ainda: quatro campos e acabou. Da próxima
-          vez, só o WhatsApp.
-        </p>
-        <Campo
-          id="p-nome"
-          rotulo="Nome completo"
-          valor={nome}
-          aoMudar={setNome}
-          aoSair={() => aoSair("nome")}
-          erro={tocado.nome ? erros.nome : ""}
-          autoComplete="name"
-          autoFoco
-          required
-        />
-        {/* O WhatsApp já foi digitado no passo anterior: repetir o campo é
-            pedir para a pessoa digitar duas vezes o mesmo número, e é como um
-            deles sai errado. Continua editável — quem errou um dígito conserta
-            aqui em vez de recomeçar. */}
-        <Campo
-          id="p-tel"
-          rotulo="WhatsApp"
-          valor={telefone}
-          aoMudar={(v) => setTelefone(mascararTelefone(v))}
-          aoSair={() => aoSair("telefone")}
-          erro={tocado.telefone ? erros.telefone : ""}
-          tipo="tel"
-          modo="numeric"
-          dica="Confira: é por aqui que a coordenação fala com você."
-          autoComplete="tel-national"
-          required
-        />
         {/* Lista, e não digitação: são 184 municípios conhecidos, e na porta do
             encontro — em pé, com a fila andando — escolher é mais rápido e mais
             certo que escrever. A primeira opção é de quem não é do Ceará. */}
-        <Campo
-          id="p-cidade"
-          rotulo="Cidade"
-          valor={cidade}
-          aoMudar={setCidade}
-          aoSair={() => aoSair("cidade")}
-          erro={tocado.cidade ? erros.cidade : ""}
-          autoComplete="address-level2"
-          required
-          lista={MUNICIPIOS_CE}
-          listaVazia="Escolha sua cidade"
-          listaExtra={FORA_DO_CEARA}
-          listaGrupo="Ceará"
-        />
-        <Campo
-          id="p-bairro"
-          rotulo="Bairro"
-          valor={bairro}
-          aoMudar={setBairro}
-          aoSair={() => aoSair("bairro")}
-          erro={tocado.bairro ? erros.bairro : ""}
-          autoComplete="address-level3"
-          required
-        />
-        <Campo
-          id="p-conv"
-          rotulo="Quem te convidou"
-          valor={convidadoPor}
-          aoMudar={setConvidadoPor}
-          opcional
-          dica="Se alguém te chamou, deixa o nome — ajuda a gente a agradecer"
-        />
+          <Campo
+            id="p-cidade"
+            rotulo="Cidade"
+            valor={cidade}
+            aoMudar={setCidade}
+            aoSair={() => aoSair("cidade")}
+            erro={tocado.cidade ? erros.cidade : ""}
+            autoComplete="address-level2"
+            required
+            lista={MUNICIPIOS_CE}
+            listaVazia="Escolha sua cidade"
+            listaExtra={FORA_DO_CEARA}
+            listaGrupo="Ceará"
+          />
+          <Campo
+            id="p-bairro"
+            rotulo="Bairro"
+            valor={bairro}
+            aoMudar={setBairro}
+            aoSair={() => aoSair("bairro")}
+            erro={tocado.bairro ? erros.bairro : ""}
+            autoComplete="address-level3"
+            required
+          />
+          <Campo
+            id="p-conv"
+            rotulo="Quem te convidou"
+            valor={convidadoPor}
+            aoMudar={setConvidadoPor}
+            opcional
+            dica="Se alguém te chamou, deixa o nome — ajuda a gente a agradecer"
+          />
 
-        <section
-          style={{
-            border: borda(C.gold),
-            background: "rgba(255,203,5,.08)",
-            padding: "14px 16px",
-            margin: "6px 0 20px",
-          }}
-        >
-          <p
+          <section
             style={{
-              fontFamily: FONT_ELITE,
-              fontSize: 11,
-              letterSpacing: 2,
-              textTransform: "uppercase",
-              color: C.gold,
-              margin: "0 0 10px",
+              border: borda(C.gold),
+              background: "rgba(255,203,5,.08)",
+              padding: "14px 16px",
+              margin: "6px 0 20px",
             }}
           >
-            Uso dos seus dados
-          </p>
-          <p style={{ margin: "0 0 10px", fontSize: 14.5, lineHeight: 1.65 }}>
-            Guardamos seu nome, WhatsApp, bairro e cidade só para falar com você sobre o
-            movimento. <strong>Não vendemos nem repassamos</strong> para ninguém de
-            fora, e você pode pedir para apagar quando quiser.
-          </p>
-          <p style={{ margin: "0 0 14px", fontSize: 13.5, color: "#b9b3a5" }}>
-            Detalhes na{" "}
-            <Link href="/privacy" target="_blank" style={{ color: C.gold }}>
-              Política de Privacidade
-            </Link>
-            .
-          </p>
-
-          <label
-            htmlFor="p-consentimento"
-            style={{ display: "flex", gap: 10, alignItems: "flex-start", minHeight: 44, cursor: "pointer" }}
-          >
-            <input
-              id="p-consentimento"
-              type="checkbox"
-              checked={consentimento}
-              onChange={(e) => {
-                setConsentimento(e.target.checked);
-                if (e.target.checked) setErro(null);
+            <p
+              style={{
+                fontFamily: FONT_ELITE,
+                fontSize: 11,
+                letterSpacing: 2,
+                textTransform: "uppercase",
+                color: C.gold,
+                margin: "0 0 10px",
               }}
-              style={{ width: 22, height: 22, flex: "0 0 auto", marginTop: 2, accentColor: C.gold }}
-            />
-            <span style={{ ...TEXTO.nota }}>
-              Concordo que a Missão Ceará use meus dados para falar comigo.
-            </span>
-          </label>
-        </section>
+            >
+              Uso dos seus dados
+            </p>
+            <p style={{ margin: "0 0 10px", fontSize: 14.5, lineHeight: 1.65 }}>
+              Guardamos seu nome, WhatsApp, bairro e cidade só para falar com você sobre o
+              movimento. <strong>Não vendemos nem repassamos</strong> para ninguém de
+              fora, e você pode pedir para apagar quando quiser.
+            </p>
+            <p style={{ margin: "0 0 14px", fontSize: 13.5, color: "#b9b3a5" }}>
+              Detalhes na{" "}
+              <Link href="/privacy" target="_blank" style={{ color: C.gold }}>
+                Política de Privacidade
+              </Link>
+              .
+            </p>
 
-        <Armadilha honeypot={honeypot} />
+            <label
+              htmlFor="p-consentimento"
+              style={{ display: "flex", gap: 10, alignItems: "flex-start", minHeight: 44, cursor: "pointer" }}
+            >
+              <input
+                id="p-consentimento"
+                type="checkbox"
+                checked={consentimento}
+                onChange={(e) => {
+                  setConsentimento(e.target.checked);
+                  if (e.target.checked) setErro(null);
+                }}
+                style={{ width: 22, height: 22, flex: "0 0 auto", marginTop: 2, accentColor: C.gold }}
+              />
+              <span style={{ ...TEXTO.nota }}>
+                Concordo que a Missão Ceará use meus dados para falar comigo.
+              </span>
+            </label>
+          </section>
 
-        {erro && <Erro texto={erro} />}
+          <Armadilha honeypot={honeypot} />
 
-        <button
-          type="submit"
-          disabled={fase === "enviando"}
-          style={{
-            width: "100%",
-            minHeight: 52,
-            padding: "14px 20px",
-            cursor: fase === "enviando" ? "wait" : "pointer",
-            fontFamily: FONT_ALFA,
-            fontSize: 17,
-            background: C.gold,
-            color: C.ink,
-            border: borda(),
-            boxShadow: "5px 5px 0 rgba(24,18,3,.4)",
-            opacity: fase === "enviando" ? 0.6 : 1,
-          }}
-        >
-          {fase === "enviando"
-            ? "Enviando…"
-            : confirmando
-              ? "Confirmar que eu vou"
-              : "Registrar minha presença"}
-        </button>
-      </form>
+          {erro && <Erro texto={erro} />}
+
+          <button
+            type="submit"
+            disabled={fase === "enviando"}
+            style={{
+              ...botaoOuro,
+              cursor: fase === "enviando" ? "wait" : "pointer",
+              opacity: fase === "enviando" ? 0.6 : 1,
+            }}
+          >
+            {fase === "enviando"
+              ? "Enviando…"
+              : confirmando
+                ? "Confirmar que eu vou"
+                : "Registrar minha presença"}
+          </button>
+        </form>
+      </Painel>
     </Casca>
   );
 }

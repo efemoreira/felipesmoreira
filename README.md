@@ -1,36 +1,50 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# felipesmoreira.com
 
-## Getting Started
+Site pessoal/institucional de Felipe Moreira (Missão Ceará).
 
-First, run the development server:
+O projeto é dividido em duas metades:
+
+- **site público** em Next.js 15 App Router, com `output: "export"`;
+- **backend real** em PHP, dentro de `public/painel/`, para login, sessão,
+  inscrições, encontros, candidatos, formação e demais dados dinâmicos.
+
+## Arquitetura em uma frase
+
+O site público é estático e vai para a Hostinger como build exportado; o painel
+PHP roda ao lado e expõe as páginas administrativas e as APIs JSON consumidas
+pelas features do front.
+
+## Comandos principais
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run build
+npm test
+npm run test:tipos
+npm run lint
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Regras de alto sinal
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Não crie `app/api` para lógica de produto; o backend dinâmico está no painel PHP.
+- `src/app/<rota>/page.tsx` deve ser fino: metadata + delegação para a feature.
+- Cor, fonte, moldura e escala de texto saem de `src/lib/theme.ts`.
+- Toda chamada do Next para o painel passa por `@/lib/api/client.ts` (`apiFetch`).
+- Em tela de trabalho para celular, priorize scroll vertical e desconfie de tabela.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Onde ler a documentação certa
 
-## Learn More
+- `CLAUDE.md` — contrato curto do repositório.
+- `docs/arquitetura-completa.md` — mapa da arquitetura e índice temático.
+- `docs/painel.md` — operação prática do painel.
+- `docs/site-publico.md` — regras e estrutura do site público.
+- `docs/dominio-e-fluxos.md` — pessoas, inscrição, presença, origem e contrato PHP ↔ Next.
+- `docs/painel-ui-e-permissoes.md` — navegação, busca, modais, áreas e convenções de tela.
+- `docs/deploy-testes-e-limites.md` — testes, deploy, limites e o que não mexer sem perguntar.
+- `docs/arquitetura-referencia.md` — referência integral/histórica das decisões mais detalhadas.
 
-To learn more about Next.js, take a look at the following resources:
+## O que não mexer sem perguntar
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `next.config.ts` com `output: "export"`;
+- `.github/workflows/publish.yml`;
+- `conceito.html`.

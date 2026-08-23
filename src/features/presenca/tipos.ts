@@ -14,7 +14,16 @@ export type Modo = "chegada" | "confirmacao";
 
 export type Encontro =
   | { existe: false }
-  | { existe: true; modo: Modo; titulo: string; data: string; hora: string; local: string };
+  | {
+      existe: true;
+      modo: Modo;
+      titulo: string;
+      subtitulo: string;
+      data: string;
+      hora: string;
+      local: string;
+      imagem: string;
+    };
 
 /** O que identifica o encontro: um token OU o outro, nunca os dois. */
 export interface Alvo {

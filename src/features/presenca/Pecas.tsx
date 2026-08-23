@@ -164,6 +164,134 @@ export const textoP: React.CSSProperties = {
   lineHeight: 1.7,
 };
 
+export const Painel: React.FC<{ children?: React.ReactNode }> = ({ children }) => (
+  <section
+    style={{
+      maxWidth: 460,
+      margin: "0 auto 22px",
+      padding: "18px 18px 20px",
+      textAlign: "left",
+      background: "rgba(7,7,8,.42)",
+      border: borda("rgba(255,203,5,.35)"),
+      boxShadow: "7px 7px 0 rgba(24,18,3,.42)",
+      backdropFilter: "blur(2px)",
+    }}
+  >
+    {children}
+  </section>
+);
+
+export const HeroDoEncontro: React.FC<{
+  titulo: string;
+  subtitulo?: string;
+  data?: string;
+  hora?: string;
+  local?: string;
+  imagem?: string;
+  confirmando: boolean;
+}> = ({ titulo, subtitulo, data, hora, local, imagem, confirmando }) => {
+  const textura =
+    "radial-gradient(circle at 18% 20%, rgba(255,203,5,.22), transparent 0 22%), " +
+    "radial-gradient(circle at 82% 28%, rgba(255,203,5,.14), transparent 0 18%), " +
+    "repeating-linear-gradient(135deg, rgba(255,203,5,.12) 0 8px, transparent 8px 16px), " +
+    "linear-gradient(180deg, rgba(14,12,8,.94), rgba(14,12,8,.72))";
+  const fundo = imagem
+    ? `linear-gradient(180deg, rgba(14,12,8,.12), rgba(14,12,8,.78)), url(${imagem})`
+    : textura;
+
+  return (
+    <section
+      style={{
+        maxWidth: 460,
+        margin: "0 auto 20px",
+        textAlign: "left",
+        border: borda(C.gold),
+        boxShadow: "8px 8px 0 rgba(24,18,3,.45)",
+        overflow: "hidden",
+        background: "rgba(10,9,7,.6)",
+      }}
+    >
+      <div
+        aria-hidden="true"
+        style={{
+          position: "relative",
+          minHeight: 196,
+          padding: "16px 16px 18px",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "space-between",
+          backgroundImage: fundo,
+          backgroundSize: imagem ? "cover" : "auto, auto, auto, cover",
+          backgroundPosition: "center",
+          backgroundColor: "#0e0c08",
+        }}
+      >
+        <div>
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              minHeight: 38,
+              padding: "6px 12px",
+              background: confirmando ? "rgba(255,203,5,.16)" : C.gold,
+              color: confirmando ? C.gold : C.ink,
+              border: borda(confirmando ? C.gold : C.ink),
+              fontFamily: FONT_ELITE,
+              fontSize: 11,
+              letterSpacing: 1.7,
+              textTransform: "uppercase",
+            }}
+          >
+            <Icon name={confirmando ? "calendar" : "flag"} size={15} />
+            {confirmando ? "Aviso de que vou" : "Lista de presença"}
+          </span>
+        </div>
+
+        <div>
+          <h2
+            style={{
+              margin: "0 0 6px",
+              fontFamily: FONT_ALFA,
+              fontSize: "clamp(24px, 5vw, 32px)",
+              lineHeight: 1.15,
+              color: C.cream,
+              textShadow: "3px 3px 0 rgba(24,18,3,.55)",
+            }}
+          >
+            {titulo}
+          </h2>
+          {subtitulo ? (
+            <p
+              style={{
+                margin: "0 0 10px",
+                fontSize: 14.5,
+                lineHeight: 1.55,
+                color: "rgba(246,245,239,.88)",
+                maxWidth: 380,
+              }}
+            >
+              {subtitulo}
+            </p>
+          ) : null}
+          <p
+            style={{
+              margin: 0,
+              fontFamily: FONT_ELITE,
+              fontSize: 11,
+              letterSpacing: 1.6,
+              textTransform: "uppercase",
+              color: "rgba(246,245,239,.78)",
+            }}
+          >
+            {[data, hora, local].filter(Boolean).join(" · ")}
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+};
+
 export function dataBonita(iso: string): string {
   if (!iso) return "";
   const [ano, mes, dia] = iso.split("-");
@@ -174,7 +302,10 @@ export const Casca: React.FC<{ titulo: string; children?: React.ReactNode }> = (
   <div
     style={{
       minHeight: "100dvh",
-      background: C.night,
+      background:
+        "radial-gradient(circle at top, rgba(255,203,5,.08), transparent 0 26%), " +
+        "repeating-linear-gradient(135deg, rgba(255,203,5,.028) 0 8px, transparent 8px 16px), " +
+        C.night,
       color: C.cream,
       fontFamily: FONT_BITTER,
       padding: "38px 20px 70px",

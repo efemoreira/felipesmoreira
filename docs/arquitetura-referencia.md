@@ -1,0 +1,1790 @@
+# Arquitetura — referência integral
+
+Arquivo de referência preservado da versão extensa anterior do guia de
+arquitetura.
+
+Use este documento quando precisar do rational completo, dos exemplos mais
+longos ou do histórico de decisões palavra por palavra. Para o trabalho normal,
+prefira os docs temáticos:
+
+- `docs/site-publico.md`
+- `docs/dominio-e-fluxos.md`
+- `docs/painel-ui-e-permissoes.md`
+- `docs/painel.md`
+- `docs/deploy-testes-e-limites.md`
+
+> Nota: o conteúdo completo anterior foi preservado para a reorganização não
+> apagar contexto.
+
+## Conteúdo preservado
+
+# felipesmoreira.com
+
+Site pessoal/institucional de Felipe Moreira (Missão Ceará). Next.js export
+estático hospedado na Hostinger, com um app PHP separado cuidando de login e
+dados dinâmicos. Este arquivo documenta as decisões de arquitetura para a
+próxima fase (usuários reais + aulas em vídeo) não virar um Frankenstein.
+
+## Stack e por quê
+
+- **Next.js 15 (App Router), `output: "export"`.** O site é 100% estático,
+  publicado pelo `.github/workflows/publish.yml` num branch `build` que a
+  Hostinger serve via Apache. **Não trocamos isso por um servidor Node/Vercel**
+  de propósito: já funciona, é grátis, e o site não precisa de SSR.
+- **O backend é o app PHP em `public/painel/`.** Login, sessão, usuários e
+  dados dinâmicos (agenda, e futuramente aulas) vivem lá — não em `app/api`
+  (que não existe, porque não pode existir num export estático). Ver
+  `docs/painel.md` para os detalhes operacionais do painel.
+- **Tailwind v4** está instalado mas a identidade visual do site (paleta
+  "cordel") não usa classes utilitárias — usa tokens de `src/lib/theme.ts`
+  aplicados via inline style. Não lute contra isso tentando migrar para
+  Tailwind; siga o padrão existente.
+
+## Estrutura de `src/`
+
+```
+src/
+  app/                # só rotas: page.tsx fino (metadata) + delega pro feature
+  features/<nome>/     # lógica + componentes + dados de cada área do site
+  components/          # primitivos compartilhados entre features (ex: icons.tsx)
+  lib/
+    theme.ts            # única fonte de C (paleta) e FONT_ALFA/ELITE/BITTER
+    api/                 # cliente para a API JSON do painel PHP
+  data/                 # JSON estático versionado (seed de build)
+```
+
+**Regra:** `src/app/<rota>/page.tsx` não deve conter lógica de UI nem dados —
+só `export const metadata` e um `return <FeatureClient />` importado de
+`@/features/<nome>`. Se uma página precisa de estado/efeitos, o componente
+que os usa é um `"use client"` dentro de `features/`, nunca direto na rota
+(exceção: `src/app/painel/estudio/`, ver nota abaixo).
+
+**Regra:** cor, fonte, **moldura e escala de texto** vêm sempre de
+`@/lib/theme` (`C`, `FONT_ALFA`, `FONT_ELITE`, `FONT_BITTER`, `BORDA`/`borda()`,
+`TEXTO`). Nunca redefina a paleta num componente novo — isso é exatamente a
+duplicação que motivou esta reorganização.
+
+> **A moldura é `borda()`, e nunca `3px solid` escrito à mão.** O `3` é
+> identidade e não estilo — canto reto, borda grossa e sombra dura são o que faz
+> o site e o painel parecerem o mesmo produto, e o painel já guarda o dele num
+> token do `:root`. Aqui ele estava em **87 lugares, em 20 arquivos**, com nove
+> cores diferentes ao lado: engrossar a moldura era uma tarde de procurar e
+> substituir, e bastava escapar um para o cartão sair mais fino que os vizinhos.
+> O token é função porque o que varia é a COR (tinta no normal, ouro no aceso,
+> vermelho no erro) — a espessura não é decisão de ninguém. Em folha de estilo
+> interpolada use `${BORDA}px solid`.
+>
+> **O texto de leitura é `...TEXTO.corpo`.** `fontSize: 15.5` com
+> `lineHeight: 1.55` aparecia em oito arquivos e o `1.6` em onze, os dois
+> querendo dizer a mesma coisa com dois valores.
+>
+> As duas trocas saíram com **markup byte a byte idêntico nas 17 rotas** — é o
+> método de `next build` + comparar o `<body>` ignorando os `<script>`.
+
+> ⚠️ **A sombra dura ainda NÃO tem token, e de propósito.** Ela aparece em 17
+> combinações de deslocamento e opacidade (`3px/.22`, `3px/.28`, `3px/.3`,
+> `3px/.35`, `3px/.5`, `4px/.28`…), o que já não é repetição: é deriva. Escolher
+> uma opacidade por deslocamento **muda o desenho** de várias peças, e isso é
+> decisão de quem olha, não refatoração. Antes de criar o token, decida a escala.
+
+**Regra:** dado de conteúdo (arrays de texto, listas, fichas) mora em
+`features/<nome>/data.ts`, tipado — não misturado com JSX no componente.
+
+### O Estúdio (`src/app/painel/estudio/`)
+
+É um editor de artes estilo Canva (~10 mil linhas), já organizado
+internamente (`camadas/`, `painel/`, tipos próprios). Por ser essencialmente
+um produto à parte, ele **não segue** o padrão `features/` — fica onde está.
+Não o use como referência para organizar novas páginas simples.
+
+Ele usa **Tailwind**, ao contrário do resto do site. As cores, porém, saem de
+tokens em `src/app/painel/estudio/estudio.css`, escopados em `#estudio-raiz` e
+definidos nos três estados de tema. **Cor cravada na classe**
+(`bg-[#14110C]`, `text-white/35`) **quebra um dos temas** — foi o que existia
+antes e é o que os tokens resolvem. Exceções de propósito: o ouro em `background`,
+`border` e `ring` (funciona nos dois) e o `bg-black/70` dos véus de modal.
+
+**O Estúdio segue o tema do painel, mas o entorno do palco é cinza neutro, não
+o papel do cordel.** A percepção de cor muda com o brilho e a temperatura do que
+está em volta: sobre o creme quente do painel, a arte pareceria mais fria do que
+vai parecer no feed. É por isso que Figma e Canva usam cinza atrás da prancheta.
+Ali a identidade é carregada pela **forma** — canto reto, borda grossa, sombra
+dura, Special Elite nos rótulos — e não pela cor do papel.
+
+Quem carimba o tema é o `estudio.php`, no `<html>`, antes de servir o HTML do
+build — o mesmo truque do `layout.php`, e pelo mesmo motivo: não piscar. Ele
+carimba junto um `window.__PAINEL__` com nome, papel e CSRF, que é o que a barra
+usa para mostrar quem está logado e ter um Sair que funcione. **As flags
+`JSON_HEX_*` do `json_encode` ali não são decoração:** o nome vem do cadastro, e
+um `</script>` dentro dele escaparia do bloco.
+
+## O contrato Next.js ↔ PHP
+
+O painel expõe endpoints JSON em `public/painel/api/*.php`, além das páginas
+HTML administrativas que já existia. Regras para endpoint novo:
+
+1. `require_once __DIR__ . '/../sessao.php';` — reaproveite `usuario_atual()`,
+   `pode($area)`, `areas_do_usuario()`. Nunca crie um segundo mecanismo de
+   sessão/login.
+2. Sempre `Content-Type: application/json` e `Cache-Control: no-store,
+   private`.
+3. Prefira responder 200 com o estado no corpo (ex: `{"autenticado": false}`)
+   a usar status HTTP para erros esperados — simplifica o cliente.
+4. No lado Next, toda chamada passa por `@/lib/api/client.ts`
+   (`apiFetch`) — não use `fetch` solto para o painel dentro de uma feature.
+
+Endpoint de referência: `public/painel/api/sessao.php` +
+`src/lib/api/sessao.ts`.
+
+### Endpoints públicos (sem login)
+
+`public/painel/api/inscricao.php` (formulário de `/queroajudar`) e
+`public/painel/api/presenca.php` (lista de presença dos encontros, o QR da mesa
+de recepção) são os **únicos dois** abertos para a internet, e por isso seguem
+regras próprias — as mesmas para os dois:
+
+- **CSRF não serve aqui.** O cookie de sessão tem `path=/painel` e
+  `SameSite=Strict`, e visitante anônimo não tem sessão nenhuma. O que protege
+  é: armadilha (honeypot), teto de envios por visitante, conferência de
+  `Origin` e checagem de duplicado.
+- **O teto usa IP embaralhado, não IP.** `chave_visitante()` faz HMAC do IP com
+  um segredo do site (`dados/segredo.php`, criado sozinho). Dá para contar
+  tentativas sem guardar endereço, que é dado pessoal.
+- **Erro de robô não é explicado.** Honeypot preenchido responde `{"ok":true}`
+  e descarta em silêncio — dizer a verdade ensina o robô a contornar.
+
+### Onde guardar dado pessoal
+
+`public_html/dados/` é **fechado por padrão**: o `.htaccess` gerado por
+`preparar_pastas()` bloqueia `.php` e `.json`, e libera **um único arquivo** —
+`agenda.json`, porque a página `/programacao` busca ele no navegador. A ordem
+importa: a liberação vem depois do bloqueio, e a última regra que casa é a que
+vale.
+
+> **Qualquer arquivo com dado pessoal — telefone, e-mail, endereço, hash de
+> senha — deve ser `.php` retornando array** (`var_export`), como
+> `usuarios.php`, `inscricoes.php` e `tentativas.php`.
+
+As imagens da agenda (`/dados/imagens/*.jpg`) continuam públicas: a regra é por
+extensão e elas não são `.php` nem `.json`.
+
+Ao precisar de um arquivo novo em `/dados` legível pela web, acrescente um
+`<Files>` liberando **aquele nome**, nunca afrouxe o bloqueio por extensão.
+
+## A candidatura e as propostas
+
+Felipe é **candidato a Vice-Governador do Ceará**, na chapa do **Delegado Huggo
+Leonardo**, pelo **Partido Missão**. Como vice, ele **não tem número de urna
+próprio** — o voto vai no número do candidato a governador, e a página
+`/amissao` diz isso com todas as letras, porque é a dúvida mais comum.
+
+`/propostas` (`src/features/propostas/`) traz o plano de governo da chapa,
+**"Retomar para Reconstruir"**, organizado como o próprio documento: por
+compromisso, não por secretaria, cada um respondendo às mesmas seis perguntas
+(o que está em jogo · onde queremos chegar · o que vamos fazer · de onde vem o
+recurso · quando entrega · como você cobra).
+
+**Todo número traz a página do plano.** Não é capricho de nota de rodapé: a
+carta de abertura pede "leiam este plano, guardem este plano e me cobrem este
+plano" (p. 2), e é a mesma regra da Parte 0 do manual — fato sem fonte não
+entra. Número sem página aqui é o bug.
+
+> ⚠️ **A fonte do conteúdo é uma wiki interna de estratégia**, não um documento
+> público. Além das propostas, ela tem seções de *vulnerabilidades*, *ganchos de
+> debate*, *silêncios* e *confrontos*, com as respostas prontas para os ataques
+> que virão. **Nada disso vai para o site.** Ao atualizar `/propostas`, copie
+> apenas proposta, meta, custeio e prazo.
+
+## A Munição (`/municao`)
+
+A ferramenta que o manual (§5.5) descreve como coordenação manual no WhatsApp.
+Cada peça é **um número do plano com a página**, mais o texto pronto pra colar,
+mais a arte gerada no canvas — e o botão usa a Web Share API, que no celular
+abre o WhatsApp direto com imagem e texto juntos.
+
+`noindex`: é ferramenta de militante, circula por link no grupo. Lista indexada
+do que vem por aí só serviria pro adversário.
+
+> **Chamava-se "kit" e virou "Munição".** A rota antiga `/kit` continua
+> respondendo, por `RewriteRule ... [R=301,L,QSA]` — o link circula em grupo de
+> WhatsApp desde antes. Os ARQUIVOS continuam com o nome antigo de propósito:
+> `kit-comum.php`, `api/kit.php` e `dados/kit.php` são contrato interno e
+> arquivo em produção, e renomeá-los é risco sem ganho.
+
+**É aqui que a atribuição fecha o ciclo.** O militante digita o nome uma vez (fica
+no `localStorage`, não no servidor), e todo link das peças sai com o `?de=<slug>`
+— o mesmo campo que `api/inscricao.php` grava desde a inscrição. Sem isso o
+alcance existe e ninguém sabe de quem foi.
+
+> O `slugDe()` de `src/lib/atribuicao.ts` e o `normalizar_origem()` do
+> `inscricoes-comum.php` **têm de concordar**. Se um normalizar diferente do
+> outro, o mesmo militante vira duas origens no relatório.
+>
+> Ele morava em `features/kit/data.ts`. Mudou de casa quando a inscrição e a
+> presença passaram a precisar dele: importá-lo de lá arrastava as oito peças
+> fixas do plano para o bundle do `/presenca`, que é aberto em pé, na porta do
+> encontro. Medido — o texto das peças estava mesmo no chunk da página.
+
+### O calendário da eleição
+
+`src/lib/eleicao.ts` é a **fonte única** das datas: a contagem regressiva da
+faixa pública e as travas do kit saem dela. Data repetida em dois arquivos é
+data que diverge na terceira alteração.
+
+**Tudo é calculado no navegador, nunca no build.** Num export estático a data de
+compilação congelaria — no dia 4 de outubro o kit ainda estaria dizendo o que
+dizia em agosto, até alguém publicar de novo. Por isso os componentes nascem
+vazios no HTML e se preenchem depois; é também o que evita divergência entre o
+que o servidor gerou e o que o cliente desenha.
+
+As fases: `campanha` → `reta-final` (últimas 48h, acaba o impulsionamento pago)
+→ `votacao` (o kit **fecha as peças**: publicar conteúdo novo de propaganda na
+internet é proibido nesse dia) → `depois`. Quem escreve o recado de cada fase é
+`src/features/kit/calendario.ts`.
+
+> **A trava mora onde a ação acontece.** Não adianta a regra estar num documento
+> se quem vai publicar está no kit, com o botão na mão — é a mesma lógica da
+> Parte 0 do manual.
+
+### Os candidatos e a colinha (`/candidatos`)
+
+**Duas coisas separadas, e é a separação que importa:**
+
+- o **candidato** é um cadastro simples — quem é, que número tem, qual o @, e uma
+  foto opcional. Rápido, sem decisão nenhuma junto;
+- a **lista** é curadoria — um nome ("Deputados federais", "As mulheres da
+  chapa", "Os que eu apoio") e quem entra nela. É a lista que vira colinha.
+
+> A primeira versão tinha grupos fixos marcados no próprio candidato
+> (`federais`, `mulheres`, `escolhidos`) e estava errada nos dois lados:
+> obrigava a classificar na hora de cadastrar, quando o que se quer é só
+> registrar o número certo; e engessava as listas em categorias decididas no
+> código, quando **lista é conteúdo de campanha e muda toda semana**.
+
+`api/candidatos.php` entrega os dois juntos — pedir as listas num segundo
+endpoint faria a página piscar duas vezes no 4G de quem abriu na fila.
+`/candidatos` desenha e gera a colinha (`src/features/candidatos/colinha.ts`,
+com os traços de `cordelCanvas.ts`).
+
+- **Candidato é uma PESSOA com `tipo = candidato`, e a tela mostra isso.** De
+  `/painel/pessoas` a ficha leva a `candidatos.php?pessoa=<id>`, que abre o
+  formulário de candidatura já com aquela ficha; de `/painel/candidatos` o botão
+  "Puxar da lista de pessoas" faz o mesmo caminho a partir de um seletor. Nos
+  dois casos **o tipo só vira `candidato` ao salvar com número válido** —
+  transformar no clique criaria candidato sem número, que é ficha que não pode ir
+  ao ar e que ninguém lembra de completar depois. Telefone, funções, conta e
+  presenças em encontro continuam as mesmas: é a mesma pessoa.
+- **Só quem enxerga a lista de pessoas puxa dela** (`pode('pessoas')`). A tela de
+  candidatos é sobre número de urna, que é informação pública; a lista de pessoas
+  tem telefone e endereço, e dado pessoal acompanha a responsabilidade sobre ele,
+  não o trabalho do dia.
+- **Não é lista no código.** Nome de urna e número saem do registro no TSE e
+  mudam até a véspera; lista no repositório é lista que exige um deploy para
+  corrigir um dígito.
+- **Sem número não cadastra.** Colinha com número errado é pior que colinha
+  nenhuma. Nome e número são os únicos obrigatórios — cargo, partido, @ e foto
+  não travam o cadastro.
+- **O cargo vem de `CARGOS` (`sessao.php`), e é ele que confere o número.** São
+  doze cargos no Brasil inteiro: cabe numa lista, e "Dep. Federal", "Deputado
+  federal" e "DEPUTADO FEDERAL" digitados por três pessoas viravam três cargos
+  no filtro e três grafias na colinha. Cada entrada carrega `digitos`, e a
+  gravação recusa o que não bate — vereador com quatro dígitos não é um número
+  quase certo, é um voto que não vai para ninguém.
+- **Vice e suplente levam os dígitos do TITULAR, não zero.** O vice não tem
+  número próprio, e é justamente por isso que o número dele na colinha é o de
+  quem encabeça a chapa: é o que o eleitor digita. É o que a `/amissao` explica
+  com todas as letras.
+- **A API manda o RÓTULO do cargo, não a chave.** Uma tabela de cargos repetida
+  em TypeScript divergiria na primeira eleição; o site desenha o que recebe.
+- **A ordem da lista é a ordem da colinha.** Não é alfabética: quem vem primeiro
+  é quem se quer que seja lembrado primeiro.
+- **Recolher um candidato tira ele de todas as listas de uma vez.** A limpeza é
+  na saída (`listas_publicadas()`), não na gravação — quem recolhe não deveria
+  ter que lembrar de editar cinco listas, e republicar devolve a todas.
+- **Uma lista vai para a home** (`naHome`), e só uma: a home é a página onde o
+  visitante tem menos paciência. Marcar a segunda desmarca a primeira em vez de
+  recusar — quem clicou já decidiu.
+- **Sem lista publicada, o bloco da home não aparece.** Mesmo padrão de
+  `CHAPA.numero`: melhor não dizer nada do que deixar um buraco onde o eleitor
+  espera um número.
+
+> **A trava do TSE mora no botão.** Compartilhar arte com número é propaganda:
+> no dia da votação o botão fecha (publicar propaganda nova na internet é
+> proibido) e depois da eleição também. **A lista continua visível nos dois
+> casos** — consultar não é publicar, e quem abrir a página no domingo precisa
+> achar o número. Mesma `faseEm()` de `src/lib/eleicao.ts` que a Munição usa.
+
+### Em que número votar
+
+`CHAPA.numero` em `src/features/missao/data.ts` guarda o número que se digita na
+urna — **14, o mesmo para presidente e para governador**. Um campo só, porque é
+um número só: o vice não tem número próprio. Enquanto estiver vazio, a faixa não
+fala de voto — é melhor não dizer nada do que deixar um buraco onde o eleitor
+espera o número.
+
+**A faixa é carimbo, não explicação.** Ela diz o número e a data, e mais nada;
+quem explica que o vice não tem número de urna é `/amissao`, que existe para
+isso. Texto de esclarecimento repetido dentro da faixa disputa espaço com o
+número, que é a única coisa que precisa ser lida de longe.
+
+**O número é desenhado já no HTML; só a contagem de dias espera o navegador.**
+A distinção não é detalhe: o número é a conversão final da campanha, e se ele só
+aparecesse depois do JavaScript rodar, o buscador nunca o leria. Já a contagem
+*precisa* ser do navegador, senão congela na data em que o site foi publicado.
+O primeiro render (o que vira HTML) traz data e número; o efeito só acrescenta
+a linha da contagem — servidor e cliente desenham igual na primeira passada, que
+é o que evita erro de hidratação.
+
+**A faixa é tinta com ouro, não ouro cheio.** No site inteiro o ouro cheio
+significa "aperte aqui", e ela fica logo acima do cartão de entrar no grupo, que
+é ouro. Dois blocos dourados empilhados disputam o mesmo clique — e a faixa não
+é botão, é carimbo.
+
+### Peça nova sem deploy
+
+As oito peças fixas vêm do plano e não envelhecem, mas o fato da semana não
+viraria peça sem um build. `public/painel/kit-comum.php` + `api/kit.php`
+resolvem: a coordenação cria a peça em **`/painel/municao`**, e o site mescla as
+publicadas **antes** das fixas.
+
+> Isto já morou dentro do quadro de Produção, num `<details>` no meio das quatro
+> colunas — a ferramenta mais usada do movimento escondida atrás de um triângulo,
+> numa tela que fala de outra coisa. Virou área própria (`municao`, em
+> `AREAS_FERRAMENTA`), com nome próprio, no grupo Comunicação do menu.
+
+- **Peça sem fonte não é aceita.** É a Parte 0 aplicada à ferramenta: peça
+  circula muito mais longe que um post.
+- **`destino` só aceita caminho interno.** URL externa vira `/propostas` — um
+  campo de link livre é convite a link colado errado.
+- Se a rede falhar, a página continua com as fixas: o mutirão não para por causa
+  de um endpoint fora do ar.
+
+**Os traços do cordel no canvas moram em `src/lib/cordelCanvas.ts`** — `escrever`,
+`quebrar`, `bloco`, `pilula`, `icone`. Nasceram dentro do `poster.ts` da
+programação e mudaram de casa quando o kit passou a desenhar as mesmas peças:
+duas cópias do mesmo `bloco()` divergiriam na primeira vez que alguém mexesse na
+espessura da borda. O que é próprio de cada peça (fundo, layout, montagem)
+continua no arquivo dela.
+
+## A agenda (`/programacao`)
+
+**Um encontro se cadastra UMA vez.** A coordenação marca em `/painel/eventos`, e
+`dados/agenda.json` é **gerado** dali a cada gravação; o visitante recebe o JSON
+pela rede — é a única página do site cujo conteúdo muda sem deploy.
+
+Eram duas metades que não se conheciam: a mesma live era digitada em
+`/painel/agenda` (com data própria, para o site) e cadastrada de novo em
+`/painel/eventos` (com outra data, para as cinco peças e a presença). Duas fichas
+para a mesma coisa é duas datas que divergem na terceira alteração.
+
+- **`naAgenda` no encontro, padrão `true`.** O normal é o encontro ser público; a
+  exceção — reunião fechada, jantar com liderança — é quem desmarca. Padrão
+  invertido faria a coordenação cadastrar e o encontro não aparecer, sem ninguém
+  entender por quê.
+- **A live é um encontro da família `digital`.** O formulário troca `local` e
+  `endereco` por `plataforma` e `link`.
+- **`agenda.php` ficou com a capa** (título, período, chamada, canais) e a lista
+  em modo leitura, apontando para cada encontro. Ela também tem o botão de
+  importação única da agenta antiga, que aparece só enquanto sobrar item sem
+  encontro.
+- **`item_publico()` é lista de permissão, não de bloqueio.** O `agenda.json` é
+  o único arquivo de `/dados` liberado à web: campo que caia nele fica aberto na
+  internet. Enumerar o que SAI garante que um campo novo no encontro nunca vaze
+  por esquecimento. Por isso `local` sai (é o nome público do lugar) e `endereco`
+  não (pode ser a casa de alguém), junto com `orcamento`, `observacoes`,
+  `responsaveis` e `publicoEsperado`.
+- **Publica ao gravar, não por botão.** Editar o encontro já exige coordenação —
+  não há revisão a mais para fazer, e "esqueci de publicar" deixa de existir.
+
+> **`estado_do_evento()` (PHP, em `agenda-comum.php`) e `estadoDe()` (TS, em
+> `programacao/tempo.ts`) têm de concordar,** inclusive no
+> `DURACAO_PADRAO_MIN = 120`. Se divergirem, o painel diz que o encontro acabou
+> enquanto o site ainda mostra "AO VIVO". Mesmo pacto de `slugDe()` ↔
+> `normalizar_origem()`.
+
+> **`agenda-comum.php` existe porque `agenda.php` faz `exigir_area('agenda')` na
+> primeira linha** — nada mais no painel conseguia usar o relógio, as cores nem
+> o caminho de imagem que moravam lá dentro. Segue a convenção dos outros
+> `*-comum.php`: só define, e quem inclui decide se exige login.
+
+**Dois campos na tela, UM instante no arquivo.** Quem marca o encontro pensa
+"sábado, 9 da manhã" — são um `<input type="date">` e um `<input type="time">`,
+e no celular o primeiro abre um calendário de verdade, que o `datetime-local`
+não abre em todo aparelho. `inicio_de_dia_e_hora()` junta os dois na gravação.
+
+**O que não muda é o que fica guardado:** um `inicio` só, ISO com fuso fixo do
+Ceará
+(`2026-10-04T19:00-03:00`); `dia`, `data` e `hora` saem dele na hora de gravar e
+continuam no JSON porque o pôster e o cartão os desenham. Antes eram três
+campos de texto digitados à mão — `"29/07"`, sem ano, e `"19H"` — e por isso a
+página não conseguia ordenar, não conseguia esconder o que passou, e o "AO VIVO"
+era uma caixa marcada à mão que ficava acesa para sempre. Havia uma no ar treze
+dias depois da live.
+
+> **Formate sempre com `DateTimeZone('America/Fortaleza')`,** nunca com `date()`
+> puro: o PHP da Hostinger roda em UTC e um evento das 19h aparecia como **22H**.
+> `partes_de_exibicao()` em `agenda.php` é a única cópia dessa conversão.
+
+> ⚠️ **`data` é TEXTO DE EXIBIÇÃO, não uma data. Conta de tempo sai de
+> `inicio`.** `data` é o `"24/08"` que `partes_de_exibicao()` derivou — sem ano
+> e sem fuso. `strtotime("24/08")` devolve `false`, o `(int)` transforma isso em
+> **0**, e a conta passa a ser feita a partir de 1º de janeiro de 1970 **sem
+> erro nenhum aparecer**: a página continua desenhando. Foi assim, em silêncio,
+> que:
+>
+> - todo encontro futuro com o checklist pela metade aparecia no hub como **"é
+>   hoje"** e pintado de urgente;
+> - a mesa de Encontros dizia **"01/01"**;
+> - o cartão do hub saía **sem data** (`data_curta()` recebia o texto e devolvia
+>   vazio);
+> - e — o pior — **o funil ficava travado no D+0**: `etapa_vencida()` lia `data`,
+>   `dias_desde()` respondia 0 por segurança, e `d3` e `d7` nunca venciam.
+>
+> A conta é uma só: **`dias_ate_o_dia($inicio)`** (`agenda-comum.php`), e
+> `dias_desde()` é o outro lado dela. São **dias de calendário no fuso do
+> Ceará**, e não blocos de 24h: "amanhã às 8h" está a catorze horas e mesmo
+> assim é amanhã, e o D+3 de um encontro de sábado à noite vence na terça, não
+> na terça à noite.
+
+**O relógio da página fica em `src/features/programacao/tempo.ts`** — `estadoDe`,
+`estaAoVivo`, `emOrdem`, `idEmDestaque`, `quantosPassaram`. Um evento "acontece"
+por `DURACAO_PADRAO_MIN` (120) minutos depois de começar, porque a coordenação
+marca quando começa e ninguém volta ao painel para dizer que acabou.
+
+- **`aoVivo` sozinho não acende nada.** O selo pede a marca manual **e** a janela
+  de tempo: só a marca é o que produziu o fantasma; só o relógio marcaria como
+  transmissão um jantar fechado.
+- **O que passou fica na lista, apagado.** Sumir com o evento faz quem chegou
+  atrasado achar que errou o link; o rodapé diz quantos foram.
+- **`agora` começa `null` e só é preenchido no efeito.** Num export estático o
+  HTML é gravado no dia do build — desenhar estado de tempo no servidor
+  congelaria "É o próximo" no evento errado e ainda quebraria a hidratação.
+- **O JSON-LD `Event` só sai para evento futuro** e também só no cliente, pela
+  mesma razão. Google recusa `Event` sem `startDate` — era essa falta, e não o
+  schema, que bloqueava.
+
+**A hora pode ficar em branco** — o dia já ordena, e o cartão simplesmente não
+mostra horário. Meia-noite em ponto é como isso fica gravado, e é por isso que
+`normalizar_evento()` trata `0H` como "hora ainda não definida": anunciar um
+encontro à meia-noite seria pior que não anunciar hora nenhuma.
+
+Item antigo, sem `inicio`, não some nem quebra: vira `sem-horario`, cai para o
+fim da lista e mostra o texto legado. O formulário exibe esse texto ao lado do
+campo vazio, para quem for preencher saber o que a linha era.
+
+**A miniatura é sempre desenhada, mesmo sem imagem.** O cartão é um grid de
+quatro colunas (`176px | 1fr | auto | auto`) e a primeira é dela. Quando o bloco
+deixava de ser renderizado para o evento sem imagem — que é a maioria —, os
+outros filhos escorregavam uma coluna: o título caía nos 176 px e quebrava em
+duas linhas, e a data, que se alinha à direita, herdava a coluna elástica de
+540 px e ia parar do outro lado do cartão. **Some tudo no celular**, onde o grid
+é de uma coluna só, e por isso o defeito passou por medição de celular.
+
+> Componente que é filho de um grid com colunas fixas não pode ser condicional
+> sem que o grid saiba. Ou desenhe sempre, ou troque o `grid-template-columns`
+> junto.
+
+Sem imagem, o que ocupa a coluna é a hachura do cordel com a sigla do dia — o
+mesmo desenho da linha do pôster, para quem vê os dois reconhecer a mesma peça.
+No celular ela é escondida (`display: none` na sigla, moldura zerada): lá não há
+coluna a preencher e a faixa custaria de volta a altura que o conserto devolveu.
+**A etiqueta continua visível nos dois**, virando selo no topo do cartão — é ela
+que carrega "Ao vivo" e "Já passou", e sumir com ela junto da moldura seria
+trocar um defeito por outro.
+
+### O pôster do Compartilhar imagem
+
+`poster.ts` desenha um layout próprio (não é um print da página) para stories
+9:16 e feed 3:4. **A sobra vertical nunca vira um respiro só.** O layout foi
+desenhado para uma semana cheia, e uma semana de três eventos empilhava a sobra
+inteira antes da lista: um quarto do pôster era um buraco entre a chamada e o
+primeiro cartão. Hoje ela é gasta em três frentes, nesta ordem — o selo da
+eleição, o respiro entre os cartões (até `GAP_MAX`) e só então as duas pontas.
+
+**Esticar o cartão não resolveria.** A tipografia dele sobe por degrau
+(`h >= 180 ? 1.12 : 1`) e a miniatura trava em 118 px, então altura a mais vira
+margem interna vazia — é por isso que `LINHA_MAX` continua onde está e quem
+ocupa o vazio é conteúdo.
+
+**O selo só sai durante a campanha.** No dia da votação publicar propaganda nova
+na internet é proibido, e depois dela pedir voto não quer dizer mais nada — a
+mesma trava que o kit aplica às peças, aqui na função que monta o texto. Sem
+número cadastrado também não sai. Nos dois casos o pôster volta a distribuir a
+sobra entre os cartões, que já era o suficiente para não deixar buraco.
+
+> `escrever()` desenha com `textBaseline = "top"`: o `y` é o topo da caixa do
+> texto, não a linha de base. Empilhe somando a altura da linha anterior —
+> tratar como linha de base foi o que fez uma linha subir para dentro da outra.
+
+## Funções da militância
+
+`src/data/funcoes.json` é a lista canônica dos papéis do movimento (Olheiro,
+Roteirista, Design…), com resumo, entrega, ritmo e passo a passo em linguagem
+de recrutamento — o texto vem de `update/Manual-da-Militancia.md`, traduzido do
+jargão interno.
+
+Uma fonte só para os dois lados: o Next importa no build (formulário
+`/queroajudar`) e o PHP lê o mesmo arquivo (`out/funcoes.json`, copiado pelo
+`publish.yml`) para validar o que chega e sugerir as áreas na aprovação.
+
+**Não confunda os três eixos:** `funcoes` é o que a pessoa faz no movimento;
+`tipo` é o que ela é (eleitor, militante, coordenador…); `areas` e
+`capacidades` são permissão de tela no painel. O `areas` de cada função vive no
+próprio `funcoes.json`, e serve de sugestão na hora de aprovar.
+
+**Ao acrescentar função nova:** entre no `funcoes.json` (o `icone` precisa
+existir em `src/components/icons.tsx`) e pronto — formulário, validação,
+sugestão de áreas e a página `/funcoes` seguem sozinhos.
+
+`/funcoes` é o mesmo catálogo em página pública e indexável, com âncora por
+função (`/funcoes#olheiro`) para mandar por link. Cada ficha leva para
+`/queroajudar?funcao=<id>`, que abre o formulário **com ela já marcada** — quem
+leu a descrição inteira e decidiu não deve ter que procurar de novo numa lista
+de doze. O id é conferido contra o catálogo antes de marcar: parâmetro é texto
+que vem de fora.
+
+> **Uma página só, com âncoras, e não uma rota por função.** `/funcoes/olheiro`
+> tem dois segmentos, e o `.htaccess` do `publish.yml` só reescreve um
+> (`^([^/]+)$ $1.html`) — a rota cairia no fallback e serviria a home. Para ter
+> rota aninhada seria preciso mexer no `publish.yml`, que é da lista do "não
+> mexer sem perguntar".
+
+## Os canais de contato
+
+Fonte única em `src/lib/contato.ts`, com o par PHP em `sessao.php`. **São dois
+grupos, e a linha divisória é a conta, não a intenção:**
+
+- **`GRUPO_GERAL`** — quem só quer acompanhar. É o **único** grupo que o site
+  público divulga: home, `/plano`, e a tela de confirmação da inscrição.
+- **`GRUPO_TRABALHO`** — quem já tem conta. Só dentro do painel. Se ele
+  circulasse no site, encheria de gente que a coordenação ainda não conferiu e
+  viraria grupo de recados.
+
+> **`GRUPO_TRABALHO` mora só no `sessao.php`** — não há par em TypeScript, e não
+> pode haver: num export estático tudo que entra em `src/` é público. Quem
+> confere é `testes/contrato/painel.test.ts`, que lê o convite do próprio PHP e
+> falha se ele aparecer fora de `public/painel/`. Era o
+> `grep -rn "chat.whatsapp.com/C8rQ" src` que se fazia à mão — e que o teste
+> encontrou desatualizado num comentário do `sessao.php`, que ainda prometia um
+> par em `contato.ts`.
+
+### Quem fala primeiro é a pessoa
+
+O WhatsApp bloqueia conta que **inicia** conversa com muita gente que nunca
+falou com ela — e mandar acesso para quem se inscreveu é exatamente isso:
+dezenas de primeiras mensagens saindo do mesmo número. Foi assim que o número da
+coordenação caiu.
+
+O conserto não é técnico, é de ordem: o **passo 1** da tela de confirmação de
+`/queroajudar` é a pessoa mandar um "oi", com o texto já escrito
+(`linkOiCoordenacao()` em `contato.ts`). Aberta a conversa, a coordenação
+**responde** dentro dela em vez de abordar desconhecidos — e resposta em conversa
+aberta não é abordagem fria.
+
+- **É o passo 1, antes até do grupo.** É o único que acelera a aprovação da
+  própria pessoa, e o texto pronto é o que faz a mensagem sair no primeiro
+  toque: "mando depois" é a mensagem que não sai.
+- **A tela de aprovação do painel repete a regra** — procure a conversa que já
+  existe e responda nela. O botão de "abrir WhatsApp com a mensagem pronta"
+  continua o mesmo; o que muda é ele cair numa conversa que já existia.
+- O número na cláusula de LGPD do formulário **fica**: a lei exige um canal para
+  a pessoa exercer os direitos dela, e é outro tipo de contato.
+
+**Não há e-mail.** `contato@felipesmoreira.com` saiu do site inteiro, inclusive
+do `email` do JSON-LD — tirar da tela e deixar no dado estruturado, que é
+justamente o que raspador lê, não tira de lugar nenhum. A LGPD exige um canal
+para a pessoa exercer os direitos dela, não exige que seja e-mail: o canal é o
+WhatsApp da coordenação, e é isso que `/privacy` diz. O que **não** pode
+acontecer é sobrar página legal sem canal nenhum.
+
+**Entrar no grupo de trabalho é a primeira obrigação de quem chega**, e por isso
+é tarefa em `agora.php` — não banner. Banner some da vista em três dias. Some
+quando a pessoa marca "já entrei" (`entrouNoGrupo` no usuário); o cartão fixo
+continua na coluna da direita do hub, que é o endereço permanente do link.
+
+## Uma pessoa, e não quatro cadastros
+
+Havia quatro arquivos que não se conheciam — `usuarios.php`, `inscricoes.php`,
+`leads.php` e `candidatos.php` — e a mesma pessoa aparecia em vários, com o nome
+escrito de três jeitos. Não dava para responder as perguntas óbvias: *em que
+encontros o Fulano esteve? esse número já é do time? quem está duplicado?*
+
+Hoje é `dados/pessoas.php`, um registro por gente, com blocos opcionais:
+
+| bloco | campos | quando |
+|---|---|---|
+| identidade | nome, telefone, e-mail, cidade, bairro | sempre |
+| movimento | `tipo`, `funcoes` | sempre |
+| painel | `usuario`, `hash`, `capacidades`, `areas` | só quem tem conta |
+| candidatura | `urna`, `cargo`, `numero`, `instagram`, `imagem` | só candidato |
+| entrada | `status`, `origem`, consentimento | só quem se inscreveu |
+
+**O modelo mora no `sessao.php`**, e não num `pessoas-comum.php`: é ele que
+autentica, e pôr o registro fora dele criaria include circular. O
+`pessoas-comum.php` tem só o que se pergunta *depois* — duplicatas, fusão, a
+fila de entrada.
+
+**Entra-se pelo login OU pelo e-mail** (`pessoa_por_login()`). Ninguém decora o
+usuário que a coordenação escolheu por ele; todo mundo sabe o próprio e-mail.
+
+- **O login ganha do e-mail** quando os dois casam. Não há como se cruzarem:
+  `validar_nome_usuario()` recusa o `@`, então texto com arroba nunca é login.
+- **E-mail repetido não abre conta nenhuma.** O e-mail não é único — o da
+  coordenação já está em mais de uma ficha, e casal que divide caixa de entrada
+  é comum. Com dois achados não dá para saber qual conta abrir, e escolher por
+  inferência é entregar a sessão de alguém.
+- **O teto de tentativas conta por CONTA, não pelo texto digitado.** Duas
+  grafias que abrem a mesma porta dariam duas vezes o número de tentativas para
+  forçá-la. Sem conta a que chegar, a chave é o próprio texto — é tudo que há.
+- A mensagem de erro continua uma só ("Usuário, e-mail ou senha incorretos") e o
+  `password_verify` roda mesmo sem usuário: nem o texto nem o tempo de resposta
+  dizem quais contas existem.
+
+**O telefone é a chave natural.** Era a única coisa que as quatro listas tinham
+em comum, é o que a pessoa digita na porta do encontro e é por ele que a
+coordenação fala com ela. Não é chave primária — gente troca de número —, mas é
+por ele que se acha duplicata e que a página de presença reconhece quem chega.
+
+### Três eixos que não se confundem
+
+- **`tipo`** — o que a pessoa **é**: eleitor, apoiador, militante, coordenador,
+  candidato. Substituiu a `classe` do lead (curioso/simpatizante/…), que dizia
+  quase a mesma coisa com outras palavras e vivia num arquivo à parte.
+- **`funcoes`** — o que ela **faz**: Olheiro, Checagem, Design… As doze do
+  `funcoes.json`. Um coordenador tem função; um militante também.
+- **`capacidades`** — o que ela **abre** no painel.
+
+### Capacidades, e as áreas por baixo
+
+Quatro caixas em vez de dez: `comunicacao`, `eventos`, `coordenacao`, `adm`.
+Marcar dez áreas uma a uma é decisão demais para uma pergunta simples ("essa
+pessoa coordena o quê?"), e quem marca acaba dando tudo por preguiça.
+
+As **áreas continuam existindo** por baixo, para a exceção — tirar o Estúdio de
+alguém de Comunicação sem inventar uma capacidade nova. `normalizar_pessoa()`
+grava o resultado das duas coisas somadas.
+
+> **O login aparece na lista e na ficha**, monoespaçado (`.login`). A busca já
+> casava por login sem nunca mostrá-lo: dava para achar, não dava para ditar — e
+> a pergunta que traz alguém a essa coluna é "qual é o login do Fulano?", feita
+> no grupo por quem esqueceu o dele.
+
+> **`pessoas` só entra em `adm`.** É a tela com telefone, e-mail e endereço de
+> todo mundo: acesso a dado pessoal não acompanha o trabalho do dia, acompanha a
+> responsabilidade sobre ele. O antigo "papel" (Administrador/Editor) sumiu — era
+> um segundo eixo de permissão ao lado das áreas, dizendo quase o mesmo.
+
+> **Estudar não pede permissão.** A formação é de quem tem conta, e `/aulas` só
+> exige login. A área `aulas` é para **editar** — pendurar o vídeo, ver quem
+> estudou —, e é por isso que ela mora no grupo Coordenação. Antes `api/aulas.php`
+> exigia a área, e militante novo ficava com a formação trancada justamente na
+> semana em que ela mais importa.
+
+### Presença é relação, não cópia
+
+`dados/presencas.php` liga pessoa × encontro (`pessoaId`, `eventoId`,
+`confirmou`, `compareceu`, `funil`). Antes cada ficha de encontro repetia nome,
+telefone e bairro: quem foi a cinco encontros tinha cinco cópias de si, e
+corrigir um telefone errado exigia achar as cinco.
+
+`presencas_do_evento()` devolve cada linha com a `pessoa` já resolvida — quem
+desenha a tela não deveria cruzar dois arrays para escrever um nome.
+`encontros_da_pessoa()` faz o caminho inverso, e é ele que responde "em que
+encontros o Fulano esteve".
+
+### Duplicatas
+
+`duplicatas_de_pessoas()` sugere por **mesmo telefone** ou **mesmo nome** (sem
+acento, sem caixa). É **sugestão que um humano confere, nunca fusão
+automática**: casa que divide celular tem duas pessoas de verdade no mesmo
+número, e juntar a ficha errada apaga o histórico de alguém — isso não tem
+desfazer.
+
+`juntar_pessoas($fica, $some)`:
+
+- campo vazio de quem fica é preenchido por quem some; **o que já está
+  preenchido não é sobrescrito** — quem escolheu manter aquela ficha decidiu que
+  ela é a boa;
+- as presenças mudam de dono, e se as duas estiveram no mesmo encontro sobra uma
+  com o melhor dos dois estados (compareceu > confirmou > convidado);
+- **duas contas de painel nunca se fundem**: escolher qual login sobrevive não é
+  decisão que se toma por inferência.
+
+### A migração acabou, e a Manutenção ficou
+
+`migrar.php` convertia os quatro cadastros antigos na primeira leitura de
+`ler_pessoas()`. **Ele não existe mais.** Cumprido o papel, o que sobrava era um
+caminho de código que ninguém exercitava e que só sabia fazer uma coisa:
+ressuscitar, na leitura seguinte, exatamente os arquivos que a Manutenção
+acabara de apagar. Zerar e ver tudo voltar não era risco teórico.
+
+No lugar dele existe **`public/painel/manutencao.php`** — apagar o que o painel
+gravou, por grupo, para sair da fase de teste com a casa limpa.
+
+- **Sem área e fora do menu.** A porta é `exigir_admin()` e o endereço se digita;
+  o único link para ela mora em `conta.php`. Uma porta chamada "apagar tudo" no
+  menu de todo dia é uma porta que alguém abre por curiosidade.
+- **A lista de arquivos é explícita**, nunca um `glob('*.php')`: varrer a pasta
+  apagaria um dia o `.htaccess` que é justamente o que a fecha para a web.
+- **A confirmação é digitada** (`ZERAR TUDO`), e não um `confirm()`: caixa de
+  confirmação se dispensa no reflexo, e isto não tem desfazer.
+- **Zerar as pessoas derruba a sessão** e leva o painel de volta ao "criar o
+  primeiro administrador" — a sessão guarda um id que deixou de existir, e um
+  painel meio carregado erra na primeira leitura.
+- **O `segredo.php` nunca é apagado.** Dele saem os convites do Dia 0 e as `ref`
+  da presença: apagá-lo invalida o que já circula, e isso é quebra, não limpeza.
+- **As imagens só saem junto com quem as usava** (pessoas *e* encontros marcados
+  ao mesmo tempo). Sozinhas, sobraria ficha apontando para arquivo que não
+  existe — e cartão com foto quebrada é pior que cartão sem foto.
+
+## Fluxo de entrada de militante
+
+1. Pessoa preenche `/queroajudar` (3 passos, com consentimento LGPD).
+2. `api/inscricao.php` valida e grava uma **pessoa** com `status = 'pendente'`.
+   **Não cria conta** — o formulário é público. Se o telefone já for conhecido
+   (ela apareceu num encontro, foi cadastrada pela coordenação), entra na fila a
+   ficha que já existe: a mesma pessoa não passa a existir duas vezes.
+3. Coordenação abre `/painel/inscricoes`, confere e aprova.
+4. A aprovação **dá conta à ficha que já está lá** — não cria uma segunda —, com
+   `trocarSenha = true`, e mostra a senha provisória **uma vez**, com um botão
+   que abre o WhatsApp da pessoa com a mensagem pronta.
+5. `exigir_login()` prende quem entra em `conta.php` até definir a própria
+   senha — isso já existia e não precisou de código novo.
+
+O consentimento fica registrado no cadastro (`consentimentoEm`,
+`consentimentoVersao`). Ao mudar o texto de LGPD do formulário, suba
+`VERSAO_CONSENTIMENTO` em `public/painel/inscricoes-comum.php`.
+
+### O vão entre se inscrever e ser aprovado
+
+É onde mais se perde gente: a pessoa está no pico de entusiasmo que vai ter, e
+entre o passo 2 e o 4 ela depende de um humano decidir. Três coisas atacam isso,
+e nenhuma delas exige aprovação:
+
+- **A tela de confirmação lidera com o que ela pode fazer agora** — entrar no
+  grupo, ler o plano, pegar o kit. O que a coordenação faz vem depois, como
+  informação. Antes eram três passos que eram todos ação de outra pessoa.
+- **`agora.php` sobe o recado para urgente** quando a inscrição mais antiga
+  passa de `HORAS_LIMITE_INSCRICAO` (48h), com o mesmo desenho da fila da
+  Checagem.
+- **O Dia 0 abre por link de convite** (abaixo).
+
+### O convite do Dia 0
+
+`link_convite()` (em `aulas-comum.php`) monta `/aulas?convite=<token>`, que
+libera **só o Dia 0** para quem ainda não tem conta. A coordenação copia o link
+na tela `/painel/aulas`.
+
+O token é **derivado do segredo do site**, não guardado: `hash_hmac` de uma
+frase fixa com `segredo()`. Não cria arquivo, não some num deploy e não dá para
+adivinhar. Apagar `dados/segredo.php` invalida todos os convites de uma vez —
+e, de quebra, zera os contadores do teto de envios, o que é inofensivo.
+
+> **A regra de ouro continua valendo:** o conteúdo sai só pelo `api/aulas.php`,
+> e nenhuma linha do manual entra no bundle. O convidado recebe um **recorte**
+> do currículo pela rede, nunca uma cópia local. O POST de progresso continua
+> exigindo login — sem conta não há onde gravar.
+
+### A presença nos encontros
+
+Dois links por encontro, e **dois tokens**:
+
+| token | onde vive | grava |
+|---|---|---|
+| `token` | só no QR impresso na mesa | `compareceu` |
+| `tokenConfirmacao` | no grupo e no botão "Vou nesse" da `/programacao` | `confirmou` |
+
+Um token para os dois faria qualquer pessoa que recebesse o link no grupo se
+marcar como presente sem sair de casa — e é a lista de presença que alimenta o
+funil D+0/D+3/D+7.
+
+**A pessoa digita só o WhatsApp.** `api/presenca.php` procura em três lugares
+pelo mesmo número — presenças de qualquer encontro, `inscricao_por_telefone()` e
+`usuario_por_telefone()` — e:
+
+- **um achado** → grava e responde com o **primeiro nome**. Nem a ficha inteira
+  (um número alheio digitado por engano viraria um jeito de ler o cadastro de
+  outra pessoa) nem nada (quem erra um dígito confirmaria a pessoa errada em
+  silêncio, sem descobrir);
+- **dois ou mais** (casa que divide celular) → mostra os nomes completos para a
+  pessoa escolher. Sem isso não há como desempatar;
+- **nenhum** → a ficha curta, com o telefone já preenchido.
+
+**As duas telas dizem, no topo, o que fazem.** Os dois links levam à mesma rota
+e se parecem, e a confusão não é teórica: quem abre o link do grupo em casa acha
+que está "dando presença", e quem lê o QR na porta acha que só está "avisando
+que vem". A faixa de modo vem antes de qualquer campo, e o verbo do botão repete
+a mesma coisa para quem rolou direto.
+
+> **A `ref` da escolha nunca é o id.** É `hash_hmac` do telefone com o id e o
+> `segredo()` do site: o servidor recalcula em vez de guardar, e uma ref só
+> serve para o telefone que a gerou. Id que sai de endpoint público é
+> identificador estável, e identificador estável é coisa que se coleciona.
+
+> **O dedupe do encontro é por telefone; o da ESCOLHA é por telefone + nome.**
+> `lead_por_telefone()` responde "este número já está aqui?", que é o certo para
+> não duplicar — mas quando duas pessoas dividem o celular ela devolve a
+> primeira, e marcar pela escolha da tela acabava marcando a pessoa errada.
+> `lead_da_pessoa()` é a versão com o nome na chave.
+
+**O teto tem escopo.** A inscrição é uma vez na vida por pessoa (5/h); a presença
+é uma fila numa porta, com trinta celulares no mesmo Wi‑Fi do local
+(`LIMITE_PRESENCA_HORA = 60`). Com o teto da inscrição, a sexta pessoa da fila
+levava "você já se cadastrou há pouco" e ia embora sem entrar na lista. **A busca
+conta no teto** — sem isso o endpoint vira um oráculo de "digita número, recebe
+nome".
+
+**Quem confirma presença e não é do movimento recebe o convite de `/queroajudar`
+com os dados já preenchidos**, por `sessionStorage` (`CHAVE_RASCUNHO`) e nunca
+por querystring: telefone em URL entra no histórico, no referrer e no log do
+servidor. O `?de=encontro-<slug>` fica na URL porque não é dado pessoal — é ele
+que responde "quantos militantes saíram do encontro X".
+
+### O time também conta na lista
+
+Militante com conta **não lê o QR da mesa** — ele está atrás dela, recebendo os
+outros. Sem escalar, a lista do encontro contava só quem entrou pela porta, e o
+relatório esquecia justamente quem fez o encontro acontecer.
+
+`time_fora_do_evento()` lista quem tem conta e ainda não está na ficha (casando
+por id **e** por telefone, para não duplicar quem já se cadastrou sozinho), e a
+ação `add-time` escala em bloco. Quem entra assim nasce `militante`, não
+`curioso` — classificá-lo como lead novo sujaria o funil —, com `confirmou` e
+sem `compareceu`: marca-se no dia, que é o que faz a conta fechar.
+
+O `usuarioId` no lead é o que sustenta o selo "do time" na lista e na visão
+cruzada.
+
+### Quatro campos obrigatórios, e só quatro
+
+**WhatsApp · nome completo · bairro · cidade** — iguais em `/queroajudar` e em
+`/presenca`. Todo o resto (e-mail, função, quem convidou) é opcional.
+
+Não é simetria: é o que faz o retrabalho sumir. É por esses quatro campos que a
+presença consegue preencher uma inscrição inteira e a inscrição consegue
+reconhecer quem chega na porta. Campo que existe de um lado só é campo que a
+pessoa digita duas vezes.
+
+> **O passo 1 pede uma escolha, e "não sei" é uma delas.** O formulário não
+> avança em branco — mas quem ainda não sabe onde encaixa tem o cartão
+> **"Onde precisar"** (grupo "Ainda não sei"), que já existia no catálogo para
+> isso. Não é o mesmo que barrar: barrar seria não ter a saída. Antes havia
+> as duas coisas ao mesmo tempo — uma caixa dizendo "pode seguir sem marcar
+> nada" logo acima de uma lista que oferecia exatamente esse cartão —, e o
+> convite a pular esvaziava a resposta que a coordenação usa para puxar a
+> conversa depois.
+>
+> **O servidor continua aceitando inscrição sem função**, e isso é de
+> propósito: `api/inscricao.php` é endpoint público, e a aprovação assume
+> `onde-precisar` (ver `inscricoes.php`). A exigência é da tela, onde a
+> pergunta é feita; recusar no servidor jogaria fora um militante por causa de
+> uma linha de relatório.
+
+A régua de validação da TELA é uma só: `src/features/inscricao/validacao.ts`
+(máscara, DDD de verdade, exigência de sobrenome). A do servidor é
+`recusa_de_inscricao()`, em `inscricoes-comum.php` — ela existe como função, e
+não como um bloco de `if` dentro de `api/inscricao.php`, porque o que está solto
+no meio de um endpoint não se chama de fora, e sem chamar não há como conferir.
+
+> **A divergência entre as duas tem direção, e só um lado dói.** Se o servidor
+> recusar algo que a tela deu como bom, a pessoa preenche os três passos, vê
+> marca verde em todo campo e leva um "não deu" genérico no fim — e vai embora,
+> no pico de entusiasmo que ela vai ter. O contrário é de propósito: o servidor
+> aceita MAIS do que a tela pede (função é opcional lá, obrigatória aqui),
+> porque a tela é dura para ajudar quem digita, não para barrar.
+> `testes/contrato/inscricao.test.ts` prende as duas direções separadamente.
+
+### A cidade é lista, não caixa de texto
+
+`src/data/municipios-ce.json` tem os **184 municípios do Ceará** na grafia do
+IBGE. É fonte única para os dois lados, pela mesma mecânica do `funcoes.json`: o
+Next importa no build (`src/lib/municipios.ts`) e o `publish.yml` copia para
+`out/municipios-ce.json`, que o PHP lê em `municipios_ce()` (no `sessao.php`,
+porque a inscrição, a presença, a pessoa e o encontro precisam todos dela).
+
+Digitar produzia "Juazeiro do Norte", "juazeiro" e "JUAZEIRO" na mesma coluna, e
+o agrupamento por região contava a mesma cidade três vezes — é exatamente o que
+`militancia_por_regiao()` responde, em `/painel/inscricoes`.
+
+- **`cidade_valida()` devolve a grafia do CATÁLOGO**, e não a que chegou. Ela é
+  quem `normalizar_pessoa()` chama, então nenhuma ficha entra com cidade
+  inventada, venha de onde vier.
+- **A primeira opção é "Fora do Ceará"** — quem está visitando, ou mora em outro
+  estado e acompanha de longe. Sem ela a pessoa escolheria a cidade mais
+  parecida, que é pior do que "de fora". O rótulo mora no próprio JSON, para os
+  dois lados compararem a mesma string.
+- **Catálogo ausente não apaga cidade.** Num deploy em que o arquivo não foi
+  copiado, `cidade_valida()` aceita o que veio: melhor uma grafia solta do que
+  todo mundo sem cidade.
+- **O filtro do painel lista só as cidades que TÊM gente.** Oferecer os 184 num
+  filtro é oferecer 180 recortes que devolvem lista vazia.
+- No painel o campo sai de `campo_cidade()` (`layout.php`) — uma cópia só para as
+  três telas que perguntam a mesma coisa.
+
+### Conferência de origem
+
+`origem_confere()` (em `sessao.php`) é a única cópia da checagem que a
+inscrição, a presença e as aulas faziam cada uma por si. **Ela tira a porta dos
+dois lados antes de comparar:** `parse_url` devolve host sem porta e
+`HTTP_HOST` a traz quando não é a padrão, então comparar cru reprova todo envio
+em porta não-padrão. Em produção isso nunca aparece (443 é implícita) — e é por
+isso que só seria descoberto tarde.
+
+### De onde a pessoa veio (`origem`)
+
+`/queroajudar?de=<slug>` grava a origem na inscrição, e ela aparece na ficha
+da fila. Um campo só para as duas perguntas, porque na prática são a mesma:
+`?de=joao-silva` diz **quem trouxe**, `?de=live-domingo` diz **por qual canal**.
+Sem isso não dá para saber qual militante recruta nem qual link converte.
+
+- **É opcional.** Inscrição sem origem é inscrição válida — recusar por causa
+  disso trocaria um militante novo por uma linha de relatório.
+- **Vira slug na entrada** (`normalizar_origem()`), senão "João Silva",
+  "joao silva" e "JOÃO" viram três origens diferentes no mesmo relatório.
+- O formulário guarda o valor em `sessionStorage` enquanto os três passos
+  rolam: sem isso, um F5 no passo 2 apagaria o crédito de quem trouxe.
+
+**A origem não é dado de terceiro nem vem de rastreador.** É o que a própria
+pessoa trouxe no link que abriu — por isso não há cookie, pixel ou referrer
+envolvido, e a Política de Privacidade continua valendo como está.
+
+#### O relatório: quem recruta, e o que converte
+
+A aba **"De onde vêm"** de `/painel/inscricoes` (`inscricoes-origens.php`, com
+`funil_de_origens()` no `-comum`) responde a pergunta que o `?de=` sempre pôde
+responder e ninguém perguntava: **das pessoas que este link trouxe, quantas
+viraram militante?**
+
+**Três degraus, e não dois:** `chegaram` (preencheu o formulário) → `aprovadas`
+(a coordenação deu acesso) → **`militaram`** (apareceu em pelo menos um
+encontro). O terceiro é o único que não depende de a pessoa dizer que vem: é
+presença marcada na porta.
+
+> **A ordem da tabela é por quem MILITOU, e o total só desempata.** Ordenar pelo
+> total poria no topo justamente a origem que enche a fila e não entrega — uma
+> live com cinquenta inscrições e nenhuma presença parece a melhor origem do
+> movimento no número cru, e é a pior. Contar só o topo do funil premia quem faz
+> barulho, não quem traz gente.
+
+- **O slug vira nome, lido do cadastro.** Se a origem é o slug do nome de alguém
+  que existe, a linha mostra o nome dessa pessoa — `?de=joao-silva` é gente,
+  `?de=live-domingo` é canal. O campo é um só porque na prática a pergunta é a
+  mesma, mas quem lê precisa distinguir para saber se **agradece** ou se
+  **repete**. E slug ninguém reconhece no grupo.
+- **Quem chegou pela URL limpa fica fora da tabela**, numa linha à parte: somá-lo
+  às origens faria "veio sozinho" parecer o melhor canal da campanha, e não há
+  ninguém a quem agradecer nem nada a repetir.
+- **A busca some nesta aba.** O funil é sobre a base inteira; tabela de conversão
+  que muda conforme o que alguém digitou não é relatório. Cada linha leva para a
+  fila já filtrada por aquela origem — o relatório dá o número, a lista dá os
+  nomes.
+- **Era um `<details>` recolhido** chamado "Quem está trazendo gente", com duas
+  colunas, no meio da fila. Faltava o degrau que decide.
+
+## Responsividade
+
+O site inteiro precisa funcionar bem em celular — é de onde vem a maioria, por
+link de WhatsApp. O que já está resolvido e não deve regredir:
+
+- `globals.css` tem `html { overflow-x: clip }` (trava global contra rolagem
+  horizontal) e força `font-size` mínimo de 16px em campos de formulário —
+  abaixo disso o Safari do iPhone dá zoom sozinho ao focar.
+- Alvo de toque mínimo de **44px** em botão, link de navegação e campo.
+- O layout declara `color-scheme: dark`; página de fundo claro precisa declarar
+  `color-scheme: light` no container, senão o navegador desenha caixa de seleção
+  e `<select>` em tema escuro.
+- `public/painel/painel.css`: ao acrescentar um `type` de input novo, inclua no
+  seletor de estilo (linha dos `input[type=...]`) — type fora da lista vira
+  caixa branca no fundo escuro. E **suba `VERSAO_ESTILO` em `layout.php`**, que
+  o `.htaccess` põe cache imutável de 1 ano em `.css`.
+
+## Visual do painel
+
+O painel usa a **mesma linguagem do site público**: bordas grossas, sombra dura
+deslocada, nada arredondado. Militante entra nos dois, e não pode parecer que
+trocou de produto.
+
+- **Fontes:** Alfa Slab One (títulos), Special Elite (rótulos, botões, navegação)
+  e Bitter (texto). Ficam em `public/painel/fontes/`, servidas do próprio
+  domínio — ver o `LEIA-ME.md` de lá para licenças e como atualizar. Não troque
+  por CDN de terceiro: a Política de Privacidade promete que nada do visitante
+  vai para fora.
+- **Ícones:** `public/painel/icones.php`, com os mesmos traçados de
+  `src/components/icons.tsx`. Ícone novo entra nos dois para não divergir.
+- **Tokens** ficam no `:root` do `painel.css`. Use-os em vez de repetir cor ou
+  família na regra — e leia a regra dos temas, logo abaixo, antes de criar um.
+
+### Os três temas
+
+O painel tem **claro, escuro e sistema**. A escolha vive num cookie que o
+`layout.php` lê e estampa como `data-tema` no `<html>` **antes** de mandar a
+página — é isso, e não JavaScript, que impede a piscada de tema errado. Em
+`sistema` não estampa nada e quem decide é o `@media (prefers-color-scheme)`.
+O seletor fica no pé da lateral e posta em `public/painel/tema.php`; funciona
+sem JavaScript, e com ele troca sem recarregar.
+
+> **Cor nova entra como token definido nos dois temas** (`:root`, o bloco da
+> media query e o `[data-tema="escuro"]`). Cor literal dentro de uma regra
+> quebra um dos dois lados e ninguém percebe até alguém reclamar.
+
+**O ouro não é cor de texto no tema claro.** `#FFCB05` sobre o papel `#F3ECDA`
+dá 1,29:1 de contraste, e a WCAG pede 4,5:1. No claro o ouro é **preenchimento e
+borda**; quem escreve é a tinta. Por isso existem tokens separados: `--titulo`,
+`--elo` e `--acento` são o ouro no escuro e o ouro escurecido (ou a tinta) no
+claro. Escrever `color:var(--ouro)` faz o texto sumir no papel — `--ouro` só
+entra em `background` e `border`.
+
+> **4,5:1 é sobre o fundo REAL, não sobre o papel.** `--acento` era `#8A6508`,
+> que dá 4,52:1 sobre `--fundo` — passa raspando, e só ali: dentro da pílula do
+> contador (fundo `--realce-3`, mais escuro que o papel) o mesmo tom caía para
+> 3,36:1, e o número da aba era o que menos se lia numa tela feita de números.
+> Hoje é `#6B4E06`: 6,56:1 no papel, 4,88:1 na pílula, e continua sendo ouro
+> queimado. Ao criar um par cor/fundo novo, meça no fundo em que ele vai cair.
+
+> **Meça com o painel renderizado.** Ler o CSS não pega isto: o fundo efetivo é
+> a pilha de translúcidos composta até o `body`, e a cor que vence é a da regra
+> mais específica *depois de o HTML existir*. Uma sonda `getComputedStyle()`
+> rodando em cima das telas de verdade, nos dois temas, achou em minutos o que
+> passou por todas as leituras anteriores — inclusive o ouro sobre ouro da
+> gaveta, logo abaixo. É o mesmo espírito do `httpd -f` para o `.htaccess`.
+
+### A navegação
+
+**Mora no `layout.php`, e só lá.** Antes as áreas apareciam numa fileira no topo
+*e* repetidas como grade dentro do hub: quem entrava lia o mesmo menu duas vezes
+sem saber qual era o menu. Hoje o corpo de cada tela só tem trabalho.
+
+- No computador é uma **lateral fixa**, agrupada por `GRUPOS_NAV`
+  (Comunicação · Encontros · Coordenação, o organograma do manual). Início e
+  Formação ficam soltos no topo, porque são de todo mundo.
+- No celular vira uma **barra fixa no rodapé** com Início, três áreas e "Mais".
+  As três saem de uma ordem fixa por pessoa, nunca do contador: barra que se
+  reordena sozinha faz errar o alvo já decorado.
+- **Área nova precisa entrar em um grupo de `GRUPOS_NAV`**, senão não aparece no
+  menu — a permissão sozinha não basta.
+- Grupo sem nenhuma área liberada não é renderizado.
+
+**Toda tela se explica.** `cabecalho_pagina()` recebe um quinto parâmetro,
+`$comoUsar`: 3–4 frases num `<details class="explicacao">` "O que dá para fazer
+aqui", fechado por padrão. Sem JavaScript e sem estado de "já vi" — quem conhece
+a ferramenta nunca abre, quem chegou hoje abre uma vez, e ninguém tem um banner
+para dispensar errado. O `$sub` de cada área sai do `resumo` de `DESTINO_AREA`,
+que estava escrito e não era renderizado em lugar nenhum.
+
+> Divisão de texto, para não duplicar: o `<details>` diz **o que** a tela faz; o
+> "Como se faz →" que o mesmo cabeçalho anexa leva para a aula, que diz **como**.
+
+**Cuidado com especificidade em cartão:** uma regra como `.mesa span` (0,1,1)
+vence `.mesa-icone` (0,1,0) e repinta o ícone. Ao estilizar filhos de um cartão,
+escreva o seletor com a classe junto (`.mesa .mesa-icone`) ou mire o filho
+direto (`.encontro-texto > span`).
+
+> **A barra do celular usa `>`, e não descendente — a gaveta mora dentro dela.**
+> `.barra-baixo > a[aria-current]`. O "Mais" é um `<details>` *dentro* da
+> `.barra-baixo`, e ele desenha o menu inteiro outra vez. Escrita como
+> descendente, a regra da barra (`color:var(--titulo)`, ouro, porque ali o fundo
+> é o papel escuro) alcançava também o item atual lá de dentro — que já é bloco
+> de **ouro cheio** — e, com a mesma especificidade e mais abaixo no arquivo,
+> ganhava: no escuro a área em que a pessoa está virava um retângulo dourado
+> vazio na gaveta. Ouro é texto num lugar e bloco no outro; os dois não podem se
+> encontrar.
+
+**A tela do encontro abre com o resumo, acima das abas.** `.resumo-encontro`
+responde de uma vez o que cada aba esconde da outra: quando é, preparo,
+confirmados, comparecidos e follow-up vencido — mais as **próximas ações**, que
+são o que fazer *agora* neste encontro e não a lista do que existe. Quem marca
+checklist no Preparo quer saber quantos confirmaram; quem recebe na porta quer
+saber quanto do preparo ficou de pé, e antes isso custava trocar de aba, ler e
+voltar perdendo o lugar. Os números saem da lista **inteira**, nunca do recorte
+da busca: a faixa diz como está o encontro, não como está o que alguém acabou de
+digitar. A barra de ações **some** quando não sobrou nada — barra de ação vazia é
+ruído com moldura.
+
+**Tela longa pede aba, e formulário pede modal.** O encontro aberto tem
+playbook, cinco peças, lista de gente, follow-up e dados — empilhado, chegar em
+"Pessoas" no celular era rolar às cegas. Foi um índice de âncoras (`.secoes`)
+antes de virar **três abas: Preparo · Pessoas · Dados**, que é a ordem do
+encontro — prepara-se antes, recebe-se durante, e os dados são o ajuste que se
+faz uma vez. A âncora encurtava o caminho sem encurtar a tela: tudo continuava
+desenhado embaixo do dedo. E o formulário de novo encontro, que vivia embaixo de
+duas listas com dezenas de itens, virou `<dialog class="modal">`.
+
+- **O follow-up mora dentro de Pessoas**, e não numa quarta aba: é sobre quem
+  veio. O link do hub para um follow-up vencido leva `&aba=pessoas#funil` — a
+  âncora sozinha não abre a aba, e cairia no Preparo.
+- **`voltar()` leva a aba junto da âncora** (`aba_da_ancora()`): marcar checklist
+  volta para Preparo, marcar presença volta para Pessoas, salvar volta para
+  Dados. Redirecionar para a aba errada é o mesmo que perder o que a pessoa
+  estava fazendo.
+- **Dados é da coordenação** (`pode('agenda')`): quem só executa nem vê a aba, e
+  forçar `?aba=dados` na URL cai no Preparo.
+
+> **O botão do modal é um link de verdade** (`?novo=1`), não um botão que só
+> existe com JavaScript: sem JS a página recarrega com o `<dialog open>` e o
+> formulário continua ali. Com JS, o link vira modal de verdade — foco preso,
+> Esc fecha, véu por cima.
+
+**Cadastrar é modal, em toda tela.** `botao_modal()` + `abrir_modal()` /
+`fechar_modal()` (`layout.php`) são a peça única; o script que os promove a
+camada mora em `fechar_pagina()` e serve o painel inteiro, em vez de uma cópia
+por página. Vale para encontro, candidato, lista e pessoa.
+
+- **O formulário de criar e o de editar são a MESMA função** (`formulario_pessoa()`,
+  `formulario_candidato()`), desenhada duas vezes. Duas cópias divergiriam na
+  primeira vez que um campo entrasse só numa delas — e o defeito apareceria como
+  "some quando eu edito".
+- **Os ids dos campos do modal de edição levam sufixo (`-e`).** Os dois
+  formulários coexistem no documento: id repetido faz o `<label for>` apontar
+  para o campo errado, e no celular o toque no rótulo foca o outro modal.
+- **O `<dialog>` fica no fim do documento, nunca dentro do `<fieldset>` ou da
+  tabela.** `<dialog>` aninhado em formulário ou tabela é HTML inválido: o
+  navegador reorganiza a árvore sozinho e o formulário some sem um erro sequer
+  no console.
+
+**Formulário longo guarda rascunho no aparelho** — `<form data-rascunho="<chave>">`,
+e o motor mora em `fechar_pagina()`, uma cópia só para o painel inteiro. Está no
+encontro novo, nos dados do encontro, no candidato e na capa da agenda: no
+celular, entre uma conversa e outra, a sessão expira, o WhatsApp chama e o
+navegador descarta a aba.
+
+- **NUNCA APLICA SOZINHO.** A faixa oferece — *Recuperar* · *Descartar* — e quem
+  decide é a pessoa. Num formulário de edição, aplicar por conta própria
+  escreveria por cima do que o servidor diz: é o defeito "ele desfez a minha
+  correção", que ninguém consegue investigar depois.
+- **Só aparece quando o guardado difere do que está na tela**, e nunca para
+  rascunho vazio: oferecer "recuperar" o que não tem conteúdo é oferecer apagar
+  o formulário.
+- **A chave leva o id do registro** (`encontro-<id>`, e não `encontro`): dois
+  encontros abertos em duas abas não podem dividir o mesmo guardado.
+- **Campo escondido, senha e arquivo ficam de fora.** O CSRF muda a cada sessão,
+  e restaurá-lo velho reprovaria o envio — o rascunho passaria a quebrar
+  exatamente o que veio salvar.
+- **Vence em 12h, some ao enviar e some ao Sair.** É dado de gente no aparelho
+  de quem digitou: ninguém volta a um rascunho de anteontem, e sair do painel é
+  o gesto de quem está entregando o aparelho.
+- **A ficha de PESSOA não tem rascunho, de propósito.** Ali o formulário é curto
+  e o conteúdo é telefone, e-mail e endereço de um TERCEIRO — deixá-lo
+  sobrevivendo no navegador de quem cadastrou é espalhar dado pessoal para
+  ganhar pouco. O encontro e o candidato guardam informação pública ou de
+  logística.
+- Tudo dentro de `try/catch`: em aba anônima o `localStorage` existe e lança na
+  hora de escrever, e formulário que não abre por causa do rascunho é pior do
+  que não ter rascunho.
+
+**Duas listas na mesma tela viram abas.** `barra_abas()` (`layout.php`) — usada
+em `pessoas` (por tipo), `candidatos` (candidatos · listas), `eventos` (próximos
+· já aconteceram, e as três seções do encontro aberto) e `inscricoes` (fila ·
+decididas). O contador ao lado do nome é **texto**, não número: quase sempre é
+uma contagem ("12"), mas o Preparo conta duas coisas de uma vez ("3/12").
+
+> **Abas são links (`?aba=…`), não botões de JavaScript**: cada aba tem URL
+> própria, o Voltar do navegador funciona e dá para mandar no grupo o link já na
+> aba certa. Ela **preserva os outros parâmetros** — trocar de aba não pode
+> apagar a busca recém-digitada. A aba aberta perde o `href` e vira
+> `<span aria-current>`: link que leva ao lugar onde já se está é ruído para
+> quem navega por teclado.
+>
+> Empilhadas, a lista que só cresce (encontros passados, inscrições decididas)
+> empurra para fora da tela justamente a que interessa. A aba diz o número das
+> duas sem desenhar nenhuma das duas.
+
+**A busca global mora na moldura** (`procurar.php` + `procurar-comum.php`,
+com a caixa em `desenhar_procurar()` do `layout.php`). A pergunta mais comum da
+coordenação é *"cadê o Fulano?"*, e quem a faz raramente sabe se Fulano é uma
+pessoa do cadastro, um candidato, o dono de um card ou o nome de um encontro.
+
+- **Não é uma área.** Não entra em `AREAS`, não aparece no menu e não pede
+  permissão própria — ela alcança exatamente o que a pessoa já abre, porque cada
+  bloco de `procurar_em_tudo()` roda dentro de um `pode()`. Buscar não pode ser
+  porta lateral para dado que a pessoa não podia ver, e é isso que
+  `testes/fumaca/procurar.test.ts` verifica.
+- **Duas letras no mínimo.** Uma casa com metade do cadastro; devolver tudo é
+  pior que devolver nada, e não dizer por quê é pior ainda.
+- **Seis por área, e o resto na tela da área** — com a busca já preenchida.
+  Repetir a lista inteira aqui seria construir uma segunda tela de pessoas,
+  sempre um passo atrás da verdadeira.
+- **O atalho `/` prefere a busca DA TELA.** Quem está numa lista e tecla `/`
+  quer filtrar aquela lista, não sair dela; onde a tela não tem busca própria, a
+  barra cai na global, que é a única ali.
+
+**Procurar é `barra_busca()`, e é a mesma caixa em toda tela.** Uma peça só em
+`layout.php` — cinco cópias de um `<form method="get">` com `name="q"` dentro
+divergiriam na primeira vez que alguém mexesse no rótulo, e a busca é justamente
+o controle que precisa estar no mesmo lugar, com o mesmo nome, em toda tela. Está
+em `eventos` (a lista e a de presença de dentro do encontro), `inscricoes` e
+`candidatos > listas`.
+
+**Quem procura E recorta usa `barra_filtros()`**, no mesmo `layout.php` —
+`pessoas`, `candidatos`, `municao`, `fatos`, `producao` e `aulas`. As seis
+escreviam o mesmo `<form class="filtros">` à mão só porque precisavam de um
+`<select>` a mais que a `barra_busca()` não tinha: seis cópias do mesmo par de
+botões e da mesma regra de quando mostrar o "Limpar". Recebe a lista dos
+controles (`['tipo' => 'busca', …]`, `['tipo' => 'escolha', …]`), e:
+
+- **quem monta as opções é a TELA**, e de propósito: é ela que sabe contar
+  quantos casam com cada valor e esconder o recorte que devolveria lista vazia.
+  Oferecer os 184 municípios num filtro é oferecer 180 becos;
+- **`$recortado` é da tela também**, porque cada uma sabe qual é o seu estado
+  neutro — a ordem padrão de gente é A-Z, a de candidato é a da colinha;
+- **o id da busca é sempre `q`**: é ele que o atalho `/` procura;
+- `resumo_do_recorte()` é o "3 de 12 aulas.", e some quando não há recorte —
+  repetir o total de uma lista que está inteira na tela é dizer o que já se vê.
+
+- **O casamento de texto é `combina_com()`** (`sessao.php`): sem acento e sem
+  caixa dos dois lados, para "jose" achar "José". Busca vazia casa com tudo, e é
+  por isso que a tela filtra sem precisar perguntar antes se há filtro.
+- **Dígito casa com dígito.** Telefone e número de urna saem do `combina_com()` e
+  são comparados por `so_digitos()`: "(85) 9" não acharia "85 9" como texto.
+- **A busca recorta as DUAS abas antes de uma ser desenhada.** Senão o contador
+  da aba fechada diria quantos existem, e não quantos casam — e quem procurasse
+  na aba errada veria zero sem saber que o item estava na outra.
+- **Recortar vem antes de cortar.** Em `fatos` as listas são fatiadas em 15;
+  filtrar depois procuraria só dentro do que coube na tela, que é justamente onde
+  o item procurado não está.
+- **`$manter` carrega a aba aberta.** Formulário GET manda só o que está dentro
+  dele: sem os campos escondidos, procurar em "Já aconteceram" devolveria o
+  resultado em "Próximos".
+- **Lista vazia por recorte não é beco** (`nada_encontrado()`): diz o que foi
+  procurado e dá o link de ver tudo de novo. Sem isso quem errou a grafia acha
+  que a tela quebrou.
+- **`/` põe o cursor na busca.** Quem usa o painel todo dia procura mais do que
+  clica. Só fora de campo de texto — dentro de um `<input>` a barra é uma barra.
+
+**Filtro é `.filtros`, e só aparece quando há o que filtrar.** Com quatro itens
+ele é três controles em cima de uma lista que já cabe na tela. **A ordem padrão
+de gente é A-Z** — a pergunta quase sempre é "cadê o Fulano" —; a ordem padrão de
+candidato é a da colinha, que é decisão de campanha e não alfabeto.
+
+**Fila grande pede recolher:** listas de decisão (como as inscrições) mostram só
+o resumo, com o formulário dentro de um `<details class="decidir">`. Com 20
+pessoas na fila, formulário aberto para todas vira um paredão impossível de ler.
+
+**Paredão de checkbox pede `filtro_de_marcacao()`.** As listas de marcação —
+quem entra na colinha, quem do time é escalado para o encontro — crescem com o
+movimento, e aos quarenta nomes achar um é rolar lendo. A busca das outras telas
+não serve ali: ela é um `<form method="get">`, e recarregar no meio da marcação
+jogaria fora tudo que ainda não foi salvo. Esta peneira roda **no navegador**,
+escondendo o que não casa e deixando marcado o que já estava.
+
+- **Nasce `hidden`, e quem a mostra é o script de `fechar_pagina()`.** Sem
+  JavaScript ela não peneiraria nada, e caixa de procurar que não procura é pior
+  que caixa nenhuma.
+- **`.check[hidden]` precisa estar no CSS.** `[hidden]` é `display:none` na folha
+  do navegador, e perde para o `display:flex` de `.check`: sem a regra a peneira
+  roda, marca as labels e não some com nenhuma. Mesmo problema de especificidade
+  do `.mesa span` que repintava o ícone.
+- **O casamento é `normalize("NFD")`**, o equivalente JavaScript do
+  `sem_acento()` do PHP — o Unicode define o resultado, então "fabio" acha
+  "Fábio" em qualquer navegador.
+
+### Editar e remover: onde a trava mora
+
+Toda lista do painel se pesquisa, se filtra, se corrige e se remove — mas **o que
+já foi decidido não se corrige por baixo, e o que é rastro não se apaga.** A
+regra é a mesma em todas as telas, e é sempre o servidor que a aplica; a tela só
+deixa de desenhar o botão que o POST recusaria, para ninguém digitar à toa.
+
+| lista | corrige | apaga |
+|---|---|---|
+| pessoas · candidatos · listas · encontros · peças da Munição | sempre | sempre |
+| fatos | só na fila, e só o autor (ou admin) | idem |
+| cards de Produção | sempre | só o que não foi publicado (admin destrava) |
+| lista de presença | marca-se e classifica-se | tira-se a LINHA, nunca a pessoa |
+
+- **Fato decidido é o registro do que a Checagem viu.** Corrigi-lo por baixo
+  transformaria uma decisão tomada em carimbo sobre outra coisa — e é dessa
+  ficha que o card do quadro carrega fonte e responsável. Apagá-lo tira a
+  resposta de "o que foi feito com aquele fato". Para encerrar sem virar peça
+  existe **arquivar com o motivo**, que é a saída desenhada para isso.
+- **Quem corrige o fato é quem o trouxe**, e não a Checagem: quem escreveu é quem
+  sabe o que quis dizer. É o outro lado da regra de que quem traz não checa.
+- **A janela de 48h é pergunta de ENTRADA, e só se refaz quando a resposta muda.**
+  Corrigir a frase de um fato de ontem não pode ser recusado porque ontem já
+  passou de 48h da publicação; trocar a `fonteData`, sim.
+- **Card publicado é o rastro de uma peça que foi ao ar** — o Acervo aponta para
+  o link que está dentro dele. Apagá-lo deixaria peça publicada sem ficha que a
+  justifique.
+- **Encontro com gente na lista não se apaga.** Apagá-lo apagaria o encontro do
+  histórico de cada uma dessas pessoas, de uma vez e sem desfazer. Para o que não
+  vai acontecer existe **Cancelado**, que já tira o encontro da programação
+  pública e deixa a lista. Apagar um encontro **republica o `agenda.json`**:
+  cartão apontando para encontro que não existe mais é pior que cartão a menos.
+- **Tirar alguém do encontro tira a LINHA, não a pessoa.** Ela continua no
+  cadastro, com telefone e os outros encontros dela — é a mesma razão pela qual
+  presença é relação e não cópia.
+- **A peça da Munição mantém o `id` quando o número muda.** Ele já é o nome do
+  PNG que alguém baixou e o link que circula no grupo: corrigir um dígito não
+  pode transformar a peça numa peça diferente.
+- **Corrigir uma lista de candidatos não mexe em quem está nela.** Nome, descrição
+  e ordem são a curadoria; quem entra é a outra pergunta, e misturar as duas num
+  formulário faria renomear a lista reenviar a marcação inteira.
+- **Inscrição não tem formulário de edição próprio.** A inscrição não é registro à
+  parte — é a MESMA pessoa, com o bloco de entrada preenchido; a ficha leva a
+  `/painel/pessoas`, e só para quem tem a área.
+
+> **`texto_js()` (`layout.php`) é o que põe nome de gente dentro de um
+> `confirm()`.** `h()` escapa a aspa simples como `&#039;` e o navegador a
+> devolve como `'` ao ler o atributo — então "Sant'Ana" fechava a string do
+> JavaScript no meio e o `onsubmit` inteiro deixava de existir: o formulário
+> passava a apagar **sem perguntar nada**. Apóstrofo em sobrenome cearense não é
+> caso raro.
+
+### Áreas e permissões
+
+O painel usa um único modelo de permissão por "área" (`AREAS` em `sessao.php`).
+Uma funcionalidade nova para usuários que já têm conta no painel é **mais uma
+área**, não um sistema de auth novo. Adicionar área = 1) chave em `AREAS`,
+2) entrada em `DESTINO_AREA` apontando pra página de gestão em PHP, 3) `RewriteRule`
+no `publish.yml`, 4) ícone em `icones.php`, 5) endpoint(s) JSON se o Next
+precisar consumir os dados, 6) se a área tem fila, um bloco em `agora.php`,
+7) entrada em `GRUPOS_NAV` e em `ROTULO_CURTO` (`layout.php`), senão ela não
+aparece no menu nem na barra do celular.
+
+Feito duas vezes recentemente: `municao` (ferramenta, em `AREAS_FERRAMENTA`) e
+`candidatos` (coordenação).
+
+**O que está pendente se declara em `agora.php`, e só lá.** `tarefas_de()` monta a
+fila do hub, `contagens_por_area()` alimenta o número ao lado do nome no menu e
+`panorama_de()` monta os medidores do cockpit — os três saem do mesmo lugar. Não
+espalhe contador pelo `index.php`: era assim antes, e o resultado era um painel
+que sabia dizer onde a pessoa podia ir sem saber dizer o que estava esperando por
+ela.
+
+**Duas perguntas, e não uma.** `tarefas_de()` responde *o que é meu*;
+`panorama_de()` responde *como está a operação*. A primeira faz alguém trabalhar
+hoje, a segunda faz decidir — e a coordenação precisa das duas. No hub a
+operação vem **depois** da fila: pôr a pergunta coletiva primeiro numa tela que
+todo militante abre faria quem tem uma área só ler dois medidores antes de achar
+a própria mesa.
+
+- **Nenhum número novo nasce ali.** Cada medidor é um helper que a ferramenta já
+  usa (`fatos_com_status`, `saidas_do_fato`, `ler_cards`, `preparo_do_evento`,
+  `etapa_vencida`, `fila_de_entrada`), e o prazo é o que o manual já cobra.
+- **Três degraus, e não dois** — `ok` · `atencao` · `urgente`. Só verde e
+  vermelho fazia tudo que estava a uma hora de estourar aparecer como se
+  estivesse bem, e o ponto de um painel de operação é ver o problema antes de
+  ele virar problema. **`atencao` é sempre a METADE do prazo que torna aquilo
+  urgente**, para o degrau não ser um número escolhido a dedo por medidor.
+- **Cada medidor é um link.** Medidor que mostra o problema e não leva até ele
+  obriga a procurar no menu qual tela responde por aquilo.
+- Mesma regra de permissão de `tarefas_de()`: cada bloco dentro de um `pode()`,
+  com o `require_once` do `*-comum.php` **dentro** do `if`.
+
+O par visual é `.painel-op` / `.medidor` no `painel.css`, e a cor dos três
+degraus sai do token **`--atencao`** (o âmbar), irmão de `--erro` e `--ok`. Ele
+também pinta `.selo-atencao`; `.selo-publicado` é o outro selo novo, ouro cheio,
+para o único estado que não se desfaz.
+
+**A permissão normal é por CAPACIDADE** (ver "Uma pessoa, e não quatro
+cadastros"); as áreas são o ajuste fino por baixo. As áreas se dividem em duas
+naturezas — a distinção não é técnica (a permissão é a mesma caixa marcada), é
+sobre o que vem marcado por padrão:
+
+- **Ferramentas do dia** — `aulas`, `fatos`, `producao`, `municao`, `eventos`. Listadas em
+  `AREAS_FERRAMENTA`. O padrão é liberar todas: ferramenta **não pertence a uma
+  função**, e o Olheiro que quiser entender o quadro de Produção deve conseguir
+  abrir.
+- **Decisão e dado pessoal** — `agenda`, `estudio`, `inscricoes`, `candidatos`,
+  `aulas`, `pessoas`. O que vai ao ar, quem entra no movimento, o que o time
+  estuda, o número que o eleitor vai digitar — e `pessoas`, a lista completa com
+  telefone, que **só a capacidade `adm` libera**.
+
+**A função da pessoa não limita acesso.** Ela define só o atalho no topo do hub
+(`MESA_DA_FUNCAO` em `agora.php`). O `areas` de cada função no
+`funcoes.json` é *sugestão* de marcação na hora de aprovar a inscrição — a
+primeira da lista é a que vira o atalho.
+
+### Como uma tela do painel se divide
+
+As sete telas grandes — encontros, pessoas, candidatos, fatos, produção,
+agenda e inscrições — eram arquivos de 528 a 1.400 linhas com quatrocentas de
+decisão coladas em setecentas de desenho.
+Mexer no formulário de dados obrigava a rolar por toda a lista de presença, e
+qualquer conserto na gravação passava a milímetros do HTML. Hoje cada uma segue
+o mesmo desenho, e **tela nova grande deve seguir também**:
+
+```
+<area>.php            SÓ A ROTA: requires, exigir_area(), despacho do POST,
+                      o recado da sessão, e a escolha de qual tela desenhar
+<area>-acoes.php      o POST inteiro, numa função. Nenhuma linha de HTML
+<area>-<tela>.php     uma função por tela, e uma por bloco grande de tela
+<area>-comum.php      o modelo — ler, gravar, normalizar, as regras de prazo
+```
+
+- **A divisão é por RESPONSABILIDADE, não por tamanho.** Cada arquivo responde
+  uma pergunta inteira: `eventos-presenca.php` responde "quem veio", e responde
+  sozinho — inclusive o funil, que fica lá porque mora na mesma aba.
+- **`<area>.php` é a ROTA, e `<area>-tela.php` é a tela.** Nunca o contrário: a
+  URL é o nome do arquivo, e trocar o que ele contém quebraria a única coisa que
+  não dá para renomear.
+- **Cada módulo exige o que usa** (`require_once`), e não o que a rota já
+  incluiu. Eram onze módulos dependendo da ordem de include; `require_once` é
+  idempotente, então o custo é zero e cada arquivo passa a abrir sozinho. Uma
+  varredura que compara os símbolos usados com os declarados mantém isso em
+  zero — documentar a ordem de include seria justamente o "conhecimento oral"
+  que esta base substitui por garantia executável.
+- **As ações vêm antes de qualquer leitura de tela.** Toda ação termina em
+  `voltar()`, que manda o header e sai; calcular a tela primeiro seria trabalho
+  jogado fora em toda gravação.
+- **Quem desenha a tela também calcula o recorte dela.** A busca, o filtro e a
+  ordem só existem para virar aquelas linhas, e **o contador da aba tem de
+  concordar com o que a lista lista** — separar os dois é como os dois passam a
+  discordar. Passar o recorte pronto exigiria catorze ou dezessete argumentos,
+  ou um `extract()` que esconde de onde cada nome veio. O que atravessa a
+  fronteira é só o que nasce fora: `$erro`, `$ok` e a senha provisória, que vêm
+  do recado guardado na sessão pela ação anterior.
+- **O recuo antes de um `<?php` de bloco é TEXTO, e sai no HTML.** Ao mover um
+  pedaço de tela para uma função, os dois espaços que ficavam antes do
+  `<?php if (…): ?>` iam junto com o markup e punham o `<fieldset>` na coluna
+  certa. A função tem de reproduzi-los, ou o recuo do HTML muda sem que nada
+  visível mude — e o instantâneo acusa uma diferença que ninguém pediu.
+- **Marcador de seção em HTML (`<!-- funil -->`) sai.** Ele existia para achar
+  o pedaço dentro de um arquivo gigante; agora cada bloco é uma função com
+  docblock, e comentário de desenvolvedor não precisa viajar até o navegador.
+  Comentário que explica um elemento vazio no HTML — o `<div class="qr-arte">`
+  que o script preenche — esse fica.
+
+**JavaScript longo dentro do PHP vira arquivo servido.** O `agenda.php` tinha
+**351 das 684 linhas num `<script>` só** — a prévia do cartão, a imagem, o
+reordenar e o aviso de trabalho não salvo. Virou `agenda-previa.js`, servido do
+próprio domínio como as fontes e o desenhador de QR (a Política de Privacidade
+promete que nada do visitante vai para fora).
+
+> **O que o servidor sabe vai por `window.__X__`, antes da tag.** Eram três
+> constantes interpoladas (o teto de upload, os rótulos de plataforma, as cores
+> dos temas), e arquivo estático não interpola. É o mesmo truque do
+> `window.__PAINEL__` do Estúdio — e as flags `JSON_HEX_*` não são decoração
+> ali nem aqui: um `</script>` dentro de um rótulo escaparia do bloco.
+>
+> O `?v=<VERSAO_ESTILO>` no `src` é obrigatório: o `.htaccess` dá um mês de
+> cache para `.js`, e sem o parâmetro a correção não chega em quem já abriu a
+> tela.
+
+> **Refatoração de tela se prova com o HTML renderizado, não com leitura.** Um
+> arquivo que renderiza cada tela do painel fora do servidor web (com sessão e
+> CSRF fixos, para o diff não encher de ruído), rodado antes e depois, responde
+> em segundos se alguma coisa mudou. Foi assim que as três divisões acima
+> saíram com **zero diferença de conteúdo em 30 telas** — e é assim que a
+> próxima deve sair. Ler o diff do PHP não pega um `<?php endif; ?>` que mudou
+> de dono; comparar a saída pega.
+>
+> **Mas o instantâneo é um GET com a sessão vazia, e por isso ele não vê o
+> recado.** No corte de `inscricoes.php` o bloco de tela que foi extraído
+> continuava relendo `$_SESSION['recado']` e `$_SESSION['acesso_novo']` — que a
+> rota já tinha tirado de lá e passado por parâmetro. Os dois chegavam nulos, o
+> desenho seguia em frente sem reclamar, e o que sumia da tela era **a senha
+> provisória que aparece uma vez só**. As 18 telas continuaram idênticas byte a
+> byte; quem pegou foi `testes/acoes/`, porque só ele faz o POST antes de olhar
+> a tela. Os dois se completam: o instantâneo prova o desenho, a ação prova o
+> depois da gravação.
+
+### A linha do tempo, e por que não há log
+
+`atividade-comum.php` responde *o que andou acontecendo* — no pé do hub, e
+recortada por pessoa na ficha dela (a "visão 360": em que encontros esteve, que
+fatos trouxe, que cards são dela, quando entrou).
+
+> **NÃO existe `dados/atividade.php`, e é de propósito.** Um log escrito a cada
+> ação tem dois defeitos que este projeto já pagou noutros lugares: vira uma
+> SEGUNDA fonte de verdade sobre o que aconteceu — que diverge no dia em que
+> alguém acrescenta uma ação e esquece de registrar — e faz toda gravação
+> escrever em dois arquivos numa hospedagem compartilhada.
+>
+> A linha do tempo é **derivada** dos carimbos que já existem: `criadoEm` da
+> pessoa, do encontro, da presença, do fato e do card; `checadoEm` do fato;
+> `publicadoEm` e o `historico` do card. Ela não pode divergir da realidade
+> porque ela **é** a realidade, lida por outro ângulo — a mesma escolha de
+> "presença é relação, não cópia".
+
+- **O que ela não mostra, e a tela diz isso:** correção. Editar o telefone de
+  alguém não deixa carimbo, então não aparece. Um log mostraria — e mentiria na
+  primeira ação nova que ninguém lembrasse de registrar.
+- **`criadoPor` do encontro e `checadoPor` do fato guardam NOME, não id**, e por
+  isso ficam fora do recorte por pessoa: casar por nome escrito à mão poria a
+  linha na ficha do homônimo.
+- **A permissão recorta, não desliga.** Mesma regra do `agora.php`: cada bloco
+  dentro de um `pode()`, com o `require_once` do `*-comum.php` dentro do `if`.
+  Quem tem `eventos` e não tem `pessoas` continua vendo os encontros e não vê
+  quem entrou no cadastro.
+- **Vem por último no hub.** As cinco seções acima respondem "o que eu faço
+  agora"; esta responde "o que o time andou fazendo", que é a pergunta de quem
+  já fez a sua parte.
+
+### As ferramentas do manual
+
+Três telas que substituem WhatsApp, Trello e planilha. O que cada uma trouxe do
+manual para dentro do código:
+
+- **Fatos** (`fatos.php`) — Ficha de Fato e fila da Checagem. Recusa gravar sem
+  link de fonte primária, e sem declarar a exceção quando a publicação tem mais
+  de 48h. A fila é ordenada do mais antigo para o mais novo, porque a meta é
+  "nada dorme sem status".
+
+  **Quem traz o fato não checa o fato.** Checagem que o próprio autor faz não é
+  checagem — é a mesma pessoa conferindo a si mesma, e o passo inteiro vira
+  carimbo. O `autorId` já estava gravado desde sempre; faltava a regra. Admin
+  destrava, mas caro: escreve o porquê, e o porquê fica na ficha, visível ao
+  lado de quem checou. Mesmo desenho da regra do ledger. `agora.php` também não
+  conta o fato próprio como pendência da pessoa — mandaria alguém para uma tela
+  onde a única coisa a fazer é esperar.
+
+  **O fato pode virar roteiro, arte, vídeo, qualquer combinação — ou nada.** Ao
+  aprovar, a Checagem marca as saídas; um card por saída, via `card_do_fato()`,
+  que agora recebe a etapa. Antes toda aprovação abria um card de roteiro, e o
+  quadro enchia de card que ninguém tinha pedido.
+
+  **"Nada" é uma resposta legítima, e fica registrada.** O status `arquivado`
+  exige motivo: sem ele, fato aprovado que ninguém aproveitou fica idêntico a
+  fato esquecido, e a pergunta *o que foi feito com aquele fato* não tem
+  resposta. `saidas_do_fato()` (em `producao-comum.php`, varrendo `fatoId`)
+  monta o rastro na tela; fato `ok-checado` há mais de `HORAS_SEM_SAIDA` (48)
+  sem nenhuma saída vira pendência no hub.
+- **Produção** (`producao.php`) — o quadro. O card **nasce da aprovação do
+  fato**, já com fonte e responsável colados; é essa ligação que justifica não
+  usar Trello. Publicar exige o link do post e passa pela **regra do ledger**
+  (mesmo responsável duas vezes em 48h → avisa e pede ciência; não bloqueia).
+  O nome de arquivo `AAAA-MM-DD_tipo_assunto` é gerado, não digitado.
+- **Encontros** (`eventos.php`) — as cinco peças com os checklists de
+  `checklists.php`, uma lista de pessoas por encontro (e não RSVP + leads
+  separados) e o funil D+0/D+3/D+7. Executar pede `eventos`; decidir e ver
+  telefone pede `agenda`.
+
+**Ao mexer em slug ou nome de arquivo:** use `sem_acento()` de `sessao.php`
+(nasceu no `producao-comum.php`, mudou de casa quando as inscrições passaram a
+precisar dela para o slug de origem), não `iconv('ASCII//TRANSLIT')` — o
+TRANSLIT depende da libc e o mesmo texto vira `ha` no Linux da Hostinger e `h`
+no macOS. No lado JavaScript o equivalente correto é `normalize("NFD")`, que o
+Unicode define e que dá o mesmo resultado em qualquer máquina.
+
+**O nome `AAAA-MM-DD_tipo_assunto` é gerado em dois lugares** e os dois têm de
+concordar: `nome_de_arquivo()`/`apelido()` em `producao-comum.php` (o card do
+quadro) e `nomeArquivo()`/`apelido()` em `src/app/painel/estudio/exportar.ts`
+(o PNG que sai do Estúdio). Mexeu num, mexa no outro — senão o Acervo recebe
+dois nomes diferentes para a mesma peça.
+
+### A formação (área `aulas`)
+
+O manual da militância virou curso: 6 Dias, 32 aulas, cada Dia abrindo com uma
+🚗 **Pista Rápida** (o caminho macro) seguida das **Pistas Lentas**
+(aprofundamento). Aula nova de reforço entra como `lenta` no Dia certo sem mexer
+no caminho principal — foi para isso que a divisão existe.
+
+**A exceção é o Dia 0, que tem duas rápidas:** `como-funciona-a-formacao` explica
+a própria divisão em pistas antes de `regras-de-todos` cobrar as regras. Quem cai
+ali pela primeira vez precisa saber ler a tela antes de receber a primeira ordem.
+E essa explicação é **aula, não rodapé**: o cabeçalho de `/aulas` e o topo do
+`aulas.php` só apontam para ela, porque texto repetido em dois lugares é texto que
+diverge na terceira alteração — a mesma razão do `checklists.php`.
+
+**O conteúdo mora em `public/painel/aulas-conteudo.php`, não em `src/data/`.**
+Esta é a diferença em relação ao `funcoes.json`: aquele é texto de recrutamento,
+público por natureza; o manual é documento interno, e num export estático tudo
+que entra no bundle é público. O texto sai só pelo `api/aulas.php`, para quem tem
+a área. Pelo mesmo motivo `/aulas` **não** usa rota dinâmica por aula
+(`generateStaticParams` geraria um HTML público por aula) — o link direto é por
+âncora, `/aulas#olheiro`.
+
+**Checklist não se escreve duas vezes.** Os "Pronto quando" ficam em
+`public/painel/checklists.php` e são referenciados por id; a aula e a ferramenta
+que usa aquela conferência renderizam o mesmo array.
+
+Vídeo é embed de YouTube não-listado (sem custo, e não há problema em o link
+circular), pendurado pelo painel — o texto da aula funciona sem ele. O tipo
+`FonteVideo` (`src/features/aulas/tipos.ts`) abstrai o provedor: trocar para um
+serviço dedicado mexe nesse tipo e no `Player.tsx`, mais nada.
+
+**Fase eleitoral no conteúdo.** O manual em `update/` só descreve a
+pré-campanha; o currículo cobre as duas fases. A aula `fases-da-campanha`
+(Dia 0) tem a tabela do que muda, e Público, Relacional, Divulgação e Roteirista
+dizem o que vale em cada uma. **Escreva sempre "antes da campanha" e "durante a
+campanha", nunca a data de virada** — ela muda a cada eleição e o texto datado
+envelhece sozinho dentro de uma aula que ninguém relê. A regra fina (horário de
+ato, o que cabe num impresso, como uma doação é declarada) fica com a
+coordenação de propósito: muda com o calendário e com decisão do juízo
+eleitoral.
+
+## Como um fluxo público se divide
+
+`/queroajudar` e `/presenca` são os dois fluxos mais críticos do site — um é a
+porta de entrada da militância, o outro é lido **em pé, na fila da porta de um
+encontro**. Eram dois componentes cliente de 1.183 e 874 linhas, com regra,
+desenho e CSS no mesmo arquivo. Hoje:
+
+```
+<Nome>Client.tsx   o FLUXO: estado, validação, rascunho, origem e o POST
+Passos.tsx         um componente por passo — a mesma divisão da barra de progresso
+Campos.tsx         os controles: cartão de função, campo de texto, campo de cidade
+Sucesso.tsx        o desfecho, que é outra tela e não um passo a mais
+estilos.ts         as 330 linhas de CSS que ficavam depois do fim do arquivo
+```
+
+- **O que fica no `Client` é o que se lê quando alguma coisa está errada**: a
+  régua de validação, o rascunho que sobrevive ao F5, o crédito de quem trouxe a
+  pessoa e o envio. O desenho de um `<input>` não é isso.
+- **Nenhum passo guarda estado próprio.** Um passo que lembrasse de alguma coisa
+  sozinho esqueceria na hora de voltar — que é justamente o que o rascunho do
+  fluxo existe para evitar.
+- **`CampoTexto` é tipo do domínio** e mora em `tipos.ts`: são os quatro campos
+  obrigatórios que os dois fluxos têm em comum, mais o e-mail.
+- O CSS continua sendo string interpolada num `<style>`, e não Tailwind nem CSS
+  Module: a identidade sai dos tokens de `@/lib/theme`, e é essa interpolação
+  que uma folha estática não faria.
+
+> **Refatoração de componente se prova com o markup gerado.** `next build` grava
+> o HTML de cada rota em `out/`; guardar o de antes e comparar o `<body>`
+> **ignorando os `<script>`** (o payload do Flight carrega ids de módulo e um
+> build id que mudam a cada build, sem nada ter mudado) diz em segundos se o
+> desenho continua o mesmo. As duas divisões acima saíram com markup byte a byte
+> idêntico.
+
+## Convenção de nomes
+
+- Rotas e conteúdo: **português** (`/programacao`, `/heroisdoceara`,
+  `/aulas`), consistente com o público do site. Nos componentes, o sufixo
+  `Client` (`ProgramacaoClient.tsx`) marca onde `"use client"` começa — e por
+  isso **página sem hook não leva o sufixo** (`Missao.tsx`, `Funcoes.tsx`): elas
+  são documentos e renderizam no servidor. Ao tirar o `"use client"` de um
+  arquivo, renomeie junto, senão o nome passa a mentir.
+- Identificadores de código (funções, tipos, arquivos utilitários): também em
+  português, seguindo o que já existe (`sessao.ts`, `dados.ts`, `tipos.ts`).
+
+## Os testes
+
+`npm test`. Três tipos, e a divisão é o que importa — `testes/LEIA-ME.md` tem o
+detalhe:
+
+- **`testes/contrato/`** — as duas cópias da mesma regra continuam concordando?
+- **`testes/acoes/`** — a gravação faz o que promete, e recusa o que promete
+  recusar?
+- **`testes/fumaca/`** — toda tela do painel abre inteira e em silêncio?
+
+**Sem framework de teste.** Node 24 traz `node:test` e roda `.ts` direto, sem
+etapa de compilação; um framework aqui seria uma dependência a mais para fazer o
+que já vem na caixa, e cada dependência é uma que alguém vai ter de auditar
+antes de um deploy de campanha. O preço é que os testes importam com a extensão
+no caminho (`from "./ponte.ts"`), o que exige um `tsconfig.json` próprio em
+`testes/` e a pasta no `exclude` do da raiz.
+
+**Rodam no `publish.yml` antes do build.** Se falharem, o build não acontece e a
+versão anterior continua no ar — stale e funcionando é melhor que publicado e
+divergente.
+
+### A ação é o que não tem desfazer
+
+`contrato/` e `fumaca/` cobrem o que o painel **diz**; nenhum dos dois abre um
+POST. Com as sete telas grandes já cortadas, o risco deixou de ser "não consigo
+refatorar" e passou a ser **"refatorei e quebrei o POST"** — e é no POST que
+moram as regras sem desfazer: juntar duas fichas, apagar uma pessoa, publicar
+um número de urna. Cada teste de `acoes/` faz a ação de verdade e confere as
+**duas metades**: o que ficou em `/dados` e o que a pessoa lê na tela seguinte.
+
+> **A ação sobe num `php -S`; a tela continua no CLI.** Toda ação termina em
+> `voltar()`, que é `header('Location: …')` + `exit` — e no SAPI de linha de
+> comando o `header()` é um nada: `headers_list()` volta vazio, e o teste não
+> teria como ver para onde a gravação mandou. Que é justamente a metade que a
+> divisão em abas quebrou uma vez.
+
+**Ao escrever um teste de ação, duas armadilhas já cobradas em erro:** caixa
+marcada várias vezes vai com `[]` no nome (sem o sufixo, `is_array($_POST[…])`
+dá `false`, a ação lê lista vazia e **grava sem reclamar** — o teste passa
+dizendo que concedeu uma permissão que não concedeu); e `ler()` só aceita nome
+de arquivo que existe, porque `dados/cards.php` não existe — os cards moram em
+`producao.php`, e ler o que não existe devolvia `[]`, fazendo o teste comparar
+0 com 0 e confirmar que nenhum card foi aberto. Aviso do PHP durante uma ação
+derruba o teste sozinho, pela mesma razão da fumaça.
+
+### O contrato é a parte que importa
+
+Este arquivo está cheio de pares que "têm de concordar": `slugDe()` ↔
+`normalizar_origem()`, `estadoDe()` ↔ `estado_do_evento()`, o `apelido()` do
+Estúdio ↔ o da Produção, `funcoes.json` e `municipios-ce.json` lidos dos dois
+lados. **Concordar por combinado funciona até alguém mexer num lado só**, e a
+divergência é sempre silenciosa: as duas linhas existem e as duas parecem
+certas. `testes/contrato/` transforma cada um desses combinados numa falha.
+
+> Eles pagaram o próprio custo na primeira execução. O de origem achou **duas
+> divergências reais** em `slugDe()`: o corte em 60 acontecia depois de montar o
+> slug (e não sobre o texto cru, como faz o `limpar_texto()` do PHP), e o hífen
+> das pontas era tirado *antes* do corte — então um slug cortado em 60 saía
+> terminando em `-`, exatamente o que aquela linha existe para impedir. O de
+> painel achou um comentário do `sessao.php` prometendo um par de
+> `GRUPO_TRABALHO` em TypeScript que não existe, e não pode existir.
+
+**Par novo:** exponha a função PHP na lista `PONTES` de `contrato/ponte.php` (ela
+é explícita de propósito — aceitar qualquer nome faria da ponte uma porta para
+executar o que estiver carregado) e escreva o teste com **entradas difíceis**:
+acento, aspas, espaço em excesso, vazio, e o comprimento exato do limite. Foi no
+limite que os dois lados discordaram.
+
+**O checklist de área nova virou teste.** Os sete passos que esta documentação
+descrevia em texto — chave em `AREAS`, `DESTINO_AREA`, `RewriteRule`, ícone,
+`GRUPOS_NAV`, `ROTULO_CURTO` — são assertivas em `contrato/painel.test.ts`.
+Esquecer um deles não quebra nada visivelmente: a permissão existe, a tela abre
+pelo endereço direto, e a área simplesmente não aparece no menu de ninguém.
+
+## O que não mexer sem perguntar
+
+- `next.config.ts` (`output: "export"`) e `.github/workflows/publish.yml` —
+  mudar isso muda o modelo de hospedagem inteiro.
+
+  > **O `.htaccess` que o `publish.yml` gera tem duas regras que parecem
+  > detalhe e não são.** Ambas foram descobertas testando o build com Apache
+  > de verdade (`httpd -f`), não lendo o arquivo:
+  >
+  > 1. **`DirectorySlash Off` + a regra do `.html` antes da de pasta.** Rota
+  >    com imagem de compartilhamento própria (`app/propostas/opengraph-image.tsx`)
+  >    faz o Next gerar **o `propostas.html` E a pasta `propostas/`**. Sem isso o
+  >    mod_dir responde 301 para `/propostas/`, que não tem índice, e a página
+  >    cai em 404. Aconteceu com quatro rotas de uma vez.
+  > 2. **`immutable` só onde o nome carrega hash** (`/_next/static/`,
+  >    `/modelos/`). O `/favicon.ico` não tem hash: com cache de um ano e
+  >    `immutable`, quem visitou o site com o ícone antigo continuava vendo o
+  >    antigo por um ano — o navegador nem revalida, nem na recarga forçada.
+  >
+  > 3. **HTML com `no-cache`.** Sem isso ele saía sem `Cache-Control` nenhum e
+  >    o navegador aplicava cache heurístico próprio — servindo a versão de
+  >    ontem numa campanha que publica todo dia. `no-cache` não é `no-store`:
+  >    o navegador guarda a cópia e só é obrigado a conferir antes de usar, o
+  >    que devolve **304 sem corpo** quando nada mudou.
+  >
+  > 4. **Os `RewriteRule ... [R=301,L,QSA]` das rotas renomeadas.** `/quero-ajudar`
+  >    virou `/queroajudar`, `/a-missao` virou `/amissao`, `/herois-do-ceara`
+  >    virou `/heroisdoceara` e `/kit` virou `/municao` — link se dita em voz
+  >    alta, e hífen não. Sem o 301 a URL antiga cairia no *SPA fallback* e
+  >    devolveria **a home com status 200**, um soft 404 (pior que o 404
+  >    honesto). **O `QSA` é o que quebra em silêncio se faltar:**
+  >    `/quero-ajudar?funcao=olheiro&de=joao-silva` tem de chegar do outro lado
+  >    com os dois parâmetros, senão o formulário abre em branco e o crédito de
+  >    quem trouxe a pessoa se perde.
+  >
+  > Ao mexer no `.htaccess`, teste servindo o `out/` com Apache local
+  > (`httpd -f`). O `python -m http.server` e o `php -S` **ignoram
+  > `.htaccess`** e não pegam nada disso — foi por isso que a quebra das quatro
+  > rotas passou por todos os testes anteriores.
+- `conceito.html` (protótipo solto na raiz) — parece artefato que valeria
+  limpar, mas não foi removido; confirme com o Felipe antes. (A pasta `out/`
+  estava listada aqui como versionada: não está, e nunca esteve — é build
+  local, ignorado pelo `.gitignore`.)
+
+## Imagens
+
+`public/` inteiro vai para o build sem passar por otimizador: o export estático
+obriga `images.unoptimized`, então **o Next não redimensiona nem converte
+nada**. O arquivo que você põe ali é o arquivo que o visitante baixa.
+
+Original em resolução cheia mora em `originais/`, que não é publicado. Os
+recortes servidos ficam em `public/image/`, e o `originais/LEIA-ME.md` tem os
+comandos exatos para refazer cada um.
+
+> O retrato da home já foi um PNG de 4,4 MB desenhando um círculo de 152 px.
+> Antes de acrescentar imagem em `public/`, confira o peso — a maioria chega de
+> celular, por link de WhatsApp.
+
+**A foto é da home; a marca é dos ícones.** O retrato aparece só no cabeçalho
+da home, no `/amissao` e no `Person.image` do schema. Todo ícone — favicon,
+ícone do Android (manifest), ícone do iOS (`apple-icon.png`) — sai da marca das
+onças em `src/app/icon.png`. Eram três desenhos diferentes antes: o iOS chegou a
+ter um monograma "FM" próprio, que já não existe.
+
+O `maskable` precisa do conteúdo em ~78% da moldura, senão o Android corta as
+orelhas ao aplicar a máscara redonda.

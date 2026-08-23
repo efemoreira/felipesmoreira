@@ -87,9 +87,11 @@ if ($metodo === 'GET') {
         'existe' => true,
         'modo'   => $modo,
         'titulo' => $evento['titulo'],
+        'subtitulo' => $evento['subtitulo'],
         'data'   => $evento['data'],
         'hora'   => $evento['hora'],
         'local'  => $evento['local'],
+        'imagem' => $evento['imagem'],
     ]);
 }
 
