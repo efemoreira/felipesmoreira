@@ -17,6 +17,11 @@ declare(strict_types=1);
  * "Pessoas" no celular. Foi um índice de âncoras antes de virar três abas.
  */
 
+require_once __DIR__ . '/agenda-comum.php';  // o relógio e o pipeline de imagem
+require_once __DIR__ . '/checklists.php';  // checklist()
+require_once __DIR__ . '/eventos-comum.php';  // o modelo do encontro e da presença
+require_once __DIR__ . '/layout.php';  // cabecalho_pagina(), barra_abas(), abrir_modal() — a moldura
+require_once __DIR__ . '/sessao.php';  // h(), limpar_texto(), pode(), combina_com() — o núcleo
 require_once __DIR__ . '/eventos-presenca.php';
 require_once __DIR__ . '/eventos-dados.php';
 

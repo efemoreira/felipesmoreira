@@ -7,9 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "node --import ./testes/alias.ts --test \"testes/**/*.test.ts\"",
-    "test:contrato": "node --import ./testes/alias.ts --test \"testes/contrato/*.test.ts\"",
-    "test:fumaca": "node --import ./testes/alias.ts --test \"testes/fumaca/*.test.ts\"",
+    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./testes/alias.ts --test \"testes/**/*.test.ts\"",
+    "test:contrato": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./testes/alias.ts --test \"testes/contrato/*.test.ts\"",
+    "test:fumaca": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./testes/alias.ts --test \"testes/fumaca/*.test.ts\"",
     "test:tipos": "tsc --noEmit && tsc --noEmit -p testes"
   },
   "dependencies": {

@@ -1309,8 +1309,9 @@ primeira da lista é a que vira o atalho.
 
 ### Como uma tela do painel se divide
 
-As três telas maiores — encontros, pessoas e candidatos — eram arquivos de 800
-a 1.400 linhas com quatrocentas de decisão coladas em setecentas de desenho.
+As seis telas grandes — encontros, pessoas, candidatos, fatos, produção e
+agenda — eram arquivos de 640 a 1.400 linhas com quatrocentas de decisão coladas
+em setecentas de desenho.
 Mexer no formulário de dados obrigava a rolar por toda a lista de presença, e
 qualquer conserto na gravação passava a milímetros do HTML. Hoje cada uma segue
 o mesmo desenho, e **tela nova grande deve seguir também**:
@@ -1326,6 +1327,15 @@ o mesmo desenho, e **tela nova grande deve seguir também**:
 - **A divisão é por RESPONSABILIDADE, não por tamanho.** Cada arquivo responde
   uma pergunta inteira: `eventos-presenca.php` responde "quem veio", e responde
   sozinho — inclusive o funil, que fica lá porque mora na mesma aba.
+- **`<area>.php` é a ROTA, e `<area>-tela.php` é a tela.** Nunca o contrário: a
+  URL é o nome do arquivo, e trocar o que ele contém quebraria a única coisa que
+  não dá para renomear.
+- **Cada módulo exige o que usa** (`require_once`), e não o que a rota já
+  incluiu. Eram onze módulos dependendo da ordem de include; `require_once` é
+  idempotente, então o custo é zero e cada arquivo passa a abrir sozinho. Uma
+  varredura que compara os símbolos usados com os declarados mantém isso em
+  zero — documentar a ordem de include seria justamente o "conhecimento oral"
+  que esta base substitui por garantia executável.
 - **As ações vêm antes de qualquer leitura de tela.** Toda ação termina em
   `voltar()`, que manda o header e sai; calcular a tela primeiro seria trabalho
   jogado fora em toda gravação.
@@ -1341,6 +1351,22 @@ o mesmo desenho, e **tela nova grande deve seguir também**:
   docblock, e comentário de desenvolvedor não precisa viajar até o navegador.
   Comentário que explica um elemento vazio no HTML — o `<div class="qr-arte">`
   que o script preenche — esse fica.
+
+**JavaScript longo dentro do PHP vira arquivo servido.** O `agenda.php` tinha
+**351 das 684 linhas num `<script>` só** — a prévia do cartão, a imagem, o
+reordenar e o aviso de trabalho não salvo. Virou `agenda-previa.js`, servido do
+próprio domínio como as fontes e o desenhador de QR (a Política de Privacidade
+promete que nada do visitante vai para fora).
+
+> **O que o servidor sabe vai por `window.__X__`, antes da tag.** Eram três
+> constantes interpoladas (o teto de upload, os rótulos de plataforma, as cores
+> dos temas), e arquivo estático não interpola. É o mesmo truque do
+> `window.__PAINEL__` do Estúdio — e as flags `JSON_HEX_*` não são decoração
+> ali nem aqui: um `</script>` dentro de um rótulo escaparia do bloco.
+>
+> O `?v=<VERSAO_ESTILO>` no `src` é obrigatório: o `.htaccess` dá um mês de
+> cache para `.js`, e sem o parâmetro a correção não chega em quem já abriu a
+> tela.
 
 > **Refatoração de tela se prova com o HTML renderizado, não com leitura.** Um
 > arquivo que renderiza cada tela do painel fora do servidor web (com sessão e

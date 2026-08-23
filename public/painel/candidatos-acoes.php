@@ -17,6 +17,8 @@ declare(strict_types=1);
  * Toda ação termina em redirecionamento (POST-redirect-GET).
  */
 
+require_once __DIR__ . '/agenda-comum.php';  // o relógio e o pipeline de imagem
+require_once __DIR__ . '/sessao.php';  // h(), limpar_texto(), pode(), combina_com() — o núcleo
 require_once __DIR__ . '/candidatos-comum.php';
 
 function avisar(string $tipo, string $texto): void
