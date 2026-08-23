@@ -381,6 +381,27 @@ dias depois da live.
 > puro: o PHP da Hostinger roda em UTC e um evento das 19h aparecia como **22H**.
 > `partes_de_exibicao()` em `agenda.php` é a única cópia dessa conversão.
 
+> ⚠️ **`data` é TEXTO DE EXIBIÇÃO, não uma data. Conta de tempo sai de
+> `inicio`.** `data` é o `"24/08"` que `partes_de_exibicao()` derivou — sem ano
+> e sem fuso. `strtotime("24/08")` devolve `false`, o `(int)` transforma isso em
+> **0**, e a conta passa a ser feita a partir de 1º de janeiro de 1970 **sem
+> erro nenhum aparecer**: a página continua desenhando. Foi assim, em silêncio,
+> que:
+>
+> - todo encontro futuro com o checklist pela metade aparecia no hub como **"é
+>   hoje"** e pintado de urgente;
+> - a mesa de Encontros dizia **"01/01"**;
+> - o cartão do hub saía **sem data** (`data_curta()` recebia o texto e devolvia
+>   vazio);
+> - e — o pior — **o funil ficava travado no D+0**: `etapa_vencida()` lia `data`,
+>   `dias_desde()` respondia 0 por segurança, e `d3` e `d7` nunca venciam.
+>
+> A conta é uma só: **`dias_ate_o_dia($inicio)`** (`agenda-comum.php`), e
+> `dias_desde()` é o outro lado dela. São **dias de calendário no fuso do
+> Ceará**, e não blocos de 24h: "amanhã às 8h" está a catorze horas e mesmo
+> assim é amanhã, e o D+3 de um encontro de sábado à noite vence na terça, não
+> na terça à noite.
+
 **O relógio da página fica em `src/features/programacao/tempo.ts`** — `estadoDe`,
 `estaAoVivo`, `emOrdem`, `idEmDestaque`, `quantosPassaram`. Um evento "acontece"
 por `DURACAO_PADRAO_MIN` (120) minutos depois de começar, porque a coordenação
@@ -495,8 +516,13 @@ grupos, e a linha divisória é a conta, não a intenção:**
   circulasse no site, encheria de gente que a coordenação ainda não conferiu e
   viraria grupo de recados.
 
-> `grep -rn "chat.whatsapp.com/C8rQ" src` tem de voltar **vazio**: o grupo de
-> trabalho não pode existir no bundle público.
+> **`GRUPO_TRABALHO` mora só no `sessao.php`** — não há par em TypeScript, e não
+> pode haver: num export estático tudo que entra em `src/` é público. Quem
+> confere é `testes/contrato/painel.test.ts`, que lê o convite do próprio PHP e
+> falha se ele aparecer fora de `public/painel/`. Era o
+> `grep -rn "chat.whatsapp.com/C8rQ" src` que se fazia à mão — e que o teste
+> encontrou desatualizado num comentário do `sessao.php`, que ainda prometia um
+> par em `contato.ts`.
 
 ### Quem fala primeiro é a pessoa
 
@@ -976,6 +1002,17 @@ direto (`.encontro-texto > span`).
 > vazio na gaveta. Ouro é texto num lugar e bloco no outro; os dois não podem se
 > encontrar.
 
+**A tela do encontro abre com o resumo, acima das abas.** `.resumo-encontro`
+responde de uma vez o que cada aba esconde da outra: quando é, preparo,
+confirmados, comparecidos e follow-up vencido — mais as **próximas ações**, que
+são o que fazer *agora* neste encontro e não a lista do que existe. Quem marca
+checklist no Preparo quer saber quantos confirmaram; quem recebe na porta quer
+saber quanto do preparo ficou de pé, e antes isso custava trocar de aba, ler e
+voltar perdendo o lugar. Os números saem da lista **inteira**, nunca do recorte
+da busca: a faixa diz como está o encontro, não como está o que alguém acabou de
+digitar. A barra de ações **some** quando não sobrou nada — barra de ação vazia é
+ruído com moldura.
+
 **Tela longa pede aba, e formulário pede modal.** O encontro aberto tem
 playbook, cinco peças, lista de gente, follow-up e dados — empilhado, chegar em
 "Pessoas" no celular era rolar às cegas. Foi um índice de âncoras (`.secoes`)
@@ -1017,6 +1054,36 @@ por página. Vale para encontro, candidato, lista e pessoa.
   navegador reorganiza a árvore sozinho e o formulário some sem um erro sequer
   no console.
 
+**Formulário longo guarda rascunho no aparelho** — `<form data-rascunho="<chave>">`,
+e o motor mora em `fechar_pagina()`, uma cópia só para o painel inteiro. Está no
+encontro novo, nos dados do encontro, no candidato e na capa da agenda: no
+celular, entre uma conversa e outra, a sessão expira, o WhatsApp chama e o
+navegador descarta a aba.
+
+- **NUNCA APLICA SOZINHO.** A faixa oferece — *Recuperar* · *Descartar* — e quem
+  decide é a pessoa. Num formulário de edição, aplicar por conta própria
+  escreveria por cima do que o servidor diz: é o defeito "ele desfez a minha
+  correção", que ninguém consegue investigar depois.
+- **Só aparece quando o guardado difere do que está na tela**, e nunca para
+  rascunho vazio: oferecer "recuperar" o que não tem conteúdo é oferecer apagar
+  o formulário.
+- **A chave leva o id do registro** (`encontro-<id>`, e não `encontro`): dois
+  encontros abertos em duas abas não podem dividir o mesmo guardado.
+- **Campo escondido, senha e arquivo ficam de fora.** O CSRF muda a cada sessão,
+  e restaurá-lo velho reprovaria o envio — o rascunho passaria a quebrar
+  exatamente o que veio salvar.
+- **Vence em 12h, some ao enviar e some ao Sair.** É dado de gente no aparelho
+  de quem digitou: ninguém volta a um rascunho de anteontem, e sair do painel é
+  o gesto de quem está entregando o aparelho.
+- **A ficha de PESSOA não tem rascunho, de propósito.** Ali o formulário é curto
+  e o conteúdo é telefone, e-mail e endereço de um TERCEIRO — deixá-lo
+  sobrevivendo no navegador de quem cadastrou é espalhar dado pessoal para
+  ganhar pouco. O encontro e o candidato guardam informação pública ou de
+  logística.
+- Tudo dentro de `try/catch`: em aba anônima o `localStorage` existe e lança na
+  hora de escrever, e formulário que não abre por causa do rascunho é pior do
+  que não ter rascunho.
+
 **Duas listas na mesma tela viram abas.** `barra_abas()` (`layout.php`) — usada
 em `pessoas` (por tipo), `candidatos` (candidatos · listas), `eventos` (próximos
 · já aconteceram, e as três seções do encontro aberto) e `inscricoes` (fila ·
@@ -1034,14 +1101,47 @@ uma contagem ("12"), mas o Preparo conta duas coisas de uma vez ("3/12").
 > empurra para fora da tela justamente a que interessa. A aba diz o número das
 > duas sem desenhar nenhuma das duas.
 
+**A busca global mora na moldura** (`procurar.php` + `procurar-comum.php`,
+com a caixa em `desenhar_procurar()` do `layout.php`). A pergunta mais comum da
+coordenação é *"cadê o Fulano?"*, e quem a faz raramente sabe se Fulano é uma
+pessoa do cadastro, um candidato, o dono de um card ou o nome de um encontro.
+
+- **Não é uma área.** Não entra em `AREAS`, não aparece no menu e não pede
+  permissão própria — ela alcança exatamente o que a pessoa já abre, porque cada
+  bloco de `procurar_em_tudo()` roda dentro de um `pode()`. Buscar não pode ser
+  porta lateral para dado que a pessoa não podia ver, e é isso que
+  `testes/fumaca/procurar.test.ts` verifica.
+- **Duas letras no mínimo.** Uma casa com metade do cadastro; devolver tudo é
+  pior que devolver nada, e não dizer por quê é pior ainda.
+- **Seis por área, e o resto na tela da área** — com a busca já preenchida.
+  Repetir a lista inteira aqui seria construir uma segunda tela de pessoas,
+  sempre um passo atrás da verdadeira.
+- **O atalho `/` prefere a busca DA TELA.** Quem está numa lista e tecla `/`
+  quer filtrar aquela lista, não sair dela; onde a tela não tem busca própria, a
+  barra cai na global, que é a única ali.
+
 **Procurar é `barra_busca()`, e é a mesma caixa em toda tela.** Uma peça só em
 `layout.php` — cinco cópias de um `<form method="get">` com `name="q"` dentro
 divergiriam na primeira vez que alguém mexesse no rótulo, e a busca é justamente
 o controle que precisa estar no mesmo lugar, com o mesmo nome, em toda tela. Está
 em `eventos` (a lista e a de presença de dentro do encontro), `inscricoes` e
-`candidatos > listas`; `pessoas`, `candidatos`, `municao`, `fatos`, `producao` e
-`aulas` montam o `.filtros` por conta própria, porque ali a busca é um campo
-entre outros.
+`candidatos > listas`.
+
+**Quem procura E recorta usa `barra_filtros()`**, no mesmo `layout.php` —
+`pessoas`, `candidatos`, `municao`, `fatos`, `producao` e `aulas`. As seis
+escreviam o mesmo `<form class="filtros">` à mão só porque precisavam de um
+`<select>` a mais que a `barra_busca()` não tinha: seis cópias do mesmo par de
+botões e da mesma regra de quando mostrar o "Limpar". Recebe a lista dos
+controles (`['tipo' => 'busca', …]`, `['tipo' => 'escolha', …]`), e:
+
+- **quem monta as opções é a TELA**, e de propósito: é ela que sabe contar
+  quantos casam com cada valor e esconder o recorte que devolveria lista vazia.
+  Oferecer os 184 municípios num filtro é oferecer 180 becos;
+- **`$recortado` é da tela também**, porque cada uma sabe qual é o seu estado
+  neutro — a ordem padrão de gente é A-Z, a de candidato é a da colinha;
+- **o id da busca é sempre `q`**: é ele que o atalho `/` procura;
+- `resumo_do_recorte()` é o "3 de 12 aulas.", e some quando não há recorte —
+  repetir o total de uma lista que está inteira na tela é dizer o que já se vê.
 
 - **O casamento de texto é `combina_com()`** (`sessao.php`): sem acento e sem
   caixa dos dois lados, para "jose" achar "José". Busca vazia casa com tudo, e é
@@ -1157,10 +1257,36 @@ Feito duas vezes recentemente: `municao` (ferramenta, em `AREAS_FERRAMENTA`) e
 `candidatos` (coordenação).
 
 **O que está pendente se declara em `agora.php`, e só lá.** `tarefas_de()` monta a
-fila do hub e `contagens_por_area()` alimenta o número ao lado do nome no menu —
-os dois saem do mesmo lugar. Não espalhe contador pelo `index.php`: era assim
-antes, e o resultado era um painel que sabia dizer onde a pessoa podia ir sem
-saber dizer o que estava esperando por ela.
+fila do hub, `contagens_por_area()` alimenta o número ao lado do nome no menu e
+`panorama_de()` monta os medidores do cockpit — os três saem do mesmo lugar. Não
+espalhe contador pelo `index.php`: era assim antes, e o resultado era um painel
+que sabia dizer onde a pessoa podia ir sem saber dizer o que estava esperando por
+ela.
+
+**Duas perguntas, e não uma.** `tarefas_de()` responde *o que é meu*;
+`panorama_de()` responde *como está a operação*. A primeira faz alguém trabalhar
+hoje, a segunda faz decidir — e a coordenação precisa das duas. No hub a
+operação vem **depois** da fila: pôr a pergunta coletiva primeiro numa tela que
+todo militante abre faria quem tem uma área só ler dois medidores antes de achar
+a própria mesa.
+
+- **Nenhum número novo nasce ali.** Cada medidor é um helper que a ferramenta já
+  usa (`fatos_com_status`, `saidas_do_fato`, `ler_cards`, `preparo_do_evento`,
+  `etapa_vencida`, `fila_de_entrada`), e o prazo é o que o manual já cobra.
+- **Três degraus, e não dois** — `ok` · `atencao` · `urgente`. Só verde e
+  vermelho fazia tudo que estava a uma hora de estourar aparecer como se
+  estivesse bem, e o ponto de um painel de operação é ver o problema antes de
+  ele virar problema. **`atencao` é sempre a METADE do prazo que torna aquilo
+  urgente**, para o degrau não ser um número escolhido a dedo por medidor.
+- **Cada medidor é um link.** Medidor que mostra o problema e não leva até ele
+  obriga a procurar no menu qual tela responde por aquilo.
+- Mesma regra de permissão de `tarefas_de()`: cada bloco dentro de um `pode()`,
+  com o `require_once` do `*-comum.php` **dentro** do `if`.
+
+O par visual é `.painel-op` / `.medidor` no `painel.css`, e a cor dos três
+degraus sai do token **`--atencao`** (o âmbar), irmão de `--erro` e `--ok`. Ele
+também pinta `.selo-atencao`; `.selo-publicado` é o outro selo novo, ouro cheio,
+para o único estado que não se desfaz.
 
 **A permissão normal é por CAPACIDADE** (ver "Uma pessoa, e não quatro
 cadastros"); as áreas são o ajuste fino por baixo. As áreas se dividem em duas
@@ -1180,6 +1306,81 @@ sobre o que vem marcado por padrão:
 (`MESA_DA_FUNCAO` em `agora.php`). O `areas` de cada função no
 `funcoes.json` é *sugestão* de marcação na hora de aprovar a inscrição — a
 primeira da lista é a que vira o atalho.
+
+### Como uma tela do painel se divide
+
+As três telas maiores — encontros, pessoas e candidatos — eram arquivos de 800
+a 1.400 linhas com quatrocentas de decisão coladas em setecentas de desenho.
+Mexer no formulário de dados obrigava a rolar por toda a lista de presença, e
+qualquer conserto na gravação passava a milímetros do HTML. Hoje cada uma segue
+o mesmo desenho, e **tela nova grande deve seguir também**:
+
+```
+<area>.php            SÓ A ROTA: requires, exigir_area(), despacho do POST,
+                      o recado da sessão, e a escolha de qual tela desenhar
+<area>-acoes.php      o POST inteiro, numa função. Nenhuma linha de HTML
+<area>-<tela>.php     uma função por tela, e uma por bloco grande de tela
+<area>-comum.php      o modelo — ler, gravar, normalizar, as regras de prazo
+```
+
+- **A divisão é por RESPONSABILIDADE, não por tamanho.** Cada arquivo responde
+  uma pergunta inteira: `eventos-presenca.php` responde "quem veio", e responde
+  sozinho — inclusive o funil, que fica lá porque mora na mesma aba.
+- **As ações vêm antes de qualquer leitura de tela.** Toda ação termina em
+  `voltar()`, que manda o header e sai; calcular a tela primeiro seria trabalho
+  jogado fora em toda gravação.
+- **Quem desenha a tela também calcula o recorte dela.** A busca, o filtro e a
+  ordem só existem para virar aquelas linhas, e **o contador da aba tem de
+  concordar com o que a lista lista** — separar os dois é como os dois passam a
+  discordar. Passar o recorte pronto exigiria catorze ou dezessete argumentos,
+  ou um `extract()` que esconde de onde cada nome veio. O que atravessa a
+  fronteira é só o que nasce fora: `$erro`, `$ok` e a senha provisória, que vêm
+  do recado guardado na sessão pela ação anterior.
+- **Marcador de seção em HTML (`<!-- funil -->`) sai.** Ele existia para achar
+  o pedaço dentro de um arquivo gigante; agora cada bloco é uma função com
+  docblock, e comentário de desenvolvedor não precisa viajar até o navegador.
+  Comentário que explica um elemento vazio no HTML — o `<div class="qr-arte">`
+  que o script preenche — esse fica.
+
+> **Refatoração de tela se prova com o HTML renderizado, não com leitura.** Um
+> arquivo que renderiza cada tela do painel fora do servidor web (com sessão e
+> CSRF fixos, para o diff não encher de ruído), rodado antes e depois, responde
+> em segundos se alguma coisa mudou. Foi assim que as três divisões acima
+> saíram com **zero diferença de conteúdo em 30 telas** — e é assim que a
+> próxima deve sair. Ler o diff do PHP não pega um `<?php endif; ?>` que mudou
+> de dono; comparar a saída pega.
+
+### A linha do tempo, e por que não há log
+
+`atividade-comum.php` responde *o que andou acontecendo* — no pé do hub, e
+recortada por pessoa na ficha dela (a "visão 360": em que encontros esteve, que
+fatos trouxe, que cards são dela, quando entrou).
+
+> **NÃO existe `dados/atividade.php`, e é de propósito.** Um log escrito a cada
+> ação tem dois defeitos que este projeto já pagou noutros lugares: vira uma
+> SEGUNDA fonte de verdade sobre o que aconteceu — que diverge no dia em que
+> alguém acrescenta uma ação e esquece de registrar — e faz toda gravação
+> escrever em dois arquivos numa hospedagem compartilhada.
+>
+> A linha do tempo é **derivada** dos carimbos que já existem: `criadoEm` da
+> pessoa, do encontro, da presença, do fato e do card; `checadoEm` do fato;
+> `publicadoEm` e o `historico` do card. Ela não pode divergir da realidade
+> porque ela **é** a realidade, lida por outro ângulo — a mesma escolha de
+> "presença é relação, não cópia".
+
+- **O que ela não mostra, e a tela diz isso:** correção. Editar o telefone de
+  alguém não deixa carimbo, então não aparece. Um log mostraria — e mentiria na
+  primeira ação nova que ninguém lembrasse de registrar.
+- **`criadoPor` do encontro e `checadoPor` do fato guardam NOME, não id**, e por
+  isso ficam fora do recorte por pessoa: casar por nome escrito à mão poria a
+  linha na ficha do homônimo.
+- **A permissão recorta, não desliga.** Mesma regra do `agora.php`: cada bloco
+  dentro de um `pode()`, com o `require_once` do `*-comum.php` dentro do `if`.
+  Quem tem `eventos` e não tem `pessoas` continua vendo os encontros e não vê
+  quem entrou no cadastro.
+- **Vem por último no hub.** As cinco seções acima respondem "o que eu faço
+  agora"; esta responde "o que o time andou fazendo", que é a pergunta de quem
+  já fez a sua parte.
 
 ### As ferramentas do manual
 
@@ -1274,6 +1475,40 @@ ato, o que cabe num impresso, como uma doação é declarada) fica com a
 coordenação de propósito: muda com o calendário e com decisão do juízo
 eleitoral.
 
+## Como um fluxo público se divide
+
+`/queroajudar` e `/presenca` são os dois fluxos mais críticos do site — um é a
+porta de entrada da militância, o outro é lido **em pé, na fila da porta de um
+encontro**. Eram dois componentes cliente de 1.183 e 874 linhas, com regra,
+desenho e CSS no mesmo arquivo. Hoje:
+
+```
+<Nome>Client.tsx   o FLUXO: estado, validação, rascunho, origem e o POST
+Passos.tsx         um componente por passo — a mesma divisão da barra de progresso
+Campos.tsx         os controles: cartão de função, campo de texto, campo de cidade
+Sucesso.tsx        o desfecho, que é outra tela e não um passo a mais
+estilos.ts         as 330 linhas de CSS que ficavam depois do fim do arquivo
+```
+
+- **O que fica no `Client` é o que se lê quando alguma coisa está errada**: a
+  régua de validação, o rascunho que sobrevive ao F5, o crédito de quem trouxe a
+  pessoa e o envio. O desenho de um `<input>` não é isso.
+- **Nenhum passo guarda estado próprio.** Um passo que lembrasse de alguma coisa
+  sozinho esqueceria na hora de voltar — que é justamente o que o rascunho do
+  fluxo existe para evitar.
+- **`CampoTexto` é tipo do domínio** e mora em `tipos.ts`: são os quatro campos
+  obrigatórios que os dois fluxos têm em comum, mais o e-mail.
+- O CSS continua sendo string interpolada num `<style>`, e não Tailwind nem CSS
+  Module: a identidade sai dos tokens de `@/lib/theme`, e é essa interpolação
+  que uma folha estática não faria.
+
+> **Refatoração de componente se prova com o markup gerado.** `next build` grava
+> o HTML de cada rota em `out/`; guardar o de antes e comparar o `<body>`
+> **ignorando os `<script>`** (o payload do Flight carrega ids de módulo e um
+> build id que mudam a cada build, sem nada ter mudado) diz em segundos se o
+> desenho continua o mesmo. As duas divisões acima saíram com markup byte a byte
+> idêntico.
+
 ## Convenção de nomes
 
 - Rotas e conteúdo: **português** (`/programacao`, `/heroisdoceara`,
@@ -1284,6 +1519,54 @@ eleitoral.
   arquivo, renomeie junto, senão o nome passa a mentir.
 - Identificadores de código (funções, tipos, arquivos utilitários): também em
   português, seguindo o que já existe (`sessao.ts`, `dados.ts`, `tipos.ts`).
+
+## Os testes
+
+`npm test`. Dois tipos, e a divisão é o que importa — `testes/LEIA-ME.md` tem o
+detalhe:
+
+- **`testes/contrato/`** — as duas cópias da mesma regra continuam concordando?
+- **`testes/fumaca/`** — toda tela do painel abre inteira e em silêncio?
+
+**Sem framework de teste.** Node 24 traz `node:test` e roda `.ts` direto, sem
+etapa de compilação; um framework aqui seria uma dependência a mais para fazer o
+que já vem na caixa, e cada dependência é uma que alguém vai ter de auditar
+antes de um deploy de campanha. O preço é que os testes importam com a extensão
+no caminho (`from "./ponte.ts"`), o que exige um `tsconfig.json` próprio em
+`testes/` e a pasta no `exclude` do da raiz.
+
+**Rodam no `publish.yml` antes do build.** Se falharem, o build não acontece e a
+versão anterior continua no ar — stale e funcionando é melhor que publicado e
+divergente.
+
+### O contrato é a parte que importa
+
+Este arquivo está cheio de pares que "têm de concordar": `slugDe()` ↔
+`normalizar_origem()`, `estadoDe()` ↔ `estado_do_evento()`, o `apelido()` do
+Estúdio ↔ o da Produção, `funcoes.json` e `municipios-ce.json` lidos dos dois
+lados. **Concordar por combinado funciona até alguém mexer num lado só**, e a
+divergência é sempre silenciosa: as duas linhas existem e as duas parecem
+certas. `testes/contrato/` transforma cada um desses combinados numa falha.
+
+> Eles pagaram o próprio custo na primeira execução. O de origem achou **duas
+> divergências reais** em `slugDe()`: o corte em 60 acontecia depois de montar o
+> slug (e não sobre o texto cru, como faz o `limpar_texto()` do PHP), e o hífen
+> das pontas era tirado *antes* do corte — então um slug cortado em 60 saía
+> terminando em `-`, exatamente o que aquela linha existe para impedir. O de
+> painel achou um comentário do `sessao.php` prometendo um par de
+> `GRUPO_TRABALHO` em TypeScript que não existe, e não pode existir.
+
+**Par novo:** exponha a função PHP na lista `PONTES` de `contrato/ponte.php` (ela
+é explícita de propósito — aceitar qualquer nome faria da ponte uma porta para
+executar o que estiver carregado) e escreva o teste com **entradas difíceis**:
+acento, aspas, espaço em excesso, vazio, e o comprimento exato do limite. Foi no
+limite que os dois lados discordaram.
+
+**O checklist de área nova virou teste.** Os sete passos que esta documentação
+descrevia em texto — chave em `AREAS`, `DESTINO_AREA`, `RewriteRule`, ícone,
+`GRUPOS_NAV`, `ROTULO_CURTO` — são assertivas em `contrato/painel.test.ts`.
+Esquecer um deles não quebra nada visivelmente: a permissão existe, a tela abre
+pelo endereço direto, e a área simplesmente não aparece no menu de ninguém.
 
 ## O que não mexer sem perguntar
 

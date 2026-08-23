@@ -169,38 +169,26 @@ abrir_pagina('Aulas em vídeo');
     <?= $total ?> aulas · <?= $comVideo ?> com vídeo · <?= $publicadas ?> publicadas.
   </p>
 
-  <form method="get" class="filtros">
-    <div class="campo">
-      <label for="q">Procurar</label>
-      <input id="q" name="q" type="search" maxlength="60" value="<?= h($buscaAu) ?>"
-             placeholder="título da aula ou assunto" autocapitalize="none"
-             spellcheck="false" title="Atalho: tecle /">
-    </div>
-    <div class="campo">
-      <label for="fe">Estado</label>
-      <select id="fe" name="estado">
-        <option value="">todas</option>
-        <option value="sem-video" <?= $estadoAu === 'sem-video' ? 'selected' : '' ?>>sem vídeo (<?= $total - $comVideo ?>)</option>
-        <option value="rascunho"  <?= $estadoAu === 'rascunho'  ? 'selected' : '' ?>>vídeo em rascunho (<?= $comVideo - $publicadas ?>)</option>
-        <option value="publicada" <?= $estadoAu === 'publicada' ? 'selected' : '' ?>>publicadas (<?= $publicadas ?>)</option>
-      </select>
-    </div>
-    <div class="acoes">
-      <button class="btn" type="submit">Filtrar</button>
-      <?php if ($recortadoAu): ?>
-        <a class="btn" href="/painel/aulas.php">Limpar</a>
-      <?php endif; ?>
-    </div>
-  </form>
+  <?php barra_filtros(
+      [
+          ['tipo' => 'busca', 'valor' => $buscaAu, 'dica' => 'título da aula ou assunto'],
+          ['tipo' => 'escolha', 'nome' => 'estado', 'rotulo' => 'Estado',
+           'valor' => $estadoAu, 'vazio' => 'todas', 'opcoes' => [
+               'sem-video' => 'sem vídeo (' . ($total - $comVideo) . ')',
+               'rascunho'  => 'vídeo em rascunho (' . ($comVideo - $publicadas) . ')',
+               'publicada' => 'publicadas (' . $publicadas . ')',
+           ]],
+      ],
+      $recortadoAu,
+      '/painel/aulas.php'
+  ); ?>
 
-  <?php if ($recortadoAu): ?>
-    <p class="dica" style="margin:-6px 0 12px"><?= $achadasAu ?> de <?= $total ?> aulas.</p>
-    <?php /* Fora do <p>: `nada_encontrado()` desenha parágrafo e `<div>`, e
-             bloco dentro de parágrafo faz o navegador fechar o <p> sozinho,
-             reorganizando a árvore. */ ?>
-    <?php if ($achadasAu === 0): ?>
-      <?php nada_encontrado($buscaAu, '/painel/aulas.php', 'Nenhuma aula nesse estado.'); ?>
-    <?php endif; ?>
+  <?php resumo_do_recorte($recortadoAu, $achadasAu, $total, 'aulas'); ?>
+  <?php /* Fora de qualquer <p>: `nada_encontrado()` desenha parágrafo e `<div>`,
+           e bloco dentro de parágrafo faz o navegador fechar o <p> sozinho,
+           reorganizando a árvore. */ ?>
+  <?php if ($recortadoAu && $achadasAu === 0): ?>
+    <?php nada_encontrado($buscaAu, '/painel/aulas.php', 'Nenhuma aula nesse estado.'); ?>
   <?php endif; ?>
 
 <?php foreach (CURRICULO as $dia): ?>

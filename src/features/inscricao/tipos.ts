@@ -30,6 +30,16 @@ export interface CatalogoFuncoes {
   funcoes: Funcao[];
 }
 
+/**
+ * Os cinco campos de texto do formulário.
+ *
+ * Quatro deles são os OBRIGATÓRIOS que `/queroajudar` e `/presenca` têm em
+ * comum — WhatsApp, nome completo, bairro e cidade —, mais o e-mail, que é
+ * opcional. Não é simetria: é o que faz a presença conseguir preencher uma
+ * inscrição inteira e a inscrição reconhecer quem chega na porta.
+ */
+export type CampoTexto = "nome" | "telefone" | "email" | "cidade" | "bairro";
+
 /** O que o formulário manda para /painel/api/inscricao.php */
 export interface DadosInscricao {
   nome: string;

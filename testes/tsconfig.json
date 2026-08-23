@@ -1,0 +1,19 @@
+{
+  "//": [
+    "Os testes têm um tsconfig próprio por um motivo só: eles importam com a",
+    "extensão `.ts` no caminho (`from \"./ponte.ts\"`), que é o que o Node exige",
+    "para executá-los direto, sem etapa de compilação e sem dependência nova.",
+    "O bundler do site nunca vê estes arquivos — `testes/` está no `exclude` do",
+    "tsconfig da raiz."
+  ],
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "types": ["node"],
+    "jsx": "react-jsx",
+    "paths": { "@/*": ["../src/*"] }
+  },
+  "include": ["**/*.ts", "../src/**/*.ts"],
+  "exclude": []
+}

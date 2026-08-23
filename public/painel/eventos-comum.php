@@ -362,6 +362,42 @@ function url_confirmacao(array $evento): string
     return raiz_do_site() . '/presenca?c=' . $evento['tokenConfirmacao'];
 }
 
+/**
+ * "24/08/2026 às 19H" — a data cheia, com o ANO, que só o instante tem.
+ *
+ * `data` é "24/08" e não diz o ano; `strtotime()` não o lê, então a versão
+ * antiga caía sempre no plano B e a tela mostrava a data curta como se fosse a
+ * cheia. O ano importa nas telas em que se confere se o encontro é o certo
+ * antes de mexer nele.
+ *
+ * Fuso do Ceará, como manda `partes_de_exibicao()`: a Hostinger roda em UTC.
+ */
+function data_cheia(array $e): string
+{
+    $hora = $e['hora'] !== '' ? ' às ' . $e['hora'] : '';
+    if ($e['inicio'] !== '') {
+        try {
+            $d = (new DateTimeImmutable($e['inicio']))->setTimezone(new DateTimeZone('America/Fortaleza'));
+            return $d->format('d/m/Y') . $hora;
+        } catch (Exception $erro) {
+            // cai no texto legado abaixo
+        }
+    }
+    // encontro antigo, sem instante: o que existe é o texto que digitaram
+    return $e['data'] !== '' ? $e['data'] . $hora : 'sem data';
+}
+
+/**
+ * Quem pode ser escalado numa peça do encontro.
+ *
+ * TODA pessoa ativa, e não só quem tem conta no painel: a Logística de um
+ * encontro é muitas vezes de quem mora na rua do local e nunca abriu o painel.
+ */
+function pessoas_ativas(): array
+{
+    return array_values(array_filter(ler_pessoas(), fn ($u) => $u['ativo']));
+}
+
 /** Eventos que ainda vão acontecer, do mais próximo para o mais distante. */
 function eventos_proximos(): array
 {
@@ -671,11 +707,23 @@ function presenca_de(string $eventoId, string $pessoaId): ?array
 
 /* ===================== funil de follow-up ===================== */
 
-/** Quantos dias desde o evento (ou desde o cadastro, se não houver data). */
+/**
+ * Quantos dias desde o evento (ou desde o cadastro, se não houver instante).
+ *
+ * DIAS DE CALENDÁRIO, e não blocos de 24 horas — é o outro lado de
+ * `dias_ate_o_dia()`, e sai da mesma conta pelo mesmo motivo. O manual cobra
+ * "D+3", e quem lê isso conta no calendário: um encontro de sábado à noite
+ * vence o D+3 na terça, não na terça à noite. Com a divisão por 86400 o degrau
+ * virava sempre algumas horas depois do que o time esperava, e a diferença
+ * mudava conforme a hora em que o encontro tinha começado.
+ *
+ * `null` (sem instante legível) vira 0, que é o mesmo que "hoje": é o valor que
+ * não faz nada vencer sozinho.
+ */
 function dias_desde(string $referencia): int
 {
-    $t = strtotime($referencia);
-    return $t === false ? 0 : (int) floor((time() - $t) / 86400);
+    $dias = dias_ate_o_dia($referencia);
+    return $dias === null ? 0 : -$dias;
 }
 
 /**
@@ -683,13 +731,24 @@ function dias_desde(string $referencia): int
  *
  * D+0 agradecer · D+3 mandar conteúdo · D+7 convidar para o próximo.
  * Só conta quem compareceu: quem foi convidado e não veio não entra no funil.
+ *
+ * O RELÓGIO SAI DE `inicio`, E NÃO DE `data`. `data` é o texto de exibição
+ * ("24/08"): `strtotime()` devolve `false` nele e `dias_desde()`, por segurança,
+ * responde 0. O efeito era o funil inteiro travado no primeiro degrau — com
+ * `$dias` sempre zero, `d3` e `d7` nunca venciam, e o painel só sabia cobrar a
+ * mensagem de agradecimento. Sem erro nenhum na tela: a única pista era o
+ * follow-up que nunca passava de D+0.
+ *
+ * O `criadoEm` da presença continua sendo o plano B, para o encontro antigo que
+ * nunca teve instante — ali a data em que a pessoa entrou na lista é a melhor
+ * aproximação que existe do dia do encontro.
  */
 function etapa_vencida(array $presenca, array $evento): ?string
 {
     if (!$presenca['compareceu']) {
         return null;
     }
-    $dias = dias_desde($evento['data'] !== '' ? $evento['data'] : $presenca['criadoEm']);
+    $dias = dias_desde($evento['inicio'] !== '' ? $evento['inicio'] : $presenca['criadoEm']);
 
     foreach (['d0' => 0, 'd3' => 3, 'd7' => 7] as $etapa => $quando) {
         if ($dias >= $quando && $presenca['funil'][$etapa] === '') {
@@ -697,6 +756,67 @@ function etapa_vencida(array $presenca, array $evento): ?string
         }
     }
     return null;
+}
+
+/**
+ * Quem está devendo um passo do funil: `[[presenca, etapa], …]`.
+ *
+ * Sem argumento, responde pelo MOVIMENTO INTEIRO — é a pergunta do hub e do
+ * cockpit. Com um encontro, responde só por ele — é a pergunta da aba Pessoas.
+ * Uma função só para as duas porque é a mesma regra: eram três cópias do mesmo
+ * `foreach` (a tela do encontro, a fila do `agora.php` e o medidor do
+ * panorama), e três cópias de uma regra de prazo é uma regra que diverge no dia
+ * em que alguém mexer numa delas.
+ *
+ * UMA PASSADA SÓ, mesmo no caso global. Chamar a versão por encontro dentro de
+ * um laço de encontros custaria uma varredura da lista de gente por encontro —
+ * numa campanha com cinquenta encontros e dois mil cadastros isso é o hub
+ * ficando lento sem ninguém saber por quê.
+ *
+ * Sempre sobre a lista INTEIRA: o follow-up vencido é o que está devendo, e
+ * filtrá-lo pela busca da tela seria esconder trabalho.
+ *
+ * A ordem é a dos encontros e, dentro de cada um, a do nome — determinística,
+ * e não "a ordem em que o arquivo foi gravado". É ela que decide de quem é o
+ * nome que aparece no recado do hub.
+ */
+function follow_ups_vencidos(?array $evento = null): array
+{
+    $quem = [];
+    foreach (ler_pessoas() as $p) {
+        $quem[$p['id']] = $p;
+    }
+    $eventos = [];
+    foreach ($evento !== null ? [$evento] : ler_eventos() as $e) {
+        $eventos[$e['id']] = $e;
+    }
+
+    $vencidos = [];
+    foreach (ler_presencas() as $l) {
+        $e = $eventos[$l['eventoId']] ?? null;
+        /* Presença de pessoa apagada não vira pendência: não há a quem mandar
+           a mensagem, e o recado do hub ficaria aceso para sempre. */
+        if ($e === null || !isset($quem[$l['pessoaId']])) {
+            continue;
+        }
+        $etapa = etapa_vencida($l, $e);
+        if ($etapa === null) {
+            continue;
+        }
+        $l['pessoa'] = $quem[$l['pessoaId']];
+        $vencidos[] = [$l, $etapa];
+    }
+
+    usort($vencidos, function (array $a, array $b) use ($eventos) {
+        $ordem = array_keys($eventos);
+        $pa = array_search($a[0]['eventoId'], $ordem, true);
+        $pb = array_search($b[0]['eventoId'], $ordem, true);
+        return $pa === $pb
+            ? strcmp($a[0]['pessoa']['nome'], $b[0]['pessoa']['nome'])
+            : $pa <=> $pb;
+    });
+
+    return $vencidos;
 }
 
 const ROTULO_FUNIL = [

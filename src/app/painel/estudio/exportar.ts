@@ -84,7 +84,7 @@ const SEM_SERVENTIA = ["de", "da", "do", "das", "dos", "e", "a", "o", "em", "no"
  * para o mesmo título, senão o card da Produção e o PNG do Estúdio chegam ao
  * Acervo com nomes diferentes para a mesma peça.
  */
-function apelido(texto: string, palavras = 4): string {
+export function apelido(texto: string, palavras = 4): string {
   /* normalize("NFD") e não iconv/TRANSLIT: o CLAUDE.md registra que o TRANSLIT
      depende da libc e devolve "ha" no Linux da Hostinger e "h" no macOS. O NFD
      do JavaScript é definido pelo Unicode e dá o mesmo resultado em todo lugar. */

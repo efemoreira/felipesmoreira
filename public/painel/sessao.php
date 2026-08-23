@@ -259,11 +259,17 @@ const DESTINO_AREA = [
 ];
 
 /**
- * O grupo de trabalho — o par PHP de `GRUPO_TRABALHO` em `src/lib/contato.ts`.
+ * O grupo de trabalho — e **só aqui**, ao contrário do `GRUPO_GERAL`, que tem
+ * par em `src/lib/contato.ts`.
  *
- * Só aqui dentro. O site público divulga o grupo GERAL; este é de quem já tem
- * conta, e entrar nele é a primeira obrigação de quem chega (ver index.php e
- * agora.php). Mexeu num arquivo, mexa no outro.
+ * NÃO existe cópia em TypeScript, e não pode existir: num export estático tudo
+ * que entra em `src/` vira bundle público, e o convite deste grupo é de quem já
+ * tem conta. Se ele circulasse no site, encheria de gente que a coordenação
+ * ainda não conferiu e viraria grupo de recados. Entrar nele é a primeira
+ * obrigação de quem chega (ver index.php e agora.php).
+ *
+ * `testes/contrato/painel.test.ts` procura este convite em `src/` e falha se o
+ * achar — o grep que o CLAUDE.md mandava fazer à mão.
  */
 const GRUPO_TRABALHO = 'https://chat.whatsapp.com/C8rQeoCzJpz6vObwyRFAbt';
 

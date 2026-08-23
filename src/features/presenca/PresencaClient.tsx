@@ -1,8 +1,7 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Icon } from "@/components/icons";
-import { C, FONT_ALFA, FONT_ELITE, FONT_BITTER } from "@/lib/theme";
+import { C, FONT_ALFA, FONT_ELITE } from "@/lib/theme";
 import { obterEncontro, enviarPresenca, procurarPessoa, confirmarPessoa } from "@/lib/api/presenca";
 import {
   mascararTelefone,
@@ -16,6 +15,20 @@ import {
 import { slugDe } from "@/lib/atribuicao";
 import { MUNICIPIOS_CE, FORA_DO_CEARA } from "@/lib/municipios";
 import type { Alvo, Encontro } from "./tipos";
+import {
+  botaoOuro,
+  botaoEscolha,
+  botaoEscolhaFraco,
+  textoP,
+  Modo,
+  ModoExplica,
+  Quando,
+  Armadilha,
+  Erro,
+  Casca,
+  Campo,
+} from "./Pecas";
+import { SemEncontro, Pronto } from "./Telas";
 
 /**
  * Cadastro na porta do encontro — o QR da mesa da Recepção abre esta página.
@@ -258,71 +271,18 @@ export default function PresencaClient() {
   }
 
   if (fase === "sem-encontro") {
-    return (
-      <Casca titulo="Link sem encontro">
-        <p style={textoP}>
-          Esse link de presença não vale mais, ou está incompleto. Chame alguém da
-          recepção — dá para cadastrar você na hora.
-        </p>
-        <Voltar />
-      </Casca>
-    );
+    return <SemEncontro />;
   }
 
   if (fase === "pronto") {
-    const confirmandoPronto = encontro?.existe && encontro.modo === "confirmacao";
     return (
-      <Casca
-        titulo={
-          reconhecido
-            ? `${confirmandoPronto ? "Combinado" : "Bem-vindo"}, ${reconhecido}!`
-            : jaEstava
-              ? "Você já estava na lista"
-              : "Pronto!"
-        }
-      >
-        <p style={textoP}>
-          {confirmandoPronto ? (
-            <>
-              Anotamos que <strong>você pretende ir</strong>. Se mudar de ideia, tudo
-              bem — é só não aparecer. <strong>No dia, procure o QR na entrada</strong>:
-              é ele que registra que você esteve lá.
-            </>
-          ) : jaEstava ? (
-            "Seu nome já estava na lista de presença. Pode guardar o celular e aproveitar o encontro."
-          ) : (
-            "Você está na lista de presença. Obrigado por estar com a gente."
-          )}
-        </p>
-
-        {/* A pessoa apareceu num encontro por vontade própria e ainda não é do
-            movimento: é o melhor momento que vai existir para perguntar. Os
-            dados vão por sessionStorage e NUNCA pela URL — telefone em
-            querystring entra no histórico, no referrer e no log do servidor. */}
-        {ofereceAjudar && (
-          <section
-            style={{
-              border: `3px solid ${C.gold}`,
-              background: "rgba(255,203,5,.08)",
-              padding: "18px 18px 20px",
-              margin: "0 auto 22px",
-              maxWidth: 420,
-              textAlign: "left",
-            }}
-          >
-            <p style={{ margin: "0 0 12px", fontSize: 15.5, lineHeight: 1.65 }}>
-              <strong>Quer ajudar de verdade?</strong> Tem função para quem tem uma hora
-              por semana e para quem tem o dia. Seus dados já vão preenchidos — é só
-              escolher como quer ajudar.
-            </p>
-            <button type="button" onClick={levarParaAjudar} style={botaoOuro}>
-              Quero ajudar
-            </button>
-          </section>
-        )}
-
-        <Voltar />
-      </Casca>
+      <Pronto
+        confirmando={!!(encontro?.existe && encontro.modo === "confirmacao")}
+        reconhecido={reconhecido}
+        jaEstava={jaEstava}
+        ofereceAjudar={ofereceAjudar}
+        aoQuererAjudar={levarParaAjudar}
+      />
     );
   }
 
@@ -338,9 +298,8 @@ export default function PresencaClient() {
         <ModoExplica confirmando={confirmando} />
         <form onSubmit={procurar} style={{ textAlign: "left" }}>
           <p style={{ ...textoP, margin: "0 0 18px" }}>
-            Comece pelo seu <strong>WhatsApp</strong>. Se você já veio a algum encontro
-            ou já se inscreveu para ajudar, é só isso — nome, bairro e cidade a gente já
-            tem, e você não digita de novo.
+            Digite seu <strong>WhatsApp</strong>. Se você já veio a um encontro ou já
+            se inscreveu, acabou aqui — o resto a gente já tem.
           </p>
           <Campo
             id="p-tel"
@@ -373,8 +332,7 @@ export default function PresencaClient() {
         <Modo confirmando={confirmando} />
         <Quando detalhes={detalhes} />
         <p style={textoP}>
-          Esse número está no cadastro de mais de uma pessoa — em casa que divide
-          celular isso é comum. Toque no seu nome.
+          Esse número está no cadastro de mais de uma pessoa. Toque no seu nome.
         </p>
         <div style={{ display: "grid", gap: 10, maxWidth: 420, margin: "0 auto 20px" }}>
           {opcoes.map((o) => (
@@ -398,8 +356,8 @@ export default function PresencaClient() {
 
       <form onSubmit={enviar} style={{ textAlign: "left" }}>
         <p style={{ ...textoP, margin: "0 0 18px" }}>
-          A gente ainda não conhece esse número — são quatro campos e acabou.
-          Da próxima vez você digita só o WhatsApp.
+          Não conhecemos esse número ainda: quatro campos e acabou. Da próxima
+          vez, só o WhatsApp.
         </p>
         <Campo
           id="p-nome"
@@ -549,322 +507,3 @@ export default function PresencaClient() {
     </Casca>
   );
 }
-
-/* ===================== peças ===================== */
-
-const botaoOuro: React.CSSProperties = {
-  width: "100%",
-  minHeight: 52,
-  padding: "14px 20px",
-  cursor: "pointer",
-  fontFamily: FONT_ALFA,
-  fontSize: 17,
-  background: C.gold,
-  color: C.ink,
-  border: `3px solid ${C.ink}`,
-  boxShadow: "5px 5px 0 rgba(24,18,3,.4)",
-};
-
-const botaoEscolha: React.CSSProperties = {
-  minHeight: 56,
-  padding: "14px 18px",
-  cursor: "pointer",
-  textAlign: "left",
-  fontFamily: FONT_BITTER,
-  fontSize: 16.5,
-  color: C.cream,
-  background: "rgba(255,203,5,.08)",
-  border: `3px solid ${C.gold}`,
-};
-
-const botaoEscolhaFraco: React.CSSProperties = {
-  ...botaoEscolha,
-  color: "#b9b3a5",
-  background: "transparent",
-  border: "3px solid rgba(255,203,5,.25)",
-  fontSize: 15,
-};
-
-/**
- * A faixa que diz **o que esta tela faz** — a peça mais importante da página.
- *
- * Os dois links levam à mesma rota e se parecem, e a confusão entre eles não é
- * teórica: quem abre o link do grupo em casa acha que está "dando presença", e
- * quem lê o QR na porta acha que só está "avisando que vem". A diferença tem de
- * estar no topo, grande, antes de qualquer campo — e o verbo do botão no fim
- * repete a mesma coisa, para quem rolou direto.
- */
-const Modo: React.FC<{ confirmando: boolean }> = ({ confirmando }) => (
-  <p
-    style={{
-      display: "inline-flex",
-      alignItems: "center",
-      gap: 9,
-      margin: "0 0 16px",
-      padding: "9px 14px",
-      background: confirmando ? "rgba(255,203,5,.12)" : C.gold,
-      color: confirmando ? C.gold : C.ink,
-      border: `3px solid ${confirmando ? C.gold : C.ink}`,
-      fontFamily: FONT_ELITE,
-      fontSize: 12,
-      letterSpacing: 1.8,
-      textTransform: "uppercase",
-    }}
-  >
-    <Icon name={confirmando ? "calendar" : "flag"} size={16} />
-    {confirmando ? "Confirmar que eu vou" : "Cheguei no encontro"}
-  </p>
-);
-
-/** Uma linha explicando o que a marca significa — e o que ela NÃO significa. */
-const ModoExplica: React.FC<{ confirmando: boolean }> = ({ confirmando }) => (
-  <p style={{ ...textoP, margin: "0 0 20px", fontSize: 14.5, opacity: 0.85 }}>
-    {confirmando ? (
-      <>
-        Isto <strong>não</strong> é a lista de presença — é o aviso de que você
-        pretende ir, para a gente saber quantos esperar. No dia, quem estiver lá
-        lê o QR na entrada.
-      </>
-    ) : (
-      <>
-        Esta é a <strong>lista de presença</strong> do encontro, e vale para quem
-        está aqui agora. Se você só quer avisar que pretende vir, use o link que a
-        coordenação manda no grupo.
-      </>
-    )}
-  </p>
-);
-
-/** Quando e onde — a linha que confirma que a pessoa abriu o link certo. */
-const Quando: React.FC<{ detalhes: { data: string; hora: string; local: string } | null }> = ({
-  detalhes,
-}) =>
-  detalhes ? (
-    <p
-      style={{
-        fontFamily: FONT_ELITE,
-        fontSize: 12,
-        letterSpacing: 1.6,
-        textTransform: "uppercase",
-        color: "#8e877a",
-        margin: "0 0 22px",
-      }}
-    >
-      {[dataBonita(detalhes.data), detalhes.hora, detalhes.local].filter(Boolean).join(" · ")}
-    </p>
-  ) : null;
-
-/** Honeypot: invisível pra gente, irresistível pra robô. */
-const Armadilha: React.FC<{ honeypot: React.RefObject<HTMLInputElement | null> }> = ({ honeypot }) => (
-  <input
-    ref={honeypot}
-    type="text"
-    name="site"
-    tabIndex={-1}
-    autoComplete="off"
-    aria-hidden="true"
-    style={{ position: "absolute", left: -9999, width: 1, height: 1, opacity: 0 }}
-  />
-);
-
-const Erro: React.FC<{ texto: string }> = ({ texto }) => (
-  <p
-    role="alert"
-    style={{
-      border: `3px solid ${C.erroBorda}`,
-      background: "rgba(194,84,63,.12)",
-      color: C.erro,
-      padding: "12px 14px",
-      margin: "0 0 18px",
-      lineHeight: 1.6,
-    }}
-  >
-    {texto}
-  </p>
-);
-
-const textoP: React.CSSProperties = {
-  maxWidth: 420,
-  margin: "0 auto 22px",
-  fontSize: 15.5,
-  lineHeight: 1.7,
-};
-
-function dataBonita(iso: string): string {
-  if (!iso) return "";
-  const [ano, mes, dia] = iso.split("-");
-  return dia && mes && ano ? `${dia}/${mes}/${ano}` : iso;
-}
-
-const Casca: React.FC<{ titulo: string; children?: React.ReactNode }> = ({ titulo, children }) => (
-  <div
-    style={{
-      minHeight: "100dvh",
-      background: C.night,
-      color: C.cream,
-      fontFamily: FONT_BITTER,
-      padding: "38px 20px 70px",
-    }}
-  >
-    <div style={{ maxWidth: 460, margin: "0 auto", textAlign: "center" }}>
-      <p
-        style={{
-          display: "inline-block",
-          fontFamily: FONT_ELITE,
-          letterSpacing: 4,
-          fontSize: 12,
-          textTransform: "uppercase",
-          color: C.ink,
-          background: C.gold,
-          padding: "4px 14px",
-          boxShadow: "3px 3px 0 rgba(24,18,3,.5)",
-          marginBottom: 18,
-        }}
-      >
-        Missão Ceará
-      </p>
-      <h1
-        style={{
-          fontFamily: FONT_ALFA,
-          fontSize: "clamp(26px, 6.5vw, 38px)",
-          lineHeight: 1.2,
-          margin: "0 0 16px",
-          color: C.gold,
-        }}
-      >
-        {titulo}
-      </h1>
-      {children}
-    </div>
-  </div>
-);
-
-const Voltar: React.FC = () => (
-  <Link
-    href="/"
-    style={{
-      display: "inline-flex",
-      alignItems: "center",
-      gap: 10,
-      minHeight: 44,
-      textDecoration: "none",
-      border: "3px solid rgba(255,203,5,.4)",
-      color: C.gold,
-      padding: "12px 20px",
-      fontFamily: FONT_ALFA,
-      fontSize: 15,
-    }}
-  >
-    <Icon name="arrowLeft" size={18} />
-    Ir para o site
-  </Link>
-);
-
-/** A moldura é a mesma do <input> e do <select>: uma cópia só. */
-const molduraDoCampo = (erro: string): React.CSSProperties => ({
-  width: "100%",
-  /* 16px é o mínimo: abaixo disso o Safari do iPhone dá zoom ao focar */
-  font: `16px/1.5 ${FONT_BITTER}`,
-  minHeight: 50,
-  padding: "12px 14px",
-  color: C.cream,
-  background: "rgba(0,0,0,.35)",
-  border: `2px solid ${erro !== "" ? "#E4572E" : "rgba(255,203,5,.3)"}`,
-  borderRadius: 0,
-});
-
-const Campo: React.FC<{
-  id: string;
-  rotulo: string;
-  valor: string;
-  aoMudar: (v: string) => void;
-  aoSair?: () => void;
-  erro?: string;
-  tipo?: string;
-  modo?: "numeric" | "text";
-  dica?: string;
-  autoComplete?: string;
-  required?: boolean;
-  opcional?: boolean;
-  autoFoco?: boolean;
-  /* Com `lista`, o campo vira <select> — mesmo rótulo, mesma moldura, mesma
-     mensagem de erro. Um segundo componente só para isso duplicaria o desenho
-     inteiro, e as duas cópias divergiriam na primeira mudança de borda. */
-  lista?: readonly string[];
-  listaVazia?: string;
-  listaExtra?: string;
-  listaGrupo?: string;
-}> = ({
-  id, rotulo, valor, aoMudar, aoSair, erro = "", tipo = "text", modo, dica,
-  autoComplete, required, opcional, autoFoco,
-  lista, listaVazia = "Escolha", listaExtra, listaGrupo,
-}) => (
-  <div style={{ margin: "0 0 16px" }}>
-    <label
-      htmlFor={id}
-      style={{
-        display: "block",
-        fontFamily: FONT_ELITE,
-        fontSize: 12,
-        letterSpacing: 1.4,
-        textTransform: "uppercase",
-        color: C.gold,
-        margin: "0 0 6px",
-      }}
-    >
-      {rotulo}
-      {/* Campo opcional tem que PARECER opcional: com quatro obrigatórios e
-          dois opcionais na mesma tela, marcar só os de cima não basta. */}
-      {opcional && (
-        <span style={{ color: "#8e877a", letterSpacing: 1 }}> (opcional)</span>
-      )}
-    </label>
-    {lista ? (
-      <select
-        id={id}
-        value={valor}
-        required={required}
-        autoComplete={autoComplete}
-        aria-invalid={erro !== ""}
-        aria-describedby={erro !== "" ? `${id}-erro` : dica ? `${id}-dica` : undefined}
-        onChange={(e) => aoMudar(e.target.value)}
-        onBlur={aoSair}
-        style={molduraDoCampo(erro)}
-      >
-        <option value="">{listaVazia}</option>
-        {listaExtra && <option value={listaExtra}>{listaExtra} — sou de fora</option>}
-        <optgroup label={listaGrupo}>
-          {lista.map((item) => (
-            <option key={item} value={item}>{item}</option>
-          ))}
-        </optgroup>
-      </select>
-    ) : (
-      <input
-        id={id}
-        type={tipo}
-        inputMode={modo}
-        value={valor}
-        required={required}
-        autoFocus={autoFoco}
-        autoComplete={autoComplete}
-        aria-invalid={erro !== ""}
-        aria-describedby={erro !== "" ? `${id}-erro` : dica ? `${id}-dica` : undefined}
-        onChange={(e) => aoMudar(e.target.value)}
-        onBlur={aoSair}
-        style={molduraDoCampo(erro)}
-      />
-    )}
-    {erro !== "" ? (
-      <p id={`${id}-erro`} role="alert" style={{ margin: "6px 0 0", fontSize: 13.5, color: "#F09A7E" }}>
-        {erro}
-      </p>
-    ) : (
-      dica && (
-        <p id={`${id}-dica`} style={{ margin: "6px 0 0", fontSize: 13, color: "#8e877a" }}>
-          {dica}
-        </p>
-      )
-    )}
-  </div>
-);

@@ -16,6 +16,13 @@ jobs:
       - name: Install all dependencies
         run: npm install
 
+      # Os testes rodam ANTES do build, e o build não acontece se eles falharem.
+      # São contratos entre o Next e o PHP (`testes/contrato/`) e o smoke test
+      # do painel (`testes/fumaca/`) — ver testes/LEIA-ME.md. Precisam do PHP,
+      # que o runner do GitHub já traz.
+      - name: Testes
+        run: npm test
+
       - name: Build
         run: npm run build # The build command of your project
 
@@ -65,6 +72,7 @@ jobs:
           RewriteRule ^painel/inscricoes/?$ /painel/inscricoes.php [L]
           RewriteRule ^painel/candidatos/?$ /painel/candidatos.php [L]
           RewriteRule ^painel/pessoas/?$ /painel/pessoas.php [L]
+          RewriteRule ^painel/procurar/?$ /painel/procurar.php [L]
           RewriteRule ^painel/conta/?$ /painel/conta.php [L]
           RewriteRule ^painel/manutencao/?$ /painel/manutencao.php [L]
           # Rotas antigas, com hífen. Elas estão no sitemap e circulam em link de

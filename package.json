@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "node --import ./testes/alias.ts --test \"testes/**/*.test.ts\"",
+    "test:contrato": "node --import ./testes/alias.ts --test \"testes/contrato/*.test.ts\"",
+    "test:fumaca": "node --import ./testes/alias.ts --test \"testes/fumaca/*.test.ts\"",
+    "test:tipos": "tsc --noEmit && tsc --noEmit -p testes"
   },
   "dependencies": {
     "@mediapipe/tasks-vision": "^1.0.1",
@@ -19,7 +23,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
+    "@types/node": "^24.13.3",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
