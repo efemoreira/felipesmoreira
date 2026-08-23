@@ -225,7 +225,7 @@ const ProgramacaoClient: React.FC<{ semente: Agenda }> = ({ semente }) => {
                   destaque={item.id === destaque}
                   aoVivoAgora={agora ? estaAoVivo(item, agora) : false}
                 />
-                {/* O "Vou" fica FORA do cartão, e não dentro: o cartão inteiro já
+                {/* O botão de confirmar fica FORA do cartão, e não dentro: o cartão inteiro já
                     é um link quando o item tem link, e botão dentro de link é
                     interativo aninhado — HTML inválido, e no leitor de tela os
                     dois viram um alvo só.
@@ -235,7 +235,10 @@ const ProgramacaoClient: React.FC<{ semente: Agenda }> = ({ semente }) => {
                 {item.confirmar && (
                   <a className="ag-vou" href={`/presenca?c=${item.confirmar}`}>
                     <Icon name="flag" size={15} />
-                    <span>Vou nesse</span>
+                    {/* A mesma palavra da tela para onde ele leva, e a mesma que
+                        o convite de qualquer evento usa: quem toca aqui sabe o
+                        que vai acontecer antes de a página abrir. */}
+                    <span>Confirmar presença</span>
                   </a>
                 )}
               </li>

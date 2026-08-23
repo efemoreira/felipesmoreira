@@ -814,7 +814,7 @@ Dois links por encontro, e **dois tokens**:
 | token | onde vive | grava |
 |---|---|---|
 | `token` | só no QR impresso na mesa | `compareceu` |
-| `tokenConfirmacao` | no grupo e no botão "Vou nesse" da `/programacao` | `confirmou` |
+| `tokenConfirmacao` | no grupo e no botão "Confirmar presença" da `/programacao` | `confirmou` |
 
 Um token para os dois faria qualquer pessoa que recebesse o link no grupo se
 marcar como presente sem sair de casa — e é a lista de presença que alimenta o

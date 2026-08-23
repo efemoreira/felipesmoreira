@@ -92,9 +92,10 @@ export default function PresencaClient() {
 
   useEffect(() => {
     const busca = new URLSearchParams(window.location.search);
-    /* `?e=` é o QR da mesa (cheguei); `?c=` é o link do grupo (vou). São dois
-       tokens diferentes de propósito — com um só, quem recebesse o link no
-       grupo se marcaria como presente sem sair de casa. */
+    /* `?e=` é o QR da mesa (check-in na porta); `?c=` é o link do grupo
+       (confirmar presença, antes). São dois tokens diferentes de propósito —
+       com um só, quem recebesse o link no grupo se marcaria como presente sem
+       sair de casa. */
     const doQr = busca.get("e") ?? "";
     const doGrupo = busca.get("c") ?? "";
     const a: Alvo = doQr ? { evento: doQr } : doGrupo ? { confirmacao: doGrupo } : {};
@@ -293,7 +294,7 @@ export default function PresencaClient() {
   /* ---------- passo 1: o WhatsApp, e mais nada ---------- */
   if (fase === "telefone") {
     return (
-      <Casca titulo={confirmando ? "Confirmar que eu vou" : "Registrar minha presença"}>
+      <Casca titulo={confirmando ? "Confirme sua presença" : "Check-in do encontro"}>
         {detalhes ? (
           <HeroDoEncontro
             titulo={detalhes.titulo}
@@ -328,8 +329,11 @@ export default function PresencaClient() {
             />
             <Armadilha honeypot={honeypot} />
             {erro && <Erro texto={erro} />}
+            {/* O botão nomeia o RESULTADO, e não o passo: para quem já é
+                conhecido pelo número este toque é o último, e "continuar" não
+                diria o que acabou de acontecer. */}
             <button type="submit" style={botaoOuro}>
-              {confirmando ? "Continuar — vou nesse" : "Continuar — cheguei"}
+              {confirmando ? "Confirmar presença" : "Fazer check-in"}
             </button>
           </form>
         </Painel>
@@ -373,7 +377,7 @@ export default function PresencaClient() {
   }
 
   return (
-    <Casca titulo={confirmando ? "Confirmar que eu vou" : "Registrar minha presença"}>
+    <Casca titulo={confirmando ? "Confirme sua presença" : "Check-in do encontro"}>
       {detalhes ? (
         <HeroDoEncontro
           titulo={detalhes.titulo}
@@ -527,8 +531,8 @@ export default function PresencaClient() {
             {fase === "enviando"
               ? "Enviando…"
               : confirmando
-                ? "Confirmar que eu vou"
-                : "Registrar minha presença"}
+                ? "Confirmar presença"
+                : "Fazer check-in"}
           </button>
         </form>
       </Painel>

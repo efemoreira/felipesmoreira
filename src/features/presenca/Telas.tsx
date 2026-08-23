@@ -26,9 +26,11 @@ export const SemEncontro: React.FC = () => (
 /**
  * O desfecho: o nome entrou na lista.
  *
- * O texto muda com o MODO, e não é detalhe: "combinado" (você disse que vem) e
- * "bem-vindo" (você chegou) são coisas diferentes, e é aqui que a pessoa
- * descobre qual das duas ela acabou de fazer.
+ * O texto muda com o MODO, e não é detalhe: "presença confirmada" (você disse
+ * que vem) e "check-in feito" (você chegou) são coisas diferentes, e é aqui que
+ * a pessoa descobre qual das duas ela acabou de fazer. O desfecho repete a
+ * palavra do botão de propósito — quem não tem certeza do que apertou volta e
+ * aperta de novo.
  *
  * `aoQuererAjudar` leva para `/queroajudar` com os dados já preenchidos — por
  * `sessionStorage` e NUNCA pela URL: telefone em querystring entra no
@@ -45,10 +47,12 @@ export const Pronto: React.FC<{
   <Casca
     titulo={
       reconhecido
-        ? `${confirmando ? "Combinado" : "Bem-vindo"}, ${reconhecido}!`
+        ? `${confirmando ? "Presença confirmada" : "Check-in feito"}, ${reconhecido}!`
         : jaEstava
           ? "Você já estava na lista"
-          : "Pronto!"
+          : confirmando
+            ? "Presença confirmada!"
+            : "Check-in feito!"
     }
   >
     {detalhes ? (
@@ -68,13 +72,13 @@ export const Pronto: React.FC<{
         {confirmando ? (
           <>
             Anotamos que <strong>você pretende ir</strong>. Se mudar de ideia, tudo
-            bem — é só não aparecer. <strong>No dia, procure o QR na entrada</strong>:
-            é ele que registra que você esteve lá.
+            bem — é só não aparecer. <strong>No dia, faça o check-in no QR da
+            entrada</strong>: é ele que registra que você esteve lá.
           </>
         ) : jaEstava ? (
-          "Seu nome já estava na lista de presença. Pode guardar o celular e aproveitar o encontro."
+          "Seu check-in já estava feito. Pode guardar o celular e aproveitar o encontro."
         ) : (
-          "Você está na lista de presença. Obrigado por estar com a gente."
+          "Check-in feito: você está na lista de presença. Obrigado por estar com a gente."
         )}
       </p>
     </Painel>

@@ -12,10 +12,11 @@ import { C, FONT_ALFA, FONT_ELITE, FONT_BITTER, borda, sombra } from "@/lib/them
  * `PresencaClient`, e é lá que se olha quando alguém não consegue dar presença.
  *
  * A peça mais importante é a `Modo`: os dois links (o QR da mesa e o de
- * nesse" que circula no grupo) levam à mesma rota e se parecem, e confundi-los
- * é o defeito que ela existe para evitar — quem abre o link do grupo em casa
- * acha que está "dando presença", e quem lê o QR na porta acha que só está
- * avisando que vem.
+ * confirmação, que circula no grupo) levam à mesma rota e se parecem, e
+ * confundi-los é o defeito que ela existe para evitar — quem abre o link do
+ * grupo em casa acha que já deu presença, e quem lê o QR na porta acha que só
+ * está avisando que vem. São duas palavras diferentes por isso: "confirmar
+ * presença" é antes, "check-in" é na porta.
  */
 
 /* ===================== peças ===================== */
@@ -57,10 +58,15 @@ export const botaoEscolhaFraco: React.CSSProperties = {
  * A faixa que diz **o que esta tela faz** — a peça mais importante da página.
  *
  * Os dois links levam à mesma rota e se parecem, e a confusão entre eles não é
- * teórica: quem abre o link do grupo em casa acha que está "dando presença", e
- * quem lê o QR na porta acha que só está "avisando que vem". A diferença tem de
- * estar no topo, grande, antes de qualquer campo — e o verbo do botão no fim
- * repete a mesma coisa, para quem rolou direto.
+ * teórica: quem abre o link do grupo em casa acha que já deu presença, e quem
+ * lê o QR na porta acha que só está avisando que vem. A diferença tem de estar
+ * no topo, grande, antes de qualquer campo — e o verbo do botão no fim repete a
+ * mesma palavra, para quem rolou direto.
+ *
+ * As palavras são as que a pessoa já conhece de fora daqui: "confirmar
+ * presença" é o RSVP do convite, "check-in" é o que ela faz na porta do show e
+ * no balcão do aeroporto. Rótulo que nomeia o resultado no vocabulário de quem
+ * lê é o que faz alguém tocar sem parar para pensar.
  */
 export const Modo: React.FC<{ confirmando: boolean }> = ({ confirmando }) => (
   <p

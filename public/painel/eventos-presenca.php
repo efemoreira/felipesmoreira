@@ -87,17 +87,18 @@ function desenhar_presenca(array $aberto, array $eu): void
       </div>
     <?php endif; ?>
 
-    <?php /* ===== o link de "vou", que circula ANTES do encontro ===== */ ?>
+    <?php /* ===== o link de confirmação, que circula ANTES do encontro ===== */ ?>
     <?php if ($aberto['tokenConfirmacao'] !== ''): ?>
       <?php $urlConfirma = url_confirmacao($aberto); ?>
       <details class="decidir" style="margin:0 0 22px">
         <summary class="btn">Link de confirmação, para mandar no grupo</summary>
         <div class="decidir-corpo">
           <p class="dica" style="margin:0 0 12px">
-            <strong>É um link diferente do QR da mesa</strong>, de propósito. Este só
-            marca “vou”; o do QR marca “cheguei”. Com um link só, quem recebesse a
-            mensagem no grupo se marcaria como presente sem sair de casa — e é a lista
-            de presença que alimenta o follow-up.
+            <strong>É um link diferente do QR da mesa</strong>, de propósito. Este
+            confirma presença ANTES; o do QR faz o <strong>check-in</strong> na porta.
+            Com um link só, quem recebesse a mensagem no grupo se marcaria como
+            presente sem sair de casa — e é a lista de presença que alimenta o
+            follow-up.
           </p>
           <p class="dica" style="margin:0 0 12px">
             Quem já veio a algum encontro, já se inscreveu ou já tem conta digita
@@ -124,7 +125,7 @@ function desenhar_presenca(array $aberto, array $eu): void
             </p>
           <?php else: ?>
             <p class="dica">
-              O botão “Vou nesse” também aparece sozinho no cartão deste encontro em
+              O botão “Confirmar presença” também aparece sozinho no cartão deste encontro em
               <a href="/programacao" target="_blank">/programacao</a>.
             </p>
           <?php endif; ?>
