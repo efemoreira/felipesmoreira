@@ -21,6 +21,9 @@ declare(strict_types=1);
  * faz os dois discordarem.
  */
 
+require_once __DIR__ . '/candidatos-comum.php';  // o modelo do candidato e das listas
+require_once __DIR__ . '/layout.php';  // cabecalho_pagina(), barra_abas(), abrir_modal() — a moldura
+require_once __DIR__ . '/sessao.php';  // h(), limpar_texto(), pode(), combina_com() — o núcleo
 require_once __DIR__ . '/candidatos-form.php';
 
 /**

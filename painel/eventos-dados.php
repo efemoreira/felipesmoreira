@@ -12,6 +12,10 @@ declare(strict_types=1);
  * ordem das três: prepara-se antes, recebe-se durante, e o ajuste é uma vez.
  */
 
+require_once __DIR__ . '/agenda-comum.php';  // o relógio e o pipeline de imagem
+require_once __DIR__ . '/layout.php';  // cabecalho_pagina(), barra_abas(), abrir_modal() — a moldura
+require_once __DIR__ . '/sessao.php';  // h(), limpar_texto(), pode(), combina_com() — o núcleo
+
 /**
  * O formulário do encontro.
  *

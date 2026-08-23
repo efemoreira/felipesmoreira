@@ -18,6 +18,9 @@ declare(strict_types=1);
  * `eventos.php` pode chamá-la antes de calcular qualquer estado de tela.
  */
 
+require_once __DIR__ . '/agenda-comum.php';  // o relógio e o pipeline de imagem
+require_once __DIR__ . '/checklists.php';  // checklist()
+require_once __DIR__ . '/sessao.php';  // h(), limpar_texto(), pode(), combina_com() — o núcleo
 require_once __DIR__ . '/eventos-comum.php';
 
 function avisar(string $tipo, string $texto): void

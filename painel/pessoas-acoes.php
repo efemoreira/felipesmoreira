@@ -16,6 +16,8 @@ declare(strict_types=1);
  * Toda ação termina em redirecionamento (POST-redirect-GET).
  */
 
+require_once __DIR__ . '/eventos-comum.php';  // o modelo do encontro e da presença
+require_once __DIR__ . '/sessao.php';  // h(), limpar_texto(), pode(), combina_com() — o núcleo
 require_once __DIR__ . '/pessoas-comum.php';
 
 function avisar(string $tipo, string $texto): void

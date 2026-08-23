@@ -14,6 +14,8 @@ declare(strict_types=1);
  * esse número que o eleitor vai digitar na urna.
  */
 
+require_once __DIR__ . '/sessao.php';  // h(), limpar_texto(), pode(), combina_com() — o núcleo
+
 
 /**
  * O formulário do candidato — um só, desenhado em dois modais.

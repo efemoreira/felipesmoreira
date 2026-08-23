@@ -14,6 +14,11 @@ declare(strict_types=1);
  * o cadastro de quem chegou sem celular.
  */
 
+require_once __DIR__ . '/eventos-comum.php';  // o modelo do encontro e da presença
+require_once __DIR__ . '/inscricoes-comum.php';  // nome_funcao()
+require_once __DIR__ . '/layout.php';  // cabecalho_pagina(), barra_abas(), abrir_modal() — a moldura
+require_once __DIR__ . '/sessao.php';  // h(), limpar_texto(), pode(), combina_com() — o núcleo
+
 /**
  * A lista de presença do encontro.
  *
