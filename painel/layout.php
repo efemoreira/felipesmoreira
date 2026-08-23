@@ -1008,15 +1008,23 @@ function menu_acoes(array $itens, string $rotulo = 'Ações'): void
         <span class="menu-rotulo"><?= h($rotulo) ?></span>
         <span class="menu-pontos" aria-hidden="true">&#8942;</span>
       </summary>
+      <?php /* Cada item é o MESMO botão do resto do painel — `.btn .btn-mini`,
+               com borda, sombra dura e o hover de sempre —, só esticado na
+               largura da gaveta e alinhado à esquerda. Item de menu desenhado
+               como texto empilhado não parece tocável: a pessoa lê uma lista
+               onde devia ver botões, e para para descobrir onde clicar. */ ?>
       <div class="menu-caixa">
         <?php foreach ($itens as $item): ?>
-          <?php $classe = 'menu-item' . (!empty($item['risco']) ? ' menu-risco' : ''); ?>
+          <?php $classe = 'btn btn-mini menu-item' . (!empty($item['risco']) ? ' btn-risco' : ''); ?>
           <?php if (isset($item['url'])): ?>
             <a class="<?= $classe ?>" href="<?= h($item['url']) ?>"
                <?= isset($item['modal']) ? 'data-modal="' . h($item['modal']) . '"' : '' ?>
                <?= !empty($item['novaAba']) ? 'target="_blank" rel="noopener"' : '' ?>><?= h($item['texto']) ?></a>
           <?php else: ?>
-            <form method="post"<?= isset($item['confirmar']) ? ' onsubmit="return confirm(' . texto_js($item['confirmar']) . ')"' : '' ?>>
+            <?php /* `menu-fim` é o traço acima do que não se desfaz: ele mora no
+                     <form>, e não no botão, porque o botão já tem borda
+                     própria — duas bordas encostadas viram uma linha grossa. */ ?>
+            <form method="post" class="<?= !empty($item['risco']) ? 'menu-fim' : '' ?>"<?= isset($item['confirmar']) ? ' onsubmit="return confirm(' . texto_js($item['confirmar']) . ')"' : '' ?>>
               <input type="hidden" name="csrf" value="<?= h(token()) ?>">
               <?php foreach (($item['campos'] ?? []) as $nome => $valor): ?>
                 <input type="hidden" name="<?= h($nome) ?>" value="<?= h((string) $valor) ?>">

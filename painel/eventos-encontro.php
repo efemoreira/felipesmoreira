@@ -169,11 +169,11 @@ function desenhar_resumo_do_encontro(array $aberto, array $vencidos, bool $coord
         <dd><?= $preparo['feito'] ?><small>/<?= $preparo['total'] ?></small></dd>
       </div>
       <div>
-        <dt>Confirmaram</dt>
+        <dt>RSVP</dt>
         <dd><?= $confirmaram ?><?php if ($aberto['publicoEsperado'] > 0): ?><small>/<?= (int) $aberto['publicoEsperado'] ?> esperados</small><?php endif; ?></dd>
       </div>
       <div>
-        <dt>Compareceram</dt>
+        <dt>Check-in</dt>
         <dd><?= $compareceram ?></dd>
       </div>
       <?php /* O follow-up é da coordenação: quem só executa não vê telefone nem

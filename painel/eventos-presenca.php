@@ -74,8 +74,8 @@ function desenhar_presenca(array $aberto, array $eu): void
         <div class="qr-texto">
           <p class="dica" style="margin:0 0 10px">
             <strong>QR da mesa da Recepção.</strong> Imprima e cole na entrada: quem
-            chega se cadastra no próprio celular, e a lista já sai organizada — sem
-            fila para alguém digitar depois.
+            chega faz o <strong>check-in</strong> no próprio celular, e a lista já sai
+            organizada — sem fila para alguém digitar depois.
           </p>
           <p class="provisoria card-arquivo"><?= h($urlPresenca) ?></p>
           <p class="dica">
@@ -91,14 +91,15 @@ function desenhar_presenca(array $aberto, array $eu): void
     <?php if ($aberto['tokenConfirmacao'] !== ''): ?>
       <?php $urlConfirma = url_confirmacao($aberto); ?>
       <details class="decidir" style="margin:0 0 22px">
-        <summary class="btn">Link de confirmação, para mandar no grupo</summary>
+        <summary class="btn">Link de RSVP, para mandar no grupo</summary>
         <div class="decidir-corpo">
           <p class="dica" style="margin:0 0 12px">
-            <strong>É um link diferente do QR da mesa</strong>, de propósito. Este
-            confirma presença ANTES; o do QR faz o <strong>check-in</strong> na porta.
-            Com um link só, quem recebesse a mensagem no grupo se marcaria como
-            presente sem sair de casa — e é a lista de presença que alimenta o
-            follow-up.
+            <strong>É um link diferente do QR da mesa</strong>, de propósito. Este é o
+            <strong>RSVP</strong>, que roda ANTES; o do QR é o <strong>check-in</strong>
+            da porta. Com um link só, quem recebesse a mensagem no grupo se marcaria
+            como presente sem sair de casa — e é o check-in que alimenta o follow-up.
+            (Para quem recebe, o link não diz “RSVP”: na tela dele está escrito
+            “confirmação prévia”, que é a palavra de quem não organiza evento.)
           </p>
           <p class="dica" style="margin:0 0 12px">
             Quem já veio a algum encontro, já se inscreveu ou já tem conta digita
@@ -198,10 +199,10 @@ function desenhar_presenca(array $aberto, array $eu): void
         }
       ?>
       <p style="margin:0 0 14px">
-        <span class="selo selo-ok"><?= $contas['veio'] ?> vieram</span>
-        <span class="selo"><?= $contas['confirmou'] ?> confirmaram</span>
+        <span class="selo selo-ok"><?= $contas['veio'] ?> fizeram check-in</span>
+        <span class="selo"><?= $contas['confirmou'] ?> no RSVP</span>
         <?php if ($contas['faltou'] > 0): ?>
-          <span class="selo selo-off"><?= $contas['faltou'] ?> confirmaram e faltaram</span>
+          <span class="selo selo-off"><?= $contas['faltou'] ?> do RSVP faltaram</span>
         <?php endif; ?>
         <?php if ($contas['convidado'] > 0): ?>
           <span class="selo selo-cinza"><?= $contas['convidado'] ?> só convidados</span>
@@ -211,7 +212,7 @@ function desenhar_presenca(array $aberto, array $eu): void
       <div class="rolagem cartoes">
         <table class="tabela">
           <thead>
-            <tr><th>Quem</th><th>Confirmou</th><th>Compareceu</th><th>O que é</th><th></th></tr>
+            <tr><th>Quem</th><th>RSVP</th><th>Check-in</th><th>O que é</th><th></th></tr>
           </thead>
           <tbody>
             <?php foreach ($pessoas as $l): ?>
@@ -243,8 +244,11 @@ function desenhar_presenca(array $aberto, array $eu): void
                 <?php /* No celular os dois viram meio cartão cada um, lado a lado:
                          eles só se leem em par — "confirmou e não veio" é a
                          pergunta, e não "confirmou". */ ?>
-                <?php foreach (['confirmou', 'compareceu'] as $campo): ?>
-                  <td class="meia" data-rotulo="<?= h(ucfirst($campo)) ?>">
+                <?php /* O nome do campo é o do dado (`confirmou`/`compareceu`, que é o
+                         que o POST grava); o rótulo é o do ofício. Trocar um não
+                         mexe no outro. */ ?>
+                <?php foreach (['confirmou' => 'RSVP', 'compareceu' => 'Check-in'] as $campo => $rotulo): ?>
+                  <td class="meia" data-rotulo="<?= h($rotulo) ?>">
                     <form method="post">
                       <input type="hidden" name="csrf" value="<?= h(token()) ?>">
                       <input type="hidden" name="id" value="<?= h($aberto['id']) ?>">
