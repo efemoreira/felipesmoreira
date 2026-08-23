@@ -158,13 +158,13 @@ function tela_de_agenda(?string $aviso, ?string $sucesso, ?array $rascunho): voi
                     <?php endif; ?>
                   </td>
                   <?php /* Os dois `if` colados nas bordas do <td>: encontro presencial
-                           sem confirmação não tem nada a dizer nesta coluna, e é um
+                           sem RSVP não tem nada a dizer nesta coluna, e é um
                            <td> vazio de verdade que o `.cartoes td:empty` some
                            no celular em vez de virar um buraco no cartão. */ ?>
                   <td><?php if (($it['plataforma'] ?? '') !== ''): ?>
                     <span class="selo"><?= h(PLATAFORMAS[$it['plataforma']] ?? $it['plataforma']) ?></span>
                   <?php endif; ?><?php if (!empty($it['confirmar'])): ?>
-                    <span class="selo selo-ok">aceita confirmação</span>
+                    <span class="selo selo-ok">aceita RSVP</span>
                   <?php endif; ?></td>
                   <td class="rodape">
                     <div class="acoes-celula">

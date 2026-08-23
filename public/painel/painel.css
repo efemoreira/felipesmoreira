@@ -695,33 +695,28 @@ input[type=file]::file-selector-button {
   clip:rect(0 0 0 0); clip-path:inset(50%); white-space:nowrap;
 }
 .menu-caixa {
-  position:absolute; top:calc(100% + 6px); right:0; z-index:30;
-  min-width:214px; padding:6px; display:flex; flex-direction:column; gap:2px;
-  background:var(--papel); border:3px solid var(--linha);
+  position:absolute; top:calc(100% + 8px); right:0; z-index:30;
+  min-width:236px; padding:10px; display:flex; flex-direction:column; gap:8px;
+  background:var(--superficie); border:3px solid var(--linha);
   box-shadow:6px 6px 0 var(--sombra);
 }
-/* aqui o <form> de uma ação é a LINHA do menu, e não um bloco em volta dela */
+/* aqui o <form> de uma ação é a LINHA da gaveta, e não um bloco em volta dela */
 .menu-caixa form { display:block; margin:0; }
-.menu-item {
-  display:flex; align-items:center; width:100%; min-height:44px; cursor:pointer;
-  padding:10px 12px; text-align:left; text-decoration:none;
-  font:400 12.5px/1.3 var(--etiqueta); letter-spacing:1.3px; text-transform:uppercase;
-  color:var(--texto); background:transparent; border:0;
-}
-.menu-item:hover { background:var(--realce-3); }
-.menu-item:focus-visible { outline:3px solid var(--foco-borda); outline-offset:-3px; }
-/* Num menu todos os itens têm o mesmo tamanho e o mesmo peso: a cor e o traço
-   acima são a única diferença que sobra entre "corrigir" e "apagar". */
-.menu-risco { color:var(--erro); }
-.menu-risco:hover { background:var(--erro-fundo-2); }
-.menu-caixa .menu-risco { margin-top:4px; padding-top:12px; border-top:2px dashed var(--linha); }
+/* O ITEM É UM BOTÃO, e não uma linha de texto: `.btn .btn-mini` inteiro —
+   borda, sombra dura, hover que levanta —, só esticado na largura da gaveta e
+   alinhado à esquerda, porque em pilha se lê pela primeira letra. Item de menu
+   sem moldura obriga quem chega a descobrir onde termina um e começa o outro. */
+.menu-item { width:100%; justify-content:flex-start; text-align:left; }
+/* O traço acima do que não se desfaz. Mora no <form>, e não no botão: o botão
+   já tem borda, e duas encostadas viram uma linha grossa sem sentido. */
+.menu-caixa .menu-fim { margin-top:3px; padding-top:11px; border-top:2px dashed var(--linha); }
 
 @media (max-width:700px) {
   /* No cartão o botão ocupa a largura da linha, e três pontinhos sozinhos no
      meio de um bloco largo não dizem o que fazem: aqui o rótulo aparece. */
   .menu-botao { justify-content:space-between; }
   .menu-rotulo { position:static; width:auto; height:auto; clip:auto; clip-path:none; }
-  .menu-caixa { min-width:min(264px, calc(100vw - 32px)); }
+  .menu-caixa { min-width:min(280px, calc(100vw - 32px)); }
 }
 
 /* ---- selos ---- */

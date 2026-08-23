@@ -120,6 +120,7 @@ Regras:
   - `barra_busca()`
   - `barra_filtros()`
   - `botao_modal()` / `abrir_modal()` / `fechar_modal()`
+  - `menu_acoes()` — os três pontinhos da linha de lista
 - Formulário longo no painel usa `data-rascunho`; o rascunho nunca se aplica sozinho.
 - A linha do tempo é derivada dos carimbos existentes; não crie `dados/atividade.php`.
 
@@ -130,6 +131,7 @@ Regras:
 - Tabelas operacionais no painel são suspeitas: se escondem ação ou contexto no celular, devem virar cards/listas.
 - **Toda tabela do painel mora em `<div class="rolagem cartoes">`.** `.rolagem` segura o desktop; `.cartoes` desmonta a tabela em cartões abaixo de 700 px. Cada `<td>` leva `data-rotulo` com o texto do `<th>` — no cartão não há cabeçalho para olhar. `.meia`/`.terco` põem blocos lado a lado, `.tarde` desce o secundário e `.rodape` separa as ações. Um HTML só: não escreva uma segunda árvore para o celular.
 - Ações dentro de uma célula vão em `<div class="acoes-celula">`, não em `<form style="display:inline">`.
+- **Duas ações ou mais na linha viram menu**: `menu_acoes()` desenha os três pontinhos e guarda os itens (links, POSTs com csrf, item de risco). Um botão visível por linha é o teto — `testes/contrato/mobile.test.ts` prende a regra.
 - `testes/contrato/mobile.test.ts` prende a regra — tabela nova sem `cartoes` quebra o teste.
 - Alvo mínimo de toque: 44 px.
 - No site público, inputs ficam com mínimo de 16 px para evitar zoom do Safari.

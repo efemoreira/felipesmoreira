@@ -94,3 +94,48 @@ describe("celular: a tabela do painel vira cartão", () => {
     assert.deepEqual(semRotulo, [], `célula pela metade sem rótulo:\n  ${semRotulo.join("\n  ")}`);
   });
 });
+
+/**
+ * A COLUNA DE AÇÕES DA LINHA.
+ *
+ * Três botões lado a lado numa linha de lista são três decisões pedidas ao
+ * mesmo tempo: no desktop a linha passa a ser lida pela coluna da direita, e no
+ * cartão do celular o `.rodape` vira uma pilha maior que o dado que ela
+ * acompanha. O padrão comum resolve com um alvo só — `menu_acoes()`, os três
+ * pontinhos —, e este teste é para a lista que alguém escrever daqui a três
+ * meses copiando a linha errada de uma tela antiga.
+ */
+describe("lista: as ações da linha moram atrás dos três pontinhos", () => {
+  test("nenhuma célula de ações voltou a ter uma fileira de botões", () => {
+    const cheias: string[] = [];
+
+    for (const arquivo of TELAS) {
+      const html = ler(arquivo);
+      for (const pedaco of html.split('<div class="acoes-celula">').slice(1)) {
+        const celula = pedaco.split("</div>")[0];
+        /* Um botão visível é o teto: ele é a ação principal da linha ("Abrir"),
+           e sozinho não compete com nada. Do segundo em diante é menu. */
+        const botoes = celula.match(/class="btn btn-mini/g) ?? [];
+        if (botoes.length > 1) cheias.push(`${arquivo} (${botoes.length} botões numa célula)`);
+      }
+    }
+
+    assert.deepEqual(
+      cheias,
+      [],
+      "estas células enfileiram botões em vez de usar `menu_acoes()`:\n  " + cheias.join("\n  "),
+    );
+  });
+
+  test("o menu continua tendo CSS e script", () => {
+    const css = readFileSync(path.join(PAINEL, "painel.css"), "utf8");
+    const layout = ler("layout.php");
+
+    /* Sem a caixa, o <details> abre um bloco solto no meio da célula; sem o
+       script, ela sai recortada pela `.rolagem` da tabela — que é
+       `overflow-x:auto`, e overflow num eixo recorta os dois. */
+    assert.match(css, /\.menu-caixa \{/, "o desenho da caixa do menu sumiu do painel.css");
+    assert.match(css, /\.menu-rotulo \{ position:static/, "no celular o menu voltou a ser três pontinhos sem nome");
+    assert.match(layout, /details\.menu-acoes/, "o script que tira a caixa do recorte da .rolagem sumiu");
+  });
+});

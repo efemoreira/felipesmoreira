@@ -63,10 +63,15 @@ export const botaoEscolhaFraco: React.CSSProperties = {
  * no topo, grande, antes de qualquer campo — e o verbo do botão no fim repete a
  * mesma palavra, para quem rolou direto.
  *
- * As palavras são as que a pessoa já conhece de fora daqui: "confirmar
- * presença" é o RSVP do convite, "check-in" é o que ela faz na porta do show e
- * no balcão do aeroporto. Rótulo que nomeia o resultado no vocabulário de quem
- * lê é o que faz alguém tocar sem parar para pensar.
+ * As palavras são as que a pessoa já conhece de fora daqui: "confirmação
+ * prévia" é o RSVP do convite, "check-in" é o que ela faz na porta do show e no
+ * balcão do aeroporto. Rótulo que nomeia o resultado no vocabulário de quem lê
+ * é o que faz alguém tocar sem parar para pensar.
+ *
+ * NO PAINEL a mesma coisa se chama RSVP, e é de propósito: lá quem lê organiza
+ * evento e RSVP é a palavra do ofício, curta o bastante para virar coluna de
+ * tabela. Aqui não — sigla em francês não é palavra de quem chega na porta do
+ * encontro. Muda o rótulo, não muda o par.
  */
 export const Modo: React.FC<{ confirmando: boolean }> = ({ confirmando }) => (
   <p
@@ -86,7 +91,7 @@ export const Modo: React.FC<{ confirmando: boolean }> = ({ confirmando }) => (
     }}
   >
     <Icon name={confirmando ? "calendar" : "flag"} size={16} />
-    {confirmando ? "Confirmar presença" : "Check-in na entrada"}
+    {confirmando ? "Confirmação prévia" : "Check-in na entrada"}
   </p>
 );
 
@@ -250,7 +255,7 @@ export const HeroDoEncontro: React.FC<{
             }}
           >
             <Icon name={confirmando ? "calendar" : "flag"} size={15} />
-            {confirmando ? "Confirmar presença" : "Check-in"}
+            {confirmando ? "Confirmação prévia" : "Check-in"}
           </span>
         </div>
 
