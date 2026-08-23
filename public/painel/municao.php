@@ -368,20 +368,23 @@ abrir_pagina('Munição');
                 </td>
                 <td class="rodape">
                   <div class="acoes-celula">
-                    <?php botao_modal('editar-peca', 'Corrigir', 'editar=' . urlencode($pc['id']), 'btn btn-mini'); ?>
-                    <form method="post">
-                      <input type="hidden" name="csrf" value="<?= h(token()) ?>">
-                      <input type="hidden" name="id" value="<?= h($pc['id']) ?>">
-                      <button class="btn btn-mini" name="acao" value="kit-publicar" type="submit">
-                        <?= $pc['publicada'] ? 'Recolher' : 'Publicar' ?>
-                      </button>
-                    </form>
-                    <form method="post"
-                          onsubmit="return confirm('Apagar esta peça?')">
-                      <input type="hidden" name="csrf" value="<?= h(token()) ?>">
-                      <input type="hidden" name="id" value="<?= h($pc['id']) ?>">
-                      <button class="btn btn-mini btn-risco" name="acao" value="kit-apagar" type="submit">Apagar</button>
-                    </form>
+                    <?php /* Três botões viravam a coluna mais pesada da lista, e a peça
+                             — que é o que se lê aqui — ficava em segundo plano. */ ?>
+                    <?php menu_acoes([
+                        ['texto' => 'Corrigir', 'url' => '?editar=' . urlencode($pc['id']), 'modal' => 'editar-peca'],
+                        [
+                            'texto'  => $pc['publicada'] ? 'Recolher do site' : 'Publicar no site',
+                            'acao'   => 'kit-publicar',
+                            'campos' => ['id' => $pc['id']],
+                        ],
+                        [
+                            'texto'     => 'Apagar',
+                            'acao'      => 'kit-apagar',
+                            'campos'    => ['id' => $pc['id']],
+                            'confirmar' => 'Apagar esta peça?',
+                            'risco'     => true,
+                        ],
+                    ]); ?>
                   </div>
                 </td>
               </tr>

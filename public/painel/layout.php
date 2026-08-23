@@ -448,6 +448,69 @@ function fechar_pagina(): void
             caixa.showModal();
           });
 
+          /* O MENU DE TRÊS PONTINHOS.
+
+             O <details> já abre e fecha sozinho; este trecho conserta as três
+             coisas que ele não faz. A primeira é fechar o vizinho — dois menus
+             abertos ao mesmo tempo é a lista com duas colunas de ações de
+             novo. A segunda é Esc e clique fora, que todo menu do mundo tem.
+
+             A terceira é o recorte: `.rolagem` é `overflow-x:auto`, e overflow
+             num eixo recorta os dois — a caixa da última linha sairia cortada
+             pela borda da tabela. `position:fixed`, medido na hora da abertura,
+             tira a caixa do recorte sem tirá-la de dentro do <details>, que é
+             quem guarda o estado e a semântica. */
+          var menus = document.querySelectorAll('details.menu-acoes');
+          function fecharMenus(exceto) {
+            menus.forEach(function (m) { if (m !== exceto) m.open = false; });
+          }
+          menus.forEach(function (menu) {
+            var botao = menu.querySelector('summary');
+            var caixa = menu.querySelector('.menu-caixa');
+            if (!botao || !caixa) return;
+
+            menu.addEventListener('toggle', function () {
+              if (!menu.open) {
+                caixa.removeAttribute('style');
+                return;
+              }
+              fecharMenus(menu);
+
+              var r = botao.getBoundingClientRect();
+              /* Zerado antes de medir: a caixa precisa estar em `fixed` para
+                 as medidas valerem, e sem left/top ela ficaria onde o
+                 `absolute` do CSS a tinha deixado. */
+              caixa.style.position = 'fixed';
+              caixa.style.right = 'auto';
+              caixa.style.left = '0px';
+              caixa.style.top = '0px';
+              var largura = caixa.offsetWidth;
+              var altura = caixa.offsetHeight;
+              /* Alinhada pela direita do botão, e trazida para dentro da tela
+                 nas duas pontas: o menu da última coluna encosta na margem. */
+              var x = Math.min(r.right - largura, window.innerWidth - largura - 8);
+              var y = r.bottom + 6;
+              /* Sem espaço embaixo (a última linha da lista), abre para cima. */
+              if (y + altura > window.innerHeight - 8) y = Math.max(8, r.top - altura - 6);
+              caixa.style.left = Math.max(8, x) + 'px';
+              caixa.style.top = y + 'px';
+            });
+          });
+          if (menus.length) {
+            document.addEventListener('click', function (e) {
+              menus.forEach(function (m) {
+                if (m.open && !m.contains(e.target)) m.open = false;
+              });
+            });
+            document.addEventListener('keydown', function (e) {
+              if (e.key === 'Escape') fecharMenus(null);
+            });
+            /* Rolar com o menu aberto arrastaria a caixa fixa para longe do
+               botão que a abriu. Fechar é mais honesto do que persegui-lo. */
+            window.addEventListener('scroll', function () { fecharMenus(null); }, true);
+            window.addEventListener('resize', function () { fecharMenus(null); });
+          }
+
           /* A peneira dos paredões de checkbox. Esconde o que não casa, sem
              tocar no que está marcado e sem recarregar — recarregar no meio da
              marcação jogaria fora tudo que ainda não foi salvo.
@@ -902,6 +965,69 @@ function abrir_modal(string $id, string $titulo, bool $aberto = false): void
 function fechar_modal(): void
 {
     echo '</dialog>';
+}
+
+/**
+ * O MENU DE TRÊS PONTINHOS de uma linha de lista.
+ *
+ * Três botões lado a lado numa linha de tabela são três decisões pedidas ao
+ * mesmo tempo, e a linha inteira passa a ser lida pela coluna da direita. No
+ * celular fica pior: o `.rodape` do cartão vira uma pilha de blocos maior que o
+ * dado que ela acompanha. O padrão comum resolve com um alvo só — os pontinhos
+ * abrem o resto, e a linha volta a ser o nome de quem está nela.
+ *
+ * `<details>` de propósito, e não `popover`: sem JavaScript ele continua
+ * abrindo, a caixa cai embaixo do botão e os itens continuam sendo links e
+ * formulários de verdade. O script de `fechar_pagina()` só melhora o que já
+ * funciona — fecha o vizinho, fecha no Esc e no clique fora, e tira a caixa do
+ * recorte da `.rolagem` com `position:fixed`.
+ *
+ * Cada item é uma destas três formas:
+ *
+ *   ['texto' => 'Abrir',  'url' => '?p=7']                          → link
+ *   ['texto' => 'Editar', 'url' => '?editar=7', 'modal' => 'caixa'] → link que abre modal
+ *   ['texto' => 'Apagar', 'acao' => 'apagar', 'campos' => ['id' => '7'],
+ *    'confirmar' => 'Apagar mesmo?', 'risco' => true]               → POST com csrf
+ *
+ * `risco` pinta o item com a cor de erro e desce um traço antes dele: o que não
+ * se desfaz não fica encostado no que se faz todo dia — e num menu, onde os
+ * itens têm o mesmo tamanho, essa é a única diferença que sobra.
+ */
+function menu_acoes(array $itens, string $rotulo = 'Ações'): void
+{
+    if ($itens === []) {
+        return;
+    }
+    ?>
+    <details class="menu-acoes">
+      <?php /* O rótulo existe para o leitor de tela e para o celular: no
+               desktop ele é `.nav-sr` (lido, não visto) e os pontinhos bastam;
+               no cartão, onde o botão ocupa a largura toda, três pontinhos
+               sozinhos no meio de um bloco não dizem o que fazem. */ ?>
+      <summary class="btn btn-mini menu-botao" title="<?= h($rotulo) ?>">
+        <span class="menu-rotulo"><?= h($rotulo) ?></span>
+        <span class="menu-pontos" aria-hidden="true">&#8942;</span>
+      </summary>
+      <div class="menu-caixa">
+        <?php foreach ($itens as $item): ?>
+          <?php $classe = 'menu-item' . (!empty($item['risco']) ? ' menu-risco' : ''); ?>
+          <?php if (isset($item['url'])): ?>
+            <a class="<?= $classe ?>" href="<?= h($item['url']) ?>"
+               <?= isset($item['modal']) ? 'data-modal="' . h($item['modal']) . '"' : '' ?>
+               <?= !empty($item['novaAba']) ? 'target="_blank" rel="noopener"' : '' ?>><?= h($item['texto']) ?></a>
+          <?php else: ?>
+            <form method="post"<?= isset($item['confirmar']) ? ' onsubmit="return confirm(' . texto_js($item['confirmar']) . ')"' : '' ?>>
+              <input type="hidden" name="csrf" value="<?= h(token()) ?>">
+              <?php foreach (($item['campos'] ?? []) as $nome => $valor): ?>
+                <input type="hidden" name="<?= h($nome) ?>" value="<?= h((string) $valor) ?>">
+              <?php endforeach; ?>
+              <button class="<?= $classe ?>" type="submit" name="acao" value="<?= h($item['acao']) ?>"><?= h($item['texto']) ?></button>
+            </form>
+          <?php endif; ?>
+        <?php endforeach; ?>
+      </div>
+    </details>
+    <?php
 }
 
 /**

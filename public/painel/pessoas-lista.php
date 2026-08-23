@@ -238,8 +238,10 @@ abrir_pagina('Pessoas');
                 <td class="meia" data-rotulo="Encontros"><?= count(encontros_da_pessoa($p['id'])) ?: '—' ?></td>
                 <td class="tarde">
                   <div class="acoes-celula">
-                    <a class="btn btn-mini" href="?p=<?= h($p['id']) ?>#ficha">Abrir</a>
-                    <a class="btn btn-mini" data-modal="editar-pessoa" href="?editar=<?= h($p['id']) ?>">Editar</a>
+                    <?php menu_acoes([
+                        ['texto' => 'Abrir a ficha', 'url' => '?p=' . urlencode($p['id']) . '#ficha'],
+                        ['texto' => 'Editar', 'url' => '?editar=' . urlencode($p['id']), 'modal' => 'editar-pessoa'],
+                    ]); ?>
                   </div>
                 </td>
               </tr>

@@ -11,7 +11,7 @@ import { C, FONT_ALFA, FONT_ELITE, FONT_BITTER, borda, sombra } from "@/lib/them
  * mão só. Tudo aqui é desenho e nada é regra: quem decide o que acontece é o
  * `PresencaClient`, e é lá que se olha quando alguém não consegue dar presença.
  *
- * A peça mais importante é a `Modo`: os dois links (o QR da mesa e o "vou
+ * A peça mais importante é a `Modo`: os dois links (o QR da mesa e o de
  * nesse" que circula no grupo) levam à mesma rota e se parecem, e confundi-los
  * é o defeito que ela existe para evitar — quem abre o link do grupo em casa
  * acha que está "dando presença", e quem lê o QR na porta acha que só está
@@ -80,7 +80,7 @@ export const Modo: React.FC<{ confirmando: boolean }> = ({ confirmando }) => (
     }}
   >
     <Icon name={confirmando ? "calendar" : "flag"} size={16} />
-    {confirmando ? "Confirmar que eu vou" : "Cheguei no encontro"}
+    {confirmando ? "Confirmar presença" : "Check-in na entrada"}
   </p>
 );
 
@@ -97,13 +97,13 @@ export const ModoExplica: React.FC<{ confirmando: boolean }> = ({ confirmando })
   <p style={{ ...textoP, margin: "0 0 20px", fontSize: 14.5, opacity: 0.85 }}>
     {confirmando ? (
       <>
-        Isto <strong>não</strong> é a lista de presença: é o aviso de que você
-        pretende ir. No dia, quem estiver lá lê o QR na entrada.
+        Aqui você avisa que <strong>pretende ir</strong> — é o que a gente usa para
+        preparar o espaço. No dia, o <strong>check-in</strong> é no QR da entrada.
       </>
     ) : (
       <>
-        Esta é a <strong>lista de presença</strong>, e vale para quem está aqui
-        agora. Só avisando que pretende vir? Use o link do grupo.
+        Este é o <strong>check-in da entrada</strong>: ele registra que você está
+        aqui, agora. Só quer avisar que pretende ir? Use o link do grupo.
       </>
     )}
   </p>
@@ -244,7 +244,7 @@ export const HeroDoEncontro: React.FC<{
             }}
           >
             <Icon name={confirmando ? "calendar" : "flag"} size={15} />
-            {confirmando ? "Aviso de que vou" : "Lista de presença"}
+            {confirmando ? "Confirmar presença" : "Check-in"}
           </span>
         </div>
 
