@@ -114,7 +114,7 @@ export const ModoExplica: React.FC<{ confirmando: boolean }> = ({ confirmando })
     ) : (
       <>
         Este é o <strong>check-in da entrada</strong>: ele registra que você está
-        aqui, agora. Só quer avisar que pretende ir? Use o link do grupo.
+        aqui, agora.
       </>
     )}
   </p>
