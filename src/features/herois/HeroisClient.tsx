@@ -2,7 +2,7 @@
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { Icon, IconName } from "@/components/icons";
-import { BORDA, C, FONT_ALFA, FONT_BITTER, FONT_ELITE, borda } from "@/lib/theme";
+import { BORDA, C, FONT_ALFA, FONT_BITTER, FONT_ELITE, borda, sombra, sombraErguida, sombraAfundada, SOMBRA } from "@/lib/theme";
 import { heroes, type Hero } from "./data";
 
 /* textura de folheto: hachuras leves de xilogravura sobre o papel */
@@ -55,7 +55,7 @@ const periodChip = (accent: string): React.CSSProperties => ({
 const fieldStyle: React.CSSProperties = {
   background: C.cream,
   border: borda(),
-  boxShadow: "3px 3px 0 rgba(24,18,3,.28)",
+  boxShadow: sombra("rente"),
   padding: "10px 12px",
   /* 16px é o mínimo que impede o iPhone de dar zoom ao focar o campo */
   fontSize: 16,
@@ -119,10 +119,10 @@ export default function HeroisClient() {
         .h-overlay { animation: hFadeIn .25s ease-out }
         .h-drawer { animation: hSlideIn .35s cubic-bezier(.22, 1.1, .35, 1) }
         .h-card { transition: transform .12s ease, box-shadow .12s ease; cursor: pointer }
-        .h-card:hover { transform: translate(-2px,-2px); box-shadow: 6px 6px 0 rgba(24,18,3,.3) !important }
-        .h-card:active { transform: translate(1px,1px); box-shadow: 2px 2px 0 rgba(24,18,3,.3) !important }
+        .h-card:hover { transform: translate(-2px,-2px); box-shadow: ${sombraErguida("cartao")} !important }
+        .h-card:active { transform: translate(2px,2px); box-shadow: ${sombraAfundada("cartao")} !important }
         .h-btn { transition: transform .12s ease, box-shadow .12s ease }
-        .h-btn:hover { transform: translate(-1px,-1px); box-shadow: 4px 4px 0 rgba(24,18,3,.3) !important }
+        .h-btn:hover { transform: translate(-2px,-2px); box-shadow: ${sombraErguida("rente")} !important }
         .h-card:focus-visible, .h-btn:focus-visible { outline: ${BORDA}px solid ${C.goldDim}; outline-offset: 3px }
         .h-field:focus { outline: ${BORDA}px solid ${C.gold}; outline-offset: 0 }
         @media (prefers-reduced-motion: reduce) {
@@ -150,7 +150,7 @@ export default function HeroisClient() {
               color: C.ink,
               background: C.cream,
               border: borda(),
-              boxShadow: "3px 3px 0 rgba(24,18,3,.28)",
+              boxShadow: sombra("rente"),
               padding: "11px 16px",
               minHeight: 44,
               marginBottom: 22,
@@ -170,7 +170,7 @@ export default function HeroisClient() {
               color: C.ink,
               background: C.gold,
               padding: "4px 14px",
-              boxShadow: "3px 3px 0 rgba(24,18,3,.3)",
+              boxShadow: sombra("rente"),
               margin: "0 0 12px",
             }}
           >
@@ -283,9 +283,9 @@ export default function HeroisClient() {
                   fontFamily: "inherit",
                   background: C.cream,
                   border: borda(),
-                  boxShadow: active
-                    ? `5px 5px 0 ${m.accent}`
-                    : "4px 4px 0 rgba(24,18,3,.28)",
+                  /* o aceso muda de COR, não de altura: 1px de diferença
+                     ninguém vê, a cor do herói se vê de longe */
+                  boxShadow: active ? sombra("cartao", m.accent) : sombra("cartao"),
                   padding: "12px 14px",
                   color: C.ink,
                 }}
@@ -365,7 +365,8 @@ export default function HeroisClient() {
                 width: "min(100%, 520px)",
                 background: `${HATCH}, ${C.paper}`,
                 borderLeft: `4px solid ${C.ink}`,
-                boxShadow: "-6px 0 0 rgba(24,18,3,.3)",
+                /* a gaveta entra pela direita: a sombra dela cai para o lado, não na diagonal */
+                boxShadow: `-${SOMBRA.alto}px 0 0 ${C.sombra}`,
                 overflowY: "auto",
                 /* impede o scroll de "vazar" para a página atrás no iOS */
                 overscrollBehavior: "contain",
@@ -442,7 +443,7 @@ export default function HeroisClient() {
                     placeItems: "center",
                     background: C.gold,
                     border: borda(),
-                    boxShadow: "3px 3px 0 rgba(24,18,3,.28)",
+                    boxShadow: sombra("rente"),
                     color: C.ink,
                     cursor: "pointer",
                     padding: 0,

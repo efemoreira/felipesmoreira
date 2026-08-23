@@ -2,7 +2,7 @@
 import React, { useEffect, useRef } from "react";
 import Link from "next/link";
 import { Icon, IconName } from "@/components/icons";
-import { BORDA, C, FONT_ALFA, FONT_ELITE, FONT_BITTER, borda, TEXTO } from "@/lib/theme";
+import { BORDA, C, FONT_ALFA, FONT_ELITE, FONT_BITTER, borda, TEXTO, sombra, sombraErguida, sombraAfundada } from "@/lib/theme";
 import { escada, times, semana, fases, regras } from "./data";
 import { GRUPO_GERAL } from "@/lib/contato";
 
@@ -84,7 +84,7 @@ const Titulo: React.FC<{ chip: string; children: React.ReactNode; dark?: boolean
         color: C.ink,
         background: C.gold,
         padding: "4px 14px",
-        boxShadow: "3px 3px 0 rgba(24,18,3,.35)",
+        boxShadow: sombra("rente"),
         margin: "0 0 14px",
       }}
     >
@@ -214,7 +214,7 @@ const PlanoClient: React.FC = () => {
               color: C.ink,
               background: C.gold,
               padding: "4px 14px",
-              boxShadow: "3px 3px 0 rgba(24,18,3,.5)",
+              boxShadow: sombra("rente"),
               marginBottom: 16,
             }}
           >
@@ -258,7 +258,7 @@ const PlanoClient: React.FC = () => {
             style={{
               background: C.cream,
               border: borda(),
-              boxShadow: "6px 6px 0 rgba(24,18,3,.3)",
+              boxShadow: sombra("alto"),
               padding: "26px 26px",
               textAlign: "center",
             }}
@@ -347,7 +347,7 @@ const PlanoClient: React.FC = () => {
                   alignItems: "flex-start",
                   background: C.cream,
                   border: borda(),
-                  boxShadow: "4px 4px 0 rgba(24,18,3,.28)",
+                  boxShadow: sombra(),
                   padding: "14px 16px",
                   marginLeft: `min(${i * 5}%, ${i * 26}px)`,
                   transitionDelay: `${i * 0.1}s`,
@@ -386,7 +386,7 @@ const PlanoClient: React.FC = () => {
                 style={{
                   background: C.paper,
                   border: borda(),
-                  boxShadow: `5px 5px 0 rgba(0,0,0,.45)`,
+                  boxShadow: sombra("cartao", C.sombraNoite),
                   padding: "18px 18px 16px",
                   color: C.ink,
                   transitionDelay: `${i * 0.1}s`,
@@ -426,7 +426,7 @@ const PlanoClient: React.FC = () => {
                   gap: 14,
                   background: C.cream,
                   border: `2px solid ${C.ink}`,
-                  boxShadow: "3px 3px 0 rgba(24,18,3,.22)",
+                  boxShadow: sombra("rente"),
                   padding: "10px 14px",
                   transitionDelay: `${i * 0.07}s`,
                 }}
@@ -516,7 +516,7 @@ const PlanoClient: React.FC = () => {
                   background: i % 2 === 0 ? C.ink : C.gold,
                   color: i % 2 === 0 ? C.gold : C.ink,
                   border: borda(),
-                  boxShadow: "4px 4px 0 rgba(24,18,3,.3)",
+                  boxShadow: sombra(),
                   padding: "10px 16px",
                   transform: `rotate(${i % 2 === 0 ? -1.2 : 1.4}deg)`,
                   animationDelay: `${i * 0.09}s`,
@@ -622,7 +622,7 @@ const PlanoClient: React.FC = () => {
               textDecoration: "none",
               background: C.gold,
               border: borda(),
-              boxShadow: `6px 6px 0 ${C.ink}`,
+              boxShadow: sombra("alto", C.ink),
               color: C.ink,
               padding: "16px 26px",
             }}
@@ -676,7 +676,7 @@ const PlanoClient: React.FC = () => {
           60% { opacity: 1; transform: scale(.96) rotate(1.6deg); }
           100% { opacity: 1; transform: scale(1) rotate(0deg); }
         }
-        .p-tinta { display: block; width: 120px; height: 6px; margin: 14px auto 0; background: ${C.gold}; box-shadow: 2px 2px 0 rgba(24,18,3,.4); transform: scaleX(0); transform-origin: left; transition: transform .8s cubic-bezier(.7,0,.3,1) .15s; }
+        .p-tinta { display: block; width: 120px; height: 6px; margin: 14px auto 0; background: ${C.gold}; box-shadow: ${sombra("rente")}; transform: scaleX(0); transform-origin: left; transition: transform .8s cubic-bezier(.7,0,.3,1) .15s; }
         [data-reveal].in .p-tinta { transform: scaleX(1); }
         .p-garra path { stroke-dasharray: 1; stroke-dashoffset: 1; opacity: 0; transition: stroke-dashoffset .9s ease, opacity .3s ease; }
         [data-reveal].in .p-garra path { stroke-dashoffset: 0; opacity: 1; }
@@ -693,8 +693,8 @@ const PlanoClient: React.FC = () => {
         .p-roll { animation: pRoll 24s linear infinite; }
         @keyframes pRoll { to { transform: translateX(-50%); } }
         .p-cta { transition: transform .12s ease, box-shadow .12s ease; }
-        .p-cta:hover { transform: translate(-2px,-2px); box-shadow: 8px 8px 0 ${C.ink}; }
-        .p-cta:active { transform: translate(2px,2px); box-shadow: 3px 3px 0 ${C.ink}; }
+        .p-cta:hover { transform: translate(-2px,-2px); box-shadow: ${sombraErguida("alto", C.ink)}; }
+        .p-cta:active { transform: translate(2px,2px); box-shadow: ${sombraAfundada("alto", C.ink)}; }
         .p-cta:focus-visible { outline: ${BORDA}px solid ${C.cream}; outline-offset: 3px; }
         @media (prefers-reduced-motion: reduce) {
           [data-reveal], [data-reveal] .p-stagger, [data-reveal] .p-stamp, .p-tinta, .p-garra path { opacity: 1 !important; transform: none !important; transition: none !important; animation: none !important; stroke-dashoffset: 0 !important; }
@@ -718,7 +718,7 @@ const caminho: React.CSSProperties = {
   display: "block",
   background: "rgba(24,18,3,.72)",
   border: `2px solid ${C.ink}`,
-  boxShadow: "4px 4px 0 rgba(24,18,3,.45)",
+  boxShadow: sombra(),
   padding: "13px 16px",
 };
 const caminhoTag: React.CSSProperties = {

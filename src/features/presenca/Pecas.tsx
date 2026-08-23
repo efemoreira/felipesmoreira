@@ -2,7 +2,7 @@
 import React from "react";
 import Link from "next/link";
 import { Icon } from "@/components/icons";
-import { C, FONT_ALFA, FONT_ELITE, FONT_BITTER, borda } from "@/lib/theme";
+import { C, FONT_ALFA, FONT_ELITE, FONT_BITTER, borda, sombra } from "@/lib/theme";
 
 /**
  * AS PEÇAS de `/presenca` — a moldura, os avisos e os campos.
@@ -30,7 +30,7 @@ export const botaoOuro: React.CSSProperties = {
   background: C.gold,
   color: C.ink,
   border: borda(),
-  boxShadow: "5px 5px 0 rgba(24,18,3,.4)",
+  boxShadow: sombra(),
 };
 
 export const botaoEscolha: React.CSSProperties = {
@@ -173,7 +173,7 @@ export const Painel: React.FC<{ children?: React.ReactNode }> = ({ children }) =
       textAlign: "left",
       background: "rgba(7,7,8,.42)",
       border: borda("rgba(255,203,5,.35)"),
-      boxShadow: "7px 7px 0 rgba(24,18,3,.42)",
+      boxShadow: sombra("alto"),
       backdropFilter: "blur(2px)",
     }}
   >
@@ -206,7 +206,7 @@ export const HeroDoEncontro: React.FC<{
         margin: "0 auto 20px",
         textAlign: "left",
         border: borda(C.gold),
-        boxShadow: "8px 8px 0 rgba(24,18,3,.45)",
+        boxShadow: sombra("alto"),
         overflow: "hidden",
         background: "rgba(10,9,7,.6)",
       }}
@@ -322,7 +322,7 @@ export const Casca: React.FC<{ titulo: string; children?: React.ReactNode }> = (
           color: C.ink,
           background: C.gold,
           padding: "4px 14px",
-          boxShadow: "3px 3px 0 rgba(24,18,3,.5)",
+          boxShadow: sombra("rente"),
           marginBottom: 18,
         }}
       >

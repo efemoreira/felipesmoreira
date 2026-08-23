@@ -25,7 +25,7 @@ que faltavam por inteiro sairam.
 | 1. Testes de acao do painel | **feito** |
 | 2. Testes de navegador do funil publico | **parcial** — o que dava para prender sem navegador foi coberto; foco e erro de rede no DOM seguem pendentes |
 | 3. Cortar `inscricoes.php` | **feito** |
-| 4. Consolidar o estilo inline do lado Next | **parcial, e de proposito** — a moldura e o texto sairam; a sombra ficou, por ser decisao de desenho |
+| 4. Consolidar o estilo inline do lado Next | **feito** — moldura, texto e, agora, a escala da sombra dura |
 | 5. Relatorio de conversao por origem | **feito** |
 | 6. Ideias novas de produto | ainda nao |
 
@@ -125,10 +125,13 @@ Hoje sai de `borda()` / `BORDA`, em `@/lib/theme`. O texto de leitura
 
 **As duas trocas sairam com markup byte a byte identico nas 17 rotas.**
 
-> **A sombra dura NAO virou token, de proposito.** Ela aparece em 17 combinacoes
-> de deslocamento e opacidade — isso nao e repeticao, e deriva. Escolher uma
-> opacidade por deslocamento **muda o desenho** de varias pecas, e isso e decisao
-> de quem olha, nao refatoracao.
+> **A sombra dura virou token depois — e a decisao de desenho esta tomada.**
+> Ela aparecia em 17 combinacoes de deslocamento e opacidade, o que nao era
+> repeticao e sim deriva. A escolha: **uma opacidade so** (`C.sombra`), e a
+> altura carregada pelo deslocamento, em **tres degraus** — `rente` 3,
+> `cartao` 5, `alto` 8. Sai de `sombra()`, com `sombraErguida()` e
+> `sombraAfundada()` para hover e clique. Ver a secao "A escala da sombra dura",
+> mais abaixo.
 
 ### 5. O relatorio de conversao por origem
 
@@ -271,9 +274,9 @@ Fatos e Producao, e reduzir texto em contexto de uso rapido no celular.
 ### O lado Next
 
 A inscricao e a presenca ja estao bem divididas. Continuam pendentes de uma
-segunda passada: **home, programacao e aulas**. Com `borda()` e `TEXTO` no lugar,
-a proxima passada tem onde se apoiar — o que falta agora e decisao de desenho
-(a escala de sombra), e nao arrumacao.
+segunda passada: **home, programacao e aulas**. Com `borda()`, `TEXTO` e agora
+`sombra()` no lugar, a proxima passada tem onde se apoiar: a arrumacao de tokens
+acabou, e o que sobra e a divisao das telas.
 
 Na presença houve mais um passo já implementado: o fluxo de `/presenca` ganhou
 hero com imagem real do encontro quando houver, textura de fallback quando não
@@ -331,18 +334,12 @@ Saida esperada:
 - um painel que se usa inteiro no celular sem “puxar pro lado para descobrir” o
   resto da informacao.
 
-### 2. A escala da sombra dura
-
-Decisao de desenho, e a unica coisa que trava o token que falta em `theme.ts`.
-Escolher uma opacidade por deslocamento e depois aplicar — com a mesma prova de
-markup das outras duas trocas.
-
-### 3. Testes de navegador, se e quando
+### 2. Testes de navegador, se e quando
 
 So se a decisao sobre a dependencia mudar. O que sobrou sem cobertura e o foco
 depois da troca de passo e o erro de rede dentro do DOM.
 
-### 4. Segunda passada em home, programacao e aulas
+### 3. Segunda passada em home, programacao e aulas
 
 As tres telas publicas que ainda nao passaram pela divisao que a inscricao e a
 presenca ja tiveram.
@@ -350,7 +347,7 @@ presenca ja tiveram.
 Antes disso, vale uma checagem curta da presença já redesenhada, para decidir se
 o hero/banner entrou como melhoria real ou só como peso visual.
 
-### 5. P2 de experiencia de campanha
+### 4. P2 de experiencia de campanha
 
 - modo de campo para recepcao e contextos de uso em pe;
 - "proximo passo" por pessoa, guiado por funcao, area e formacao.

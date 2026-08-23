@@ -1,7 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { Icon, type IconName } from "@/components/icons";
-import { BORDA, C, FONT_ALFA, FONT_ELITE, FONT_BITTER, borda, TEXTO } from "@/lib/theme";
+import { BORDA, C, FONT_ALFA, FONT_ELITE, FONT_BITTER, borda, TEXTO, sombra } from "@/lib/theme";
 import CATALOGO from "@/data/funcoes.json";
 import type { CatalogoFuncoes, Funcao, GrupoFuncao } from "@/features/inscricao/tipos";
 
@@ -39,7 +39,7 @@ const Ficha: React.FC<{ f: Funcao }> = ({ f }) => (
     style={{
       background: C.cream,
       border: borda(),
-      boxShadow: "6px 6px 0 rgba(24,18,3,.3)",
+      boxShadow: sombra("alto"),
       padding: "20px 18px",
       display: "flex",
       flexDirection: "column",
@@ -132,7 +132,7 @@ const Ficha: React.FC<{ f: Funcao }> = ({ f }) => (
         background: C.ink,
         color: C.gold,
         border: borda(),
-        boxShadow: "4px 4px 0 rgba(24,18,3,.3)",
+        boxShadow: sombra(),
         fontFamily: FONT_ALFA,
         fontSize: 15,
         textDecoration: "none",
@@ -246,7 +246,7 @@ export default function Funcoes() {
           style={{
             background: C.gold,
             border: borda(),
-            boxShadow: "7px 7px 0 rgba(24,18,3,.3)",
+            boxShadow: sombra("alto"),
             padding: "22px 20px",
             textAlign: "center",
           }}
@@ -270,7 +270,7 @@ export default function Funcoes() {
               background: C.ink,
               color: C.gold,
               border: borda(),
-              boxShadow: "4px 4px 0 rgba(24,18,3,.35)",
+              boxShadow: sombra(),
               fontFamily: FONT_ALFA,
               fontSize: 16,
               textDecoration: "none",

@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/icons";
-import { C, BORDA, type Agenda } from "./tipos";
+import { C, BORDA, type Agenda, sombra, sombraErguida, sombraAfundada } from "./tipos";
 import { FORMATOS, canvasParaBlob, gerarPoster, nomeArquivo, type Formato } from "./poster";
 
 const FONT_ALFA = "var(--font-alfa), serif";
@@ -215,11 +215,11 @@ const css = `
     font-family: ${FONT_ELITE}; font-size: 13px; letter-spacing: 2.5px; text-transform: uppercase;
     color: ${C.ink}; background: ${C.gold};
     padding: 11px 22px; border: ${BORDA}px solid ${C.ink};
-    box-shadow: 5px 5px 0 rgba(24,18,3,.5);
+    box-shadow: ${sombra()};
     transition: transform .12s ease, box-shadow .12s ease;
   }
-  .cp-abrir:hover { transform: translate(-2px,-2px); box-shadow: 7px 7px 0 rgba(24,18,3,.55); }
-  .cp-abrir:active { transform: translate(2px,2px); box-shadow: 2px 2px 0 rgba(24,18,3,.4); }
+  .cp-abrir:hover { transform: translate(-2px,-2px); box-shadow: ${sombraErguida("cartao")}; }
+  .cp-abrir:active { transform: translate(2px,2px); box-shadow: ${sombraAfundada("cartao")}; }
   .cp-abrir:focus-visible { outline: ${BORDA}px solid ${C.gold}; outline-offset: 4px; }
 
   .cp-overlay {
@@ -232,7 +232,7 @@ const css = `
     width: min(460px, 100%); max-width: 100%; box-sizing: border-box;
     max-height: 92dvh; overflow: auto;
     background: ${C.night}; color: ${C.cream};
-    border: ${BORDA}px solid ${C.gold}; box-shadow: 10px 10px 0 rgba(0,0,0,.55);
+    border: ${BORDA}px solid ${C.gold}; box-shadow: ${sombra("alto", C.sombraNoite)};
     padding: 16px;
     animation: cpUp .22s ease-out;
   }

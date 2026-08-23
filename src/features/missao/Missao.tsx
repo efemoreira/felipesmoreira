@@ -1,7 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { Icon } from "@/components/icons";
-import { BORDA, C, FONT_ALFA, FONT_ELITE, FONT_BITTER, borda, TEXTO } from "@/lib/theme";
+import { BORDA, C, FONT_ALFA, FONT_ELITE, FONT_BITTER, borda, TEXTO, sombra } from "@/lib/theme";
 import { FaixaEleicao } from "@/components/FaixaEleicao";
 import { CARGO, CHAMADA, CHAPA, capitulos, porQueSeguranca } from "./data";
 
@@ -123,7 +123,7 @@ export default function Missao() {
                 style={{
                   background: C.cream,
                   border: borda(),
-                  boxShadow: "6px 6px 0 rgba(24,18,3,.3)",
+                  boxShadow: sombra("alto"),
                   padding: "20px 18px",
                 }}
               >
@@ -196,7 +196,7 @@ export default function Missao() {
                 style={{
                   background: C.cream,
                   border: borda(),
-                  boxShadow: "5px 5px 0 rgba(24,18,3,.28)",
+                  boxShadow: sombra(),
                   padding: "16px 17px",
                 }}
               >
@@ -243,7 +243,7 @@ export default function Missao() {
             background: C.ink,
             color: C.cream,
             border: borda(),
-            boxShadow: "7px 7px 0 rgba(24,18,3,.3)",
+            boxShadow: sombra("alto"),
             padding: "22px 20px",
             marginBottom: 34,
           }}
@@ -288,7 +288,7 @@ export default function Missao() {
           style={{
             background: C.gold,
             border: borda(),
-            boxShadow: "7px 7px 0 rgba(24,18,3,.3)",
+            boxShadow: sombra("alto"),
             padding: "22px 20px",
             textAlign: "center",
           }}
@@ -312,7 +312,7 @@ export default function Missao() {
               background: C.ink,
               color: C.gold,
               border: borda(),
-              boxShadow: "4px 4px 0 rgba(24,18,3,.35)",
+              boxShadow: sombra(),
               fontFamily: FONT_ALFA,
               fontSize: 16,
               textDecoration: "none",

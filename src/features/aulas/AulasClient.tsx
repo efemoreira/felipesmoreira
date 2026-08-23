@@ -2,7 +2,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Icon } from "@/components/icons";
-import { C, FONT_ALFA, FONT_BITTER, FONT_ELITE, borda } from "@/lib/theme";
+import { C, FONT_ALFA, FONT_BITTER, FONT_ELITE, borda, sombra } from "@/lib/theme";
 import { obterAulas, marcarAula } from "@/lib/api/aulas";
 import { ListaDias } from "./ListaDias";
 import type { Dia, RespostaAulas } from "./tipos";
@@ -340,7 +340,7 @@ const MinhaTrilha: React.FC<{
       background: "rgba(255,203,5,.08)",
       padding: "16px 18px",
       margin: "0 0 40px",
-      boxShadow: "5px 5px 0 rgba(0,0,0,.35)",
+      boxShadow: sombra("cartao", C.sombraNoite),
     }}
   >
     <p
@@ -438,7 +438,7 @@ const Recado: React.FC<{ fase: "carregando" | "sem-login" | "sem-acesso" | "erro
             color: C.ink,
             background: C.gold,
             padding: "4px 14px",
-            boxShadow: "3px 3px 0 rgba(24,18,3,.5)",
+            boxShadow: sombra("rente"),
             marginBottom: 18,
           }}
         >
@@ -470,7 +470,7 @@ const Recado: React.FC<{ fase: "carregando" | "sem-login" | "sem-acesso" | "erro
                 textDecoration: "none",
                 background: C.gold,
                 border: borda(),
-                boxShadow: "5px 5px 0 rgba(24,18,3,.35)",
+                boxShadow: sombra(),
                 color: C.ink,
                 padding: "12px 20px",
                 fontFamily: FONT_ALFA,

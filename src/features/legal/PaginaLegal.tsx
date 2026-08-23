@@ -1,7 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { Icon } from "@/components/icons";
-import { BORDA, C, FONT_ALFA, FONT_BITTER, FONT_ELITE } from "@/lib/theme";
+import { BORDA, C, FONT_ALFA, FONT_BITTER, FONT_ELITE, sombra } from "@/lib/theme";
 import { WHATSAPP_COORDENACAO, TELEFONE_COORDENACAO } from "@/lib/contato";
 
 export interface Secao {
@@ -88,7 +88,7 @@ const css = `
     font-family: ${FONT_ELITE}; font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
     color: ${C.ink}; background: ${C.cream}; text-decoration: none;
     padding: 10px 15px; border: ${BORDA}px solid ${C.ink};
-    box-shadow: 3px 3px 0 rgba(24,18,3,.28); margin-bottom: 22px;
+    box-shadow: ${sombra("rente")}; margin-bottom: 22px;
   }
 
   .lg-cabecalho { margin-bottom: 30px; }
@@ -96,7 +96,7 @@ const css = `
     display: inline-block; font-family: ${FONT_ELITE};
     letter-spacing: 4px; font-size: 12px; text-transform: uppercase;
     color: ${C.ink}; background: ${C.gold};
-    padding: 4px 14px; box-shadow: 3px 3px 0 rgba(24,18,3,.3); margin: 0 0 12px;
+    padding: 4px 14px; box-shadow: ${sombra("rente")}; margin: 0 0 12px;
   }
   .lg-titulo {
     font-family: ${FONT_ALFA}; font-size: clamp(28px, 7vw, 42px);
@@ -110,7 +110,7 @@ const css = `
 
   .lg-secao {
     background: ${C.cream}; border: ${BORDA}px solid ${C.ink};
-    box-shadow: 4px 4px 0 rgba(24,18,3,.22);
+    box-shadow: ${sombra()};
     padding: 16px 17px; margin-bottom: 14px;
   }
   .lg-secao-titulo {

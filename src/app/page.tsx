@@ -2,7 +2,7 @@
 import React from "react";
 import Link from "next/link";
 import { Icon, IconName } from "@/components/icons";
-import { BORDA, C, FONT_ALFA, FONT_ELITE, FONT_BITTER, borda } from "@/lib/theme";
+import { BORDA, C, FONT_ALFA, FONT_ELITE, FONT_BITTER, borda, sombra, sombraErguida, sombraAfundada } from "@/lib/theme";
 import { FaixaEleicao } from "@/components/FaixaEleicao";
 import { SigaCandidatos } from "@/features/candidatos/SigaCandidatos";
 import { GRUPO_GERAL } from "@/lib/contato";
@@ -178,7 +178,7 @@ const Home: React.FC = () => {
               borderRadius: "50%",
               overflow: "hidden",
               background: C.cream,
-              boxShadow: `0 0 0 4px ${C.ink}, 0 0 0 8px ${C.gold}, 0 0 0 12px ${C.ink}, 8px 8px 0 rgba(24,18,3,.35)`,
+              boxShadow: `0 0 0 4px ${C.ink}, 0 0 0 8px ${C.gold}, 0 0 0 12px ${C.ink}, ${sombra("alto")}`,
             }}
           >
             {/* No export estático o Next não redimensiona nem negocia formato
@@ -209,7 +209,7 @@ const Home: React.FC = () => {
               color: C.ink,
               background: C.gold,
               padding: "4px 14px",
-              boxShadow: "3px 3px 0 rgba(24,18,3,.35)",
+              boxShadow: sombra("rente"),
               marginBottom: 14,
             }}
           >
@@ -268,7 +268,7 @@ const Home: React.FC = () => {
               textDecoration: "none",
               background: l.accent ? C.gold : C.paper,
               border: borda(),
-              boxShadow: `5px 5px 0 rgba(24,18,3,.35)`,
+              boxShadow: sombra(),
               color: C.ink,
               transition: "transform .12s ease, box-shadow .12s ease",
             };
@@ -415,11 +415,11 @@ const Home: React.FC = () => {
 
       {/* hover/press dos cartões, foco de teclado, entrada suave + respeito a reduced-motion */}
       <style>{`
-        .cordel-card:hover { transform: translate(-2px,-2px); box-shadow: 7px 7px 0 rgba(24,18,3,.4) !important; }
-        .cordel-card:active { transform: translate(2px,2px); box-shadow: 2px 2px 0 rgba(24,18,3,.35) !important; }
+        .cordel-card:hover { transform: translate(-2px,-2px); box-shadow: ${sombraErguida("cartao")} !important; }
+        .cordel-card:active { transform: translate(2px,2px); box-shadow: ${sombraAfundada("cartao")} !important; }
         .cordel-social { transition: transform .12s ease, box-shadow .12s ease; }
-        .cordel-social:hover { transform: translate(-2px,-2px); box-shadow: 5px 5px 0 rgba(24,18,3,.4); }
-        .cordel-social:active { transform: translate(1px,1px); box-shadow: 2px 2px 0 rgba(24,18,3,.35); }
+        .cordel-social:hover { transform: translate(-2px,-2px); box-shadow: ${sombraErguida("rente")}; }
+        .cordel-social:active { transform: translate(2px,2px); box-shadow: ${sombraAfundada("rente")}; }
         .cordel-card:focus-visible, .cordel-social:focus-visible { outline: ${BORDA}px solid #FFCB05; outline-offset: 3px; }
         @keyframes cordelIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
         main > * { animation: cordelIn .5s ease-out backwards; }
@@ -445,7 +445,7 @@ const socialIcon: React.CSSProperties = {
   background: C.gold,
   border: borda(),
   color: C.ink,
-  boxShadow: "3px 3px 0 rgba(24,18,3,.35)",
+  boxShadow: sombra("rente"),
   textDecoration: "none",
 };
 

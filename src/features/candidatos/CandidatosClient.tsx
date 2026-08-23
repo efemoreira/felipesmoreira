@@ -2,7 +2,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Icon } from "@/components/icons";
-import { BORDA, C, FONT_ALFA, FONT_ELITE, FONT_BITTER } from "@/lib/theme";
+import { BORDA, C, FONT_ALFA, FONT_ELITE, FONT_BITTER, sombra } from "@/lib/theme";
 import { canvasParaBlob } from "@/lib/cordelCanvas";
 import { faseEm, type Fase } from "@/lib/eleicao";
 import { obterChapa, pessoasDa, type Candidato, type Lista } from "@/lib/api/candidatos";
@@ -355,7 +355,7 @@ const css = `
     display: inline-flex; align-items: center; gap: 7px; min-height: 44px; padding: 0 14px;
     cursor: pointer; font-family: ${FONT_ELITE}; font-size: 11.5px; letter-spacing: 1.4px;
     text-transform: uppercase; color: ${C.ink}; background: ${C.gold};
-    border: ${BORDA}px solid ${C.ink}; box-shadow: 3px 3px 0 ${C.ink};
+    border: ${BORDA}px solid ${C.ink}; box-shadow: ${sombra("rente", C.ink)};
   }
   .cd-btn:disabled, .cd-btn-grupo:disabled { opacity: .6; cursor: wait; }
   .cd-btn-grupo { margin-bottom: 14px; }

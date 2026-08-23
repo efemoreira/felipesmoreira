@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Icon, IconName } from "@/components/icons";
 import CompartilharClient from "./CompartilharClient";
-import { C, BORDA, sigla, temaDe, type Agenda, type ItemAgenda } from "./tipos";
+import { C, BORDA, sigla, temaDe, type Agenda, type ItemAgenda, sombra, sombraErguida, sombraAfundada } from "./tipos";
 import { CAMINHO_AGENDA_AO_VIVO, normalizarAgenda } from "./dados";
 import { emOrdem, estadoDe, estaAoVivo, idEmDestaque, quantosPassaram, type Estado } from "./tempo";
 
@@ -384,11 +384,11 @@ const css = `
     min-height: 44px; margin: 8px 0 0; padding: 0 16px;
     font-family: ${FONT_ELITE}; font-size: 12px; letter-spacing: 1.6px; text-transform: uppercase;
     color: ${C.ink}; background: ${C.gold2};
-    border: ${BORDA}px solid ${C.ink}; box-shadow: 3px 3px 0 ${C.ink};
+    border: ${BORDA}px solid ${C.ink}; box-shadow: ${sombra("rente", C.ink)};
     text-decoration: none;
   }
   .ag-vou:hover { background: ${C.gold}; }
-  .ag-vou:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 ${C.ink}; }
+  .ag-vou:active { transform: translate(2px, 2px); box-shadow: ${sombraAfundada("rente", C.ink)}; }
 
   .ag-topo {
     display: flex; align-items: center; justify-content: space-between;
@@ -399,11 +399,11 @@ const css = `
     font-family: ${FONT_ELITE}; font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
     color: ${C.ink}; background: ${C.gold}; text-decoration: none;
     padding: 11px 16px; min-height: 44px; border: 2px solid ${C.ink};
-    box-shadow: 3px 3px 0 rgba(24,18,3,.45);
+    box-shadow: ${sombra("rente")};
     transition: transform .12s ease, box-shadow .12s ease;
   }
-  .ag-voltar:hover { transform: translate(-2px,-2px); box-shadow: 5px 5px 0 rgba(24,18,3,.5); }
-  .ag-voltar:active { transform: translate(1px,1px); box-shadow: 2px 2px 0 rgba(24,18,3,.4); }
+  .ag-voltar:hover { transform: translate(-2px,-2px); box-shadow: ${sombraErguida("rente")}; }
+  .ag-voltar:active { transform: translate(2px,2px); box-shadow: ${sombraAfundada("rente")}; }
 
   .ag-canais { display: flex; align-items: center; gap: 10px; }
   .ag-canais-label {
@@ -437,7 +437,7 @@ const css = `
     font-family: ${FONT_ELITE}; font-size: 12px; letter-spacing: 2.5px; text-transform: uppercase;
     color: ${C.ink}; background: ${C.gold};
     padding: 4px 13px; margin: 0 0 12px;
-    box-shadow: 3px 3px 0 rgba(24,18,3,.45);
+    box-shadow: ${sombra("rente")};
   }
   .ag-chamada {
     max-width: 520px; margin: 0 auto;
@@ -459,12 +459,12 @@ const css = `
     background: var(--bg);
     color: var(--fg);
     border: ${BORDA}px solid ${C.ink};
-    box-shadow: 6px 6px 0 rgba(24,18,3,.5);
+    box-shadow: ${sombra("alto")};
     text-decoration: none;
     transition: transform .14s ease, box-shadow .14s ease;
   }
-  .ag-clicavel:hover { transform: translate(-3px,-3px); box-shadow: 9px 9px 0 rgba(24,18,3,.55); }
-  .ag-clicavel:active { transform: translate(2px,2px); box-shadow: 3px 3px 0 rgba(24,18,3,.45); }
+  .ag-clicavel:hover { transform: translate(-2px,-2px); box-shadow: ${sombraErguida("alto")}; }
+  .ag-clicavel:active { transform: translate(2px,2px); box-shadow: ${sombraAfundada("alto")}; }
   .ag-clicavel:focus-visible { outline: ${BORDA}px solid ${C.gold}; outline-offset: 4px; }
 
   .ag-thumb {
@@ -492,10 +492,10 @@ const css = `
 
   /* Já passou: continua na lista, porque a semana se lê inteira, mas recua
      para o que ainda vai acontecer ficar na frente do olho. */
-  .ag-passou { opacity: .55; box-shadow: 3px 3px 0 rgba(24,18,3,.35); }
+  .ag-passou { opacity: .55; box-shadow: ${sombra("rente")}; }
 
   /* O próximo (ou o que está rolando) ganha o anel de ouro. */
-  .ag-destaque { box-shadow: 6px 6px 0 rgba(24,18,3,.5), 0 0 0 3px ${C.gold}; }
+  .ag-destaque { box-shadow: ${sombra("alto")}, 0 0 0 3px ${C.gold}; }
 
   .ag-etiqueta {
     position: absolute; top: 6px; left: 6px;
@@ -540,7 +540,7 @@ const css = `
     display: grid; place-items: center;
     background: var(--badge); color: var(--badge-fg);
     border: 2px solid ${C.ink}; border-radius: 10px;
-    box-shadow: 3px 3px 0 rgba(24,18,3,.35);
+    box-shadow: ${sombra("rente")};
   }
 
   .ag-vazio {

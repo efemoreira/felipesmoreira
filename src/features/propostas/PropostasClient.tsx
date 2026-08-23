@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { Icon } from "@/components/icons";
-import { BORDA, C, FONT_ALFA, FONT_BITTER, FONT_ELITE, borda, TEXTO } from "@/lib/theme";
+import { BORDA, C, FONT_ALFA, FONT_BITTER, FONT_ELITE, borda, TEXTO, sombra } from "@/lib/theme";
 import {
   CHAPA,
   CITACOES,
@@ -61,7 +61,7 @@ const CartaoMeta: React.FC<{ numero: string; oQue: string; pagina: string }> = (
     style={{
       background: C.cream,
       border: borda(),
-      boxShadow: "4px 4px 0 rgba(24,18,3,.3)",
+      boxShadow: sombra(),
       padding: "12px 14px",
       display: "flex",
       flexDirection: "column",
@@ -96,7 +96,7 @@ const BlocoCompromisso: React.FC<{ c: Compromisso }> = ({ c }) => {
       style={{
         background: C.paper,
         border: borda(),
-        boxShadow: "7px 7px 0 rgba(24,18,3,.3)",
+        boxShadow: sombra("alto"),
         padding: "22px 20px",
         display: "flex",
         flexDirection: "column",
@@ -364,7 +364,7 @@ export default function PropostasClient() {
             background: C.ink,
             color: C.cream,
             border: borda(),
-            boxShadow: "7px 7px 0 rgba(24,18,3,.3)",
+            boxShadow: sombra("alto"),
             padding: "22px 20px",
             marginBottom: 34,
           }}
@@ -439,7 +439,7 @@ export default function PropostasClient() {
                   letterSpacing: 0.6,
                   background: C.cream,
                   border: `2px solid ${C.ink}`,
-                  boxShadow: "3px 3px 0 rgba(24,18,3,.28)",
+                  boxShadow: sombra("rente"),
                   padding: "6px 11px",
                 }}
               >
@@ -510,7 +510,7 @@ export default function PropostasClient() {
                   border: borda(),
                   borderLeftWidth: 7,
                   borderLeftColor: C.gold,
-                  boxShadow: "5px 5px 0 rgba(24,18,3,.28)",
+                  boxShadow: sombra(),
                   padding: "16px 18px",
                 }}
               >
@@ -545,7 +545,7 @@ export default function PropostasClient() {
             marginTop: 34,
             background: C.gold,
             border: borda(),
-            boxShadow: "7px 7px 0 rgba(24,18,3,.3)",
+            boxShadow: sombra("alto"),
             padding: "22px 20px",
             textAlign: "center",
           }}
@@ -569,7 +569,7 @@ export default function PropostasClient() {
               background: C.ink,
               color: C.gold,
               border: borda(),
-              boxShadow: "4px 4px 0 rgba(24,18,3,.35)",
+              boxShadow: sombra(),
               fontFamily: FONT_ALFA,
               fontSize: 16,
               textDecoration: "none",

@@ -30,7 +30,9 @@ Regras:
 - Fonte única: `src/lib/theme.ts`.
 - Use `C`, `FONT_ALFA`, `FONT_ELITE`, `FONT_BITTER`, `BORDA`/`borda()` e `TEXTO`.
 - Não escreva `3px solid` à mão.
-- A sombra dura ainda não tem token global; isso segue como decisão visual.
+- A sombra dura sai de `sombra()` / `sombraErguida()` / `sombraAfundada()`.
+- Três degraus, e só três: `rente` (3), `cartao` (5), `alto` (8). A opacidade é
+  fixa; o que muda com a altura é o deslocamento.
 
 ## Frentes públicas principais
 

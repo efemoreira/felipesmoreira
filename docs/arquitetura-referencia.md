@@ -81,11 +81,33 @@ duplicação que motivou esta reorganização.
 > As duas trocas saíram com **markup byte a byte idêntico nas 17 rotas** — é o
 > método de `next build` + comparar o `<body>` ignorando os `<script>`.
 
-> ⚠️ **A sombra dura ainda NÃO tem token, e de propósito.** Ela aparece em 17
+> **A sombra dura é `sombra()`, e a escala é `SOMBRA`.** Ela aparecia em 17
 > combinações de deslocamento e opacidade (`3px/.22`, `3px/.28`, `3px/.3`,
-> `3px/.35`, `3px/.5`, `4px/.28`…), o que já não é repetição: é deriva. Escolher
-> uma opacidade por deslocamento **muda o desenho** de várias peças, e isso é
-> decisão de quem olha, não refatoração. Antes de criar o token, decida a escala.
+> `3px/.35`, `3px/.5`, `4px/.28`…), o que já não era repetição: era deriva. A
+> decisão que faltava está tomada, e é dupla.
+>
+> **A opacidade é uma só, e quem carrega a altura é o deslocamento.** Sombra dura
+> não tem borrão — ela é um decalque da peça, deslocado, e tinta é uma só: um
+> registro fora do lugar não fica mais claro porque saiu mais longe, fica mais
+> visível porque mostra mais tinta. Variar as duas coisas juntas tinha deixado o
+> desenho invertido — peça pequena em `.35`, peça grande em `.3`, o que era para
+> estar rente à página pesando mais que o que era para estar levantado dela. É
+> também o que o painel já faz: `--sombra` é fixo lá, e só o deslocamento muda.
+>
+> **São três degraus, e não oito:** `rente` 3, `cartao` 5, `alto` 8 — cada um
+> ~1,6 do anterior, o mínimo para o olho ler "outro nível" sem medir. Estavam em
+> uso 3, 4, 5, 6, 7, 8, 9 e 10, e nenhum se distinguia do vizinho. O primeiro é
+> `3` de propósito: é a espessura da `BORDA`, então a peça rente à página lê como
+> se a moldura tivesse engrossado de um lado.
+>
+> Hover e clique saem de `sombraErguida()` (+2, com `translate(-2px,-2px)`) e
+> `sombraAfundada()` (−2, com `translate(2px,2px)`): a quina de baixo da sombra
+> fica parada e o que se vê é a peça descolando do papel, não o par escorregando.
+> A cor continua sendo decisão da peça, como em `borda()` — `C.sombra` no papel,
+> `C.sombraNoite` no escuro, `C.sombraErro` no campo com erro.
+>
+> A troca saiu com **a única diferença nas 17 rotas sendo o valor de
+> `box-shadow`** — mesmo método de `next build` + comparar o `<body>`.
 
 **Regra:** dado de conteúdo (arrays de texto, listas, fichas) mora em
 `features/<nome>/data.ts`, tipado — não misturado com JSX no componente.

@@ -43,7 +43,8 @@ Regras:
 - Cor, fonte, moldura e escala de texto saem de `@/lib/theme`.
 - Use `C`, `FONT_ALFA`, `FONT_ELITE`, `FONT_BITTER`, `BORDA`/`borda()` e `TEXTO`.
 - Não crie nova paleta local nem escreva `3px solid` à mão.
-- **A sombra dura ainda não tem token global.** Isso segue como decisão visual, não refatoração automática.
+- **A sombra dura sai de `sombra()`**, com `sombraErguida()`/`sombraAfundada()` para hover e clique.
+- A escala é `SOMBRA` — `rente` (3), `cartao` (5), `alto` (8). Opacidade é uma só (`C.sombra`); quem carrega a altura é o deslocamento. Cor é decisão da peça, como em `borda()` (`C.sombraNoite` sobre fundo escuro, `C.sombraErro` no campo com erro).
 
 ## Contrato Next ↔ PHP
 

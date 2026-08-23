@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import { Icon } from "@/components/icons";
-import { C, FONT_ALFA, FONT_ELITE, borda } from "@/lib/theme";
+import { C, FONT_ALFA, FONT_ELITE, borda, sombra } from "@/lib/theme";
 import { Blocos } from "./Blocos";
 import { Player } from "./Player";
 import type { Aula as TipoAula } from "./tipos";
@@ -136,7 +136,7 @@ export const Aula: React.FC<Props> = ({
               fontFamily: FONT_ALFA,
               fontSize: 14,
               border: borda(),
-              boxShadow: "4px 4px 0 rgba(24,18,3,.35)",
+              boxShadow: sombra(),
               background: concluida ? "transparent" : C.gold,
               color: concluida ? C.cream : C.ink,
               borderColor: concluida ? "rgba(255,203,5,.4)" : C.ink,

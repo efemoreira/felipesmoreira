@@ -1,7 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { Icon } from "@/components/icons";
-import { BORDA, C, FONT_ALFA, FONT_ELITE, FONT_BITTER, borda } from "@/lib/theme";
+import { BORDA, C, FONT_ALFA, FONT_ELITE, FONT_BITTER, borda, sombra, sombraErguida, sombraAfundada } from "@/lib/theme";
 
 /* versos de cordel para a página perdida */
 const versos = [
@@ -71,7 +71,7 @@ const NotFound: React.FC = () => {
             color: C.ink,
             background: C.gold,
             padding: "4px 14px",
-            boxShadow: "3px 3px 0 rgba(24,18,3,.35)",
+            boxShadow: sombra("rente"),
             marginBottom: 18,
           }}
         >
@@ -131,7 +131,7 @@ const NotFound: React.FC = () => {
             textDecoration: "none",
             background: C.gold,
             border: borda(),
-            boxShadow: "5px 5px 0 rgba(24,18,3,.35)",
+            boxShadow: sombra(),
             color: C.ink,
             padding: "14px 22px",
             transition: "transform .12s ease, box-shadow .12s ease",
@@ -181,8 +181,8 @@ const NotFound: React.FC = () => {
 
       {/* hover/press do botão + respeito a reduced-motion */}
       <style>{`
-        .cordel-card:hover { transform: translate(-2px,-2px); box-shadow: 7px 7px 0 rgba(24,18,3,.4) !important; }
-        .cordel-card:active { transform: translate(2px,2px); box-shadow: 2px 2px 0 rgba(24,18,3,.35) !important; }
+        .cordel-card:hover { transform: translate(-2px,-2px); box-shadow: ${sombraErguida("cartao")} !important; }
+        .cordel-card:active { transform: translate(2px,2px); box-shadow: ${sombraAfundada("cartao")} !important; }
         .cordel-card:focus-visible { outline: ${BORDA}px solid ${C.gold}; outline-offset: 3px; }
         @media (prefers-reduced-motion: reduce) {
           .cordel-card { transition: none !important; }

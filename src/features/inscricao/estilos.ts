@@ -1,4 +1,4 @@
-import { BORDA, C, FONT_ALFA, FONT_ELITE, FONT_BITTER } from "@/lib/theme";
+import { BORDA, C, FONT_ALFA, FONT_ELITE, FONT_BITTER, sombra, sombraErguida, sombraAfundada } from "@/lib/theme";
 
 /**
  * A folha de estilo do formulário de `/queroajudar`, num arquivo só.
@@ -44,7 +44,7 @@ export const css = `
     font-family: ${FONT_ELITE}; font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
     color: ${C.ink}; background: ${C.cream}; text-decoration: none;
     padding: 10px 15px; border: ${BORDA}px solid ${C.ink};
-    box-shadow: 3px 3px 0 rgba(24,18,3,.28);
+    box-shadow: ${sombra("rente")};
     margin-bottom: 22px;
   }
 
@@ -53,7 +53,7 @@ export const css = `
     display: inline-block; font-family: ${FONT_ELITE};
     letter-spacing: 4px; font-size: 12px; text-transform: uppercase;
     color: ${C.ink}; background: ${C.gold};
-    padding: 4px 14px; box-shadow: 3px 3px 0 rgba(24,18,3,.3);
+    padding: 4px 14px; box-shadow: ${sombra("rente")};
     margin: 0 0 12px;
   }
   .in-titulo {
@@ -107,7 +107,7 @@ export const css = `
   .in-grupo-nome {
     font-family: ${FONT_ALFA}; font-size: 19px; padding: 0;
     background: ${C.gold}; border: ${BORDA}px solid ${C.ink};
-    box-shadow: 4px 4px 0 rgba(24,18,3,.3);
+    box-shadow: ${sombra("rente")};
     padding: 5px 13px; margin-bottom: 10px;
   }
   .in-grupo-resumo { font-size: 14px; line-height: 1.55; opacity: .8; margin: 0 0 14px; }
@@ -115,13 +115,13 @@ export const css = `
 
   .in-cartao {
     background: ${C.cream}; border: ${BORDA}px solid ${C.ink};
-    box-shadow: 4px 4px 0 rgba(24,18,3,.24);
+    box-shadow: ${sombra()};
     padding: 12px 14px 10px;
     transition: box-shadow .12s ease, transform .12s ease;
   }
   .in-cartao.marcado {
     background: #FFF6D4;
-    box-shadow: 5px 5px 0 ${C.goldDim};
+    box-shadow: ${sombra("cartao", C.goldDim)};
   }
   .in-cartao-topo {
     display: flex; align-items: flex-start; gap: 11px; cursor: pointer;
@@ -189,10 +189,10 @@ export const css = `
     min-height: 48px; padding: 11px 13px;
     background: ${C.cream}; color: ${C.ink};
     border: ${BORDA}px solid ${C.ink}; border-radius: 0;
-    box-shadow: 3px 3px 0 rgba(24,18,3,.24);
+    box-shadow: ${sombra("rente")};
   }
   .in-campo input:focus-visible, .in-campo select:focus-visible { outline: ${BORDA}px solid ${C.goldDim}; outline-offset: 2px; }
-  .in-campo input.com-erro, .in-campo select.com-erro { border-color: #8C2F22; box-shadow: 3px 3px 0 rgba(140,47,34,.3); }
+  .in-campo input.com-erro, .in-campo select.com-erro { border-color: #8C2F22; box-shadow: ${sombra("rente", C.sombraErro)}; }
   .in-dica { font-size: 13px; line-height: 1.45; opacity: .7; margin: 6px 0 0; }
   .in-erro {
     font-size: 13.5px; line-height: 1.45; margin: 6px 0 0;
@@ -203,7 +203,7 @@ export const css = `
   .in-confirma { display: flex; flex-direction: column; gap: 16px; }
   .in-resumo {
     background: ${C.cream}; border: ${BORDA}px solid ${C.ink};
-    box-shadow: 4px 4px 0 rgba(24,18,3,.24); padding: 15px 16px;
+    box-shadow: ${sombra()}; padding: 15px 16px;
   }
   .in-resumo-titulo {
     display: flex; align-items: center; gap: 8px;
@@ -232,7 +232,7 @@ export const css = `
 
   .in-lgpd {
     background: ${C.night}; color: ${C.cream};
-    border: ${BORDA}px solid ${C.ink}; box-shadow: 4px 4px 0 rgba(24,18,3,.4);
+    border: ${BORDA}px solid ${C.ink}; box-shadow: ${sombra()};
     padding: 16px;
   }
   .in-lgpd .in-resumo-titulo { color: ${C.gold}; }
@@ -266,10 +266,10 @@ export const css = `
     transition: transform .12s ease, box-shadow .12s ease;
   }
   .in-btn svg { flex: 0 0 auto; }
-  .in-btn-principal { background: ${C.gold}; color: ${C.ink}; box-shadow: 5px 5px 0 rgba(24,18,3,.35); }
-  .in-btn-fantasma { background: ${C.cream}; color: ${C.ink}; box-shadow: 5px 5px 0 rgba(24,18,3,.2); flex: 0 1 150px; }
-  .in-btn:hover { transform: translate(-2px,-2px); box-shadow: 7px 7px 0 rgba(24,18,3,.38); }
-  .in-btn:active { transform: translate(2px,2px); box-shadow: 2px 2px 0 rgba(24,18,3,.3); }
+  .in-btn-principal { background: ${C.gold}; color: ${C.ink}; box-shadow: ${sombra()}; }
+  .in-btn-fantasma { background: ${C.cream}; color: ${C.ink}; box-shadow: ${sombra()}; flex: 0 1 150px; }
+  .in-btn:hover { transform: translate(-2px,-2px); box-shadow: ${sombraErguida("cartao")}; }
+  .in-btn:active { transform: translate(2px,2px); box-shadow: ${sombraAfundada("cartao")}; }
   .in-btn:disabled { opacity: .6; cursor: progress; transform: none; }
   .in-btn:focus-visible { outline: ${BORDA}px solid ${C.goldDim}; outline-offset: 4px; }
 
@@ -280,7 +280,7 @@ export const css = `
     display: grid; place-items: center;
     background: ${C.gold}; color: ${C.ink};
     border: 4px solid ${C.ink}; border-radius: 50%;
-    box-shadow: 6px 6px 0 rgba(24,18,3,.3);
+    box-shadow: ${sombra("alto")};
   }
   .in-sucesso .in-linha { margin: 0 auto; }
   .in-proximos {
@@ -290,7 +290,7 @@ export const css = `
   .in-proximos li {
     display: flex; align-items: flex-start; gap: 13px;
     background: ${C.cream}; border: ${BORDA}px solid ${C.ink};
-    box-shadow: 4px 4px 0 rgba(24,18,3,.22);
+    box-shadow: ${sombra()};
     padding: 13px 15px; font-size: 14.5px; line-height: 1.55;
   }
   .in-proximos b {
@@ -334,7 +334,7 @@ export const css = `
   }
 
   @media (hover: none) {
-    .in-btn:hover { transform: none; box-shadow: 5px 5px 0 rgba(24,18,3,.35); }
+    .in-btn:hover { transform: none; box-shadow: ${sombra("cartao")}; }
   }
   @media (prefers-reduced-motion: reduce) {
     .in-btn, .in-cartao { transition: none !important; }

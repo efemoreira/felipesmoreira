@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { C, FONT_ALFA, FONT_ELITE, borda } from "@/lib/theme";
+import { C, FONT_ALFA, FONT_ELITE, borda, sombra } from "@/lib/theme";
 import type { Bloco } from "./tipos";
 
 /**
@@ -39,7 +39,7 @@ const Caixa: React.FC<{ cor: string; fundo?: string; children: React.ReactNode }
       background: fundo,
       padding: "14px 16px",
       margin: "0 0 18px",
-      boxShadow: "4px 4px 0 rgba(0,0,0,.35)",
+      boxShadow: sombra("cartao", C.sombraNoite),
     }}
   >
     {children}
