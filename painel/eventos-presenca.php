@@ -276,14 +276,20 @@ function desenhar_presenca(array $aberto, array $eu): void
                            que se desfaz é "esteve neste sábado" — o dedo errado
                            na lista, ou o mesmo número cadastrado duas vezes na
                            porta. */ ?>
-                  <form method="post"
-                        onsubmit="return confirm(<?= texto_js('Tirar ' . $q['nome'] . ' da lista deste encontro? O cadastro dela continua em Pessoas.') ?>)">
-                    <input type="hidden" name="csrf" value="<?= h(token()) ?>">
-                    <input type="hidden" name="id" value="<?= h($aberto['id']) ?>">
-                    <input type="hidden" name="lead" value="<?= h($l['id']) ?>">
-                    <button type="submit" class="btn btn-mini btn-risco" name="acao" value="tirar-pessoa"
-                            title="Tirar da lista deste encontro">Tirar</button>
-                  </form>
+                  <?php /* Atrás dos três pontinhos, e não solto na linha: na porta do
+                           encontro o polegar está marcando presença a cada dez
+                           segundos, e o botão que desfaz é vizinho dos que fazem. */ ?>
+                  <div class="acoes-celula">
+                    <?php menu_acoes([
+                        [
+                            'texto'     => 'Tirar deste encontro',
+                            'acao'      => 'tirar-pessoa',
+                            'campos'    => ['id' => $aberto['id'], 'lead' => $l['id']],
+                            'confirmar' => 'Tirar ' . $q['nome'] . ' da lista deste encontro? O cadastro dela continua em Pessoas.',
+                            'risco'     => true,
+                        ],
+                    ]); ?>
+                  </div>
                 </td>
               </tr>
             <?php endforeach; ?>

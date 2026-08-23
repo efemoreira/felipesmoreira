@@ -267,21 +267,21 @@ abrir_pagina('Candidatos');
                     </td>
                     <td class="rodape">
                       <div class="acoes-celula">
-                        <a class="btn btn-mini" data-modal="editar-candidato"
-                           href="?aba=candidatos&c=<?= h($c['id']) ?>">Editar</a>
-                        <form method="post">
-                          <input type="hidden" name="csrf" value="<?= h(token()) ?>">
-                          <input type="hidden" name="id" value="<?= h($c['id']) ?>">
-                          <button class="btn btn-mini" name="acao" value="cand-publicar" type="submit">
-                            <?= $c['publicado'] ? 'Recolher' : 'Publicar' ?>
-                          </button>
-                        </form>
-                        <form method="post"
-                              onsubmit="return confirm(<?= texto_js('Tirar ' . $c['nome'] . ' da chapa? A pessoa continua na lista, com o histórico dela.') ?>)">
-                          <input type="hidden" name="csrf" value="<?= h(token()) ?>">
-                          <input type="hidden" name="id" value="<?= h($c['id']) ?>">
-                          <button class="btn btn-mini btn-risco" name="acao" value="cand-apagar" type="submit">Tirar da chapa</button>
-                        </form>
+                        <?php menu_acoes([
+                            ['texto' => 'Editar', 'url' => '?aba=candidatos&c=' . urlencode($c['id']), 'modal' => 'editar-candidato'],
+                            [
+                                'texto'  => $c['publicado'] ? 'Recolher do site' : 'Publicar no site',
+                                'acao'   => 'cand-publicar',
+                                'campos' => ['id' => $c['id']],
+                            ],
+                            [
+                                'texto'     => 'Tirar da chapa',
+                                'acao'      => 'cand-apagar',
+                                'campos'    => ['id' => $c['id']],
+                                'confirmar' => 'Tirar ' . $c['nome'] . ' da chapa? A pessoa continua na lista, com o histórico dela.',
+                                'risco'     => true,
+                            ],
+                        ]); ?>
                       </div>
                     </td>
                   </tr>
