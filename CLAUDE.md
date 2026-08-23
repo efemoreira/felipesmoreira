@@ -128,6 +128,9 @@ Regras:
 - O site e o painel precisam funcionar bem em celular.
 - Priorize **scroll vertical apenas** nas telas de trabalho.
 - Tabelas operacionais no painel são suspeitas: se escondem ação ou contexto no celular, devem virar cards/listas.
+- **Toda tabela do painel mora em `<div class="rolagem cartoes">`.** `.rolagem` segura o desktop; `.cartoes` desmonta a tabela em cartões abaixo de 700 px. Cada `<td>` leva `data-rotulo` com o texto do `<th>` — no cartão não há cabeçalho para olhar. `.meia`/`.terco` põem blocos lado a lado, `.tarde` desce o secundário e `.rodape` separa as ações. Um HTML só: não escreva uma segunda árvore para o celular.
+- Ações dentro de uma célula vão em `<div class="acoes-celula">`, não em `<form style="display:inline">`.
+- `testes/contrato/mobile.test.ts` prende a regra — tabela nova sem `cartoes` quebra o teste.
 - Alvo mínimo de toque: 44 px.
 - No site público, inputs ficam com mínimo de 16 px para evitar zoom do Safari.
 

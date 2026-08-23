@@ -129,6 +129,10 @@ function tela_de_inscricoes(?string $erro, ?string $ok, ?array $acesso): void
           Só quem já foi aprovado. É por aqui que dá pra ver onde já tem gente para um time
           próprio — e quem está sozinho na cidade dele.
         </p>
+        <?php /* Esta era a única tabela do painel sem `.rolagem`: numa tela
+                 estreita ela não ganhava barra, ela EMPURRAVA a página para o
+                 lado. */ ?>
+        <div class="rolagem cartoes">
         <table class="tabela">
           <thead>
             <tr><th>Cidade</th><th>Gente</th><th>Bairros</th></tr>
@@ -136,9 +140,9 @@ function tela_de_inscricoes(?string $erro, ?string $ok, ?array $acesso): void
           <tbody>
             <?php foreach ($regioes as $r): ?>
               <tr>
-                <td><strong><?= h($r['cidade']) ?></strong></td>
-                <td><?= (int) $r['total'] ?></td>
-                <td>
+                <td class="meia" data-rotulo="Cidade"><strong><?= h($r['cidade']) ?></strong></td>
+                <td class="meia" data-rotulo="Gente"><?= (int) $r['total'] ?></td>
+                <td data-rotulo="Bairros">
                   <?php if ($r['bairros'] === []): ?>
                     <span class="selo selo-cinza">sem bairro informado</span>
                   <?php else: ?>
@@ -151,6 +155,7 @@ function tela_de_inscricoes(?string $erro, ?string $ok, ?array $acesso): void
             <?php endforeach; ?>
           </tbody>
         </table>
+        </div>
       </div>
     </details>
   <?php endif; ?>

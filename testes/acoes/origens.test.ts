@@ -28,7 +28,11 @@ function tabelaDeOrigens(html: string) {
   const corpo = /De onde vem a militância[\s\S]*?<tbody>([\s\S]*?)<\/tbody>/.exec(html);
   if (corpo === null) return [];
   return [...corpo[1].matchAll(/<tr>([\s\S]*?)<\/tr>/g)].map((tr) => {
-    const celulas = [...tr[1].matchAll(/<td>([\s\S]*?)<\/td>/g)].map((c) =>
+    /* `<td[^>]*>` e não `<td>`: no celular a tabela vira cartão, e cada célula
+       carrega a classe da largura e o `data-rotulo` que substitui o cabeçalho.
+       O que este teste lê é o NÚMERO da coluna — não o atributo que a coluna
+       usa para se desenhar. */
+    const celulas = [...tr[1].matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map((c) =>
       c[1].replace(/<[^>]*>/g, " ").replace(/&amp;/g, "&").replace(/\s+/g, " ").trim(),
     );
     return {

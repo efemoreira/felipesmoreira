@@ -64,7 +64,7 @@ function aba_das_origens(array $origens, callable $formatar): void
       </p>
 
       <?php if ($linhas !== []): ?>
-      <div class="rolagem">
+      <div class="rolagem cartoes">
         <table class="tabela">
           <thead>
             <tr>
@@ -90,11 +90,14 @@ function aba_das_origens(array $origens, callable $formatar): void
                     <br><span class="dica"><?= h($l['quem']) ?></span>
                   <?php endif; ?>
                 </td>
-                <td><?= (int) $l['chegaram'] ?></td>
-                <td><?= (int) $l['aprovadas'] ?></td>
-                <td><strong><?= (int) $l['militaram'] ?></strong></td>
-                <td><?= h(percentual_de_conversao($l['militaram'], $l['chegaram'])) ?></td>
-                <td><?= h($formatar($l['ultima'])) ?></td>
+                <?php /* No celular os três degraus ficam em terços, na mesma faixa: a
+                         leitura do relatório é a QUEDA de um para o outro, e em
+                         blocos empilhados ela vira três números soltos. */ ?>
+                <td class="terco" data-rotulo="Chegaram"><?= (int) $l['chegaram'] ?></td>
+                <td class="terco" data-rotulo="Aprovadas"><?= (int) $l['aprovadas'] ?></td>
+                <td class="terco" data-rotulo="Militaram"><strong><?= (int) $l['militaram'] ?></strong></td>
+                <td class="meia" data-rotulo="Conversão"><?= h(percentual_de_conversao($l['militaram'], $l['chegaram'])) ?></td>
+                <td class="meia" data-rotulo="Última"><?= h($formatar($l['ultima'])) ?></td>
               </tr>
             <?php endforeach; ?>
           </tbody>

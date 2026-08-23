@@ -1,6 +1,6 @@
 # Plano de evolucao da ferramenta de organizacao da militancia
 
-Data: 2026-08-23 (segunda rodada)
+Data: 2026-08-23 (terceira rodada)
 
 ## Objetivo deste documento
 
@@ -16,24 +16,71 @@ Nao e um plano especulativo. E um quadro de progresso e prioridade.
 
 ## O que mudou nesta rodada
 
-A rodada anterior fechou a organizacao do painel. Esta fechou a **garantia**: o
-que antes so estava bem arrumado agora esta preso por teste, e as duas frentes
-que faltavam por inteiro sairam.
+A rodada anterior fechou a **garantia**. Esta fechou a frente que era a
+prioridade 1 do proprio plano: **a auditoria mobile-first das telas de trabalho
+do painel**. As treze tabelas do painel deixaram de depender de arrastar para o
+lado.
 
 | item da sequencia anterior | estado |
 | --- | --- |
-| 1. Testes de acao do painel | **feito** |
-| 2. Testes de navegador do funil publico | **parcial** — o que dava para prender sem navegador foi coberto; foco e erro de rede no DOM seguem pendentes |
-| 3. Cortar `inscricoes.php` | **feito** |
-| 4. Consolidar o estilo inline do lado Next | **feito** — moldura, texto e, agora, a escala da sombra dura |
-| 5. Relatorio de conversao por origem | **feito** |
-| 6. Ideias novas de produto | ainda nao |
+| 1. Auditoria mobile-first das telas de trabalho | **feito no painel** — as 13 tabelas viraram cartao no celular e a regra esta presa por teste |
+| 2. Testes de navegador do funil publico | **parcial** — segue a decisao de nao entrar Playwright; foco e erro de rede no DOM continuam sem cobertura |
+| 3. Segunda passada em home, programacao e aulas | ainda nao |
+| 4. P2 de experiencia de campanha | ainda nao |
 
 Validacoes executadas nesta rodada:
 
-- `npm test` — **163 testes, 40 suites, tudo passando** (eram 74);
+- `npm test` — **171 testes, 42 suites, tudo passando** (eram 167);
 - `npm run test:tipos`, `npm run lint`, `npx eslint testes/` — limpos;
-- `npm run build` — 17 rotas, e o markup comparado antes e depois.
+- `npm run build` — 17 rotas.
+
+### A auditoria mobile do painel
+
+**Um padrao so, e um HTML so.** `<div class="rolagem cartoes">` em volta de
+toda tabela do painel: `.rolagem` segura o desktop, e `.cartoes` desmonta a
+tabela abaixo de 700px — cada `<tr>` vira cartao, cada `<td>` vira bloco, e o
+`data-rotulo` de cada celula entra no lugar do cabecalho que sumiu.
+
+> **A alternativa era escrever duas arvores para a mesma lista.** Quem mantem
+> duas mantem duas e conserta uma — e a que conserta e sempre a do desktop,
+> porque e a que a coordenacao ve. A semantica de tabela continua inteira em
+> tela larga.
+
+Tres larguras de bloco resolvem o resto: cheia por padrao, `.meia` para o par
+que so se le junto (confirmou × compareceu) e `.terco` para a trinca do funil
+de origens. `.tarde` desce o que na linha era so mais uma coluna, e `.rodape`
+separa por uma linha tracejada o que se FAZ do que se le.
+
+| tela | o que mudou no celular |
+| --- | --- |
+| `eventos-presenca.php` | a pior tela do plano: cada pessoa e um cartao, os dois estados lado a lado em botao de largura inteira, o tipo num seletor proprio e o **Tirar** isolado no rodape |
+| `pessoas-lista.php` | tipo e encontros sobem em par; login e funcoes descem — quem procura alguem pergunta "e apoiador?" e "ja apareceu?" antes de "qual e o login?" |
+| `candidatos-tela.php` | numero e estado em par, as tres acoes no rodape do cartao |
+| `municao.php` | fonte e estado em par, as tres acoes no rodape |
+| `agenda-tela.php` | a programacao vira lista vertical |
+| `inscricoes-origens.php` | os tres degraus em tercos, na mesma faixa: a leitura do relatorio e a QUEDA de um para o outro, e empilhados eles viram tres numeros soltos |
+| `inscricoes-decididas.php`, `fatos-decididos.php` (3), `aulas.php`, `pessoas-ficha.php` | arquivo e relatorio: tabela no desktop, cartao no celular |
+| `inscricoes-tela.php` | era a **unica sem `.rolagem`**: em tela estreita ela nao ganhava barra, ela empurrava a pagina para o lado |
+
+**Dois defeitos de layout que so apareceriam no telefone foram fechados na
+origem:** a foto do candidato e a coluna "Onde" da agenda sao opcionais, e o
+`<td>` delas carregava uma quebra de linha solta. Vazio com espaco em branco
+nao e `:empty` — os dois viravam um buraco de 12px no cartao. Os `if` agora
+abrem e fecham colados nas bordas do `<td>`.
+
+**A regra ficou presa por teste** (`testes/contrato/mobile.test.ts`, 4 testes):
+toda tabela do painel dentro de `.rolagem.cartoes`, nenhuma `.rolagem` sozinha,
+o bloco de CSS no lugar e nenhuma celula `.meia`/`.terco` sem rotulo.
+
+> **Este teste existe para a proxima tabela.** As treze de hoje ja estao
+> convertidas; o que se perde sem teste e a tabela numero catorze, escrita daqui
+> a tres meses copiando a linha errada de uma tela antiga — e descoberta por
+> alguem xingando o telefone numa noite de encontro.
+
+Um efeito colateral, de proposito: `.acoes-celula` substituiu o
+`style="display:inline"` que os `<form>` de acao carregavam dentro das celulas.
+Os botoes de Municao passaram de `.btn` para `.btn-mini`, como em todas as
+outras listas do painel.
 
 ## O que esta feito
 
@@ -152,119 +199,22 @@ que decide.
 
 ### Mobile first das telas
 
-A base existe e esta bem pensada:
+O painel esta fechado: as treze tabelas viram cartao no celular, a navegacao ja
+descia para a barra do rodape, as abas sao links com URL propria, o quadro de
+Producao ja empilha e os campos ja respeitam o minimo de 16px do Safari.
 
-- a navegação do painel ja desce para uma barra fixa no rodape no celular;
-- as abas sao links com URL propria, e nao botões de JavaScript;
-- o quadro de Produção ja empilha em vez de forçar rolagem lateral;
-- o site publico ja trava a rolagem horizontal global com `html { overflow-x: clip; }`;
-- os campos do site publico respeitam o minimo de 16px para o Safari nao dar zoom;
-- o painel ja trabalha com alvo minimo de toque de 44px em varios controles.
+O que continua parcial mora **fora da tabela**:
 
-O problema remanescente e que varias telas ainda dependem de tabela com
-`.rolagem { overflow-x:auto; }`, o que no uso diario vira **scroll horizontal de
-sobrevivencia** em vez de experiencia mobile-first.
-
-Importante: os erros encontrados **tambem estao no painel**, e ali doem mais,
-porque sao telas de trabalho cotidiano da coordenação e da militância. Nao e um
-problema restrito ao site publico.
-
-Hoje isso ainda aparece em pontos como:
-
-- `agenda-tela.php`;
-- `inscricoes-decididas.php`;
-- `inscricoes-origens.php`;
-- `inscricoes-tela.php`;
-- `eventos-presenca.php`;
-- `candidatos-tela.php`;
-- `aulas.php`;
-- `fatos-decididos.php`;
-- `municao.php`;
-- `pessoas-lista.php`;
-- `pessoas-ficha.php`.
-
-Leitura correta:
-
-- a barra do celular, as abas e os grids principais estao no caminho certo;
-- o painel ainda concentra varios dos piores casos, sobretudo onde a informacao
-  foi mantida em tabela de escritorio e nao em lista de acao para celular;
-- o que ainda falta e converter as **listas de trabalho** para leitura e acao com
-  rolagem vertical apenas, sem depender de arrastar tabela para o lado;
-- o problema ja nao e de navegação global, e sim de formatos de lista e tabela.
-
-### Backlog mobile por tela, em ordem de gravidade
-
-| prioridade | tela | gravidade | por que doi no celular | destino recomendado |
-| --- | --- | --- | --- | --- |
-| P0 | `eventos-presenca.php` | muito alta | lista operacional, varias colunas, varios botoes por linha, uso de porta/recepcao | virar lista vertical por pessoa, com ações empilhadas |
-| P0 | `pessoas-lista.php` | muito alta | 6 colunas, selos, login, encontros e ações; tela de consulta recorrente | virar card-list com resumo + ações |
-| P0 | `candidatos-tela.php` | alta | foto, número, estado e 3 ações por linha; fica apertado e ruidoso | virar lista de ficha curta por candidato |
-| P0 | `municao.php` | alta | peça, fonte, estado e ações; uso recorrente em fluxo rápido | virar lista de peças com ações em bloco |
-| P1 | `agenda-tela.php` | média-alta | tabela curta, mas com ação e metadados que pedem leitura rápida | virar lista vertical da programação no painel |
-| P1 | `inscricoes-decididas.php` | média | arquivo/consulta, menos ação, mas ainda ruim para leitura apertada | pode manter tabela no desktop e virar cards no mobile |
-| P1 | `inscricoes-origens.php` | média | relatório numérico com 6 colunas; leitura horizontal mata comparação rápida | manter semântica de tabela no desktop e versão empilhada no mobile |
-| P1 | `fatos-decididos.php` | média | é arquivo, não operação de porta, mas continua largo e textual | manter semântica de tabela no desktop e versão condensada no mobile |
-| P2 | `pessoas-ficha.php` | média-baixa | histórico de encontros; é consulta, não fila de ação | pode continuar tabela por exceção, com visual mobile próprio |
-| P2 | `aulas.php` | baixa | relatório de progresso; uso mais analítico que operacional | pode continuar tabela por exceção |
-| P2 | `inscricoes-tela.php` | baixa | o quadro “onde a militância mora” é analítico, mas ainda pode quebrar em tela estreita | pode continuar tabela por exceção |
-
-### A pior tela hoje no celular
-
-`eventos-presenca.php` é a pior experiência atual.
-
-Motivo:
-
-- ela junta frequência alta, urgência alta e densidade alta;
-- é usada em contexto de recepção e evento, muitas vezes em pé e com pressa;
-- cada linha pede leitura de identidade, estado, classificação e ação;
-- a tabela atual mistura informação de pessoa com microações demais na mesma faixa horizontal.
-
-Desenho vertical recomendado para ela:
-
-- cada pessoa vira um card;
-- o topo do card mostra nome, bairro/cidade, telefone e selo de origem;
-- os estados `confirmou` e `compareceu` viram dois toggles ou botões grandes em linha ou pilha;
-- a classificação (`tipo`) desce para um seletor próprio do card;
-- a ação de tirar da lista vai para o rodapé do card, isolada como ação de risco;
-- os totais do encontro continuam no topo da seção, em selos ou bloco-resumo;
-- a busca e os filtros ficam acima da lista, sempre na vertical.
-
-Saída esperada:
-
-- uma lista de presença que se usa com o polegar, sem arrastar lateralmente para descobrir botão ou estado.
-
-### Tabelas que DEVEM virar lista ou card no mobile
-
-- `eventos-presenca.php`
-- `pessoas-lista.php`
-- `candidatos-tela.php`
-- `municao.php`
-- `agenda-tela.php`
-
-Critério:
-
-- telas de trabalho frequente;
-- presença de ação por linha;
-- coluna escondendo botão, estado ou identidade de pessoa;
-- uso esperado em celular no fluxo do dia.
-
-### Tabelas que podem continuar por exceção
-
-Podem continuar como tabela no desktop, desde que ganhem uma apresentação
-vertical no mobile e não dependam de rolagem horizontal para serem entendidas:
-
-- `inscricoes-origens.php`
-- `inscricoes-decididas.php`
-- `fatos-decididos.php`
-- `aulas.php`
-- `pessoas-ficha.php`
-- `inscricoes-tela.php`
-
-Critério:
-
-- telas mais analíticas ou de arquivo;
-- leitura comparativa que ainda se beneficia de semântica tabular no desktop;
-- pouca ou nenhuma ação por linha.
+- **modais longos** — leitura e acao com o viewport preso ainda nao foram
+  medidos;
+- **filtros e barras de busca** — o `.filtros-busca` ja cai para uma coluna aos
+  600px, mas a quebra de botao ao lado de campo nao foi conferida tela a tela;
+- **o site publico** — a rolagem horizontal global ja esta travada e os campos
+  ja estao em 16px, mas home, programacao e aulas ainda nao passaram pela
+  segunda passada (ver mais abaixo);
+- **medir de verdade** — o que existe hoje e leitura de codigo e de regra CSS.
+  Falta abrir as telas num aparelho e confirmar que nao sobrou rolagem lateral
+  em nenhuma tela de uso cotidiano.
 
 ### Estado visual das areas operacionais
 
@@ -301,38 +251,23 @@ se vale expandir para inscricoes, fatos e producao.
 
 ## O que falta, por prioridade
 
-### 1. Auditoria mobile-first das telas de trabalho
+### 1. Fechar a auditoria mobile fora da tabela
 
-Esta virou frente explicita do plano.
+O painel nao depende mais de arrastar para o lado. O que sobra da frente:
 
-Objetivo:
-
-- toda tela de uso diario funcionar no celular com **scroll vertical apenas**;
-- tanto no site publico quanto no painel, com prioridade primeiro para o painel;
-- tabelas virarem cards, blocos empilhados ou listas responsivas quando a largura
-  nao couber;
-- abas, menus, filtros e acoes principais continuarem acionaveis no polegar;
-- nenhuma lista importante depender de arrastar horizontalmente para revelar
-  campo critico ou botao de acao.
-
-Checklist de estudo e correcao:
-
-- mapear todas as ocorrencias de `.rolagem` e decidir se cada uma vira card-list,
-  tabela condensada ou permanece tabela por excecao justificavel;
-- mapear tambem as tabelas que nem chegam a passar por `.rolagem`, porque essas
-  tendem a quebrar o layout de forma mais feia no celular;
-- revisar listas com muitas colunas, principalmente Pessoas, Inscrições, Origens,
-  Fatos decididos, Presenças de encontro e Munição;
-- revisar agrupamentos de acoes para que empilhem sem quebrar contexto no celular;
-- revisar modais longos, para garantir leitura e acao sem viewport presa;
-- revisar filtros e barras de busca para evitar quebra ruim de botao e campo;
-- medir se ainda existe rolagem horizontal real em telas que deveriam ser de uso
-  cotidiano.
+- abrir as telas **num aparelho de verdade** e confirmar que nao sobrou rolagem
+  lateral em nenhuma tela de uso cotidiano — o que existe hoje e leitura de
+  regra CSS, e regra CSS nao e medicao;
+- revisar **modais longos**, para garantir leitura e acao sem viewport presa;
+- revisar **filtros e barras de busca**, para evitar quebra ruim de botao ao
+  lado de campo;
+- conferir os agrupamentos de acao que ficaram fora de tabela — Fatos e
+  Producao, onde o rigor de estado visual ainda nao foi espalhado.
 
 Saida esperada:
 
-- um painel que se usa inteiro no celular sem “puxar pro lado para descobrir” o
-  resto da informacao.
+- um painel que se usa inteiro no celular sem "puxar pro lado para descobrir" o
+  resto da informacao. **A parte que dependia de tabela ja esta.**
 
 ### 2. Testes de navegador, se e quando
 
@@ -366,8 +301,11 @@ o hero/banner entrou como melhoria real ou só como peso visual.
 
 Antes de inventar coisa nova, fechar o que ja esta parcialmente resolvido.
 
-O gargalo desta rodada deixou de ser "como organizar" e deixou de ser "como
-terminar sem reabrir risco": os cortes agora sao provados por comparacao de saida
-e as regras estao presas por teste de acao. **O que sobra e decisao de desenho** —
-e experiencia de uso no celular — duas coisas que nenhum teste sozinho toma no
-lugar de alguem.
+O gargalo ja nao e "como organizar", nem "como terminar sem reabrir risco", nem
+"a lista de trabalho nao cabe no telefone": os cortes sao provados por comparacao
+de saida, as regras estao presas por teste de acao, e a tabela do painel agora
+vira cartao por padrao — com teste que pega a proxima que nascer horizontal.
+
+**O que sobra e o que nenhum teste toma no lugar de alguem**: abrir as telas num
+aparelho e olhar. A auditoria mobile fechou a parte que se prova lendo codigo; a
+que falta se prova com o telefone na mao.

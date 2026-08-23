@@ -239,7 +239,7 @@ function bloco_ficha(array $aberta): void
       <?php if ($encontros === []): ?>
         <p class="dica" style="margin:0">Nunca apareceu em encontro nenhum.</p>
       <?php else: ?>
-        <div class="rolagem">
+        <div class="rolagem cartoes">
           <table class="tabela">
             <thead><tr><th>Encontro</th><th>Quando</th><th>O que aconteceu</th></tr></thead>
             <tbody>
@@ -250,8 +250,8 @@ function bloco_ficha(array $aberta): void
                       <?= h($en['evento']['titulo']) ?>
                     </a>
                   </td>
-                  <td><?= h(trim($en['evento']['data'] . ' ' . $en['evento']['hora'])) ?: '—' ?></td>
-                  <td>
+                  <td class="meia" data-rotulo="Quando"><?= h(trim($en['evento']['data'] . ' ' . $en['evento']['hora'])) ?: '—' ?></td>
+                  <td class="meia" data-rotulo="O que aconteceu">
                     <?php if ($en['compareceu']): ?>
                       <span class="selo selo-ok">veio</span>
                     <?php elseif ($en['confirmou']): ?>

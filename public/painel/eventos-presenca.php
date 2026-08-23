@@ -207,7 +207,7 @@ function desenhar_presenca(array $aberto, array $eu): void
         <?php endif; ?>
       </p>
 
-      <div class="rolagem">
+      <div class="rolagem cartoes">
         <table class="tabela">
           <thead>
             <tr><th>Quem</th><th>Confirmou</th><th>Compareceu</th><th>O que é</th><th></th></tr>
@@ -239,8 +239,11 @@ function desenhar_presenca(array $aberto, array $eu): void
                     <?= tem_conta($q) ? ' · <span class="selo selo-cinza">do time</span>' : '' ?>
                   </span>
                 </td>
+                <?php /* No celular os dois viram meio cartão cada um, lado a lado:
+                         eles só se leem em par — "confirmou e não veio" é a
+                         pergunta, e não "confirmou". */ ?>
                 <?php foreach (['confirmou', 'compareceu'] as $campo): ?>
-                  <td>
+                  <td class="meia" data-rotulo="<?= h(ucfirst($campo)) ?>">
                     <form method="post">
                       <input type="hidden" name="csrf" value="<?= h(token()) ?>">
                       <input type="hidden" name="id" value="<?= h($aberto['id']) ?>">
@@ -251,7 +254,7 @@ function desenhar_presenca(array $aberto, array $eu): void
                     </form>
                   </td>
                 <?php endforeach; ?>
-                <td>
+                <td data-rotulo="O que é">
                   <form method="post">
                     <input type="hidden" name="csrf" value="<?= h(token()) ?>">
                     <input type="hidden" name="id" value="<?= h($aberto['id']) ?>">
@@ -267,7 +270,7 @@ function desenhar_presenca(array $aberto, array $eu): void
                     <noscript><button type="submit" class="btn btn-mini">ok</button></noscript>
                   </form>
                 </td>
-                <td>
+                <td class="rodape">
                   <?php /* Tira a LINHA, não a pessoa: o cadastro dela continua em
                            /painel/pessoas, com telefone e os outros encontros. O
                            que se desfaz é "esteve neste sábado" — o dedo errado

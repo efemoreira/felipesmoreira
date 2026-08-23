@@ -350,7 +350,7 @@ abrir_pagina('Munição');
       <?php elseif ($visiveis === []): ?>
         <?php nada_encontrado($busca, '/painel/municao.php', 'Nenhuma peça com esse recorte.'); ?>
       <?php else: ?>
-      <div class="rolagem">
+      <div class="rolagem cartoes">
         <table class="tabela">
           <thead><tr><th>Peça</th><th>Fonte</th><th>Estado</th><th></th></tr></thead>
           <tbody>
@@ -360,27 +360,29 @@ abrir_pagina('Munição');
                   <strong><?= h($pc['numero']) ?></strong><br>
                   <span class="dica"><?= h($pc['frase']) ?></span>
                 </td>
-                <td><span class="selo"><?= h($pc['fonte']) ?></span></td>
-                <td>
+                <td class="meia" data-rotulo="Fonte"><span class="selo"><?= h($pc['fonte']) ?></span></td>
+                <td class="meia" data-rotulo="Estado">
                   <span class="selo <?= $pc['publicada'] ? 'selo-ok' : 'selo-cinza' ?>">
                     <?= $pc['publicada'] ? 'no ar' : 'rascunho' ?>
                   </span>
                 </td>
-                <td>
-                  <?php botao_modal('editar-peca', 'Corrigir', 'editar=' . urlencode($pc['id']), 'btn btn-mini'); ?>
-                  <form method="post" style="display:inline">
-                    <input type="hidden" name="csrf" value="<?= h(token()) ?>">
-                    <input type="hidden" name="id" value="<?= h($pc['id']) ?>">
-                    <button class="btn" name="acao" value="kit-publicar" type="submit">
-                      <?= $pc['publicada'] ? 'Recolher' : 'Publicar' ?>
-                    </button>
-                  </form>
-                  <form method="post" style="display:inline"
-                        onsubmit="return confirm('Apagar esta peça?')">
-                    <input type="hidden" name="csrf" value="<?= h(token()) ?>">
-                    <input type="hidden" name="id" value="<?= h($pc['id']) ?>">
-                    <button class="btn btn-risco" name="acao" value="kit-apagar" type="submit">Apagar</button>
-                  </form>
+                <td class="rodape">
+                  <div class="acoes-celula">
+                    <?php botao_modal('editar-peca', 'Corrigir', 'editar=' . urlencode($pc['id']), 'btn btn-mini'); ?>
+                    <form method="post">
+                      <input type="hidden" name="csrf" value="<?= h(token()) ?>">
+                      <input type="hidden" name="id" value="<?= h($pc['id']) ?>">
+                      <button class="btn btn-mini" name="acao" value="kit-publicar" type="submit">
+                        <?= $pc['publicada'] ? 'Recolher' : 'Publicar' ?>
+                      </button>
+                    </form>
+                    <form method="post"
+                          onsubmit="return confirm('Apagar esta peça?')">
+                      <input type="hidden" name="csrf" value="<?= h(token()) ?>">
+                      <input type="hidden" name="id" value="<?= h($pc['id']) ?>">
+                      <button class="btn btn-mini btn-risco" name="acao" value="kit-apagar" type="submit">Apagar</button>
+                    </form>
+                  </div>
                 </td>
               </tr>
             <?php endforeach; ?>
