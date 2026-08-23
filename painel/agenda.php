@@ -208,7 +208,9 @@ abrir_pagina('Agenda da semana');
 
   <?php recado($aviso, $sucesso); ?>
 
-  <form method="post" id="form" enctype="multipart/form-data">
+  <?php /* Rascunho: é a capa da programação pública, texto corrido escrito à
+           mão — o tipo de coisa que dói perder. */ ?>
+  <form method="post" id="form" enctype="multipart/form-data" data-rascunho="agenda-capa">
     <input type="hidden" name="acao" value="salvar">
     <input type="hidden" name="MAX_FILE_SIZE" value="<?= MAX_UPLOAD ?>">
     <input type="hidden" name="csrf" value="<?= h(token()) ?>">

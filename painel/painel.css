@@ -95,6 +95,21 @@
   --erro-fundo:rgba(194,84,63,.14); --erro-fundo-2:rgba(194,84,63,.2);
   --ok:#2F6B28; --ok-borda:#4E9B45;
   --ok-fundo:rgba(78,155,69,.16);
+  /* O degrau entre "em dia" e "venceu". Sem ele a operação só sabia dizer verde
+     ou vermelho, e tudo que estava perto do prazo aparecia como se estivesse
+     bem.
+
+     Calculado sobre os fundos COMPOSTOS em que ele de fato cai, e não só sobre
+     o papel: 6,11:1 em --fundo, 5,22:1 dentro do próprio --atencao-fundo e
+     5,14:1 em --realce-3. É a lição do --acento, que passava raspando no papel
+     e reprovava dentro da pílula do contador. Confirme com a sonda
+     getComputedStyle() sobre as telas antes de mexer.
+
+     A BORDA É UMA SÓ para os dois temas, como --erro-borda e --ok-borda: borda
+     não escreve, e #B8792B dá 5,21:1 no escuro e 3,07:1 no claro — acima dos
+     3:1 que a WCAG pede para elemento de interface. */
+  --atencao:#7A4E06; --atencao-borda:#B8792B;
+  --atencao-fundo:rgba(184,121,43,.16);
   /* selo de pendência: branco sobre vermelho se lê nos dois temas */
   --aviso-fundo:#C2543F; --aviso-texto:#fff;
 
@@ -127,6 +142,7 @@
     --erro:#F4A79D;
     --erro-fundo:rgba(194,84,63,.12); --erro-fundo-2:rgba(194,84,63,.18);
     --ok:#A7DBA0; --ok-fundo:rgba(78,155,69,.12);
+    --atencao:#F0C070; --atencao-fundo:rgba(184,121,43,.14);
   }
 }
 /* O mesmo escuro, para quem apertou o botão. */
@@ -152,6 +168,7 @@
   --erro:#F4A79D;
   --erro-fundo:rgba(194,84,63,.12); --erro-fundo-2:rgba(194,84,63,.18);
   --ok:#A7DBA0; --ok-fundo:rgba(78,155,69,.12);
+  --atencao:#F0C070; --atencao-fundo:rgba(184,121,43,.14);
 }
 * { box-sizing: border-box; }
 
@@ -242,6 +259,36 @@ a { color:var(--elo); text-underline-offset:3px; }
 }
 
 /* ---- a lista agrupada ---- */
+/* ---- a busca global, no alto da moldura ----
+   Ela vem ANTES do menu de propósito: procurar é o caminho mais curto para
+   quem já sabe o nome do que quer, e o menu é para quem está indo ver como
+   está uma frente. Quem sabe o nome não devia ter de escolher uma área antes. */
+.procurar { display:flex; gap:0; margin:0 0 14px; border:2px solid var(--linha); background:var(--campo); }
+.procurar input[type=search] {
+  flex:1 1 auto; min-width:0; margin:0; border:0; background:none;
+  padding:9px 10px; font:400 14px/1.3 var(--corpo); color:var(--texto);
+  /* 16px é o mínimo que o Safari do iPhone não dá zoom ao focar; aqui o campo
+     só aparece no computador e dentro da gaveta, e a gaveta usa a regra do
+     celular logo abaixo. */
+}
+.procurar input[type=search]::placeholder { color:var(--placeholder); }
+.procurar input[type=search]:focus { outline:3px solid var(--foco-borda); outline-offset:-3px; }
+.procurar button {
+  flex:0 0 auto; display:grid; place-items:center; width:38px;
+  border:0; border-left:2px solid var(--linha); background:none;
+  color:var(--texto-min); cursor:pointer;
+}
+.procurar button:hover { background:var(--realce-1); color:var(--acento); }
+.procurar button:focus-visible { outline:3px solid var(--foco-borda); outline-offset:-3px; }
+
+/* Rótulo que só o leitor de tela lê: a lupa e o `placeholder` dizem o que é
+   para quem enxerga, mas campo sem <label> é campo sem nome para quem navega
+   por teclado. */
+.nav-sr {
+  position:absolute; width:1px; height:1px; overflow:hidden;
+  clip:rect(0 0 0 0); clip-path:inset(50%); white-space:nowrap;
+}
+
 .nav-areas { display:flex; flex-direction:column; gap:2px; }
 /* rótulo de grupo é rótulo, não botão: apagado, pequeno, sem alvo de clique */
 .nav-grupo {
@@ -564,6 +611,11 @@ input[type=file]::file-selector-button {
 .selo-cinza { border-color:var(--linha-2); color:var(--texto-min); }
 .selo-off { border-color:var(--erro-borda); color:var(--erro); }
 .selo-ok { border-color:var(--ok-borda); color:var(--ok); }
+/* O degrau do meio: ainda não venceu, mas está no fim do prazo. */
+.selo-atencao { border-color:var(--atencao-borda); color:var(--atencao); }
+/* Publicado é o único estado que não se desfaz — ouro CHEIO, como o botão que
+   leva a ele. `--ouro` só entra em background e border; quem escreve é a tinta. */
+.selo-publicado { background:var(--ouro); border-color:var(--ink); color:var(--ink); }
 
 /* O login numa lista ou numa ficha. Monoespaçado e miúdo: ele é para ser lido em
    voz alta no grupo — "é jota-silva, tudo junto" — e num tipo proporcional o l e
@@ -594,6 +646,10 @@ input[type=file]::file-selector-button {
 @media (max-width:900px) {
   .lateral { display:none; }
   .conteudo { padding:18px 14px 20px; }
+  /* No celular a caixa só existe dentro da gaveta, e ali ela é um campo de
+     verdade: abaixo de 16px o Safari do iPhone dá zoom sozinho ao focar. */
+  .procurar input[type=search] { font-size:16px; padding:11px 12px; }
+  .procurar button { width:44px; }
   /* espaço para a barra não cobrir o fim do conteúdo, com a faixa do iPhone */
   body { padding-bottom:calc(74px + env(safe-area-inset-bottom)); }
 
@@ -1003,9 +1059,148 @@ fieldset[id], .item[id], .ficha[id] { scroll-margin-top:18px; }
 }
 .qr-texto { flex:1 1 250px; min-width:0; }
 
+/* ======================================================================
+   COCKPIT — os medidores da operação (index.php + agora.php)
+
+   O hub já dizia o que estava esperando ESTA pessoa. O que faltava era a outra
+   pergunta, que é da coordenação: como está a operação inteira hoje. São os
+   mesmos helpers de `tarefas_de()` lidos por outro ângulo — nenhum número novo
+   é calculado aqui nem no index.php.
+
+   O estado é a cor, e a cor tem três degraus, não dois: `em dia`, `atenção`
+   (perto do prazo) e `vencido`. Só verde e vermelho fazia tudo que estava
+   quase estourando parecer que estava bem.
+   ====================================================================== */
+.painel-op {
+  display:grid; gap:10px; margin:0 0 26px;
+  grid-template-columns:repeat(auto-fit,minmax(158px,1fr));
+}
+.medidor {
+  display:block; text-decoration:none; color:inherit; min-width:0;
+  border:3px solid var(--linha); background:var(--superficie-2);
+  padding:12px 14px 13px;
+}
+.medidor:hover { border-color:var(--ouro); background:var(--realce-2); }
+.medidor:focus-visible { outline:3px solid var(--foco-borda); outline-offset:3px; }
+.medidor-num {
+  display:block; font:400 27px/1 var(--display); letter-spacing:.5px; color:var(--titulo);
+}
+.medidor-rotulo {
+  display:block; margin-top:7px;
+  font:400 11px/1.35 var(--etiqueta); letter-spacing:1.2px; text-transform:uppercase;
+  color:var(--texto-min);
+}
+.medidor-nota { display:block; margin-top:6px; font-size:13px; line-height:1.5; color:var(--texto-fraco); }
+
+/* Os três degraus. A borda muda junto com o número: quem varre a tela de longe
+   lê a cor da caixa antes de ler o dígito dentro dela. */
+.medidor-ok { border-color:var(--ok-borda); }
+.medidor-ok .medidor-num { color:var(--ok); }
+.medidor-atencao { border-color:var(--atencao-borda); background:var(--atencao-fundo); }
+.medidor-atencao .medidor-num { color:var(--atencao); }
+.medidor-urgente { border-color:var(--erro-borda); background:var(--erro-fundo); }
+.medidor-urgente .medidor-num { color:var(--erro); }
+.medidor-urgente:hover { border-color:var(--erro); background:var(--erro-fundo-2); }
+
+/* ======================================================================
+   RESUMO DO ENCONTRO (eventos.php)
+
+   A tela do encontro tem três abas, e o número que importa mora sempre na aba
+   em que a pessoa NÃO está: quem marca checklist no Preparo quer saber quantos
+   confirmaram, quem recebe na porta quer saber quanto do preparo ficou de pé.
+   Esta faixa fica acima das abas e responde as duas de uma vez, sem trocar de
+   aba para consultar e voltar perdendo o lugar.
+   ====================================================================== */
+.resumo-encontro {
+  border:3px solid var(--linha); background:var(--superficie-2);
+  padding:14px 16px; margin:0 0 18px;
+}
+.resumo-numeros {
+  display:grid; gap:12px 18px; margin:0;
+  grid-template-columns:repeat(auto-fit,minmax(104px,1fr));
+}
+.resumo-numeros > div { min-width:0; }
+.resumo-numeros dt {
+  font:400 10.5px/1.3 var(--etiqueta); letter-spacing:1.4px; text-transform:uppercase;
+  color:var(--texto-min);
+}
+.resumo-numeros dd {
+  margin:4px 0 0; font:400 22px/1.1 var(--display); letter-spacing:.4px; color:var(--titulo);
+}
+.resumo-numeros dd small { font:400 13px/1.4 var(--corpo); color:var(--texto-fraco); letter-spacing:0; }
+.resumo-numeros .resumo-alerta dd { color:var(--erro); }
+.resumo-numeros .resumo-perto dd { color:var(--atencao); }
+
+/* As próximas ações: o que fazer AGORA neste encontro, e não a lista do que
+   existe. Some sozinha quando não sobrou nada — barra de ação vazia é ruído. */
+.resumo-acoes { margin:14px 0 0; padding-top:12px; border-top:2px dashed var(--linha); }
+.resumo-acoes .acoes { gap:8px; }
+
+@media (max-width:600px) {
+  .medidor { padding:10px 12px 11px; }
+  .medidor-num { font-size:23px; }
+  .resumo-encontro { padding:12px 13px; }
+}
+
+/* ======================================================================
+   LINHA DO TEMPO — o que andou acontecendo
+
+   Lista densa de propósito: ela é lida por cima, procurando um nome ou uma
+   surpresa, e não item por item. Por isso o horário vem PRIMEIRO e alinhado —
+   é por ele que o olho desce a coluna — e o texto ocupa o resto.
+   ====================================================================== */
+.tempo { list-style:none; margin:0; padding:0; display:grid; gap:0; }
+.tempo li + li { border-top:2px solid var(--realce-2); }
+.tempo a {
+  display:flex; gap:11px; align-items:baseline; padding:9px 4px;
+  text-decoration:none; color:inherit; min-width:0;
+}
+.tempo a:hover { background:var(--realce-1); }
+.tempo a:focus-visible { outline:3px solid var(--foco-borda); outline-offset:-3px; }
+.tempo-quando {
+  flex:0 0 76px; font:400 11.5px/1.5 var(--etiqueta); letter-spacing:.8px;
+  color:var(--texto-min); text-align:right;
+}
+.tempo-texto { flex:1 1 auto; min-width:0; font-size:14.5px; line-height:1.5; }
+/* Quem fez some no cinza: o que interessa é o QUE aconteceu; o nome é a
+   segunda pergunta, e só quando a primeira já foi respondida. */
+.tempo-quem { color:var(--texto-min); }
+.tempo-icone { flex:0 0 auto; color:var(--texto-apagado); display:grid; place-items:center; }
+
+@media (max-width:600px) {
+  /* No celular a coluna do horário custa um terço da largura para dizer
+     "há 2 h". Ela vira uma linha acima do texto. */
+  .tempo a { flex-wrap:wrap; gap:2px 11px; }
+  .tempo-quando { flex:1 0 100%; text-align:left; }
+}
+
+/* ======================================================================
+   RASCUNHO — o que ficou digitado e não foi salvo
+
+   Formulário longo no celular perde para qualquer coisa: a sessão expira, o
+   WhatsApp chama, o navegador descarta a aba. O rascunho fica no aparelho de
+   quem digitou e some quando o formulário é enviado.
+
+   NUNCA APLICA SOZINHO. A faixa OFERECE, e quem decide é a pessoa: num
+   formulário de edição, aplicar por conta própria escreveria por cima do que o
+   servidor diz — o defeito "ele desfez a minha correção", que não tem como ser
+   investigado depois. Por isso ela só aparece quando o guardado difere do que
+   está na tela, e traz as duas saídas lado a lado.
+   ====================================================================== */
+.rascunho-aviso {
+  display:flex; flex-wrap:wrap; gap:10px 14px; align-items:center;
+  border:3px solid var(--atencao-borda); background:var(--atencao-fundo);
+  padding:12px 14px; margin:0 0 16px;
+}
+.rascunho-aviso p {
+  flex:1 1 220px; margin:0; font-size:14.5px; line-height:1.5; color:var(--texto);
+}
+.rascunho-aviso .acoes { flex:0 0 auto; gap:8px; margin:0; }
+
 /* Na hora de imprimir, só o papel do QR interessa. */
 @media print {
-  .lateral, .barra-baixo, .acoes, fieldset:not(:has(.qr-bloco)), form { display:none; }
+  .lateral, .barra-baixo, .acoes, .painel-op, .resumo-encontro, .rascunho-aviso,
+  fieldset:not(:has(.qr-bloco)), form { display:none; }
   body { background:#fff; color:#000; }
   .qr-papel { box-shadow:none; }
 }

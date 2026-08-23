@@ -340,48 +340,36 @@ abrir_pagina('Produção');
   <?php /* O filtro só aparece quando há o que filtrar: com quatro cards ele é
            três controles em cima de um quadro que cabe inteiro na tela. */ ?>
   <?php if ($quantosCards > 6 || $recortado): ?>
-    <form method="get" class="filtros">
-      <div class="campo">
-        <label for="q">Procurar</label>
-        <input id="q" name="q" type="search" maxlength="60" value="<?= h($buscaPr) ?>"
-               placeholder="título, dono, alvo, fonte ou nome do arquivo"
-               autocapitalize="none" spellcheck="false" title="Atalho: tecle /">
-      </div>
-      <div class="campo">
-        <label for="fe">Peça</label>
-        <select id="fe" name="etapa">
-          <option value="">todas</option>
-          <?php foreach (ETAPAS as $chave => $nome): ?>
-            <?php if (($porEtapa[$chave] ?? 0) === 0 && $etapaF !== $chave) { continue; } ?>
-            <option value="<?= h($chave) ?>" <?= $etapaF === $chave ? 'selected' : '' ?>>
-              <?= h($nome) ?> (<?= (int) ($porEtapa[$chave] ?? 0) ?>)
-            </option>
-          <?php endforeach; ?>
-        </select>
-      </div>
-      <div class="campo">
-        <label for="fd">Mostrar</label>
-        <select id="fd" name="dono">
-          <option value="">o quadro inteiro</option>
-          <option value="meus"      <?= $donoF === 'meus'      ? 'selected' : '' ?>>os meus</option>
-          <option value="sem-dono"  <?= $donoF === 'sem-dono'  ? 'selected' : '' ?>>sem dono</option>
-          <option value="atrasados" <?= $donoF === 'atrasados' ? 'selected' : '' ?>>atrasados</option>
-        </select>
-      </div>
-      <div class="acoes">
-        <button class="btn" type="submit">Filtrar</button>
-        <?php if ($recortado): ?>
-          <a class="btn" href="/painel/producao.php">Limpar</a>
-        <?php endif; ?>
-      </div>
-    </form>
-    <?php if ($recortado): ?>
-      <p class="dica" style="margin:-6px 0 18px">
-        <?= $achados ?> de <?= $quantosCards ?> no quadro.
-        <?php if ($achados === 0 && $buscaPr !== ''): ?>
-          Confira a grafia — a busca ignora acento e maiúscula, mas não adivinha.
-        <?php endif; ?>
-      </p>
+    <?php
+      $opcoesEtapa = [];
+      foreach (ETAPAS as $chave => $nome) {
+          if (($porEtapa[$chave] ?? 0) === 0 && $etapaF !== $chave) {
+              continue;
+          }
+          $opcoesEtapa[$chave] = $nome . ' (' . (int) ($porEtapa[$chave] ?? 0) . ')';
+      }
+      barra_filtros(
+          [
+              ['tipo' => 'busca', 'valor' => $buscaPr, 'dica' => 'título, dono, alvo, fonte ou nome do arquivo'],
+              ['tipo' => 'escolha', 'nome' => 'etapa', 'rotulo' => 'Peça',
+               'valor' => $etapaF, 'vazio' => 'todas', 'opcoes' => $opcoesEtapa],
+              /* Este não tem opção vazia própria: "o quadro inteiro" É o vazio,
+                 e escrito assim porque a pergunta aqui não é "qual recorte" e
+                 sim "mostrar o quê". */
+              ['tipo' => 'escolha', 'nome' => 'dono', 'rotulo' => 'Mostrar',
+               'valor' => $donoF, 'vazio' => 'o quadro inteiro', 'opcoes' => [
+                   'meus'      => 'os meus',
+                   'sem-dono'  => 'sem dono',
+                   'atrasados' => 'atrasados',
+               ]],
+          ],
+          $recortado,
+          '/painel/producao.php'
+      );
+      resumo_do_recorte($recortado, $achados, $quantosCards, 'no quadro');
+    ?>
+    <?php if ($recortado && $achados === 0): ?>
+      <?php nada_encontrado($buscaPr, '/painel/producao.php', 'Nenhum card com esse recorte.'); ?>
     <?php endif; ?>
   <?php endif; ?>
 
@@ -415,6 +403,10 @@ abrir_pagina('Produção');
         <?php foreach ($daColuna as $c): ?>
           <?php
             $atrasado = $chave !== 'publicado' && $c['prazo'] !== '' && $c['prazo'] < $hoje;
+            /* O degrau do meio: vence HOJE ainda dá tempo, e é justamente o
+               card que precisa ser visto de manhã. Sem ele o quadro só sabia
+               dizer "no prazo" ou "já era". */
+            $venceHoje = $chave !== 'publicado' && $c['prazo'] === $hoje;
             $meu = $c['donoId'] === $eu['id'];
             $posicao = array_search($chave, array_keys(COLUNAS), true);
             $colunas = array_keys(COLUNAS);
@@ -424,6 +416,14 @@ abrir_pagina('Produção');
               <span class="selo"><?= h(ETAPAS[$c['etapa']]) ?></span>
               <?php if ($atrasado): ?>
                 <span class="selo selo-off">atrasado</span>
+              <?php elseif ($venceHoje): ?>
+                <span class="selo selo-atencao">vence hoje</span>
+              <?php endif; ?>
+              <?php /* Ouro cheio, e só nesta coluna: publicar é o fim da linha e
+                       não tem desfazer — é o mesmo peso que o Acervo dá ao card
+                       quando vai atrás do link do post. */ ?>
+              <?php if ($chave === 'publicado'): ?>
+                <span class="selo selo-publicado">no ar</span>
               <?php endif; ?>
             </header>
 

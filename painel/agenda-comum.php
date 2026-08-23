@@ -187,6 +187,40 @@ function estado_do_evento(string $inicio, ?int $agora = null): string
     return $agora < $t + DURACAO_PADRAO_MIN * 60 ? 'agora' : 'passado';
 }
 
+/**
+ * Quantos dias de calendário faltam para o instante — negativo depois, `null`
+ * quando não há instante nenhum.
+ *
+ * ISTO EXISTE PORQUE `data` NÃO É UMA DATA. O campo `data` do encontro é texto
+ * de EXIBIÇÃO ("24/08"), derivado do `inicio` por `partes_de_exibicao()` — sem
+ * ano e sem fuso. `strtotime('24/08')` devolve `false`, o `(int)` transforma
+ * isso em 0, e a conta passa a ser feita a partir de 1º de janeiro de 1970 sem
+ * erro nenhum aparecer: a página continua desenhando. Era assim que TODO
+ * encontro futuro com o checklist pela metade aparecia no hub como "é hoje" e
+ * pintado de urgente, e que a mesa de Encontros dizia "01/01".
+ *
+ * A contagem é em DIAS DE CALENDÁRIO no fuso do Ceará, e não em blocos de 24h:
+ * um encontro amanhã às 8h está a catorze horas de distância e mesmo assim é
+ * amanhã — é isso que quem lê "faltam 2 dias" entende.
+ *
+ * Mesmo cuidado de `partes_de_exibicao()`: o PHP da Hostinger roda em UTC, e
+ * comparar sem converter faz o encontro das 22h virar o dia seguinte.
+ */
+function dias_ate_o_dia(string $inicio): ?int
+{
+    if ($inicio === '') {
+        return null;
+    }
+    try {
+        $fuso  = new DateTimeZone('America/Fortaleza');
+        $quando = (new DateTimeImmutable($inicio))->setTimezone($fuso)->setTime(0, 0);
+        $hoje   = (new DateTimeImmutable('now', $fuso))->setTime(0, 0);
+    } catch (Exception $e) {
+        return null;
+    }
+    return (int) $hoje->diff($quando)->format('%r%a');
+}
+
 function limpar_link($v): string
 {
     $s = limpar_texto($v, 300);

@@ -15,6 +15,7 @@ declare(strict_types=1);
  */
 
 require_once __DIR__ . '/layout.php';  // puxa o sessao.php junto
+require_once __DIR__ . '/atividade-comum.php';
 
 $aviso = null;
 $sucesso = null;
@@ -208,18 +209,26 @@ if ($u === null) {
 /* ---------- hub ---------- */
 
 /**
- * O hub responde, de cima para baixo, as quatro perguntas de quem abre o
- * painel: onde eu trabalho, o que está esperando por mim, o que vem aí e
- * quanto eu já aprendi. A grade de áreas fica por último de propósito — ela é
- * o índice do painel, não a pauta do dia.
+ * O hub responde, de cima para baixo, as cinco perguntas de quem abre o painel:
+ * onde eu trabalho, o que está esperando por mim, como está a operação inteira,
+ * o que vem aí e quanto eu já aprendi.
+ *
+ * A OPERAÇÃO VEM DEPOIS DA FILA, e não antes. A pergunta pessoal ("o que é meu")
+ * é a que faz alguém trabalhar hoje; a coletiva ("como estamos") é a que faz
+ * decidir. Invertê-las poria a coordenação primeiro numa tela que todo militante
+ * abre — e quem tem uma área só leria dois medidores antes de achar a própria
+ * mesa.
  *
  * Nenhum número aqui é calculado neste arquivo: tudo vem do agora.php, que é a
- * fonte única do que está pendente. Área nova declara a fila lá, não aqui.
+ * fonte única — `tarefas_de()` para a fila, `panorama_de()` para os medidores.
+ * Área nova declara as duas coisas lá, não aqui.
  */
 
 $areas = areas_do_usuario();
 $mesas = mesas_de($u);
 $tarefas = tarefas_de($u);
+$panorama = panorama_de($u);
+$atividade = linha_do_tempo();
 $formacao = formacao_de($u);
 
 $negado = (string) ($_GET['negado'] ?? '');
@@ -263,8 +272,10 @@ abrir_pagina('Início');
         [
             'Esta tela é só o que está esperando por você hoje — para onde ir fica no menu, ao lado.',
             'A mesa do topo é a da sua função no movimento; “Ver tudo” abre a ferramenta inteira.',
+            'Os medidores de “A operação hoje” são do time inteiro, não seus: verde é em dia, âmbar é perto do prazo, vermelho já venceu.',
             'Área é permissão de tela; função é o seu papel na militância. Uma não limita a outra.',
             'Fila vazia é o objetivo, não erro: a meta é que nada durma sem status.',
+            '“O que andou acontecendo” é derivado do que já está gravado — não há registro de auditoria por trás.',
         ]
     );
   ?>
@@ -338,7 +349,29 @@ abrir_pagina('Início');
       <?php endif; ?>
     <?php endif; ?>
 
-    <?php /* ============ 3. os encontros marcados ============ */ ?>
+    <?php /* ============ 3. a operação de hoje ============
+             Os mesmos helpers da fila, lidos por outro ângulo: a fila diz o que
+             é MEU, os medidores dizem como está o TODO. É a diferença entre
+             trabalhar hoje e decidir hoje, e a coordenação precisa das duas.
+
+             Cada cartão é um link: medidor que mostra o problema e não leva até
+             ele obriga a procurar no menu qual tela responde por aquilo. */ ?>
+    <?php if ($panorama !== []): ?>
+      <h2 class="secao">A operação hoje</h2>
+      <div class="painel-op">
+        <?php foreach ($panorama as $m): ?>
+          <a class="medidor medidor-<?= h($m['estado']) ?>" href="<?= h($m['url']) ?>">
+            <strong class="medidor-num"><?= h($m['num']) ?></strong>
+            <span class="medidor-rotulo"><?= h($m['rotulo']) ?></span>
+            <?php if ($m['nota'] !== ''): ?>
+              <span class="medidor-nota"><?= h($m['nota']) ?></span>
+            <?php endif; ?>
+          </a>
+        <?php endforeach; ?>
+      </div>
+    <?php endif; ?>
+
+    <?php /* ============ 4. os encontros marcados ============ */ ?>
     <?php if (in_array('eventos', $areas, true)): ?>
       <h2 class="secao">Próximos encontros</h2>
       <?php if ($proximos === []): ?>
@@ -360,8 +393,18 @@ abrir_pagina('Início');
             ?>
             <a class="encontro" href="/painel/eventos.php?e=<?= h(rawurlencode($e['id'])) ?>">
               <span class="encontro-data">
-                <?php if ($e['data'] !== ''): ?>
-                  <strong><?= h(data_curta($e['data'])) ?></strong>
+                <?php /* `inicio` (o instante), e não `data` (o "24/08" de
+                         exibição): `data_curta()` lê ISO, e com o texto de
+                         exibição ela devolvia string vazia — o cartão do hub
+                         saía sem data para todo encontro. */ ?>
+                <?php if ($e['inicio'] !== ''): ?>
+                  <strong><?= h(data_curta($e['inicio'])) ?></strong>
+                  <span><?= $e['hora'] !== '' ? h($e['hora']) : 'sem hora' ?></span>
+                <?php elseif ($e['data'] !== ''): ?>
+                  <?php /* Encontro antigo, gravado antes de `inicio` existir:
+                           mostra o texto legado como está. Ele não some nem
+                           quebra — só não dá para dizer o dia da semana. */ ?>
+                  <strong><?= h($e['data']) ?></strong>
                   <span><?= $e['hora'] !== '' ? h($e['hora']) : 'sem hora' ?></span>
                 <?php else: ?>
                   <strong>SEM DATA</strong>
@@ -386,7 +429,7 @@ abrir_pagina('Início');
       <?php endif; ?>
     <?php endif; ?>
 
-    <?php /* ============ 4. a formação ============ */ ?>
+    <?php /* ============ 5. a formação ============ */ ?>
     <?php if ($formacao !== null): ?>
       <h2 class="secao">Sua formação</h2>
       <section class="formacao">
@@ -422,6 +465,30 @@ abrir_pagina('Início');
           </p>
         <?php endif; ?>
       </section>
+    <?php endif; ?>
+
+    <?php /* ============ 6. o que andou acontecendo ============
+             POR ÚLTIMO de propósito: é contexto, não tarefa. As cinco seções
+             acima respondem "o que eu faço agora"; esta responde "o que o time
+             andou fazendo", que é a pergunta de quem já fez a sua parte.
+
+             Nenhuma linha daqui sai de um arquivo de log — ela é derivada dos
+             carimbos que já existem. Ver atividade-comum.php. */ ?>
+    <?php if ($atividade !== []): ?>
+      <h2 class="secao">O que andou acontecendo</h2>
+      <ul class="tempo">
+        <?php foreach ($atividade as $l): ?>
+          <li>
+            <a href="<?= h($l['url']) ?>">
+              <span class="tempo-quando"><?= h(ha_quanto_tempo($l['quando'])) ?></span>
+              <span class="tempo-icone"><?= icone(ICONE_AREA[$l['area']] ?? 'star', 16) ?></span>
+              <span class="tempo-texto">
+                <?= h($l['texto']) ?><?php if ($l['quem'] !== ''): ?><span class="tempo-quem"> · <?= h($l['quem']) ?></span><?php endif; ?>
+              </span>
+            </a>
+          </li>
+        <?php endforeach; ?>
+      </ul>
     <?php endif; ?>
 
   <?php endif; ?>

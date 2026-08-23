@@ -317,40 +317,29 @@ abrir_pagina('Munição');
       <?php /* O filtro só aparece quando há o que filtrar: com quatro peças ele é
                três controles em cima de uma lista que já cabe na tela. */ ?>
       <?php if (count($pecasKit) > 6 || $busca !== '' || $temaF !== '' || $estadoF !== ''): ?>
-        <form method="get" class="filtros">
-          <div class="campo">
-            <label for="q">Procurar</label>
-            <input id="q" name="q" type="search" maxlength="60" value="<?= h($busca) ?>"
-                   placeholder="número, frase, fonte ou legenda" autocapitalize="none"
-                   spellcheck="false" title="Atalho: tecle /">
-          </div>
-          <div class="campo">
-            <label for="ft">Tema</label>
-            <select id="ft" name="tema">
-              <option value="">todos</option>
-              <?php foreach (TEMAS_KIT as $t): ?>
-                <?php if (($porTema[$t] ?? 0) === 0 && $temaF !== $t) { continue; } ?>
-                <option value="<?= h($t) ?>" <?= $temaF === $t ? 'selected' : '' ?>>
-                  <?= h($t) ?> (<?= (int) ($porTema[$t] ?? 0) ?>)
-                </option>
-              <?php endforeach; ?>
-            </select>
-          </div>
-          <div class="campo">
-            <label for="fe">Estado</label>
-            <select id="fe" name="estado">
-              <option value="">todos</option>
-              <option value="no-ar"    <?= $estadoF === 'no-ar'    ? 'selected' : '' ?>>no ar (<?= $noAr ?>)</option>
-              <option value="rascunho" <?= $estadoF === 'rascunho' ? 'selected' : '' ?>>rascunho (<?= count($pecasKit) - $noAr ?>)</option>
-            </select>
-          </div>
-          <div class="acoes">
-            <button class="btn" type="submit">Filtrar</button>
-            <?php if ($busca !== '' || $temaF !== '' || $estadoF !== ''): ?>
-              <a class="btn" href="/painel/municao.php">Limpar</a>
-            <?php endif; ?>
-          </div>
-        </form>
+        <?php
+          $opcoesTema = [];
+          foreach (TEMAS_KIT as $t) {
+              if (($porTema[$t] ?? 0) === 0 && $temaF !== $t) {
+                  continue;
+              }
+              $opcoesTema[$t] = $t . ' (' . (int) ($porTema[$t] ?? 0) . ')';
+          }
+          barra_filtros(
+              [
+                  ['tipo' => 'busca', 'valor' => $busca, 'dica' => 'número, frase, fonte ou legenda'],
+                  ['tipo' => 'escolha', 'nome' => 'tema', 'rotulo' => 'Tema',
+                   'valor' => $temaF, 'vazio' => 'todos', 'opcoes' => $opcoesTema],
+                  ['tipo' => 'escolha', 'nome' => 'estado', 'rotulo' => 'Estado',
+                   'valor' => $estadoF, 'vazio' => 'todos', 'opcoes' => [
+                       'no-ar'    => 'no ar (' . $noAr . ')',
+                       'rascunho' => 'rascunho (' . (count($pecasKit) - $noAr) . ')',
+                   ]],
+              ],
+              $busca !== '' || $temaF !== '' || $estadoF !== '',
+              '/painel/municao.php'
+          );
+        ?>
       <?php endif; ?>
 
       <?php if ($pecasKit === []): ?>

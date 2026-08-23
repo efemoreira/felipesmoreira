@@ -176,45 +176,31 @@ function tarefas_de(array $u): array
     if (pode('eventos')) {
         require_once __DIR__ . '/eventos-comum.php';
 
-        $eventos = [];
-        foreach (ler_eventos() as $e) {
-            $eventos[$e['id']] = $e;
-        }
-
         /* O funil D+0 / D+3 / D+7. Lead sem segunda mensagem é lead perdido, e
            é a única parte do manual que vence sozinha com o relógio.
 
+           A regra mora em `follow_ups_vencidos()`, no eventos-comum.php, e não
+           aqui: este `foreach` já existia igualzinho na tela do encontro e no
+           medidor do panorama, e prazo escrito em três lugares é prazo que
+           diverge na terceira alteração.
+
            O nome vem da PESSOA, não da presença: a presença é só a relação entre
-           as duas pontas, e quem tem nome é gente. */
-        $quem = [];
-        foreach (ler_pessoas() as $pp) {
-            $quem[$pp['id']] = $pp;
-        }
-        $vencidos = [];
-        foreach (ler_presencas() as $lead) {
-            $evento = $eventos[$lead['eventoId']] ?? null;
-            if ($evento === null || !isset($quem[$lead['pessoaId']])) {
-                continue;
-            }
-            $etapa = etapa_vencida($lead, $evento);
-            if ($etapa !== null) {
-                $lead['pessoa'] = $quem[$lead['pessoaId']];
-                $vencidos[] = ['lead' => $lead, 'etapa' => $etapa];
-            }
-        }
+           as duas pontas, e quem tem nome é gente — a função já devolve a ficha
+           resolvida em `['pessoa']`. */
+        $vencidos = follow_ups_vencidos();
         if ($vencidos !== []) {
-            $primeiro = $vencidos[0];
+            [$primeiroLead, $primeiraEtapa] = $vencidos[0];
             $quantos = count($vencidos);
             $tarefas[] = [
                 'area'    => 'eventos',
                 'icone'   => 'whatsapp',
                 'urgente' => true,
                 'texto'   => $quantos === 1
-                    ? 'Falar com ' . explode(' ', $primeiro['lead']['pessoa']['nome'])[0]
+                    ? 'Falar com ' . explode(' ', $primeiroLead['pessoa']['nome'])[0]
                     : "Fazer o follow-up de {$quantos} pessoas",
-                'porque'  => mb_strtolower(ROTULO_FUNIL[$primeiro['etapa']])
+                'porque'  => mb_strtolower(ROTULO_FUNIL[$primeiraEtapa])
                     . ' — o passo venceu e lead sem segunda mensagem é lead perdido',
-                'url'     => '/painel/eventos.php?e=' . rawurlencode($primeiro['lead']['eventoId']) . '&aba=pessoas#funil',
+                'url'     => '/painel/eventos.php?e=' . rawurlencode($primeiroLead['eventoId']) . '&aba=pessoas#funil',
             ];
         }
 
@@ -224,9 +210,11 @@ function tarefas_de(array $u): array
             if ($preparo['total'] === 0 || $preparo['feito'] >= $preparo['total']) {
                 continue;
             }
-            $faltam = $e['data'] !== ''
-                ? (int) floor((strtotime($e['data']) - strtotime(date('Y-m-d'))) / 86400)
-                : null;
+            /* `dias_ate_o_dia()` e não `strtotime($e['data'])`: `data` é
+               texto de exibição ("24/08"), e a conta em cima dele era feita a
+               partir de 1970 — todo encontro futuro caía aqui como "é hoje" e
+               urgente. Ver o comentário da função, em agenda-comum.php. */
+            $faltam = dias_ate_o_dia($e['inicio']);
             if ($faltam !== null && $faltam > 7) {
                 continue;  // ainda não é hora de cobrar
             }
@@ -283,6 +271,219 @@ function tarefas_de(array $u): array
     $calmas   = array_values(array_filter($tarefas, fn ($t) => !$t['urgente']));
 
     return $memo[$u['id']] = array_merge($urgentes, $calmas);
+}
+
+/**
+ * Os medidores da operação — o cockpit do Início.
+ *
+ * `tarefas_de()` responde "o que está esperando POR MIM". Esta responde a outra
+ * pergunta, que é da coordenação: "como está a operação hoje". São os mesmos
+ * helpers lidos por outro ângulo — nenhum número novo nasce aqui, e nenhuma
+ * regra de prazo é inventada: os limites são os mesmos que a fila já cobra
+ * (2h da checagem, HORAS_SEM_SAIDA, HORAS_LIMITE_INSCRICAO, D+0/D+3/D+7).
+ *
+ * TRÊS DEGRAUS, e não dois. `ok` · `atencao` · `urgente`. Só verde e vermelho
+ * fazia tudo que estava a uma hora de estourar aparecer como se estivesse bem —
+ * e o ponto de um painel de operação é justamente ver o problema antes de ele
+ * virar problema. `atencao` é sempre a METADE do prazo que torna aquilo
+ * urgente, para o degrau não virar número escolhido a dedo por medidor.
+ *
+ * PERMISSÃO: mesma regra de `tarefas_de()` — cada bloco dentro de um `pode()`,
+ * com o require_once do *-comum.php DENTRO do if.
+ *
+ * Cada medidor é:
+ *   num     — o número grande, já como texto ("3", "2/5", "—")
+ *   rotulo  — o que ele conta, em duas ou três palavras
+ *   nota    — a frase que explica o estado, ou ''
+ *   estado  — ok | atencao | urgente
+ *   url     — para onde o cartão leva
+ */
+function panorama_de(array $u): array
+{
+    static $memo = [];
+    if (isset($memo[$u['id']])) {
+        return $memo[$u['id']];
+    }
+
+    $medidores = [];
+
+    /* O degrau do meio é sempre metade do prazo que torna a coisa urgente. */
+    $degrau = function (int $valor, int $urgente): string {
+        if ($valor >= $urgente) {
+            return 'urgente';
+        }
+        return $valor >= (int) ceil($urgente / 2) ? 'atencao' : 'ok';
+    };
+
+    /* ---------- Checagem: a fila e a idade dela ---------- */
+    if (pode('fatos')) {
+        require_once __DIR__ . '/fatos-comum.php';
+        require_once __DIR__ . '/producao-comum.php';
+
+        $fila = fatos_com_status('a-checar');
+        $horas = 0;
+        foreach ($fila as $f) {
+            $horas = max($horas, horas_esperando($f));
+        }
+        $medidores[] = [
+            'num'    => (string) count($fila),
+            'rotulo' => 'Na checagem',
+            'nota'   => $fila === []
+                ? 'Fila zerada — nada dorme sem status.'
+                : ($horas >= 2
+                    ? "O mais antigo está parado há {$horas}h; o prazo é 2h."
+                    : 'Dentro do prazo de 2h.'),
+            /* Fila vazia é ok mesmo quando o relógio não correu ainda: o que
+               pinta o medidor é a idade do mais antigo, e sem fila não há
+               idade nenhuma. */
+            'estado' => $fila === [] ? 'ok' : $degrau($horas, 2),
+            'url'    => '/painel/fatos.php#fila',
+        ];
+
+        /* Aprovado e sem virar peça: o vão entre "decidido" e "feito". */
+        $parados = array_filter(
+            fatos_com_status('ok-checado'),
+            fn ($f) => saidas_do_fato($f['id']) === []
+        );
+        $velho = 0;
+        foreach ($parados as $f) {
+            $velho = max($velho, horas_esperando($f));
+        }
+        $medidores[] = [
+            'num'    => (string) count($parados),
+            'rotulo' => 'Sem saída',
+            'nota'   => $parados === []
+                ? 'Todo fato aprovado virou peça ou foi arquivado.'
+                : 'Passaram da checagem e não viraram peça — abra uma saída ou arquive.',
+            'estado' => $parados === [] ? 'ok' : $degrau($velho, HORAS_SEM_SAIDA),
+            'url'    => '/painel/fatos.php#checados',
+        ];
+    }
+
+    /* ---------- Produção: o que está atrasado no quadro ---------- */
+    if (pode('producao')) {
+        require_once __DIR__ . '/producao-comum.php';
+
+        $hoje = date('Y-m-d');
+        $abertos = 0;
+        $atrasados = 0;
+        $semDono = count(cards_da_coluna('a-fazer'));
+        foreach (ler_cards() as $c) {
+            if ($c['coluna'] === 'publicado') {
+                continue;
+            }
+            $abertos++;
+            if ($c['prazo'] !== '' && $c['prazo'] < $hoje) {
+                $atrasados++;
+            }
+        }
+        $medidores[] = [
+            'num'    => $atrasados . '/' . $abertos,
+            'rotulo' => 'Quadro atrasado',
+            'nota'   => $abertos === 0
+                ? 'Quadro vazio. O card nasce quando a Checagem aprova um fato.'
+                : ($atrasados > 0
+                    ? 'Cards com prazo vencido, do total em andamento.'
+                    : ($semDono > 0
+                        ? "Nenhum atraso. {$semDono} ainda sem dono."
+                        : 'Nenhum atraso e nenhum card sem dono.')),
+            /* Um card atrasado já é urgente: o prazo do manual é o mesmo dia
+               para roteiro e 24h para vídeo — não há degrau a percorrer. */
+            'estado' => $atrasados > 0 ? 'urgente' : ($semDono > 0 ? 'atencao' : 'ok'),
+            'url'    => '/painel/producao.php?dono=atrasados',
+        ];
+    }
+
+    /* ---------- Encontros: o preparo do próximo e o funil ---------- */
+    if (pode('eventos')) {
+        require_once __DIR__ . '/eventos-comum.php';
+
+        $proximos = eventos_proximos();
+        if ($proximos === []) {
+            $medidores[] = [
+                'num'    => '—',
+                'rotulo' => 'Próximo encontro',
+                'nota'   => 'Nenhum encontro marcado. O primeiro passo é Local & Hora.',
+                'estado' => 'atencao',
+                'url'    => '/painel/eventos.php',
+            ];
+        } else {
+            $e = $proximos[0];
+            $preparo = preparo_do_evento($e);
+            $faltam = dias_ate_o_dia($e['inicio']);
+            $completo = $preparo['total'] > 0 && $preparo['feito'] >= $preparo['total'];
+
+            /* Aqui o relógio corre para trás: quanto MENOS dias faltam, pior é
+               estar com o preparo pela metade. Por isso o degrau é escrito à
+               mão em vez de sair do $degrau(). */
+            if ($completo) {
+                $estado = 'ok';
+            } elseif ($faltam !== null && $faltam <= 2) {
+                $estado = 'urgente';
+            } elseif ($faltam !== null && $faltam <= 7) {
+                $estado = 'atencao';
+            } else {
+                $estado = 'ok';
+            }
+
+            $medidores[] = [
+                'num'    => $preparo['feito'] . '/' . $preparo['total'],
+                'rotulo' => 'Preparo do próximo',
+                'nota'   => apelido_curto($e['titulo'], 26)
+                    . ($faltam === null
+                        ? ' · sem data'
+                        : ($faltam <= 0 ? ' · é hoje' : ($faltam === 1 ? ' · é amanhã' : " · faltam {$faltam} dias"))),
+                'estado' => $estado,
+                'url'    => '/painel/eventos.php?e=' . rawurlencode($e['id']),
+            ];
+        }
+
+        /* O funil, somado em todos os encontros: lead sem segunda mensagem é
+           lead perdido, e é a única parte do manual que vence com o relógio.
+           Mesma fonte da fila e da tela do encontro. */
+        $vencidos = count(follow_ups_vencidos());
+        $noFunil = count(array_filter(ler_presencas(), fn ($l) => $l['compareceu']));
+        $medidores[] = [
+            'num'    => (string) $vencidos,
+            'rotulo' => 'Follow-up vencido',
+            'nota'   => $noFunil === 0
+                ? 'Ninguém marcado como presente ainda.'
+                : ($vencidos === 0
+                    ? ($noFunil === 1
+                        ? 'A única pessoa do funil está em dia.'
+                        : "Todas as {$noFunil} pessoas do funil estão em dia.")
+                    : 'Pessoas que compareceram e estão sem a próxima mensagem.'),
+            'estado' => $vencidos === 0 ? 'ok' : ($vencidos >= 5 ? 'urgente' : 'atencao'),
+            'url'    => '/painel/eventos.php',
+        ];
+    }
+
+    /* ---------- Inscrições: o vão entre se inscrever e ser aprovado ---------- */
+    if (pode('inscricoes')) {
+        require_once __DIR__ . '/inscricoes-comum.php';
+        require_once __DIR__ . '/pessoas-comum.php';
+
+        $fila = fila_de_entrada();
+        $horas = 0;
+        foreach ($fila as $i) {
+            $horas = max($horas, horas_na_fila($i));
+        }
+        $dias = (int) floor($horas / 24);
+        $medidores[] = [
+            'num'    => (string) count($fila),
+            'rotulo' => 'Esperando entrar',
+            'nota'   => $fila === []
+                ? 'Ninguém parado na porta.'
+                : ($horas >= HORAS_LIMITE_INSCRICAO
+                    ? 'A mais antiga está parada há ' . $dias . ' ' . ($dias === 1 ? 'dia' : 'dias')
+                        . ' — quem espera demais não volta.'
+                    : 'Quem se inscreveu ainda não tem acesso nem resposta.'),
+            'estado' => $fila === [] ? 'ok' : $degrau($horas, HORAS_LIMITE_INSCRICAO),
+            'url'    => '/painel/inscricoes.php',
+        ];
+    }
+
+    return $memo[$u['id']] = $medidores;
 }
 
 /**
@@ -405,8 +606,10 @@ function estado_da_area(string $area, array $u): string
         }
         $e = $proximos[0];
         $preparo = preparo_do_evento($e);
+        /* `data` JÁ É o "24/08" pronto para ler — reformatá-lo com date() era
+           formatar o número 0, e a mesa dizia "01/01" para todo encontro. */
         return 'Próximo: ' . apelido_curto($e['titulo'])
-            . ($e['data'] !== '' ? ' · ' . date('d/m', (int) strtotime($e['data'])) : '')
+            . ($e['data'] !== '' ? ' · ' . $e['data'] : '')
             . ' · preparo ' . $preparo['feito'] . '/' . $preparo['total'];
     }
 
@@ -484,17 +687,27 @@ function formacao_de(array $u): ?array
 /**
  * "SÁB 23/08" — a data do jeito que se lê num cartaz.
  *
- * date('w') conta a semana a partir do domingo; a lista abaixo segue essa ordem
- * de propósito, para não precisar corrigir índice na hora de usar.
+ * RECEBE O `inicio`, e não o `data`: aquele é o instante ISO, este é o "24/08"
+ * de exibição, que `strtotime()` não sabe ler — passar o segundo devolvia
+ * string vazia, e o cartão do hub saía sem data nenhuma.
+ *
+ * O fuso é o do Ceará, e não o do servidor, pela mesma razão de
+ * `partes_de_exibicao()`: a Hostinger roda em UTC, e um encontro às 22h
+ * apareceria com o dia seguinte no selo.
  */
-function data_curta(string $iso): string
+function data_curta(string $inicio): string
 {
-    $t = strtotime($iso);
-    if ($t === false) {
+    if ($inicio === '') {
         return '';
     }
+    try {
+        $d = (new DateTimeImmutable($inicio))->setTimezone(new DateTimeZone('America/Fortaleza'));
+    } catch (Exception $e) {
+        return '';
+    }
+    // format('w') devolve 0 para domingo; a lista segue essa ordem de propósito
     $dias = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'];
-    return $dias[(int) date('w', $t)] . ' ' . date('d/m', $t);
+    return $dias[(int) $d->format('w')] . ' ' . $d->format('d/m');
 }
 
 /** Título curto para caber num cartão sem estourar a linha. */

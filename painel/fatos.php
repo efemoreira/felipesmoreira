@@ -509,32 +509,24 @@ abrir_pagina('Fatos do dia');
   <?php /* O filtro só aparece quando há o que filtrar: com quatro fatos ele é
            dois controles em cima de uma lista que já cabe na tela. */ ?>
   <?php if ($quantosFatos > 6 || $buscaFa !== '' || $catF !== ''): ?>
-    <form method="get" class="filtros">
-      <div class="campo">
-        <label for="q">Procurar</label>
-        <input id="q" name="q" type="search" maxlength="60" value="<?= h($buscaFa) ?>"
-               placeholder="o que aconteceu, quem, fonte ou autor" autocapitalize="none"
-               spellcheck="false" title="Atalho: tecle /">
-      </div>
-      <div class="campo">
-        <label for="fcat">Categoria</label>
-        <select id="fcat" name="cat">
-          <option value="">todas</option>
-          <?php foreach (CATEGORIAS as $chave => $nome): ?>
-            <?php if (($porCategoria[$chave] ?? 0) === 0 && $catF !== $chave) { continue; } ?>
-            <option value="<?= h($chave) ?>" <?= $catF === $chave ? 'selected' : '' ?>>
-              <?= h($nome) ?> (<?= (int) ($porCategoria[$chave] ?? 0) ?>)
-            </option>
-          <?php endforeach; ?>
-        </select>
-      </div>
-      <div class="acoes">
-        <button class="btn" type="submit">Filtrar</button>
-        <?php if ($buscaFa !== '' || $catF !== ''): ?>
-          <a class="btn" href="/painel/fatos.php">Limpar</a>
-        <?php endif; ?>
-      </div>
-    </form>
+    <?php
+      $opcoesCat = [];
+      foreach (CATEGORIAS as $chave => $nome) {
+          if (($porCategoria[$chave] ?? 0) === 0 && $catF !== $chave) {
+              continue;
+          }
+          $opcoesCat[$chave] = $nome . ' (' . (int) ($porCategoria[$chave] ?? 0) . ')';
+      }
+      barra_filtros(
+          [
+              ['tipo' => 'busca', 'valor' => $buscaFa, 'dica' => 'o que aconteceu, quem, fonte ou autor'],
+              ['tipo' => 'escolha', 'nome' => 'cat', 'rotulo' => 'Categoria',
+               'valor' => $catF, 'vazio' => 'todas', 'opcoes' => $opcoesCat],
+          ],
+          $buscaFa !== '' || $catF !== '',
+          '/painel/fatos.php'
+      );
+    ?>
   <?php endif; ?>
 
   <!-- ============ a fila ============ -->
@@ -557,8 +549,14 @@ abrir_pagina('Fatos do dia');
               chegou <?= h($quando($f['criadoEm'])) ?>
             </span>
           </span>
+          <?php /* Três degraus, e não dois. O prazo da checagem é 2h; com só
+                   "vermelho depois de 2h" o fato de 1h50 aparecia igualzinho ao
+                   que acabou de chegar, e quem varre a fila não tinha como
+                   saber qual pegar primeiro. */ ?>
           <?php if ($horas >= 2): ?>
             <span class="selo selo-off"><?= $horas ?>h esperando</span>
+          <?php elseif ($horas >= 1): ?>
+            <span class="selo selo-atencao"><?= $horas ?>h esperando</span>
           <?php endif; ?>
         </header>
 
@@ -743,7 +741,10 @@ abrir_pagina('Fatos do dia');
                     <span class="selo selo-off">sem peça</span>
                   <?php else: ?>
                     <?php foreach ($saidas as $c): ?>
-                      <span class="selo <?= $c['coluna'] === 'publicado' ? '' : 'selo-cinza' ?>">
+                      <?php /* Publicado é ouro CHEIO: é o único estado que não
+                               se desfaz, e a peça no ar é a resposta final da
+                               pergunta "o que foi feito com aquele fato". */ ?>
+                      <span class="selo <?= $c['coluna'] === 'publicado' ? 'selo-publicado' : 'selo-cinza' ?>">
                         <?= h(ETAPAS[$c['etapa']] ?? $c['etapa']) ?>
                         · <?= h(COLUNAS[$c['coluna']] ?? $c['coluna']) ?>
                       </span>
