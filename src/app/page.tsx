@@ -2,7 +2,7 @@
 import React from "react";
 import Link from "next/link";
 import { Icon, IconName } from "@/components/icons";
-import { C, FONT_ALFA, FONT_ELITE, FONT_BITTER } from "@/lib/theme";
+import { BORDA, C, FONT_ALFA, FONT_ELITE, FONT_BITTER, borda } from "@/lib/theme";
 import { FaixaEleicao } from "@/components/FaixaEleicao";
 import { SigaCandidatos } from "@/features/candidatos/SigaCandidatos";
 import { GRUPO_GERAL } from "@/lib/contato";
@@ -267,7 +267,7 @@ const Home: React.FC = () => {
               display: "block",
               textDecoration: "none",
               background: l.accent ? C.gold : C.paper,
-              border: `3px solid ${C.ink}`,
+              border: borda(),
               boxShadow: `5px 5px 0 rgba(24,18,3,.35)`,
               color: C.ink,
               transition: "transform .12s ease, box-shadow .12s ease",
@@ -420,7 +420,7 @@ const Home: React.FC = () => {
         .cordel-social { transition: transform .12s ease, box-shadow .12s ease; }
         .cordel-social:hover { transform: translate(-2px,-2px); box-shadow: 5px 5px 0 rgba(24,18,3,.4); }
         .cordel-social:active { transform: translate(1px,1px); box-shadow: 2px 2px 0 rgba(24,18,3,.35); }
-        .cordel-card:focus-visible, .cordel-social:focus-visible { outline: 3px solid #FFCB05; outline-offset: 3px; }
+        .cordel-card:focus-visible, .cordel-social:focus-visible { outline: ${BORDA}px solid #FFCB05; outline-offset: 3px; }
         @keyframes cordelIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
         main > * { animation: cordelIn .5s ease-out backwards; }
         main > *:nth-child(1) { animation-delay: .05s; }
@@ -443,7 +443,7 @@ const socialIcon: React.CSSProperties = {
   placeItems: "center",
   borderRadius: "50%",
   background: C.gold,
-  border: `3px solid ${C.ink}`,
+  border: borda(),
   color: C.ink,
   boxShadow: "3px 3px 0 rgba(24,18,3,.35)",
   textDecoration: "none",

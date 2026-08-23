@@ -97,6 +97,61 @@ function catalogo_funcoes(): array
 }
 
 /** Nome de exibição da função; devolve o próprio id se o catálogo não tiver. */
+/**
+ * A régua de campo da inscrição — a mesma que `api/inscricao.php` aplica.
+ *
+ * Devolve `''` quando passa, ou a frase da recusa. Ela existe como FUNÇÃO, e
+ * não como um bloco de `if` dentro do endpoint, por um motivo só: há uma
+ * segunda cópia dela em `src/features/inscricao/validacao.ts`, e as duas têm
+ * de concordar. Enquanto a régua estava solta no meio do endpoint não havia
+ * como chamá-la de fora, e o par ficava sem quem conferisse.
+ *
+ * **A divergência que dói tem direção.** Se o servidor recusar algo que a tela
+ * aceitou, a pessoa preenche tudo, passa por todas as marcas verdes e leva um
+ * "não deu" genérico no fim — e vai embora. O contrário (o servidor aceitar
+ * mais do que a tela pede) é de propósito: aqui é endpoint público, e a régua
+ * de lá é mais dura para ajudar quem digita, não para barrar.
+ *
+ * @param array $campos nome, telefone, email, cidade e bairro, já limpos
+ */
+function recusa_de_inscricao(array $campos): string
+{
+    $nome = preg_replace('/\s+/u', ' ', (string) ($campos['nome'] ?? '')) ?? '';
+
+    if (mb_strlen($nome) < 5 || mb_strpos($nome, ' ') === false) {
+        return 'Escreva seu nome completo.';
+    }
+    $telefone = (string) ($campos['telefone'] ?? '');
+    if (strlen($telefone) < 10 || strlen($telefone) > 11) {
+        return 'Confira o WhatsApp: use DDD + número.';
+    }
+    $email = (string) ($campos['email'] ?? '');
+    if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        return 'Esse e-mail parece incompleto.';
+    }
+    if ((string) ($campos['cidade'] ?? '') === '' || (string) ($campos['bairro'] ?? '') === '') {
+        return 'Escolha sua cidade na lista e diga seu bairro.';
+    }
+    /* Função é OPCIONAL. Quem chegou disposto e ainda não sabe onde encaixa é
+       militante do mesmo jeito — recusar aqui trocaria um militante novo por
+       uma linha de relatório, o mesmo erro que a `origem` evita. Sem escolha,
+       a aprovação assume "onde-precisar" (ver inscricoes.php). */
+    return '';
+}
+
+/**
+ * Número no formato que o wa.me espera: 55 + DDD + número.
+ *
+ * Mudou de casa junto com a divisão da tela: a senha provisória (que fica na
+ * capa) e a ficha da fila precisam dela, e as duas passaram a viver em arquivos
+ * diferentes.
+ */
+function numero_whatsapp(string $telefone): string
+{
+    $d = so_digitos($telefone);
+    return str_starts_with($d, '55') ? $d : '55' . $d;
+}
+
 function nome_funcao(string $id): string
 {
     return (string) (catalogo_funcoes()['porId'][$id]['nome'] ?? $id);
@@ -236,6 +291,115 @@ function placar_de_origens(?array $pessoas = null): array
 
     usort($soma, fn ($a, $b) => [$b['total'], $b['aprovadas']] <=> [$a['total'], $a['aprovadas']]);
     return ['placar' => array_values($soma), 'semOrigem' => $semOrigem];
+}
+
+/**
+ * O FUNIL DE CADA ORIGEM — quem recruta, e o que converte.
+ *
+ * `placar_de_origens()` responde "quantas chegaram por aqui". Esta responde a
+ * pergunta seguinte, que é a que decide onde a campanha põe esforço: **das que
+ * chegaram, quantas viraram militante de verdade?**
+ *
+ * A diferença não é detalhe. Uma live que traz cinquenta inscrições e nenhuma
+ * aprovada parece a melhor origem do movimento no número cru, e é a pior; um
+ * militante que traz seis e vê as seis comparecendo é o que precisa ser copiado.
+ * Contar só o topo do funil premia quem faz barulho, não quem traz gente.
+ *
+ * **Três degraus, e não dois:**
+ *
+ * 1. `chegaram` — preencheu o formulário. É o que o link fez.
+ * 2. `aprovadas` — a coordenação conferiu e deu acesso.
+ * 3. `militaram` — apareceu em pelo menos um encontro. Este é o único que não
+ *    depende de a pessoa dizer que vai: é presença marcada na porta.
+ *
+ * **Quem recruta é separado de por onde veio, e a separação é lida do
+ * cadastro**, não de uma segunda lista: se a origem é o slug do nome de alguém
+ * que existe, a linha ganha o nome dessa pessoa. `?de=joao-silva` é gente,
+ * `?de=live-domingo` é canal — o campo é um só porque na prática a pergunta é a
+ * mesma, mas quem lê o relatório precisa distinguir os dois para saber se
+ * agradece ou se repete.
+ *
+ * Não inclui quem chegou sem origem: essa conta vai separada, porque "veio
+ * sozinho" não é um recrutador. E só conta quem passou pelo formulário — quem a
+ * coordenação cadastrou na mão não veio de link nenhum.
+ *
+ * @return array{
+ *   linhas: list<array{origem:string, quem:string, chegaram:int, aprovadas:int,
+ *                      militaram:int, ultima:string}>,
+ *   semOrigem: int, semOrigemMilitaram: int
+ * }
+ */
+function funil_de_origens(?array $pessoas = null): array
+{
+    require_once __DIR__ . '/eventos-comum.php';   // as presenças, para o 3º degrau
+
+    $pessoas ??= ler_pessoas();
+
+    /* Quem compareceu a pelo menos um encontro. Um `array` de ids em vez de uma
+       consulta por pessoa: são duas listas inteiras, e cruzá-las uma vez custa
+       menos que uma varredura por linha do relatório. */
+    $compareceu = [];
+    foreach (ler_presencas() as $l) {
+        if (!empty($l['compareceu'])) {
+            $compareceu[$l['pessoaId']] = true;
+        }
+    }
+
+    /* O slug do nome de cada pessoa → o nome dela. É assim que a origem
+       `joao-silva` vira "João Silva" na tela: o mesmo `normalizar_origem()` que
+       grava a origem, aplicado ao nome de quem já está no cadastro. Sem isso o
+       relatório mostra slug, e slug ninguém reconhece no grupo. */
+    $porSlug = [];
+    foreach ($pessoas as $p) {
+        $slug = normalizar_origem($p['nome']);
+        if ($slug !== '' && !isset($porSlug[$slug])) {
+            $porSlug[$slug] = $p['nome'];
+        }
+    }
+
+    $soma = [];
+    $semOrigem = 0;
+    $semOrigemMilitaram = 0;
+
+    foreach ($pessoas as $p) {
+        if ($p['status'] === '') {
+            continue;
+        }
+        $militou = isset($compareceu[$p['id']]);
+
+        if ($p['origem'] === '') {
+            $semOrigem++;
+            $semOrigemMilitaram += $militou ? 1 : 0;
+            continue;
+        }
+        $o = $p['origem'];
+        $soma[$o] ??= [
+            'origem'    => $o,
+            'quem'      => $porSlug[$o] ?? '',
+            'chegaram'  => 0,
+            'aprovadas' => 0,
+            'militaram' => 0,
+            'ultima'    => '',
+        ];
+        $soma[$o]['chegaram']++;
+        $soma[$o]['aprovadas'] += $p['status'] === 'aprovada' ? 1 : 0;
+        $soma[$o]['militaram'] += $militou ? 1 : 0;
+        if (($p['criadoEm'] ?? '') > $soma[$o]['ultima']) {
+            $soma[$o]['ultima'] = (string) $p['criadoEm'];
+        }
+    }
+
+    /* A ordem é por QUEM MILITOU, e o total só desempata. Ordenar pelo total
+       poria no topo justamente a origem que enche a fila e não entrega — que é
+       o erro de leitura que este relatório existe para desfazer. */
+    usort($soma, fn ($a, $b) => [$b['militaram'], $b['aprovadas'], $b['chegaram']]
+                           <=> [$a['militaram'], $a['aprovadas'], $a['chegaram']]);
+
+    return [
+        'linhas' => array_values($soma),
+        'semOrigem' => $semOrigem,
+        'semOrigemMilitaram' => $semOrigemMilitaram,
+    ];
 }
 
 /**

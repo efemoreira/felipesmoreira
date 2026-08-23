@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/icons";
-import { C, type Agenda } from "./tipos";
+import { C, BORDA, type Agenda } from "./tipos";
 import { FORMATOS, canvasParaBlob, gerarPoster, nomeArquivo, type Formato } from "./poster";
 
 const FONT_ALFA = "var(--font-alfa), serif";
@@ -214,13 +214,13 @@ const css = `
     display: inline-flex; align-items: center; gap: 9px; cursor: pointer;
     font-family: ${FONT_ELITE}; font-size: 13px; letter-spacing: 2.5px; text-transform: uppercase;
     color: ${C.ink}; background: ${C.gold};
-    padding: 11px 22px; border: 3px solid ${C.ink};
+    padding: 11px 22px; border: ${BORDA}px solid ${C.ink};
     box-shadow: 5px 5px 0 rgba(24,18,3,.5);
     transition: transform .12s ease, box-shadow .12s ease;
   }
   .cp-abrir:hover { transform: translate(-2px,-2px); box-shadow: 7px 7px 0 rgba(24,18,3,.55); }
   .cp-abrir:active { transform: translate(2px,2px); box-shadow: 2px 2px 0 rgba(24,18,3,.4); }
-  .cp-abrir:focus-visible { outline: 3px solid ${C.gold}; outline-offset: 4px; }
+  .cp-abrir:focus-visible { outline: ${BORDA}px solid ${C.gold}; outline-offset: 4px; }
 
   .cp-overlay {
     position: fixed; inset: 0; z-index: 50;
@@ -232,7 +232,7 @@ const css = `
     width: min(460px, 100%); max-width: 100%; box-sizing: border-box;
     max-height: 92dvh; overflow: auto;
     background: ${C.night}; color: ${C.cream};
-    border: 3px solid ${C.gold}; box-shadow: 10px 10px 0 rgba(0,0,0,.55);
+    border: ${BORDA}px solid ${C.gold}; box-shadow: 10px 10px 0 rgba(0,0,0,.55);
     padding: 16px;
     animation: cpUp .22s ease-out;
   }
@@ -259,7 +259,7 @@ const css = `
   }
   .cp-formato:hover { border-color: ${C.gold}; background: rgba(255,203,5,.12); }
   .cp-formato-ativo { background: ${C.gold}; color: ${C.ink}; border-color: ${C.gold}; }
-  .cp-formato:focus-visible { outline: 3px solid ${C.gold}; outline-offset: 3px; }
+  .cp-formato:focus-visible { outline: ${BORDA}px solid ${C.gold}; outline-offset: 3px; }
 
   .cp-palco {
     min-height: 220px; display: grid; place-items: center;
@@ -284,7 +284,7 @@ const css = `
   .cp-btn:hover { background: rgba(255,203,5,.16); }
   .cp-btn-principal { background: ${C.gold}; color: ${C.ink}; border-color: ${C.ink}; }
   .cp-btn-principal:hover { background: #ffd93d; }
-  .cp-btn:focus-visible, .cp-fechar:focus-visible { outline: 3px solid ${C.gold}; outline-offset: 3px; }
+  .cp-btn:focus-visible, .cp-fechar:focus-visible { outline: ${BORDA}px solid ${C.gold}; outline-offset: 3px; }
 
   .cp-dica {
     margin: 12px 0 2px; text-align: center;

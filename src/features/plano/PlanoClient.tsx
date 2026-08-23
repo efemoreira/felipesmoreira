@@ -2,7 +2,7 @@
 import React, { useEffect, useRef } from "react";
 import Link from "next/link";
 import { Icon, IconName } from "@/components/icons";
-import { C, FONT_ALFA, FONT_ELITE, FONT_BITTER } from "@/lib/theme";
+import { BORDA, C, FONT_ALFA, FONT_ELITE, FONT_BITTER, borda, TEXTO } from "@/lib/theme";
 import { escada, times, semana, fases, regras } from "./data";
 import { GRUPO_GERAL } from "@/lib/contato";
 
@@ -257,7 +257,7 @@ const PlanoClient: React.FC = () => {
           <div
             style={{
               background: C.cream,
-              border: `3px solid ${C.ink}`,
+              border: borda(),
               boxShadow: "6px 6px 0 rgba(24,18,3,.3)",
               padding: "26px 26px",
               textAlign: "center",
@@ -331,7 +331,7 @@ const PlanoClient: React.FC = () => {
       <section style={papel}>
         <div data-reveal style={secPad}>
           <Titulo chip="Capítulo 3">Como se entra</Titulo>
-          <p style={{ textAlign: "center", fontSize: 15.5, lineHeight: 1.6, maxWidth: 540, margin: "0 auto 30px" }}>
+          <p style={{ textAlign: "center", ...TEXTO.corpoSolto, maxWidth: 540, margin: "0 auto 30px" }}>
             <strong>Ninguém preenche formulário.</strong> Aqui as pessoas conversam —
             com o Levi, nosso secretário. São cinco passos, um de cada vez: cada degrau
             é fácil, e o próximo só chega pra quem subiu o anterior.
@@ -346,7 +346,7 @@ const PlanoClient: React.FC = () => {
                   gap: 14,
                   alignItems: "flex-start",
                   background: C.cream,
-                  border: `3px solid ${C.ink}`,
+                  border: borda(),
                   boxShadow: "4px 4px 0 rgba(24,18,3,.28)",
                   padding: "14px 16px",
                   marginLeft: `min(${i * 5}%, ${i * 26}px)`,
@@ -373,7 +373,7 @@ const PlanoClient: React.FC = () => {
         <Estrelas />
         <div data-reveal style={secPad}>
           <Titulo dark chip="Capítulo 4">Ninguém milita sozinho</Titulo>
-          <p style={{ textAlign: "center", fontSize: 15.5, lineHeight: 1.6, maxWidth: 540, margin: "0 auto 30px", textShadow: "0 1px 6px rgba(0,0,0,.6)" }}>
+          <p style={{ textAlign: "center", ...TEXTO.corpoSolto, maxWidth: 540, margin: "0 auto 30px", textShadow: "0 1px 6px rgba(0,0,0,.6)" }}>
             Ninguém pertence &ldquo;ao movimento&rdquo; — todo mundo pertence a um
             <strong> time de 8 a 14 pessoas</strong>, com coordenador, grupo próprio
             e trabalho de verdade. Você escolhe a sua frente:
@@ -385,7 +385,7 @@ const PlanoClient: React.FC = () => {
                 className="p-stagger"
                 style={{
                   background: C.paper,
-                  border: `3px solid ${C.ink}`,
+                  border: borda(),
                   boxShadow: `5px 5px 0 rgba(0,0,0,.45)`,
                   padding: "18px 18px 16px",
                   color: C.ink,
@@ -411,7 +411,7 @@ const PlanoClient: React.FC = () => {
       <section style={papel}>
         <div data-reveal style={secPad}>
           <Titulo chip="Capítulo 5">A semana que se repete</Titulo>
-          <p style={{ textAlign: "center", fontSize: 15.5, lineHeight: 1.6, maxWidth: 540, margin: "0 auto 30px" }}>
+          <p style={{ textAlign: "center", ...TEXTO.corpoSolto, maxWidth: 540, margin: "0 auto 30px" }}>
             A previsibilidade é o que cria hábito. Quando a campanha esquenta,
             toda semana tem a mesma espinha — e você sabe de véspera onde é o seu lugar nela.
           </p>
@@ -478,7 +478,7 @@ const PlanoClient: React.FC = () => {
                     height: f.estado === "agora" ? 24 : 18,
                     borderRadius: "50%",
                     background: f.estado === "vem" ? C.night : C.gold,
-                    border: `3px solid ${f.estado === "vem" ? C.goldDim : C.ink}`,
+                    border: borda(f.estado === "vem" ? C.goldDim : C.ink),
                     boxShadow: `0 0 0 2px ${f.estado === "vem" ? C.goldDim : C.gold}`,
                   }}
                 />
@@ -515,7 +515,7 @@ const PlanoClient: React.FC = () => {
                   textTransform: "uppercase",
                   background: i % 2 === 0 ? C.ink : C.gold,
                   color: i % 2 === 0 ? C.gold : C.ink,
-                  border: `3px solid ${C.ink}`,
+                  border: borda(),
                   boxShadow: "4px 4px 0 rgba(24,18,3,.3)",
                   padding: "10px 16px",
                   transform: `rotate(${i % 2 === 0 ? -1.2 : 1.4}deg)`,
@@ -621,7 +621,7 @@ const PlanoClient: React.FC = () => {
               gap: 12,
               textDecoration: "none",
               background: C.gold,
-              border: `3px solid ${C.ink}`,
+              border: borda(),
               boxShadow: `6px 6px 0 ${C.ink}`,
               color: C.ink,
               padding: "16px 26px",
@@ -642,8 +642,8 @@ const PlanoClient: React.FC = () => {
           aria-hidden="true"
           style={{
             position: "relative",
-            borderTop: `3px solid ${C.ink}`,
-            borderBottom: `3px solid ${C.ink}`,
+            borderTop: borda(),
+            borderBottom: borda(),
             background: C.gold,
             overflow: "hidden",
             height: 42,
@@ -695,7 +695,7 @@ const PlanoClient: React.FC = () => {
         .p-cta { transition: transform .12s ease, box-shadow .12s ease; }
         .p-cta:hover { transform: translate(-2px,-2px); box-shadow: 8px 8px 0 ${C.ink}; }
         .p-cta:active { transform: translate(2px,2px); box-shadow: 3px 3px 0 ${C.ink}; }
-        .p-cta:focus-visible { outline: 3px solid ${C.cream}; outline-offset: 3px; }
+        .p-cta:focus-visible { outline: ${BORDA}px solid ${C.cream}; outline-offset: 3px; }
         @media (prefers-reduced-motion: reduce) {
           [data-reveal], [data-reveal] .p-stagger, [data-reveal] .p-stamp, .p-tinta, .p-garra path { opacity: 1 !important; transform: none !important; transition: none !important; animation: none !important; stroke-dashoffset: 0 !important; }
           .p-gira, .p-star, .p-hint, .p-roll, .p-cta { animation: none !important; transition: none !important; }

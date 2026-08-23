@@ -2,7 +2,7 @@
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { Icon, IconName } from "@/components/icons";
-import { C, FONT_ALFA, FONT_ELITE, FONT_BITTER } from "@/lib/theme";
+import { BORDA, C, FONT_ALFA, FONT_BITTER, FONT_ELITE, borda } from "@/lib/theme";
 import { heroes, type Hero } from "./data";
 
 /* textura de folheto: hachuras leves de xilogravura sobre o papel */
@@ -54,7 +54,7 @@ const periodChip = (accent: string): React.CSSProperties => ({
 
 const fieldStyle: React.CSSProperties = {
   background: C.cream,
-  border: `3px solid ${C.ink}`,
+  border: borda(),
   boxShadow: "3px 3px 0 rgba(24,18,3,.28)",
   padding: "10px 12px",
   /* 16px é o mínimo que impede o iPhone de dar zoom ao focar o campo */
@@ -123,8 +123,8 @@ export default function HeroisClient() {
         .h-card:active { transform: translate(1px,1px); box-shadow: 2px 2px 0 rgba(24,18,3,.3) !important }
         .h-btn { transition: transform .12s ease, box-shadow .12s ease }
         .h-btn:hover { transform: translate(-1px,-1px); box-shadow: 4px 4px 0 rgba(24,18,3,.3) !important }
-        .h-card:focus-visible, .h-btn:focus-visible { outline: 3px solid ${C.goldDim}; outline-offset: 3px }
-        .h-field:focus { outline: 3px solid ${C.gold}; outline-offset: 0 }
+        .h-card:focus-visible, .h-btn:focus-visible { outline: ${BORDA}px solid ${C.goldDim}; outline-offset: 3px }
+        .h-field:focus { outline: ${BORDA}px solid ${C.gold}; outline-offset: 0 }
         @media (prefers-reduced-motion: reduce) {
           .h-overlay, .h-drawer { animation: none }
           .h-card, .h-btn { transition: none }
@@ -149,7 +149,7 @@ export default function HeroisClient() {
               textDecoration: "none",
               color: C.ink,
               background: C.cream,
-              border: `3px solid ${C.ink}`,
+              border: borda(),
               boxShadow: "3px 3px 0 rgba(24,18,3,.28)",
               padding: "11px 16px",
               minHeight: 44,
@@ -282,7 +282,7 @@ export default function HeroisClient() {
                   textAlign: "left",
                   fontFamily: "inherit",
                   background: C.cream,
-                  border: `3px solid ${C.ink}`,
+                  border: borda(),
                   boxShadow: active
                     ? `5px 5px 0 ${m.accent}`
                     : "4px 4px 0 rgba(24,18,3,.28)",
@@ -384,7 +384,7 @@ export default function HeroisClient() {
                   top: 0,
                   background: C.paper,
                   padding: "20px 0 14px",
-                  borderBottom: `3px solid ${C.ink}`,
+                  borderBottom: borda(),
                   marginBottom: 18,
                   zIndex: 1,
                 }}
@@ -441,7 +441,7 @@ export default function HeroisClient() {
                     display: "grid",
                     placeItems: "center",
                     background: C.gold,
-                    border: `3px solid ${C.ink}`,
+                    border: borda(),
                     boxShadow: "3px 3px 0 rgba(24,18,3,.28)",
                     color: C.ink,
                     cursor: "pointer",

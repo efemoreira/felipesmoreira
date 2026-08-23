@@ -46,6 +46,7 @@ const PONTES = [
     'nome_de_arquivo',
     'cidade_valida',
     'telefone_bonito',
+    'recusa_de_inscricao',
 ];
 
 $entrada = json_decode((string) file_get_contents('php://stdin'), true);

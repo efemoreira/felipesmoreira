@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { Icon } from "@/components/icons";
-import { C, FONT_ALFA, FONT_ELITE, FONT_BITTER } from "@/lib/theme";
+import { BORDA, C, FONT_ALFA, FONT_BITTER, FONT_ELITE, borda, TEXTO } from "@/lib/theme";
 import {
   CHAPA,
   CITACOES,
@@ -41,7 +41,7 @@ const Selo: React.FC<{ n: number }> = ({ n }) => (
       placeItems: "center",
       background: C.ink,
       color: C.gold,
-      border: `3px solid ${C.ink}`,
+      border: borda(),
       fontFamily: FONT_ALFA,
       fontSize: 18,
       lineHeight: 1,
@@ -60,7 +60,7 @@ const CartaoMeta: React.FC<{ numero: string; oQue: string; pagina: string }> = (
   <div
     style={{
       background: C.cream,
-      border: `3px solid ${C.ink}`,
+      border: borda(),
       boxShadow: "4px 4px 0 rgba(24,18,3,.3)",
       padding: "12px 14px",
       display: "flex",
@@ -95,7 +95,7 @@ const BlocoCompromisso: React.FC<{ c: Compromisso }> = ({ c }) => {
       id={c.id}
       style={{
         background: C.paper,
-        border: `3px solid ${C.ink}`,
+        border: borda(),
         boxShadow: "7px 7px 0 rgba(24,18,3,.3)",
         padding: "22px 20px",
         display: "flex",
@@ -141,7 +141,7 @@ const BlocoCompromisso: React.FC<{ c: Compromisso }> = ({ c }) => {
             display: "grid",
             placeItems: "center",
             background: C.gold,
-            border: `3px solid ${C.ink}`,
+            border: borda(),
             color: C.ink,
           }}
         >
@@ -152,7 +152,7 @@ const BlocoCompromisso: React.FC<{ c: Compromisso }> = ({ c }) => {
       {/* O que está em jogo */}
       <div>
         <p style={rotuloSecao}>O que está em jogo</p>
-        <p style={{ margin: 0, fontSize: 15.5, lineHeight: 1.6 }}>{c.emJogo}</p>
+        <p style={{ margin: 0, ...TEXTO.corpoSolto }}>{c.emJogo}</p>
       </div>
 
       {/* Onde queremos chegar — os números */}
@@ -223,7 +223,7 @@ const BlocoCompromisso: React.FC<{ c: Compromisso }> = ({ c }) => {
             <p style={rotuloSecao}>De onde vem o recurso</p>
             <ul style={{ margin: 0, paddingLeft: 18, listStyle: "disc", display: "flex", flexDirection: "column", gap: 7 }}>
               {c.recurso.map((r) => (
-                <li key={r} style={{ fontSize: 14.5, lineHeight: 1.55 }}>
+                <li key={r} style={{ ...TEXTO.nota }}>
                   {r}
                 </li>
               ))}
@@ -349,7 +349,7 @@ export default function PropostasClient() {
               lineHeight: 1.6,
               margin: 0,
               paddingTop: 14,
-              borderTop: `3px solid ${C.ink}`,
+              borderTop: borda(),
             }}
           >
             <strong>{CHAPA.governador}</strong>, governador · <strong>{CHAPA.vice}</strong>, vice
@@ -363,7 +363,7 @@ export default function PropostasClient() {
           style={{
             background: C.ink,
             color: C.cream,
-            border: `3px solid ${C.ink}`,
+            border: borda(),
             boxShadow: "7px 7px 0 rgba(24,18,3,.3)",
             padding: "22px 20px",
             marginBottom: 34,
@@ -380,7 +380,7 @@ export default function PropostasClient() {
           >
             Como ler este plano
           </h2>
-          <p style={{ margin: "0 0 16px", fontSize: 15.5, lineHeight: 1.6 }}>
+          <p style={{ margin: "0 0 16px", ...TEXTO.corpoSolto }}>
             Ele não é organizado por secretaria, e sim por compromissos — porque os problemas do
             cearense não respeitam a divisão de pastas do governo. Cada um responde sempre às
             mesmas seis perguntas:
@@ -507,7 +507,7 @@ export default function PropostasClient() {
                   margin: 0,
                   borderLeft: `5px solid ${C.gold}`,
                   background: C.cream,
-                  border: `3px solid ${C.ink}`,
+                  border: borda(),
                   borderLeftWidth: 7,
                   borderLeftColor: C.gold,
                   boxShadow: "5px 5px 0 rgba(24,18,3,.28)",
@@ -544,7 +544,7 @@ export default function PropostasClient() {
           style={{
             marginTop: 34,
             background: C.gold,
-            border: `3px solid ${C.ink}`,
+            border: borda(),
             boxShadow: "7px 7px 0 rgba(24,18,3,.3)",
             padding: "22px 20px",
             textAlign: "center",
@@ -553,7 +553,7 @@ export default function PropostasClient() {
           <h2 style={{ fontFamily: FONT_ALFA, fontSize: 23, lineHeight: 1.15, margin: "0 0 10px" }}>
             Cobrar é bom. Construir é melhor.
           </h2>
-          <p style={{ margin: "0 0 18px", fontSize: 15.5, lineHeight: 1.6 }}>
+          <p style={{ margin: "0 0 18px", ...TEXTO.corpoSolto }}>
             Este plano só sai do papel se tiver gente. Entre na militância da Missão Ceará e
             escolha por onde começar.
           </p>
@@ -568,7 +568,7 @@ export default function PropostasClient() {
               padding: "12px 22px",
               background: C.ink,
               color: C.gold,
-              border: `3px solid ${C.ink}`,
+              border: borda(),
               boxShadow: "4px 4px 0 rgba(24,18,3,.35)",
               fontFamily: FONT_ALFA,
               fontSize: 16,
@@ -585,7 +585,7 @@ export default function PropostasClient() {
         #${compromissos.map((c) => c.id).join(", #")} { scroll-margin-top: 20px; }
         summary::-webkit-details-marker { display: none; }
         a:focus-visible, summary:focus-visible {
-          outline: 3px solid ${C.ink};
+          outline: ${BORDA}px solid ${C.ink};
           outline-offset: 3px;
         }
       `}</style>

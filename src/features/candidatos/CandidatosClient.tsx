@@ -2,7 +2,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Icon } from "@/components/icons";
-import { C, FONT_ALFA, FONT_ELITE, FONT_BITTER } from "@/lib/theme";
+import { BORDA, C, FONT_ALFA, FONT_ELITE, FONT_BITTER } from "@/lib/theme";
 import { canvasParaBlob } from "@/lib/cordelCanvas";
 import { faseEm, type Fase } from "@/lib/eleicao";
 import { obterChapa, pessoasDa, type Candidato, type Lista } from "@/lib/api/candidatos";
@@ -326,7 +326,7 @@ const css = `
 
   .cd-foto {
     width: 56px; height: 56px; object-fit: cover; flex: 0 0 auto;
-    border: 3px solid ${C.ink}; background: rgba(246,245,239,.08);
+    border: ${BORDA}px solid ${C.ink}; background: rgba(246,245,239,.08);
   }
   .cd-foto-vazia {
     display: inline-flex; align-items: center; justify-content: center;
@@ -335,7 +335,7 @@ const css = `
   .cd-ficha {
     display: grid; grid-template-columns: auto auto 1fr auto; align-items: center; gap: 14px;
     padding: 16px 18px; background: rgba(246,245,239,.05);
-    border: 3px solid rgba(255,203,5,.28);
+    border: ${BORDA}px solid rgba(255,203,5,.28);
   }
   .cd-ficha-ouro { border-color: ${C.gold}; background: rgba(255,203,5,.08); }
   .cd-numero {
@@ -355,7 +355,7 @@ const css = `
     display: inline-flex; align-items: center; gap: 7px; min-height: 44px; padding: 0 14px;
     cursor: pointer; font-family: ${FONT_ELITE}; font-size: 11.5px; letter-spacing: 1.4px;
     text-transform: uppercase; color: ${C.ink}; background: ${C.gold};
-    border: 3px solid ${C.ink}; box-shadow: 3px 3px 0 ${C.ink};
+    border: ${BORDA}px solid ${C.ink}; box-shadow: 3px 3px 0 ${C.ink};
   }
   .cd-btn:disabled, .cd-btn-grupo:disabled { opacity: .6; cursor: wait; }
   .cd-btn-grupo { margin-bottom: 14px; }
@@ -364,7 +364,7 @@ const css = `
     font-size: 15.5px; line-height: 1.7; margin: 0 0 22px;
   }
   .cd-aviso, .cd-trava {
-    border: 3px solid ${C.gold}; background: rgba(255,203,5,.08); padding: 14px 16px;
+    border: ${BORDA}px solid ${C.gold}; background: rgba(255,203,5,.08); padding: 14px 16px;
   }
   .cd-elo { color: ${C.gold2}; }
 

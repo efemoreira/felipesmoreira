@@ -1,7 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { Icon, type IconName } from "@/components/icons";
-import { C, FONT_ALFA, FONT_ELITE, FONT_BITTER } from "@/lib/theme";
+import { BORDA, C, FONT_ALFA, FONT_ELITE, FONT_BITTER, borda, TEXTO } from "@/lib/theme";
 import CATALOGO from "@/data/funcoes.json";
 import type { CatalogoFuncoes, Funcao, GrupoFuncao } from "@/features/inscricao/tipos";
 
@@ -38,7 +38,7 @@ const Ficha: React.FC<{ f: Funcao }> = ({ f }) => (
     id={f.id}
     style={{
       background: C.cream,
-      border: `3px solid ${C.ink}`,
+      border: borda(),
       boxShadow: "6px 6px 0 rgba(24,18,3,.3)",
       padding: "20px 18px",
       display: "flex",
@@ -57,7 +57,7 @@ const Ficha: React.FC<{ f: Funcao }> = ({ f }) => (
           display: "grid",
           placeItems: "center",
           background: C.gold,
-          border: `3px solid ${C.ink}`,
+          border: borda(),
           color: C.ink,
         }}
       >
@@ -82,11 +82,11 @@ const Ficha: React.FC<{ f: Funcao }> = ({ f }) => (
     <dl style={{ margin: 0, display: "flex", flexDirection: "column", gap: 11 }}>
       <div>
         <dt style={rotulo}>O que você entrega</dt>
-        <dd style={{ margin: 0, fontSize: 15.5, lineHeight: 1.55 }}>{f.entrega}</dd>
+        <dd style={{ margin: 0, ...TEXTO.corpo }}>{f.entrega}</dd>
       </div>
       <div>
         <dt style={rotulo}>Quanto tempo pede</dt>
-        <dd style={{ margin: 0, fontSize: 15.5, lineHeight: 1.55 }}>{f.ritmo}</dd>
+        <dd style={{ margin: 0, ...TEXTO.corpo }}>{f.ritmo}</dd>
       </div>
     </dl>
 
@@ -113,7 +113,7 @@ const Ficha: React.FC<{ f: Funcao }> = ({ f }) => (
             ordem some. Onde o marcador não diz nada, deixe o padrão. */}
       <ol style={{ margin: "10px 0 0", paddingLeft: 20, listStyle: "decimal", display: "flex", flexDirection: "column", gap: 7 }}>
         {f.detalhe.map((d) => (
-          <li key={d} style={{ fontSize: 15.5, lineHeight: 1.55 }}>
+          <li key={d} style={{ ...TEXTO.corpo }}>
             {d}
           </li>
         ))}
@@ -131,7 +131,7 @@ const Ficha: React.FC<{ f: Funcao }> = ({ f }) => (
         padding: "11px 18px",
         background: C.ink,
         color: C.gold,
-        border: `3px solid ${C.ink}`,
+        border: borda(),
         boxShadow: "4px 4px 0 rgba(24,18,3,.3)",
         fontFamily: FONT_ALFA,
         fontSize: 15,
@@ -218,7 +218,7 @@ export default function Funcoes() {
           const info = catalogo.grupos[g];
           return (
             <section key={g} style={{ marginBottom: 36 }}>
-              <header style={{ borderBottom: `3px solid ${C.ink}`, paddingBottom: 10, marginBottom: 18 }}>
+              <header style={{ borderBottom: borda(), paddingBottom: 10, marginBottom: 18 }}>
                 <h2
                   style={{
                     fontFamily: FONT_ALFA,
@@ -229,7 +229,7 @@ export default function Funcoes() {
                 >
                   {info.nome}
                 </h2>
-                <p style={{ margin: 0, fontSize: 15.5, lineHeight: 1.55, opacity: 0.85 }}>
+                <p style={{ margin: 0, ...TEXTO.corpo, opacity: 0.85 }}>
                   {info.resumo}
                 </p>
               </header>
@@ -245,7 +245,7 @@ export default function Funcoes() {
         <section
           style={{
             background: C.gold,
-            border: `3px solid ${C.ink}`,
+            border: borda(),
             boxShadow: "7px 7px 0 rgba(24,18,3,.3)",
             padding: "22px 20px",
             textAlign: "center",
@@ -254,7 +254,7 @@ export default function Funcoes() {
           <h2 style={{ fontFamily: FONT_ALFA, fontSize: 22, lineHeight: 1.15, margin: "0 0 10px" }}>
             Ainda em dúvida?
           </h2>
-          <p style={{ margin: "0 0 18px", fontSize: 15.5, lineHeight: 1.6 }}>
+          <p style={{ margin: "0 0 18px", ...TEXTO.corpoSolto }}>
             Escolha “Onde precisar”. A coordenação conversa com você e te encaixa — é conversa, não
             formulário.
           </p>
@@ -269,7 +269,7 @@ export default function Funcoes() {
               padding: "12px 22px",
               background: C.ink,
               color: C.gold,
-              border: `3px solid ${C.ink}`,
+              border: borda(),
               boxShadow: "4px 4px 0 rgba(24,18,3,.35)",
               fontFamily: FONT_ALFA,
               fontSize: 16,
@@ -284,7 +284,7 @@ export default function Funcoes() {
 
       <style>{`
         summary::-webkit-details-marker { display: none; }
-        a:focus-visible, summary:focus-visible { outline: 3px solid ${C.ink}; outline-offset: 3px; }
+        a:focus-visible, summary:focus-visible { outline: ${BORDA}px solid ${C.ink}; outline-offset: 3px; }
       `}</style>
     </div>
   );

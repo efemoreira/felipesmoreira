@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { C, FONT_ALFA, FONT_ELITE } from "@/lib/theme";
+import { C, FONT_ALFA, FONT_ELITE, borda } from "@/lib/theme";
 import { dataPorExtenso, diasAteVotacao, faseEm, type Fase } from "@/lib/eleicao";
 import { CHAPA } from "@/features/missao/data";
 
@@ -53,7 +53,7 @@ export const FaixaEleicao: React.FC<{ compacta?: boolean }> = ({ compacta = fals
       style={{
         background: C.ink,
         color: C.cream,
-        border: `3px solid ${C.gold}`,
+        border: borda(C.gold),
         boxShadow: "5px 5px 0 rgba(24,18,3,.45)",
         padding: compacta ? "13px 15px" : "17px 19px",
         display: "flex",

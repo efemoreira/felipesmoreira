@@ -9,6 +9,7 @@
     "lint": "next lint",
     "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./testes/alias.ts --test \"testes/**/*.test.ts\"",
     "test:contrato": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./testes/alias.ts --test \"testes/contrato/*.test.ts\"",
+    "test:acoes": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./testes/alias.ts --test \"testes/acoes/*.test.ts\"",
     "test:fumaca": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./testes/alias.ts --test \"testes/fumaca/*.test.ts\"",
     "test:tipos": "tsc --noEmit && tsc --noEmit -p testes"
   },

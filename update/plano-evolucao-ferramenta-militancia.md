@@ -1,10 +1,10 @@
 # Plano de evolucao da ferramenta de organizacao da militancia
 
-Data: 2026-08-23
+Data: 2026-08-23 (segunda rodada)
 
 ## Objetivo deste documento
 
-Este arquivo agora e um retrato do estado atual do projeto, com foco em quatro
+Este arquivo e um retrato do estado atual do projeto, com foco em quatro
 perguntas:
 
 1. o que ja foi feito;
@@ -12,286 +12,195 @@ perguntas:
 3. o que esta parcialmente resolvido;
 4. o que ainda falta e deve vir antes de novas ideias.
 
-Nao e mais um plano especulativo. E um quadro de progresso e prioridade.
+Nao e um plano especulativo. E um quadro de progresso e prioridade.
 
-## Base usada nesta atualizacao
+## O que mudou nesta rodada
 
-Leitura do estado atual do codigo, com foco em:
+A rodada anterior fechou a organizacao do painel. Esta fechou a **garantia**: o
+que antes so estava bem arrumado agora esta preso por teste, e as duas frentes
+que faltavam por inteiro sairam.
 
-- painel PHP;
-- funil publico em Next;
-- testes e scripts do projeto;
-- tamanho e distribuicao atual das rotas e dos modulos extraidos.
+| item da sequencia anterior | estado |
+| --- | --- |
+| 1. Testes de acao do painel | **feito** |
+| 2. Testes de navegador do funil publico | **feito sem navegador**, por decisao — ver abaixo |
+| 3. Cortar `inscricoes.php` | **feito** |
+| 4. Consolidar o estilo inline do lado Next | **parcial, e de proposito** — a moldura e o texto sairam; a sombra ficou, por ser decisao de desenho |
+| 5. Relatorio de conversao por origem | **feito** |
+| 6. Ideias novas de produto | ainda nao |
 
 Validacoes executadas nesta rodada:
 
-- `npm test`;
-- `npm run test:tipos`;
-- `npm run lint`;
-- diagnostico de erros do workspace.
-
-Resultado: tudo passou.
-
-## Resumo executivo
-
-O projeto saiu de um painel com varias telas monoliticas para uma base bem mais
-segura de evoluir. Hoje o ganho mais claro esta em tres frentes:
-
-- as seis maiores telas operacionais do painel ja foram cortadas por responsabilidade;
-- o hub ficou mais proximo de um cockpit operacional;
-- a base de qualidade subiu com testes de contrato, fumaça, busca global e linha do tempo.
-
-O que ainda falta nao e pouca coisa, mas agora esta muito mais claro:
-
-- falta cobrir os fluxos de POST com testes de acao;
-- falta cobrir a interacao real do funil publico com testes de navegador;
-- falta terminar a limpeza do lado Next, onde ainda ha bastante estilo inline;
-- falta transformar a infraestrutura de origem num relatorio operacional de conversao;
-- falta cortar a ultima tela grande que ainda segue monolitica: `inscricoes.php`.
+- `npm test` — **163 testes, 40 suites, tudo passando** (eram 74);
+- `npm run test:tipos`, `npm run lint`, `npx eslint testes/` — limpos;
+- `npm run build` — 17 rotas, e o markup comparado antes e depois.
 
 ## O que esta feito
 
-### 1. O painel operacao melhorou de verdade
+### 1. Testes de acao: o POST deixou de ser o ponto cego
 
-Feito bem:
+Era a maior lacuna do quadro anterior. Com as telas grandes ja cortadas, o risco
+tinha deixado de ser "nao consigo refatorar" e passado a ser **"refatorei e
+quebrei o POST"** — e o POST e onde moram as regras que nao tem desfazer.
 
-- O Inicio deixou de ser so um hub de navegacao e passou a juntar fila, panorama, atividade recente e formacao.
-- A busca global do painel entrou como ferramenta real de coordenacao.
-- A linha do tempo e a visao 360 da pessoa entraram sem criar um segundo arquivo de log.
-- Filtros, abas, busca e vazios ficaram muito mais consistentes no painel.
+`testes/acoes/` cobre seis telas, e cada teste confere **as duas metades**: o que
+ficou no arquivo em `/dados` e o que a pessoa le na tela seguinte.
 
-Efeito pratico:
+| arquivo | as regras que ele prende |
+| --- | --- |
+| `inscricoes` | aprovar da conta a ficha que ja existe, e nao cria uma segunda; recusar nao apaga ninguem |
+| `eventos` | `voltar()` leva a **aba** junto da ancora; encontro com gente na lista nao se apaga |
+| `pessoas` | o ultimo administrador nao se rebaixa, nao se desativa e nao se apaga; juntar nao sobrescreve |
+| `fatos` | quem traz o fato nao checa o fato — e o admin que destrava escreve o porque |
+| `producao` | a regra do ledger **avisa e nao bloqueia**; card publicado e rastro |
+| `candidatos` | o cargo confere os digitos; sem numero nao vai ao ar; a ordem da lista e a da colinha |
 
-- menos ida e volta entre telas;
-- melhor nocao do que esta vencendo hoje;
-- melhor visibilidade do que o time fez e do que esta parado.
+**A acao sobe num `php -S`, e a tela continua no CLI.** Toda acao termina em
+`header('Location: …')` + `exit`, e no SAPI de linha de comando o `header()` e um
+nada: o teste nao teria como ver para onde a gravacao mandou. Nenhuma dependencia
+nova — `php -S` ja vem na caixa, como o `node:test`.
 
-### 2. As seis telas grandes do painel foram cortadas
+**Dois defeitos reais apareceram na primeira execucao:**
 
-Este foi o maior ganho estrutural da rodada.
+- **nome so de espacos criava pessoa sem nome.** `normalizar_pessoa()` conferia
+  `empty($p['nome'])` no campo cru — e `"   "` e string nao-vazia —, e so depois
+  `limpar_texto()` a reduzia a `''`. Pelo mesmo portao passava candidato: numero
+  de urna na colinha sem nome ao lado. Corrigido no portao unico;
+- **o corte de `inscricoes.php` perdia o recado e a senha provisoria.** O bloco
+  extraido continuava relendo a sessao que a rota ja tinha esvaziado. As 18 telas
+  comparadas continuaram identicas byte a byte — o instantaneo e um GET com
+  sessao vazia, e nao ve recado. Quem pegou foi o teste de acao.
 
-| Tela | Antes | Rota agora | Como ficou |
-| --- | ---: | ---: | --- |
-| `eventos.php` | 1371 | 60 | `eventos-acoes.php` · `eventos-lista.php` · `eventos-encontro.php` · `eventos-presenca.php` · `eventos-dados.php` |
-| `pessoas.php` | 799 | 50 | `pessoas-acoes.php` · `pessoas-lista.php` · `pessoas-ficha.php` |
-| `candidatos.php` | 910 | 48 | `candidatos-acoes.php` · `candidatos-tela.php` · `candidatos-form.php` |
-| `fatos.php` | 830 | 43 | `fatos-acoes.php` · `fatos-fila.php` · `fatos-decididos.php` · `fatos-tela.php` · `fatos-form.php` |
-| `agenda.php` | 684 | 27 | `agenda-acoes.php` · `agenda-tela.php` · `agenda-previa.js` |
-| `producao.php` | 640 | 36 | `producao-acoes.php` · `producao-quadro.php` · `producao-card.php` · `producao-modal.php` · `producao-tela.php` |
+### 2. O funil publico, sem navegador
 
-Avaliacao:
+**Decisao tomada nesta rodada:** nao entra Playwright. Ele baixa binarios de
+navegador e bate de frente com duas regras escritas no repositorio — "sem
+framework de teste" e "cada dependencia e uma que alguem vai ter de auditar antes
+de um deploy de campanha".
 
-- `eventos.php` continua sendo a melhor referencia de corte.
-- `pessoas.php` e `candidatos.php` ficaram bem resolvidos e mais seguros de manter.
-- `fatos.php` e `producao.php` seguiram o mesmo padrao corretamente.
-- `agenda.php` teve um corte diferente, e correto: o problema maior ali era a concentracao de UI e JavaScript inline.
+O que foi coberto sem dependencia nenhuma, em `testes/contrato/inscricao.test.ts`:
 
-### 3. O funil publico avancou, mas nao terminou
+- **a regua da tela contra a regua do servidor**, nas duas direcoes;
+- **a passagem de bastao de `/presenca` para `/queroajudar`** — as duas listas
+  lidas do codigo, e nao copiadas para o teste;
+- **a mascara do telefone** contra o `so_digitos()` do PHP.
 
-Estado atual:
+Para isso a regua do servidor precisou sair de dentro do endpoint: era uma
+sequencia de `if` no meio de `api/inscricao.php`, e o que esta solto no meio de um
+endpoint nao se chama de fora. Hoje e `recusa_de_inscricao()`.
 
-- `InscricaoClient.tsx`: 400 linhas.
-- `Passos.tsx`: 207 linhas.
-- `Campos.tsx`: 184 linhas.
-- `Sucesso.tsx`: 176 linhas.
+> **A divergencia que doi tem direcao.** Se o servidor recusar algo que a tela deu
+> como bom, a pessoa preenche os tres passos, ve marca verde em todo campo e leva
+> um "nao deu" generico no fim — e vai embora. O contrario e de proposito.
 
-Leitura:
+**Fica de fora, e continua pendente:** o que so um navegador ve — foco depois da
+troca de passo, e o comportamento em erro de rede dentro do DOM.
 
-- A inscricao saiu de um monolito e entrou numa composicao boa por fluxo, etapas, campos e tela final.
-- Esta bem encaminhada e pode ser marcada como refatoracao bem sucedida.
+### 3. `inscricoes.php` foi cortada
 
-Estado atual da presenca:
+Ultima tela monolitica. De **528 linhas para 52**, no mesmo desenho das outras
+seis:
 
-- `PresencaClient.tsx`: 509 linhas.
-- `Pecas.tsx`: 344 linhas.
-- `Telas.tsx`: 96 linhas.
+| arquivo | linhas | responsabilidade |
+| --- | ---: | --- |
+| `inscricoes.php` | 52 | so a rota |
+| `inscricoes-acoes.php` | 153 | o POST inteiro |
+| `inscricoes-tela.php` | 204 | cabecalho, panorama, abas e busca |
+| `inscricoes-fila.php` | 172 | a aba de trabalho |
+| `inscricoes-decididas.php` | 79 | a aba de arquivo |
+| `inscricoes-origens.php` | 122 | a aba de conversao (nova) |
 
-Leitura:
+Provado com **18 telas de conteudo identico**, e cada modulo abre sozinho.
 
-- Melhorou muito, mas ainda nao fechou no mesmo nivel da inscricao.
-- O corte ja aconteceu, porem a orquestracao principal ainda esta grande demais para dizer que a frente acabou.
+### 4. Os tokens que faltavam no lado Next
 
-### 4. Reaproveitamento de infra e UX ja entrou no codigo
+A moldura do cordel — o `3px solid` — estava escrita a mao em **87 lugares, em 20
+arquivos**, com nove cores diferentes ao lado. O `3` e identidade, nao estilo: e
+o que faz o site e o painel parecerem o mesmo produto, e o painel ja guardava o
+dele num token do `:root`.
 
-Feito bem:
+Hoje sai de `borda()` / `BORDA`, em `@/lib/theme`. O texto de leitura
+(`fontSize: 15.5` com `lineHeight: 1.55`, em oito arquivos) virou `TEXTO.corpo`.
 
-- `barra_filtros()` agora esta espalhada nas telas certas do painel.
-- `barra_busca()` cobre as telas que so procuram.
-- O motor de rascunho local entrou em `layout.php` e ja esta plugado em agenda, encontro e candidato.
-- O warning tipico dos testes Node foi silenciado no lugar certo, sem mexer no modelo do app.
+**As duas trocas sairam com markup byte a byte identico nas 17 rotas.**
 
-Feito parcial:
+> **A sombra dura NAO virou token, de proposito.** Ela aparece em 17 combinacoes
+> de deslocamento e opacidade — isso nao e repeticao, e deriva. Escolher uma
+> opacidade por deslocamento **muda o desenho** de varias pecas, e isso e decisao
+> de quem olha, nao refatoracao.
 
-- O autosave ainda nao foi expandido para toda tela longa que se beneficiaria dele.
-- A busca global ainda pode levar melhor ao alvo exato em algumas areas.
+### 5. O relatorio de conversao por origem
 
-### 5. A base de qualidade subiu bastante
+A infraestrutura de `?de=` existia desde sempre e ninguem conseguia responder a
+pergunta que ela existe para responder. A aba **"De onde vem"** responde:
 
-Feito bem:
+**Tres degraus, e nao dois** — `chegaram` → `aprovadas` → **`militaram`** (apareceu
+em pelo menos um encontro). O terceiro e o unico que nao depende de a pessoa dizer
+que vem.
 
-- Testes de contrato PHP x TS.
-- Testes de fumaça das telas do painel.
-- Testes especificos da busca global.
-- Testes especificos da linha do tempo.
-- Typecheck da raiz e dos testes.
-- Lint limpo.
+> **A ordem e por quem militou, e o total so desempata.** Ordenar pelo total poria
+> no topo justamente a origem que enche a fila e nao entrega.
 
-Validado agora:
+Era um `<details>` recolhido no meio da fila, com duas colunas. Faltava o degrau
+que decide.
 
-- `npm test`: passou com 74 testes.
-- `npm run test:tipos`: passou.
-- `npm run lint`: passou.
-- Workspace sem erros reportados.
+## O que continua parcial
 
-## O que esta parcial e ainda pede segunda passada
+### Estado visual das areas operacionais
 
-### 1. Estados visuais e leitura operacional
+Melhorou no hub, na fila e nos medidores. Ainda falta espalhar o mesmo rigor para
+Fatos e Producao, e reduzir texto em contexto de uso rapido no celular.
 
-Melhorou:
+### O lado Next
 
-- fila;
-- medidores;
-- selos de atraso e urgencia;
-- leitura geral do hub.
+A inscricao e a presenca ja estao bem divididas. Continuam pendentes de uma
+segunda passada: **home, programacao e aulas**. Com `borda()` e `TEXTO` no lugar,
+a proxima passada tem onde se apoiar — o que falta agora e decisao de desenho
+(a escala de sombra), e nao arrumacao.
 
-Ainda falta:
+### Autosave
 
-- espalhar o mesmo rigor visual para todas as areas operacionais remanescentes;
-- reduzir texto demais em contextos de uso rapido no celular;
-- reforcar o que e “agir agora” e o que e “contexto” em telas como Fatos e Produção.
-
-### 2. Lado Next ainda esta visualmente mais fragmentado do que o painel
-
-Hoje o painel ja opera mais como sistema. O front publico ainda nao.
-
-Parcial bom:
-
-- inscricao melhorou bastante;
-- presenca melhorou bastante.
-
-Ainda falta:
-
-- home;
-- programacao;
-- aulas;
-- presenca terminar de sair de tanto estilo inline.
-
-### 3. Autosave entrou, mas nao fechou como frente concluida
-
-Hoje existe em:
-
-- agenda;
-- encontro novo;
-- dados do encontro;
-- candidato.
-
-Ainda falta decidir se vale expandir para:
-
-- inscricoes do painel;
-- fatos;
-- producao;
-- outras telas com formulario longo e risco real de perda.
+Existe em agenda, encontro novo, dados do encontro e candidato. Continua em aberto
+se vale expandir para inscricoes, fatos e producao.
 
 ## O que falta, por prioridade
 
-### 1. Testes de acao do painel
+### 1. A escala da sombra dura
 
-Maior lacuna atual.
+Decisao de desenho, e a unica coisa que trava o token que falta em `theme.ts`.
+Escolher uma opacidade por deslocamento e depois aplicar — com a mesma prova de
+markup das outras duas trocas.
 
-O que falta cobrir:
+### 2. Testes de navegador, se e quando
 
-- aprovar inscricao;
-- criar encontro;
-- marcar checklist;
-- tirar pessoa de encontro;
-- publicar card;
-- publicar e recolher candidato;
-- acoes equivalentes das telas que acabaram de ser cortadas.
+So se a decisao sobre a dependencia mudar. O que sobrou sem cobertura e o foco
+depois da troca de passo e o erro de rede dentro do DOM.
 
-Por que vem primeiro:
+### 3. Segunda passada em home, programacao e aulas
 
-- agora que o painel esta modularizado, o proximo risco nao e mais “nao consigo refatorar”; e “refatorei e quebrei o POST”.
+As tres telas publicas que ainda nao passaram pela divisao que a inscricao e a
+presenca ja tiveram.
 
-### 2. Testes de navegador do funil publico
-
-O que falta cobrir:
-
-- troca de passo;
-- foco depois da navegacao;
-- persistencia em `sessionStorage`;
-- comportamento em erro de rede;
-- convite de ajuda apos presenca.
-
-Por que vem primeiro:
-
-- a maior parte dos testes atuais garante contrato e renderizacao;
-- o funil publico ainda precisa de garantia de comportamento real.
-
-### 3. `inscricoes.php`
-
-Hoje e a ultima tela do painel que ainda segue o mesmo problema estrutural que as outras seis tinham antes do corte.
-
-Estado atual:
-
-- `inscricoes.php`: 528 linhas.
-
-Leitura:
-
-- e a proxima candidata natural ao mesmo corte por responsabilidade.
-- como tela de fila e aprovacao, ela tambem merece a mesma seguranca que Eventos, Pessoas, Candidatos, Fatos e Produção ja ganharam.
-
-### 4. Relatorio de conversao por origem
-
-Esta e a maior frente de produto ainda pendente.
-
-Ja existe:
-
-- `?de=` na origem;
-- gravacao no fluxo publico;
-- estrutura para atribuicao.
-
-Ainda falta:
-
-- a tela operacional que responda quem recruta e o que converte.
-
-### 5. Design system do lado Next
-
-Ainda falta consolidar:
-
-- menos estilo inline repetido;
-- mais componentes visuais compartilhados;
-- mais proximidade com a linguagem do painel.
-
-### 6. P2 de experiencia de campanha
-
-Ainda nao esta fechado:
+### 4. P2 de experiencia de campanha
 
 - modo de campo para recepcao e contextos de uso em pe;
-- “proximo passo” por pessoa, guiado por funcao, area e formacao.
+- "proximo passo" por pessoa, guiado por funcao, area e formacao.
 
-## Arquivos grandes que continuam grandes, mas nao entram na mesma fila
+## Arquivos grandes que continuam grandes, e por que
 
 | Arquivo | Linhas | Leitura correta |
 | --- | ---: | --- |
-| `sessao.php` | 1168 | E nucleo de sessao, permissao e modelo. Nao e o mesmo problema das telas monoliticas |
-| `aulas-conteudo.php` | 1095 | E conteudo, nao tela operacional |
-| `layout.php` | 975 | Cresceu com busca, rascunho e helpers compartilhados; e candidato a corte por peça, mas nao e urgencia de produto agora |
-| `eventos-comum.php` | 856 | Dominio rico e coeso; aqui o problema e densidade, nao mistura de POST com HTML |
-| `agora.php` | 718 | Fonte unica de fila e panorama; mesmo caso do anterior |
-
-## Sequencia recomendada de trabalho
-
-1. Escrever testes de acao do painel para as rotas ja cortadas.
-2. Escrever testes de navegador para `/queroajudar` e `/presenca`.
-3. Cortar `inscricoes.php` com o mesmo padrao das demais telas.
-4. Consolidar o lado Next que ainda carrega muito estilo inline.
-5. Abrir a frente de relatorio de conversao por origem.
-6. So depois disso retomar ideias novas de produto que dependam dessa base.
+| `sessao.php` | 1184 | nucleo de sessao, permissao e modelo. Nao e o problema das telas monoliticas |
+| `aulas-conteudo.php` | 1095 | e conteudo, nao tela operacional |
+| `layout.php` | 975 | cresceu com busca, rascunho e helpers; candidato a corte por peca, sem urgencia |
+| `eventos-comum.php` | 856 | dominio rico e coeso; densidade, nao mistura de POST com HTML |
+| `agora.php` | 718 | fonte unica de fila e panorama; mesmo caso |
 
 ## Regra de ouro para a proxima fase
 
 Antes de inventar coisa nova, fechar o que ja esta parcialmente resolvido.
 
-Hoje a base ja esta boa o bastante para a ferramenta crescer com mais seguranca.
-O gargalo deixou de ser “como organizar” e passou a ser “como terminar o que ja
-foi bem iniciado sem reabrir risco estrutural”.
+O gargalo desta rodada deixou de ser "como organizar" e deixou de ser "como
+terminar sem reabrir risco": os cortes agora sao provados por comparacao de saida
+e as regras estao presas por teste de acao. **O que sobra e decisao de desenho** —
+e essa e a unica coisa nesta lista que nenhum teste pode tomar no lugar de alguem.

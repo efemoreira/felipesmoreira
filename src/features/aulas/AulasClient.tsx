@@ -2,7 +2,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Icon } from "@/components/icons";
-import { C, FONT_ALFA, FONT_ELITE, FONT_BITTER } from "@/lib/theme";
+import { C, FONT_ALFA, FONT_BITTER, FONT_ELITE, borda } from "@/lib/theme";
 import { obterAulas, marcarAula } from "@/lib/api/aulas";
 import { ListaDias } from "./ListaDias";
 import type { Dia, RespostaAulas } from "./tipos";
@@ -239,7 +239,7 @@ export default function AulasClient() {
         {falhaAoGravar && (
           <p
             style={{
-              border: `3px solid ${C.erroBorda}`,
+              border: borda(C.erroBorda),
               background: "rgba(194,84,63,.12)",
               color: C.erro,
               padding: "12px 14px",
@@ -278,7 +278,7 @@ export default function AulasClient() {
 const AvisoConvidado: React.FC = () => (
   <section
     style={{
-      border: `3px solid ${C.gold}`,
+      border: borda(C.gold),
       background: "rgba(255,203,5,.08)",
       padding: "16px 16px",
       margin: "0 0 22px",
@@ -336,7 +336,7 @@ const MinhaTrilha: React.FC<{
 }> = ({ aulas, concluidas, aoIr }) => (
   <section
     style={{
-      border: `3px solid ${C.gold}`,
+      border: borda(C.gold),
       background: "rgba(255,203,5,.08)",
       padding: "16px 18px",
       margin: "0 0 40px",
@@ -469,7 +469,7 @@ const Recado: React.FC<{ fase: "carregando" | "sem-login" | "sem-acesso" | "erro
                 minHeight: 44,
                 textDecoration: "none",
                 background: C.gold,
-                border: `3px solid ${C.ink}`,
+                border: borda(),
                 boxShadow: "5px 5px 0 rgba(24,18,3,.35)",
                 color: C.ink,
                 padding: "12px 20px",
@@ -488,7 +488,7 @@ const Recado: React.FC<{ fase: "carregando" | "sem-login" | "sem-acesso" | "erro
               gap: 10,
               minHeight: 44,
               textDecoration: "none",
-              border: "3px solid rgba(255,203,5,.4)",
+              border: borda("rgba(255,203,5,.4)"),
               color: C.gold,
               padding: "12px 20px",
               fontFamily: FONT_ALFA,

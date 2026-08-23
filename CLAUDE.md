@@ -39,9 +39,33 @@ só `export const metadata` e um `return <FeatureClient />` importado de
 que os usa é um `"use client"` dentro de `features/`, nunca direto na rota
 (exceção: `src/app/painel/estudio/`, ver nota abaixo).
 
-**Regra:** cor e fonte vêm sempre de `@/lib/theme` (`C`, `FONT_ALFA`,
-`FONT_ELITE`, `FONT_BITTER`). Nunca redefina a paleta num componente novo —
-isso é exatamente a duplicação que motivou esta reorganização.
+**Regra:** cor, fonte, **moldura e escala de texto** vêm sempre de
+`@/lib/theme` (`C`, `FONT_ALFA`, `FONT_ELITE`, `FONT_BITTER`, `BORDA`/`borda()`,
+`TEXTO`). Nunca redefina a paleta num componente novo — isso é exatamente a
+duplicação que motivou esta reorganização.
+
+> **A moldura é `borda()`, e nunca `3px solid` escrito à mão.** O `3` é
+> identidade e não estilo — canto reto, borda grossa e sombra dura são o que faz
+> o site e o painel parecerem o mesmo produto, e o painel já guarda o dele num
+> token do `:root`. Aqui ele estava em **87 lugares, em 20 arquivos**, com nove
+> cores diferentes ao lado: engrossar a moldura era uma tarde de procurar e
+> substituir, e bastava escapar um para o cartão sair mais fino que os vizinhos.
+> O token é função porque o que varia é a COR (tinta no normal, ouro no aceso,
+> vermelho no erro) — a espessura não é decisão de ninguém. Em folha de estilo
+> interpolada use `${BORDA}px solid`.
+>
+> **O texto de leitura é `...TEXTO.corpo`.** `fontSize: 15.5` com
+> `lineHeight: 1.55` aparecia em oito arquivos e o `1.6` em onze, os dois
+> querendo dizer a mesma coisa com dois valores.
+>
+> As duas trocas saíram com **markup byte a byte idêntico nas 17 rotas** — é o
+> método de `next build` + comparar o `<body>` ignorando os `<script>`.
+
+> ⚠️ **A sombra dura ainda NÃO tem token, e de propósito.** Ela aparece em 17
+> combinações de deslocamento e opacidade (`3px/.22`, `3px/.28`, `3px/.3`,
+> `3px/.35`, `3px/.5`, `4px/.28`…), o que já não é repetição: é deriva. Escolher
+> uma opacidade por deslocamento **muda o desenho** de várias peças, e isso é
+> decisão de quem olha, não refatoração. Antes de criar o token, decida a escala.
 
 **Regra:** dado de conteúdo (arrays de texto, listas, fichas) mora em
 `features/<nome>/data.ts`, tipado — não misturado com JSX no componente.
@@ -836,9 +860,19 @@ pessoa digita duas vezes.
 > pergunta é feita; recusar no servidor jogaria fora um militante por causa de
 > uma linha de relatório.
 
-A régua de validação é uma só: `src/features/inscricao/validacao.ts` (máscara,
-DDD de verdade, exigência de sobrenome). Duas réguas divergem na terceira
-alteração.
+A régua de validação da TELA é uma só: `src/features/inscricao/validacao.ts`
+(máscara, DDD de verdade, exigência de sobrenome). A do servidor é
+`recusa_de_inscricao()`, em `inscricoes-comum.php` — ela existe como função, e
+não como um bloco de `if` dentro de `api/inscricao.php`, porque o que está solto
+no meio de um endpoint não se chama de fora, e sem chamar não há como conferir.
+
+> **A divergência entre as duas tem direção, e só um lado dói.** Se o servidor
+> recusar algo que a tela deu como bom, a pessoa preenche os três passos, vê
+> marca verde em todo campo e leva um "não deu" genérico no fim — e vai embora,
+> no pico de entusiasmo que ela vai ter. O contrário é de propósito: o servidor
+> aceita MAIS do que a tela pede (função é opcional lá, obrigatória aqui),
+> porque a tela é dura para ajudar quem digita, não para barrar.
+> `testes/contrato/inscricao.test.ts` prende as duas direções separadamente.
 
 ### A cidade é lista, não caixa de texto
 
@@ -893,6 +927,39 @@ Sem isso não dá para saber qual militante recruta nem qual link converte.
 **A origem não é dado de terceiro nem vem de rastreador.** É o que a própria
 pessoa trouxe no link que abriu — por isso não há cookie, pixel ou referrer
 envolvido, e a Política de Privacidade continua valendo como está.
+
+#### O relatório: quem recruta, e o que converte
+
+A aba **"De onde vêm"** de `/painel/inscricoes` (`inscricoes-origens.php`, com
+`funil_de_origens()` no `-comum`) responde a pergunta que o `?de=` sempre pôde
+responder e ninguém perguntava: **das pessoas que este link trouxe, quantas
+viraram militante?**
+
+**Três degraus, e não dois:** `chegaram` (preencheu o formulário) → `aprovadas`
+(a coordenação deu acesso) → **`militaram`** (apareceu em pelo menos um
+encontro). O terceiro é o único que não depende de a pessoa dizer que vem: é
+presença marcada na porta.
+
+> **A ordem da tabela é por quem MILITOU, e o total só desempata.** Ordenar pelo
+> total poria no topo justamente a origem que enche a fila e não entrega — uma
+> live com cinquenta inscrições e nenhuma presença parece a melhor origem do
+> movimento no número cru, e é a pior. Contar só o topo do funil premia quem faz
+> barulho, não quem traz gente.
+
+- **O slug vira nome, lido do cadastro.** Se a origem é o slug do nome de alguém
+  que existe, a linha mostra o nome dessa pessoa — `?de=joao-silva` é gente,
+  `?de=live-domingo` é canal. O campo é um só porque na prática a pergunta é a
+  mesma, mas quem lê precisa distinguir para saber se **agradece** ou se
+  **repete**. E slug ninguém reconhece no grupo.
+- **Quem chegou pela URL limpa fica fora da tabela**, numa linha à parte: somá-lo
+  às origens faria "veio sozinho" parecer o melhor canal da campanha, e não há
+  ninguém a quem agradecer nem nada a repetir.
+- **A busca some nesta aba.** O funil é sobre a base inteira; tabela de conversão
+  que muda conforme o que alguém digitou não é relatório. Cada linha leva para a
+  fila já filtrada por aquela origem — o relatório dá o número, a lista dá os
+  nomes.
+- **Era um `<details>` recolhido** chamado "Quem está trazendo gente", com duas
+  colunas, no meio da fila. Faltava o degrau que decide.
 
 ## Responsividade
 
@@ -1309,9 +1376,9 @@ primeira da lista é a que vira o atalho.
 
 ### Como uma tela do painel se divide
 
-As seis telas grandes — encontros, pessoas, candidatos, fatos, produção e
-agenda — eram arquivos de 640 a 1.400 linhas com quatrocentas de decisão coladas
-em setecentas de desenho.
+As sete telas grandes — encontros, pessoas, candidatos, fatos, produção,
+agenda e inscrições — eram arquivos de 528 a 1.400 linhas com quatrocentas de
+decisão coladas em setecentas de desenho.
 Mexer no formulário de dados obrigava a rolar por toda a lista de presença, e
 qualquer conserto na gravação passava a milímetros do HTML. Hoje cada uma segue
 o mesmo desenho, e **tela nova grande deve seguir também**:
@@ -1346,6 +1413,11 @@ o mesmo desenho, e **tela nova grande deve seguir também**:
   ou um `extract()` que esconde de onde cada nome veio. O que atravessa a
   fronteira é só o que nasce fora: `$erro`, `$ok` e a senha provisória, que vêm
   do recado guardado na sessão pela ação anterior.
+- **O recuo antes de um `<?php` de bloco é TEXTO, e sai no HTML.** Ao mover um
+  pedaço de tela para uma função, os dois espaços que ficavam antes do
+  `<?php if (…): ?>` iam junto com o markup e punham o `<fieldset>` na coluna
+  certa. A função tem de reproduzi-los, ou o recuo do HTML muda sem que nada
+  visível mude — e o instantâneo acusa uma diferença que ninguém pediu.
 - **Marcador de seção em HTML (`<!-- funil -->`) sai.** Ele existia para achar
   o pedaço dentro de um arquivo gigante; agora cada bloco é uma função com
   docblock, e comentário de desenvolvedor não precisa viajar até o navegador.
@@ -1375,6 +1447,16 @@ promete que nada do visitante vai para fora).
 > saíram com **zero diferença de conteúdo em 30 telas** — e é assim que a
 > próxima deve sair. Ler o diff do PHP não pega um `<?php endif; ?>` que mudou
 > de dono; comparar a saída pega.
+>
+> **Mas o instantâneo é um GET com a sessão vazia, e por isso ele não vê o
+> recado.** No corte de `inscricoes.php` o bloco de tela que foi extraído
+> continuava relendo `$_SESSION['recado']` e `$_SESSION['acesso_novo']` — que a
+> rota já tinha tirado de lá e passado por parâmetro. Os dois chegavam nulos, o
+> desenho seguia em frente sem reclamar, e o que sumia da tela era **a senha
+> provisória que aparece uma vez só**. As 18 telas continuaram idênticas byte a
+> byte; quem pegou foi `testes/acoes/`, porque só ele faz o POST antes de olhar
+> a tela. Os dois se completam: o instantâneo prova o desenho, a ação prova o
+> depois da gravação.
 
 ### A linha do tempo, e por que não há log
 
@@ -1548,10 +1630,12 @@ estilos.ts         as 330 linhas de CSS que ficavam depois do fim do arquivo
 
 ## Os testes
 
-`npm test`. Dois tipos, e a divisão é o que importa — `testes/LEIA-ME.md` tem o
+`npm test`. Três tipos, e a divisão é o que importa — `testes/LEIA-ME.md` tem o
 detalhe:
 
 - **`testes/contrato/`** — as duas cópias da mesma regra continuam concordando?
+- **`testes/acoes/`** — a gravação faz o que promete, e recusa o que promete
+  recusar?
 - **`testes/fumaca/`** — toda tela do painel abre inteira e em silêncio?
 
 **Sem framework de teste.** Node 24 traz `node:test` e roda `.ts` direto, sem
@@ -1564,6 +1648,30 @@ no caminho (`from "./ponte.ts"`), o que exige um `tsconfig.json` próprio em
 **Rodam no `publish.yml` antes do build.** Se falharem, o build não acontece e a
 versão anterior continua no ar — stale e funcionando é melhor que publicado e
 divergente.
+
+### A ação é o que não tem desfazer
+
+`contrato/` e `fumaca/` cobrem o que o painel **diz**; nenhum dos dois abre um
+POST. Com as sete telas grandes já cortadas, o risco deixou de ser "não consigo
+refatorar" e passou a ser **"refatorei e quebrei o POST"** — e é no POST que
+moram as regras sem desfazer: juntar duas fichas, apagar uma pessoa, publicar
+um número de urna. Cada teste de `acoes/` faz a ação de verdade e confere as
+**duas metades**: o que ficou em `/dados` e o que a pessoa lê na tela seguinte.
+
+> **A ação sobe num `php -S`; a tela continua no CLI.** Toda ação termina em
+> `voltar()`, que é `header('Location: …')` + `exit` — e no SAPI de linha de
+> comando o `header()` é um nada: `headers_list()` volta vazio, e o teste não
+> teria como ver para onde a gravação mandou. Que é justamente a metade que a
+> divisão em abas quebrou uma vez.
+
+**Ao escrever um teste de ação, duas armadilhas já cobradas em erro:** caixa
+marcada várias vezes vai com `[]` no nome (sem o sufixo, `is_array($_POST[…])`
+dá `false`, a ação lê lista vazia e **grava sem reclamar** — o teste passa
+dizendo que concedeu uma permissão que não concedeu); e `ler()` só aceita nome
+de arquivo que existe, porque `dados/cards.php` não existe — os cards moram em
+`producao.php`, e ler o que não existe devolvia `[]`, fazendo o teste comparar
+0 com 0 e confirmar que nenhum card foi aberto. Aviso do PHP durante uma ação
+derruba o teste sozinho, pela mesma razão da fumaça.
 
 ### O contrato é a parte que importa
 

@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Icon, IconName } from "@/components/icons";
 import CompartilharClient from "./CompartilharClient";
-import { C, sigla, temaDe, type Agenda, type ItemAgenda } from "./tipos";
+import { C, BORDA, sigla, temaDe, type Agenda, type ItemAgenda } from "./tipos";
 import { CAMINHO_AGENDA_AO_VIVO, normalizarAgenda } from "./dados";
 import { emOrdem, estadoDe, estaAoVivo, idEmDestaque, quantosPassaram, type Estado } from "./tempo";
 
@@ -384,7 +384,7 @@ const css = `
     min-height: 44px; margin: 8px 0 0; padding: 0 16px;
     font-family: ${FONT_ELITE}; font-size: 12px; letter-spacing: 1.6px; text-transform: uppercase;
     color: ${C.ink}; background: ${C.gold2};
-    border: 3px solid ${C.ink}; box-shadow: 3px 3px 0 ${C.ink};
+    border: ${BORDA}px solid ${C.ink}; box-shadow: 3px 3px 0 ${C.ink};
     text-decoration: none;
   }
   .ag-vou:hover { background: ${C.gold}; }
@@ -458,14 +458,14 @@ const css = `
     padding: 12px 14px 12px 12px;
     background: var(--bg);
     color: var(--fg);
-    border: 3px solid ${C.ink};
+    border: ${BORDA}px solid ${C.ink};
     box-shadow: 6px 6px 0 rgba(24,18,3,.5);
     text-decoration: none;
     transition: transform .14s ease, box-shadow .14s ease;
   }
   .ag-clicavel:hover { transform: translate(-3px,-3px); box-shadow: 9px 9px 0 rgba(24,18,3,.55); }
   .ag-clicavel:active { transform: translate(2px,2px); box-shadow: 3px 3px 0 rgba(24,18,3,.45); }
-  .ag-clicavel:focus-visible { outline: 3px solid ${C.gold}; outline-offset: 4px; }
+  .ag-clicavel:focus-visible { outline: ${BORDA}px solid ${C.gold}; outline-offset: 4px; }
 
   .ag-thumb {
     position: relative;

@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { C } from "@/lib/theme";
+import { C, borda } from "@/lib/theme";
 import { Casca, Voltar, textoP, botaoOuro } from "./Pecas";
 
 /**
@@ -72,7 +72,7 @@ export const Pronto: React.FC<{
     {ofereceAjudar && (
       <section
         style={{
-          border: `3px solid ${C.gold}`,
+          border: borda(C.gold),
           background: "rgba(255,203,5,.08)",
           padding: "18px 18px 20px",
           margin: "0 auto 22px",

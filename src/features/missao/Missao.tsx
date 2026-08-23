@@ -1,7 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { Icon } from "@/components/icons";
-import { C, FONT_ALFA, FONT_ELITE, FONT_BITTER } from "@/lib/theme";
+import { BORDA, C, FONT_ALFA, FONT_ELITE, FONT_BITTER, borda, TEXTO } from "@/lib/theme";
 import { FaixaEleicao } from "@/components/FaixaEleicao";
 import { CARGO, CHAMADA, CHAPA, capitulos, porQueSeguranca } from "./data";
 
@@ -122,7 +122,7 @@ export default function Missao() {
                 key={cap.marco}
                 style={{
                   background: C.cream,
-                  border: `3px solid ${C.ink}`,
+                  border: borda(),
                   boxShadow: "6px 6px 0 rgba(24,18,3,.3)",
                   padding: "20px 18px",
                 }}
@@ -137,7 +137,7 @@ export default function Missao() {
                       display: "grid",
                       placeItems: "center",
                       background: C.gold,
-                      border: `3px solid ${C.ink}`,
+                      border: borda(),
                       color: C.ink,
                     }}
                   >
@@ -195,7 +195,7 @@ export default function Missao() {
                 key={item.oQueVi}
                 style={{
                   background: C.cream,
-                  border: `3px solid ${C.ink}`,
+                  border: borda(),
                   boxShadow: "5px 5px 0 rgba(24,18,3,.28)",
                   padding: "16px 17px",
                 }}
@@ -212,7 +212,7 @@ export default function Missao() {
                 >
                   {item.oQueVi}
                 </p>
-                <p style={{ margin: "0 0 10px", fontSize: 15.5, lineHeight: 1.6 }}>
+                <p style={{ margin: "0 0 10px", ...TEXTO.corpoSolto }}>
                   {item.oQuePlanoFaz}
                 </p>
                 <Link
@@ -242,7 +242,7 @@ export default function Missao() {
           style={{
             background: C.ink,
             color: C.cream,
-            border: `3px solid ${C.ink}`,
+            border: borda(),
             boxShadow: "7px 7px 0 rgba(24,18,3,.3)",
             padding: "22px 20px",
             marginBottom: 34,
@@ -272,7 +272,7 @@ export default function Missao() {
               padding: "12px 20px",
               background: C.gold,
               color: C.ink,
-              border: `3px solid ${C.gold}`,
+              border: borda(C.gold),
               fontFamily: FONT_ALFA,
               fontSize: 15.5,
               textDecoration: "none",
@@ -287,7 +287,7 @@ export default function Missao() {
         <section
           style={{
             background: C.gold,
-            border: `3px solid ${C.ink}`,
+            border: borda(),
             boxShadow: "7px 7px 0 rgba(24,18,3,.3)",
             padding: "22px 20px",
             textAlign: "center",
@@ -296,7 +296,7 @@ export default function Missao() {
           <h2 style={{ fontFamily: FONT_ALFA, fontSize: 23, lineHeight: 1.15, margin: "0 0 10px" }}>
             Isso não se faz sozinho
           </h2>
-          <p style={{ margin: "0 0 18px", fontSize: 15.5, lineHeight: 1.6 }}>
+          <p style={{ margin: "0 0 18px", ...TEXTO.corpoSolto }}>
             Tem lugar pra quem tem dez horas por semana e pra quem tem trinta minutos. A
             coordenação conversa com você e te encaixa.
           </p>
@@ -311,7 +311,7 @@ export default function Missao() {
               padding: "12px 22px",
               background: C.ink,
               color: C.gold,
-              border: `3px solid ${C.ink}`,
+              border: borda(),
               boxShadow: "4px 4px 0 rgba(24,18,3,.35)",
               fontFamily: FONT_ALFA,
               fontSize: 16,
@@ -325,7 +325,7 @@ export default function Missao() {
       </div>
 
       <style>{`
-        a:focus-visible { outline: 3px solid ${C.ink}; outline-offset: 3px; }
+        a:focus-visible { outline: ${BORDA}px solid ${C.ink}; outline-offset: 3px; }
       `}</style>
     </div>
   );

@@ -1,6 +1,6 @@
 import { test, describe, before, after } from "node:test";
 import assert from "node:assert/strict";
-import { montarSandbox, ADMIN, type Sandbox } from "../sandbox.ts";
+import { montarSandbox, type Sandbox } from "../sandbox.ts";
 
 /**
  * A BUSCA GLOBAL, e principalmente o que ela NÃO alcança.

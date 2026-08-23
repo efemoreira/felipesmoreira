@@ -1,7 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { Icon } from "@/components/icons";
-import { C, FONT_ALFA, FONT_ELITE, FONT_BITTER } from "@/lib/theme";
+import { BORDA, C, FONT_ALFA, FONT_ELITE, FONT_BITTER, borda } from "@/lib/theme";
 
 /* versos de cordel para a página perdida */
 const versos = [
@@ -130,7 +130,7 @@ const NotFound: React.FC = () => {
             gap: 12,
             textDecoration: "none",
             background: C.gold,
-            border: `3px solid ${C.ink}`,
+            border: borda(),
             boxShadow: "5px 5px 0 rgba(24,18,3,.35)",
             color: C.ink,
             padding: "14px 22px",
@@ -183,7 +183,7 @@ const NotFound: React.FC = () => {
       <style>{`
         .cordel-card:hover { transform: translate(-2px,-2px); box-shadow: 7px 7px 0 rgba(24,18,3,.4) !important; }
         .cordel-card:active { transform: translate(2px,2px); box-shadow: 2px 2px 0 rgba(24,18,3,.35) !important; }
-        .cordel-card:focus-visible { outline: 3px solid ${C.gold}; outline-offset: 3px; }
+        .cordel-card:focus-visible { outline: ${BORDA}px solid ${C.gold}; outline-offset: 3px; }
         @media (prefers-reduced-motion: reduce) {
           .cordel-card { transition: none !important; }
         }

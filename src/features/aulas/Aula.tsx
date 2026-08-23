@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import { Icon } from "@/components/icons";
-import { C, FONT_ALFA, FONT_ELITE } from "@/lib/theme";
+import { C, FONT_ALFA, FONT_ELITE, borda } from "@/lib/theme";
 import { Blocos } from "./Blocos";
 import { Player } from "./Player";
 import type { Aula as TipoAula } from "./tipos";
@@ -44,7 +44,7 @@ export const Aula: React.FC<Props> = ({
       open={aberta}
       onToggle={(e) => aoAbrir(aula.id, (e.currentTarget as HTMLDetailsElement).open)}
       style={{
-        border: `3px solid ${rapida ? C.gold : "rgba(255,203,5,.24)"}`,
+        border: borda(rapida ? C.gold : "rgba(255,203,5,.24)"),
         background: rapida ? "rgba(255,203,5,.07)" : "rgba(255,203,5,.03)",
         margin: "0 0 12px",
         scrollMarginTop: 20,
@@ -135,7 +135,7 @@ export const Aula: React.FC<Props> = ({
               cursor: gravando ? "wait" : "pointer",
               fontFamily: FONT_ALFA,
               fontSize: 14,
-              border: `3px solid ${C.ink}`,
+              border: borda(),
               boxShadow: "4px 4px 0 rgba(24,18,3,.35)",
               background: concluida ? "transparent" : C.gold,
               color: concluida ? C.cream : C.ink,
@@ -160,7 +160,7 @@ export const Aula: React.FC<Props> = ({
                 fontFamily: FONT_ALFA,
                 fontSize: 14,
                 color: C.gold,
-                border: "3px solid rgba(255,203,5,.4)",
+                border: borda("rgba(255,203,5,.4)"),
               }}
             >
               Fazer isto agora

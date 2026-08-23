@@ -1,7 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { Icon } from "@/components/icons";
-import { C, FONT_ALFA, FONT_ELITE, FONT_BITTER } from "@/lib/theme";
+import { BORDA, C, FONT_ALFA, FONT_BITTER, FONT_ELITE } from "@/lib/theme";
 import { WHATSAPP_COORDENACAO, TELEFONE_COORDENACAO } from "@/lib/contato";
 
 export interface Secao {
@@ -87,7 +87,7 @@ const css = `
     display: inline-flex; align-items: center; gap: 8px; min-height: 44px;
     font-family: ${FONT_ELITE}; font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
     color: ${C.ink}; background: ${C.cream}; text-decoration: none;
-    padding: 10px 15px; border: 3px solid ${C.ink};
+    padding: 10px 15px; border: ${BORDA}px solid ${C.ink};
     box-shadow: 3px 3px 0 rgba(24,18,3,.28); margin-bottom: 22px;
   }
 
@@ -109,7 +109,7 @@ const css = `
   }
 
   .lg-secao {
-    background: ${C.cream}; border: 3px solid ${C.ink};
+    background: ${C.cream}; border: ${BORDA}px solid ${C.ink};
     box-shadow: 4px 4px 0 rgba(24,18,3,.22);
     padding: 16px 17px; margin-bottom: 14px;
   }
@@ -128,7 +128,7 @@ const css = `
 
   .lg-rodape {
     margin-top: 26px; padding-top: 16px;
-    border-top: 3px solid ${C.ink};
+    border-top: ${BORDA}px solid ${C.ink};
     font-size: 14.5px; line-height: 1.6;
   }
   .lg-rodape p { margin: 0; }

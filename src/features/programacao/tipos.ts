@@ -1,7 +1,7 @@
 /* Tipos e temas compartilhados entre a página e o gerador de PNG */
-import { C } from "@/lib/theme";
+import { C, BORDA } from "@/lib/theme";
 
-export { C };
+export { C, BORDA };
 
 export type CorCartao = "ouro" | "milho" | "azul" | "escuro" | "papel";
 

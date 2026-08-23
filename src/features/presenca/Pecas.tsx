@@ -2,7 +2,7 @@
 import React from "react";
 import Link from "next/link";
 import { Icon } from "@/components/icons";
-import { C, FONT_ALFA, FONT_ELITE, FONT_BITTER } from "@/lib/theme";
+import { C, FONT_ALFA, FONT_ELITE, FONT_BITTER, borda } from "@/lib/theme";
 
 /**
  * AS PEÇAS de `/presenca` — a moldura, os avisos e os campos.
@@ -29,7 +29,7 @@ export const botaoOuro: React.CSSProperties = {
   fontSize: 17,
   background: C.gold,
   color: C.ink,
-  border: `3px solid ${C.ink}`,
+  border: borda(),
   boxShadow: "5px 5px 0 rgba(24,18,3,.4)",
 };
 
@@ -42,14 +42,14 @@ export const botaoEscolha: React.CSSProperties = {
   fontSize: 16.5,
   color: C.cream,
   background: "rgba(255,203,5,.08)",
-  border: `3px solid ${C.gold}`,
+  border: borda(C.gold),
 };
 
 export const botaoEscolhaFraco: React.CSSProperties = {
   ...botaoEscolha,
   color: "#b9b3a5",
   background: "transparent",
-  border: "3px solid rgba(255,203,5,.25)",
+  border: borda("rgba(255,203,5,.25)"),
   fontSize: 15,
 };
 
@@ -72,7 +72,7 @@ export const Modo: React.FC<{ confirmando: boolean }> = ({ confirmando }) => (
       padding: "9px 14px",
       background: confirmando ? "rgba(255,203,5,.12)" : C.gold,
       color: confirmando ? C.gold : C.ink,
-      border: `3px solid ${confirmando ? C.gold : C.ink}`,
+      border: borda(confirmando ? C.gold : C.ink),
       fontFamily: FONT_ELITE,
       fontSize: 12,
       letterSpacing: 1.8,
@@ -145,7 +145,7 @@ export const Erro: React.FC<{ texto: string }> = ({ texto }) => (
   <p
     role="alert"
     style={{
-      border: `3px solid ${C.erroBorda}`,
+      border: borda(C.erroBorda),
       background: "rgba(194,84,63,.12)",
       color: C.erro,
       padding: "12px 14px",
@@ -222,7 +222,7 @@ export const Voltar: React.FC = () => (
       gap: 10,
       minHeight: 44,
       textDecoration: "none",
-      border: "3px solid rgba(255,203,5,.4)",
+      border: borda("rgba(255,203,5,.4)"),
       color: C.gold,
       padding: "12px 20px",
       fontFamily: FONT_ALFA,

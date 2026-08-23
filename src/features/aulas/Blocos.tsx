@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { C, FONT_ALFA, FONT_ELITE } from "@/lib/theme";
+import { C, FONT_ALFA, FONT_ELITE, borda } from "@/lib/theme";
 import type { Bloco } from "./tipos";
 
 /**
@@ -35,7 +35,7 @@ const Caixa: React.FC<{ cor: string; fundo?: string; children: React.ReactNode }
 }) => (
   <div
     style={{
-      border: `3px solid ${cor}`,
+      border: borda(cor),
       background: fundo,
       padding: "14px 16px",
       margin: "0 0 18px",

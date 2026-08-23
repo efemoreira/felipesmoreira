@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { Icon } from "@/components/icons";
-import { C, FONT_ALFA, FONT_ELITE } from "@/lib/theme";
+import { C, FONT_ALFA, FONT_ELITE, borda } from "@/lib/theme";
 import { obterChapa, pessoasDa, type Candidato } from "@/lib/api/candidatos";
 
 /**
@@ -44,7 +44,7 @@ export const SigaCandidatos: React.FC = () => {
       aria-labelledby="siga-titulo"
       style={{
         background: C.paper,
-        border: `3px solid ${C.ink}`,
+        border: borda(),
         boxShadow: "5px 5px 0 rgba(24,18,3,.35)",
         color: C.ink,
         padding: "18px 18px 16px",

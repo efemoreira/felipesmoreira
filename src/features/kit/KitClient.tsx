@@ -2,7 +2,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Icon } from "@/components/icons";
-import { C, FONT_ALFA, FONT_ELITE, FONT_BITTER } from "@/lib/theme";
+import { BORDA, C, FONT_ALFA, FONT_ELITE, FONT_BITTER, borda, TEXTO } from "@/lib/theme";
 import { canvasParaBlob } from "@/lib/cordelCanvas";
 import { faseEm } from "@/lib/eleicao";
 import { RECADOS } from "./calendario";
@@ -204,7 +204,7 @@ export default function KitClient() {
           <section
             role={recado.trava ? "alert" : "status"}
             style={{
-              border: `3px solid ${recado.trava ? C.erroBorda : C.gold}`,
+              border: borda(recado.trava ? C.erroBorda : C.gold),
               background: recado.trava ? "rgba(194,84,63,.14)" : "rgba(255,203,5,.08)",
               padding: "18px 18px",
               marginBottom: 28,
@@ -230,7 +230,7 @@ export default function KitClient() {
             <p style={{ margin: 0, fontFamily: FONT_ALFA, fontSize: 19, lineHeight: 1.2 }}>
               {recado.titulo}
             </p>
-            <p style={{ margin: 0, fontSize: 15.5, lineHeight: 1.6, opacity: 0.92 }}>
+            <p style={{ margin: 0, ...TEXTO.corpoSolto, opacity: 0.92 }}>
               {recado.texto}
             </p>
           </section>
@@ -240,7 +240,7 @@ export default function KitClient() {
         <section
           style={{
             background: "rgba(246,245,239,.06)",
-            border: `3px solid ${C.gold}`,
+            border: borda(C.gold),
             padding: "18px 18px",
             marginBottom: 28,
           }}
@@ -267,7 +267,7 @@ export default function KitClient() {
               marginTop: 8,
             }}
           />
-          <p style={{ margin: "10px 0 0", fontSize: 14.5, lineHeight: 1.55, opacity: 0.85 }}>
+          <p style={{ margin: "10px 0 0", ...TEXTO.nota, opacity: 0.85 }}>
             {slug ? (
               <>
                 Quem se inscrever pelo seu link vai aparecer pra coordenação como{" "}
@@ -320,7 +320,7 @@ export default function KitClient() {
             style={{
               background: C.erro,
               color: C.ink,
-              border: `3px solid ${C.erroBorda}`,
+              border: borda(C.erroBorda),
               padding: "11px 14px",
               margin: "0 0 20px",
               fontSize: 15,
@@ -337,7 +337,7 @@ export default function KitClient() {
               key={p.id}
               style={{
                 background: "rgba(246,245,239,.05)",
-                border: `3px solid ${C.goldDim}`,
+                border: borda(C.goldDim),
                 padding: "18px 17px",
                 display: "flex",
                 flexDirection: "column",
@@ -355,7 +355,7 @@ export default function KitClient() {
                     placeItems: "center",
                     background: C.gold,
                     color: C.ink,
-                    border: `3px solid ${C.ink}`,
+                    border: borda(),
                   }}
                 >
                   <Icon name={p.icone} size={21} />
@@ -458,7 +458,7 @@ export default function KitClient() {
         <section
           style={{
             marginTop: 30,
-            border: `3px solid ${C.goldDim}`,
+            border: borda(C.goldDim),
             padding: "18px 17px",
           }}
         >
@@ -466,15 +466,15 @@ export default function KitClient() {
             Como o mutirão funciona
           </h2>
           <ol style={{ margin: 0, paddingLeft: 20, listStyle: "decimal", display: "flex", flexDirection: "column", gap: 8 }}>
-            <li style={{ fontSize: 15.5, lineHeight: 1.55 }}>
+            <li style={{ ...TEXTO.corpo }}>
               Combine o horário no grupo. Todo mundo postando junto rende muito mais que espalhado
               no dia.
             </li>
-            <li style={{ fontSize: 15.5, lineHeight: 1.55 }}>
+            <li style={{ ...TEXTO.corpo }}>
               Poste a arte com o texto, e depois volte pra responder os comentários — nunca pelo
               ódio, sempre com a página do plano na mão.
             </li>
-            <li style={{ fontSize: 15.5, lineHeight: 1.55 }}>
+            <li style={{ ...TEXTO.corpo }}>
               Não invente número. Se perguntarem algo que não está na peça, mande a pessoa pro
               plano em vez de chutar.
             </li>
@@ -485,7 +485,7 @@ export default function KitClient() {
       <style>{`
         summary::-webkit-details-marker { display: none; }
         button:focus-visible, a:focus-visible, summary:focus-visible, input:focus-visible {
-          outline: 3px solid ${C.gold}; outline-offset: 2px;
+          outline: ${BORDA}px solid ${C.gold}; outline-offset: 2px;
         }
         button[disabled] { opacity: .6; cursor: progress; }
       `}</style>
@@ -534,12 +534,12 @@ const botaoOuro: React.CSSProperties = {
   ...botaoBase,
   background: C.gold,
   color: C.ink,
-  border: `3px solid ${C.gold}`,
+  border: borda(C.gold),
 };
 
 const botaoVazado: React.CSSProperties = {
   ...botaoBase,
   background: "transparent",
   color: C.cream,
-  border: `3px solid ${C.goldDim}`,
+  border: borda(C.goldDim),
 };

@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { C, FONT_ALFA, FONT_ELITE } from "@/lib/theme";
+import { C, FONT_ALFA, FONT_ELITE, borda, TEXTO } from "@/lib/theme";
 import { obterEncontro, enviarPresenca, procurarPessoa, confirmarPessoa } from "@/lib/api/presenca";
 import {
   mascararTelefone,
@@ -425,7 +425,7 @@ export default function PresencaClient() {
 
         <section
           style={{
-            border: `3px solid ${C.gold}`,
+            border: borda(C.gold),
             background: "rgba(255,203,5,.08)",
             padding: "14px 16px",
             margin: "6px 0 20px",
@@ -470,7 +470,7 @@ export default function PresencaClient() {
               }}
               style={{ width: 22, height: 22, flex: "0 0 auto", marginTop: 2, accentColor: C.gold }}
             />
-            <span style={{ fontSize: 14.5, lineHeight: 1.55 }}>
+            <span style={{ ...TEXTO.nota }}>
               Concordo que a Missão Ceará use meus dados para falar comigo.
             </span>
           </label>
@@ -492,7 +492,7 @@ export default function PresencaClient() {
             fontSize: 17,
             background: C.gold,
             color: C.ink,
-            border: `3px solid ${C.ink}`,
+            border: borda(),
             boxShadow: "5px 5px 0 rgba(24,18,3,.4)",
             opacity: fase === "enviando" ? 0.6 : 1,
           }}

@@ -1,4 +1,4 @@
-import { C, FONT_ALFA, FONT_ELITE, FONT_BITTER } from "@/lib/theme";
+import { BORDA, C, FONT_ALFA, FONT_ELITE, FONT_BITTER } from "@/lib/theme";
 
 /**
  * A folha de estilo do formulário de `/queroajudar`, num arquivo só.
@@ -43,7 +43,7 @@ export const css = `
     display: inline-flex; align-items: center; gap: 8px; min-height: 44px;
     font-family: ${FONT_ELITE}; font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
     color: ${C.ink}; background: ${C.cream}; text-decoration: none;
-    padding: 10px 15px; border: 3px solid ${C.ink};
+    padding: 10px 15px; border: ${BORDA}px solid ${C.ink};
     box-shadow: 3px 3px 0 rgba(24,18,3,.28);
     margin-bottom: 22px;
   }
@@ -85,7 +85,7 @@ export const css = `
     font-family: ${FONT_ALFA}; font-size: clamp(21px, 5vw, 27px);
     margin: 22px 0 14px; outline: none;
   }
-  .in-passo-titulo:focus-visible { outline: 3px solid ${C.goldDim}; outline-offset: 4px; }
+  .in-passo-titulo:focus-visible { outline: ${BORDA}px solid ${C.goldDim}; outline-offset: 4px; }
 
   .in-ajuda {
     font-size: 14.5px; line-height: 1.6; margin: 0 0 18px;
@@ -106,7 +106,7 @@ export const css = `
   .in-grupo { border: 0; padding: 0; margin: 0 0 28px; }
   .in-grupo-nome {
     font-family: ${FONT_ALFA}; font-size: 19px; padding: 0;
-    background: ${C.gold}; border: 3px solid ${C.ink};
+    background: ${C.gold}; border: ${BORDA}px solid ${C.ink};
     box-shadow: 4px 4px 0 rgba(24,18,3,.3);
     padding: 5px 13px; margin-bottom: 10px;
   }
@@ -114,7 +114,7 @@ export const css = `
   .in-cartoes { display: grid; gap: 12px; }
 
   .in-cartao {
-    background: ${C.cream}; border: 3px solid ${C.ink};
+    background: ${C.cream}; border: ${BORDA}px solid ${C.ink};
     box-shadow: 4px 4px 0 rgba(24,18,3,.24);
     padding: 12px 14px 10px;
     transition: box-shadow .12s ease, transform .12s ease;
@@ -188,10 +188,10 @@ export const css = `
     width: 100%; font-family: ${FONT_BITTER}; font-size: 16px;
     min-height: 48px; padding: 11px 13px;
     background: ${C.cream}; color: ${C.ink};
-    border: 3px solid ${C.ink}; border-radius: 0;
+    border: ${BORDA}px solid ${C.ink}; border-radius: 0;
     box-shadow: 3px 3px 0 rgba(24,18,3,.24);
   }
-  .in-campo input:focus-visible, .in-campo select:focus-visible { outline: 3px solid ${C.goldDim}; outline-offset: 2px; }
+  .in-campo input:focus-visible, .in-campo select:focus-visible { outline: ${BORDA}px solid ${C.goldDim}; outline-offset: 2px; }
   .in-campo input.com-erro, .in-campo select.com-erro { border-color: #8C2F22; box-shadow: 3px 3px 0 rgba(140,47,34,.3); }
   .in-dica { font-size: 13px; line-height: 1.45; opacity: .7; margin: 6px 0 0; }
   .in-erro {
@@ -202,7 +202,7 @@ export const css = `
   /* ---- passo 3: confirmação ---- */
   .in-confirma { display: flex; flex-direction: column; gap: 16px; }
   .in-resumo {
-    background: ${C.cream}; border: 3px solid ${C.ink};
+    background: ${C.cream}; border: ${BORDA}px solid ${C.ink};
     box-shadow: 4px 4px 0 rgba(24,18,3,.24); padding: 15px 16px;
   }
   .in-resumo-titulo {
@@ -232,7 +232,7 @@ export const css = `
 
   .in-lgpd {
     background: ${C.night}; color: ${C.cream};
-    border: 3px solid ${C.ink}; box-shadow: 4px 4px 0 rgba(24,18,3,.4);
+    border: ${BORDA}px solid ${C.ink}; box-shadow: 4px 4px 0 rgba(24,18,3,.4);
     padding: 16px;
   }
   .in-lgpd .in-resumo-titulo { color: ${C.gold}; }
@@ -262,7 +262,7 @@ export const css = `
     display: inline-flex; align-items: center; justify-content: center; gap: 10px;
     font-family: ${FONT_ALFA}; font-size: 16px; letter-spacing: .4px;
     text-decoration: none; text-align: center;
-    border: 3px solid ${C.ink}; padding: 13px 20px;
+    border: ${BORDA}px solid ${C.ink}; padding: 13px 20px;
     transition: transform .12s ease, box-shadow .12s ease;
   }
   .in-btn svg { flex: 0 0 auto; }
@@ -271,7 +271,7 @@ export const css = `
   .in-btn:hover { transform: translate(-2px,-2px); box-shadow: 7px 7px 0 rgba(24,18,3,.38); }
   .in-btn:active { transform: translate(2px,2px); box-shadow: 2px 2px 0 rgba(24,18,3,.3); }
   .in-btn:disabled { opacity: .6; cursor: progress; transform: none; }
-  .in-btn:focus-visible { outline: 3px solid ${C.goldDim}; outline-offset: 4px; }
+  .in-btn:focus-visible { outline: ${BORDA}px solid ${C.goldDim}; outline-offset: 4px; }
 
   /* ---- sucesso ---- */
   .in-sucesso { text-align: center; padding-top: 48px; }
@@ -289,7 +289,7 @@ export const css = `
   }
   .in-proximos li {
     display: flex; align-items: flex-start; gap: 13px;
-    background: ${C.cream}; border: 3px solid ${C.ink};
+    background: ${C.cream}; border: ${BORDA}px solid ${C.ink};
     box-shadow: 4px 4px 0 rgba(24,18,3,.22);
     padding: 13px 15px; font-size: 14.5px; line-height: 1.55;
   }
