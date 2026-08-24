@@ -44,6 +44,7 @@ parecem certas.
 | `fontes-unicas` | `funcoes.json`, `municipios-ce.json` | o painel lê um arquivo que o `publish.yml` deixou de copiar |
 | `painel` | o checklist de área nova, as rotas 301, o grupo de trabalho | área que não aparece no menu; URL antiga virando soft 404 |
 | `inscricao` | `validacao.ts` ↔ `recusa_de_inscricao()`, e a passagem de `/presenca` para `/queroajudar` | a pessoa passa por todos os campos em verde e leva um "não deu" genérico no fim |
+| `presenca-previa` | `url_confirmacao()` ↔ a RewriteRule do `publish.yml` ↔ `api/presenca-previa.php` | o link colado no grupo anuncia a candidatura no lugar do encontro |
 
 **Estes testes já pagaram o próprio custo.** Na primeira execução, o de origem
 achou duas divergências reais em `slugDe()`: o corte em 60 acontecia depois de

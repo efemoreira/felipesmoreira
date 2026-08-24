@@ -73,6 +73,10 @@ Regras:
 - `/presenca` trabalha com dois tokens: um para confirmação e outro para presença na porta.
 - A passagem `/presenca` → `/queroajudar` usa `sessionStorage` (`CHAVE_RASCUNHO`), nunca querystring para telefone.
 - `slugDe()` (TS) e `normalizar_origem()` (PHP) têm de concordar.
+- O cartão do link (WhatsApp) de `/presenca` sai de `api/presenca-previa.php`: o
+  `.htaccess` desvia **só o robô de prévia** para lá, e o navegador continua
+  recebendo o HTML estático. Título e descrição do encontro vivem lá; o que está
+  em `app/presenca/page.tsx` é o plano B.
 
 ### Agenda e encontros
 

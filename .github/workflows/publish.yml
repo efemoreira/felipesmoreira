@@ -75,6 +75,19 @@ jobs:
           RewriteRule ^painel/procurar/?$ /painel/procurar.php [L]
           RewriteRule ^painel/conta/?$ /painel/conta.php [L]
           RewriteRule ^painel/manutencao/?$ /painel/manutencao.php [L]
+          # ===== Prévia do link de presença (WhatsApp, Telegram, Facebook…) =====
+          # O site é estático: existe UM presenca.html para todos os encontros, e
+          # qual encontro é sai do ?e=/?c= — que só o JavaScript lê. O robô que
+          # monta o cartão do link não roda JavaScript, então lia as meta tags do
+          # layout raiz e a mensagem saía anunciando a candidatura no lugar do
+          # encontro. O PHP responde o cartão certo, com o dia e o nome.
+          #
+          # SÓ O ROBÔ DESVIA. A pessoa que abre o link no celular continua
+          # recebendo o arquivo estático, byte a byte igual ao de hoje: a fila da
+          # porta do encontro não pode passar a depender do PHP estar de pé.
+          RewriteCond %{QUERY_STRING} (^|&)[ec]=[a-f0-9]
+          RewriteCond %{HTTP_USER_AGENT} (WhatsApp|facebookexternalhit|Facebot|Twitterbot|TelegramBot|Slackbot|Discordbot|LinkedInBot|SkypeUriPreview|redditbot|Applebot|Pinterest|vkShare|Iframely|Embedly|Bluesky|Mastodon|SignalR|Googlebot|bingbot) [NC]
+          RewriteRule ^presenca/?$ /painel/api/presenca-previa.php [L,QSA]
           # Rotas antigas, com hífen. Elas estão no sitemap e circulam em link de
           # WhatsApp: sem o 301 elas cairiam no fallback lá embaixo e devolveriam
           # a HOME com status 200 — um soft 404, que para buscador é pior que o
