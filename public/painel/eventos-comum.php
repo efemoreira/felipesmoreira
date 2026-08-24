@@ -173,6 +173,12 @@ function normalizar_evento($e): ?array
     if (!isset(PLATAFORMAS[$plataforma])) {
         $plataforma = '';
     }
+    /* Encontro cadastrado antes de o filtro existir cai no padrão, que é o
+       mesmo véu que a /presenca já desenhava: nada muda de aparência sozinho. */
+    $filtro = (string) ($e['filtro'] ?? '');
+    if (!isset(FILTROS[$filtro])) {
+        $filtro = FILTRO_PADRAO;
+    }
 
     return [
         'id'      => limpar_texto($e['id'], 40),
@@ -192,6 +198,7 @@ function normalizar_evento($e): ?array
         'aoVivo'     => !empty($e['aoVivo']),
         'link'       => limpar_link($e['link'] ?? ''),
         'imagem'     => limpar_texto($e['imagem'] ?? '', 300),
+        'filtro'     => $filtro,
         'local'   => limpar_texto($e['local'] ?? '', 120),
         'endereco' => limpar_texto($e['endereco'] ?? '', 200),
         'publicoEsperado' => max(0, (int) ($e['publicoEsperado'] ?? 0)),

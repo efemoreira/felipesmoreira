@@ -46,6 +46,8 @@ const PONTES = [
     'nome_de_arquivo',
     'cidade_valida',
     'telefone_bonito',
+    'numero_whatsapp',
+    'numero_whatsapp_outro',
     'recusa_de_inscricao',
 ];
 

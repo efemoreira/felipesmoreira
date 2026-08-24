@@ -303,6 +303,7 @@ export default function PresencaClient() {
             hora={detalhes.hora}
             local={detalhes.local}
             imagem={detalhes.imagem}
+            filtro={detalhes.filtro}
             confirmando={confirmando}
           />
         ) : null}
@@ -353,6 +354,7 @@ export default function PresencaClient() {
             hora={detalhes.hora}
             local={detalhes.local}
             imagem={detalhes.imagem}
+            filtro={detalhes.filtro}
             confirmando={confirmando}
           />
         ) : null}
@@ -386,6 +388,7 @@ export default function PresencaClient() {
           hora={detalhes.hora}
           local={detalhes.local}
           imagem={detalhes.imagem}
+          filtro={detalhes.filtro}
           confirmando={confirmando}
         />
       ) : null}

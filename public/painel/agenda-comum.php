@@ -39,6 +39,43 @@ const PLATAFORMAS = [
     'whatsapp'  => 'WhatsApp',
     'video'     => 'Kwai / vídeo',
 ];
+/**
+ * O VÉU ENTRE A IMAGEM DO ENCONTRO E O TEXTO QUE VAI POR CIMA.
+ *
+ * A imagem do encontro é fundo na tela de confirmação e de check-in
+ * (`/presenca`), com o nome, a data e o local escritos em cima. Foto clara,
+ * cheia de detalhe ou com letra dentro faz o texto sumir dentro dela — e não há
+ * escurecimento único que sirva para cartaz de fundo liso e para foto de rua ao
+ * meio-dia. Então quem cadastra escolhe, olhando a prévia.
+ *
+ * `veu` é o degradê que entra ENTRE a imagem e o texto: mais fraco no topo, onde
+ * fica só o selo, e mais forte embaixo, onde ficam o nome e o endereço.
+ * `desfoque` é o borrão na imagem — tira o detalhe fino, que é o que mais
+ * atrapalha a leitura, sem apagar a foto.
+ *
+ * Espelhado em `src/features/presenca/filtro.ts`; `testes/contrato/fontes-unicas.test.ts`
+ * prende os dois lados. O padrão é `medio`, que é exatamente o que a tela já
+ * fazia antes de a escolha existir — encontro antigo continua igual.
+ */
+const FILTROS = [
+    'nenhum' => ['nome' => 'Nenhum — a imagem como ela é',
+                 'veu' => '',
+                 'desfoque' => 0],
+    'leve'   => ['nome' => 'Leve — escurece só o pé',
+                 'veu' => 'linear-gradient(180deg, rgba(14,12,8,.06), rgba(14,12,8,.55))',
+                 'desfoque' => 0],
+    'medio'  => ['nome' => 'Médio — o padrão',
+                 'veu' => 'linear-gradient(180deg, rgba(14,12,8,.12), rgba(14,12,8,.78))',
+                 'desfoque' => 0],
+    'forte'  => ['nome' => 'Forte — imagem bem atrás do texto',
+                 'veu' => 'linear-gradient(180deg, rgba(14,12,8,.45), rgba(14,12,8,.92))',
+                 'desfoque' => 0],
+    'desfoque' => ['nome' => 'Forte com desfoque — foto cheia de detalhe',
+                 'veu' => 'linear-gradient(180deg, rgba(14,12,8,.45), rgba(14,12,8,.92))',
+                 'desfoque' => 4],
+];
+const FILTRO_PADRAO = 'medio';
+
 const DIAS = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
 
 /* As mesmas cores de src/app/programacao/tipos.ts — a prévia tem de mostrar o
@@ -271,12 +308,24 @@ function arquivo_enviado($indice): ?array
  * `arquivo_enviado()` existe para `name="imagem[N]"`, onde o PHP entrega
  * `$_FILES['imagem']['name'][N]` e é preciso remontar a ficha. Quando o campo é
  * um só, a ficha já vem pronta e remontar seria só chance de errar.
+ *
+ * NULO QUER DIZER "NÃO VEIO ARQUIVO", e não "não veio o campo". O formulário é
+ * `multipart/form-data` e o `<input type=file>` está sempre lá: o PHP monta
+ * `$_FILES['imagem']` mesmo quando ninguém escolheu nada, só que com
+ * `UPLOAD_ERR_NO_FILE`. Devolver a ficha nesse caso fazia todo
+ * `if (arquivo_simples(...) !== null) {...} elseif ($_POST['tirarImagem'])`
+ * nunca chegar no `elseif` — era por isso que "Remover esta imagem" não
+ * removia. Quem quiser o erro do upload chama `guardar_upload()`, que continua
+ * tratando os outros códigos.
  */
 function arquivo_simples(string $campo): ?array
 {
     $f = $_FILES[$campo] ?? null;
     if (!is_array($f) || !isset($f['error']) || is_array($f['error'])) {
         return null;
+    }
+    if ((int) $f['error'] === UPLOAD_ERR_NO_FILE) {
+        return null;  // o campo existe, o arquivo não
     }
     return [
         'tmp_name' => (string) ($f['tmp_name'] ?? ''),
@@ -380,8 +429,9 @@ function guardar_upload(array $arquivo): array
     imagecopyresampled($saida, $origem, 0, 0, 0, 0, $nl, $na, $lo, $al);
 
     $gravou = imagejpeg($saida, $destino, 82);
-    imagedestroy($saida);
-    imagedestroy($origem);
+    /* Sem `imagedestroy()`: desde o PHP 8.0 a imagem é objeto e o coletor de
+       lixo a solta sozinho; desde o 8.5 a chamada é depreciada e escreve aviso
+       no log a cada foto enviada. */
 
     if (!$gravou) {
         return ['ok' => false, 'caminho' => '', 'erro' => 'não consegui gravar a imagem'];
@@ -415,8 +465,7 @@ function corrigir_rotacao($imagem, string $arquivo, int $tipo)
     }
     $girada = @imagerotate($imagem, $graus, 0);
     if ($girada) {
-        imagedestroy($imagem);
-        return $girada;
+        return $girada;  // a original sai de cena com o objeto; ver o comentário acima
     }
     return $imagem;
 }

@@ -1,5 +1,7 @@
 import { test, describe, before, beforeEach, after } from "node:test";
 import assert from "node:assert/strict";
+import { existsSync } from "node:fs";
+import path from "node:path";
 import { montarSandbox, type Sandbox } from "../sandbox.ts";
 
 /**
@@ -190,6 +192,84 @@ describe("ação: tirar alguém do encontro", () => {
 
     assert.match(r.html, /não está na lista deste encontro/);
     assert.equal(painel.ler("presencas").length, 1);
+  });
+});
+
+/** Um PNG de 1x1 — o menor arquivo que o `getimagesize()` aceita como imagem. */
+const PNG = Uint8Array.from(
+  atob(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+  ),
+  (c) => c.charCodeAt(0),
+);
+
+/** Os campos que o formulário de Dados manda junto, e sem os quais salvar zera o encontro. */
+function dadosDoEncontro(e: Record<string, string>, extra: Record<string, string> = {}) {
+  return {
+    acao: "salvar",
+    id: e.id,
+    titulo: e.titulo,
+    dia: daquiADias(10),
+    hora: "19:00",
+    local: e.local ?? "",
+    ...extra,
+  };
+}
+
+describe("ação: a imagem do encontro", () => {
+  /** Sobe o PNG e devolve o encontro já com imagem. */
+  async function comImagem() {
+    const e = painel.ler("eventos")[0];
+    await painel.postarComArquivo(
+      "eventos",
+      dadosDoEncontro(e),
+      { imagem: { nome: "cartaz.png", conteudo: PNG, tipo: "image/png" } },
+    );
+    const salvo = painel.ler("eventos").find((x) => x.id === e.id);
+    assert.notEqual(salvo.imagem, "", "o upload não gravou imagem nenhuma");
+    return salvo;
+  }
+
+  test("“Remover esta imagem” remove — e apaga o arquivo do disco", async () => {
+    /* O formulário é multipart e o `<input type=file>` está sempre lá: mesmo sem
+       ninguém escolher arquivo, o PHP monta `$_FILES['imagem']` com
+       UPLOAD_ERR_NO_FILE. Enquanto `arquivo_simples()` devolvia essa ficha vazia
+       como se fosse envio, o `elseif` do "tirar" nunca era alcançado — a caixa
+       era marcada, a tela dizia que salvou, e a imagem continuava lá. */
+    const com = await comImagem();
+    const arquivo = path.join(painel.dir, "dados/imagens", path.basename(com.imagem));
+    assert.ok(existsSync(arquivo), "o arquivo da imagem não foi para o disco");
+
+    await painel.postarComArquivo(
+      "eventos",
+      dadosDoEncontro(com, { tirarImagem: "1" }),
+      { imagem: null },  // o campo de arquivo em branco, como o navegador manda
+    );
+
+    const depois = painel.ler("eventos").find((e) => e.id === com.id);
+    assert.equal(depois.imagem, "", "marcou remover e a imagem continuou no encontro");
+    assert.equal(existsSync(arquivo), false, "tirou do encontro e deixou o arquivo no disco");
+  });
+
+  test("salvar sem mexer na imagem não apaga a que está lá", async () => {
+    const com = await comImagem();
+
+    await painel.postarComArquivo("eventos", dadosDoEncontro(com), { imagem: null });
+
+    const depois = painel.ler("eventos").find((e) => e.id === com.id);
+    assert.equal(depois.imagem, com.imagem, "salvar o resto do formulário apagou a imagem");
+  });
+
+  test("o filtro grava, e chave inventada cai no padrão", async () => {
+    const e = painel.ler("eventos")[0];
+
+    await painel.postar("eventos", dadosDoEncontro(e, { filtro: "desfoque" }));
+    assert.equal(painel.ler("eventos").find((x) => x.id === e.id).filtro, "desfoque");
+
+    /* O que chega no POST é texto: sem a conferência contra FILTROS, o site
+       receberia uma chave que não existe e cairia no padrão só por sorte. */
+    await painel.postar("eventos", dadosDoEncontro(e, { filtro: "escurecer-tudo" }));
+    assert.equal(painel.ler("eventos").find((x) => x.id === e.id).filtro, "medio");
   });
 });
 

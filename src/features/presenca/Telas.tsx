@@ -42,7 +42,15 @@ export const Pronto: React.FC<{
   jaEstava: boolean;
   ofereceAjudar: boolean;
   aoQuererAjudar: () => void;
-  detalhes?: { titulo: string; subtitulo?: string; data: string; hora: string; local: string; imagem?: string } | null;
+  detalhes?: {
+    titulo: string;
+    subtitulo?: string;
+    data: string;
+    hora: string;
+    local: string;
+    imagem?: string;
+    filtro?: string;
+  } | null;
 }> = ({ confirmando, reconhecido, jaEstava, ofereceAjudar, aoQuererAjudar, detalhes }) => (
   <Casca
     titulo={
@@ -63,6 +71,7 @@ export const Pronto: React.FC<{
         hora={detalhes.hora}
         local={detalhes.local}
         imagem={detalhes.imagem}
+        filtro={detalhes.filtro}
         confirmando={confirmando}
       />
     ) : null}

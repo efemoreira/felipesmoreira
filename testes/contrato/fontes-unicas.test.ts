@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { chamarPhp } from "./ponte.ts";
+import { FILTROS, FILTRO_PADRAO } from "../../src/features/presenca/filtro.ts";
 
 /**
  * OS ARQUIVOS QUE OS DOIS LADOS LEEM.
@@ -80,6 +81,28 @@ describe("fontes únicas: os arquivos que o Next e o PHP dividem", () => {
       [],
       "função com ícone que não existe: o cartão dela sai sem desenho, sem erro nenhum",
     );
+  });
+
+  test("o filtro da imagem do encontro é o mesmo no painel e na /presenca", () => {
+    /* O painel desenha a PRÉVIA do véu e o site desenha o véu de verdade. São
+       dois desenhos do mesmo CSS, em linguagens diferentes: divergir aqui é a
+       coordenação escolher olhando uma coisa e a tela da porta mostrar outra —
+       e ninguém compara as duas telas lado a lado para descobrir. */
+    const php = ler("public/painel/agenda-comum.php");
+    const bloco = php.slice(php.indexOf("const FILTROS = ["));
+    const doPhp: Record<string, { veu: string; desfoque: number }> = {};
+    for (const m of bloco.slice(0, bloco.indexOf("];")).matchAll(
+      /'([a-z]+)'\s*=>\s*\[\s*'nome'\s*=>\s*'[^']*',\s*'veu'\s*=>\s*'([^']*)',\s*'desfoque'\s*=>\s*(\d+)/g,
+    )) {
+      doPhp[m[1]] = { veu: m[2], desfoque: Number(m[3]) };
+    }
+
+    assert.ok(Object.keys(doPhp).length > 0, "não consegui ler FILTROS do agenda-comum.php");
+    assert.deepEqual(doPhp, FILTROS, "o catálogo de filtros divergiu entre o PHP e o TypeScript");
+
+    const padrao = php.match(/const FILTRO_PADRAO = '([a-z]+)'/);
+    assert.equal(padrao?.[1], FILTRO_PADRAO, "o filtro padrão divergiu");
+    assert.ok(FILTRO_PADRAO in FILTROS, "o padrão aponta para um filtro que não existe");
   });
 
   test("as áreas sugeridas por cada função existem no painel", () => {

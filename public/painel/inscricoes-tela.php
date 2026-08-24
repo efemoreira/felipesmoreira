@@ -111,11 +111,7 @@ function tela_de_inscricoes(?string $erro, ?string $ok, ?array $acesso): void
         senha: <?= h($acesso['senha']) ?>
       </div>
       <div class="acoes" style="margin-top:14px">
-        <a class="btn btn-ouro"
-           href="https://wa.me/<?= h(numero_whatsapp($acesso['telefone'])) ?>?text=<?= h(rawurlencode($msg)) ?>"
-           target="_blank" rel="noopener">
-          Abrir WhatsApp com a mensagem pronta
-        </a>
+        <?php links_whatsapp($acesso['telefone'], 'Abrir WhatsApp com a mensagem pronta', $msg, 'btn btn-ouro'); ?>
       </div>
     </div>
   <?php endif; ?>

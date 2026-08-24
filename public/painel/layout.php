@@ -24,7 +24,7 @@ require_once __DIR__ . '/icones.php';
 require_once __DIR__ . '/agora.php';
 
 /** Versão do CSS — muda junto com o painel.css para furar o cache do navegador. */
-const VERSAO_ESTILO = '20';
+const VERSAO_ESTILO = '21';
 
 /**
  * Os grupos da navegação, na ordem em que aparecem.
@@ -623,6 +623,10 @@ function fechar_pagina(): void
               var botoes = faixa.querySelectorAll('button');
               botoes[0].addEventListener('click', function () {
                 aplicar(form, guardado);
+                /* Trocar valor por código não dispara evento nenhum, e quem
+                   desenha prévia a partir do formulário ficaria mostrando o
+                   estado anterior ao rascunho recuperado. */
+                form.dispatchEvent(new Event('change', { bubbles: true }));
                 faixa.remove();
               });
               botoes[1].addEventListener('click', function () {
@@ -1035,6 +1039,49 @@ function menu_acoes(array $itens, string $rotulo = 'Ações'): void
         <?php endforeach; ?>
       </div>
     </details>
+    <?php
+}
+
+/**
+ * O LINK DO WHATSAPP, e o segundo link que existe por causa do nono dígito.
+ *
+ * Metade das mensagens da coordenação sai daqui: o painel abre a conversa da
+ * pessoa com o número que está na ficha. Só que o número guardado e o número
+ * com que a pessoa registrou o WhatsApp nem sempre são o mesmo — quem nunca
+ * reinstalou o aplicativo desde a mudança continua com oito dígitos lá dentro,
+ * e o link de 13 dígitos abre "número inválido" para ela. Acontece o contrário
+ * também, com quem foi cadastrado aqui sem o 9.
+ *
+ * Não há como descobrir isso de fora (ver `numero_whatsapp_outro()`), então a
+ * tela mostra os dois e quem está mandando a mensagem tenta o outro quando o
+ * primeiro não abre. É por isso que o segundo link é discreto e não some: ele
+ * não é uma segunda ação, é a mesma ação na outra grafia do número.
+ *
+ * `$classe` vazia desenha os dois como texto — é o caso da linha de lista, onde
+ * o link é o próprio telefone. Com classe de botão, os dois viram botão.
+ */
+function links_whatsapp(string $telefone, string $rotulo, string $texto = '', string $classe = ''): void
+{
+    if (so_digitos($telefone) === '') {
+        return;
+    }
+    $consulta = $texto !== '' ? '?text=' . rawurlencode($texto) : '';
+    $outro = numero_whatsapp_outro($telefone);
+    /* 12 dígitos é o número sem o 9; 13 é o com. O rótulo diz o que a segunda
+       tentativa TEM, e não o que ela é: "sem o 9" é o que a pessoa procura
+       depois de levar um "número inválido" na cara. */
+    $acao = strlen($outro) === 12 ? 'sem o 9' : 'com o 9';
+    $aviso = 'Se o outro link disser que o número não existe, tente por aqui: '
+           . 'essa conta pode ter sido registrada ' . $acao . '.';
+    ?>
+    <a<?= $classe !== '' ? ' class="' . h($classe) . '"' : '' ?>
+       href="https://wa.me/<?= h(numero_whatsapp($telefone)) ?><?= $consulta ?>"
+       target="_blank" rel="noopener"><?= h($rotulo) ?></a>
+    <?php if ($outro !== ''): ?>
+      <a class="<?= $classe !== '' ? h($classe) : 'wa-outro' ?>"
+         href="https://wa.me/<?= h($outro) ?><?= $consulta ?>"
+         target="_blank" rel="noopener" title="<?= h($aviso) ?>"><?= h($classe !== '' ? 'Tentar ' . $acao : $acao) ?></a>
+    <?php endif; ?>
     <?php
 }
 

@@ -132,6 +132,7 @@ function tratar_acoes_de_evento(array $eu, bool $coordena): void
                 'publicoEsperado' => (int) ($_POST['publicoEsperado'] ?? 0),
                 'naAgenda' => !empty($_POST['naAgenda']),
                 'imagem'   => $imagemNova,
+                'filtro'   => FILTRO_PADRAO,
                 'token'   => bin2hex(random_bytes(10)),
                 'tokenConfirmacao' => bin2hex(random_bytes(10)),
                 'status'  => 'planejado',
@@ -186,7 +187,10 @@ function tratar_acoes_de_evento(array $eu, bool $coordena): void
                     $e['aoVivo']     = !empty($_POST['aoVivo']);
                     $e['link']       = limpar_link($_POST['link'] ?? '');
 
-                    /* imagem: upload novo > pedido de remoção > o que já estava lá */
+                    /* imagem: upload novo > pedido de remoção > o que já estava lá.
+                       `arquivo_simples()` só devolve ficha quando veio arquivo de
+                       verdade — enquanto ela devolvia a ficha vazia do campo, este
+                       `elseif` era inalcançável e "Remover esta imagem" não removia. */
                     if (($env = arquivo_simples('imagem')) !== null) {
                         $r = guardar_upload($env);
                         if ($r['ok']) {
@@ -199,6 +203,10 @@ function tratar_acoes_de_evento(array $eu, bool $coordena): void
                         apagar_imagem($e['imagem']);
                         $e['imagem'] = '';
                     }
+                    /* O filtro se guarda mesmo sem imagem: quem troca a foto depois
+                       não precisa lembrar de reescolher o véu. */
+                    $filtro = (string) ($_POST['filtro'] ?? '');
+                    $e['filtro'] = isset(FILTROS[$filtro]) ? $filtro : FILTRO_PADRAO;
                     foreach (array_keys(PECAS) as $peca) {
                         $e['responsaveis'][$peca] = limpar_texto($_POST['resp'][$peca] ?? '', 40);
                     }

@@ -118,10 +118,27 @@ function desenhar_dados(array $aberto, array $time, int $naLista): void
             <p class="dica"><?= $ehDigital ? 'Onde a transmissão acontece.' : 'Só para encontro digital.' ?></p>
           </div>
         </div>
+        <?php /* A prévia é do TEXTO EM CIMA DA IMAGEM, e não da imagem: é assim que
+                 a foto aparece na /presenca, e é lá que ela briga com o nome do
+                 encontro. Mostrar a foto limpa esconde justamente o que se está
+                 escolhendo. */ ?>
+        <?php $filtroAtual = FILTROS[$aberto['filtro']]; ?>
         <div class="campo">
           <label for="e-img">Imagem <span class="dica">— opcional</span></label>
           <?php if ($aberto['imagem'] !== ''): ?>
-            <p><img src="<?= h($aberto['imagem']) ?>" alt="" style="max-width:240px;border:3px solid var(--linha-2)"></p>
+            <div class="previa-filtro">
+              <img src="<?= h($aberto['imagem']) ?>" alt="" data-foto
+                   style="filter:blur(<?= (int) $filtroAtual['desfoque'] ?>px)">
+              <span aria-hidden="true" data-veu style="background:<?= h($filtroAtual['veu']) ?>"></span>
+              <span class="previa-filtro-texto" aria-hidden="true">
+                <?php /* O selo é o do check-in porque é o caso apertado: quem está
+                         na porta lê isto em pé, com a fila andando. O link de
+                         confirmação usa a mesma imagem e o mesmo véu. */ ?>
+                <em>Check-in</em>
+                <strong><?= h($aberto['titulo']) ?></strong>
+                <span><?= h(trim(($aberto['local'] !== '' ? $aberto['local'] : 'Local a definir'))) ?></span>
+              </span>
+            </div>
             <label class="check">
               <input type="checkbox" name="tirarImagem" value="1"> Remover esta imagem
             </label>
@@ -132,6 +149,39 @@ function desenhar_dados(array $aberto, array $time, int $naLista): void
             Sem imagem, o cartão desenha a hachura do cordel com a sigla do dia.
           </p>
         </div>
+        <div class="campo">
+          <label for="e-filtro">Filtro sobre a imagem</label>
+          <select id="e-filtro" name="filtro" data-filtro>
+            <?php foreach (FILTROS as $chave => $f): ?>
+              <option value="<?= h($chave) ?>" <?= $aberto['filtro'] === $chave ? 'selected' : '' ?>><?= h($f['nome']) ?></option>
+            <?php endforeach; ?>
+          </select>
+          <p class="dica">
+            Na <a href="/presenca" target="_blank">tela de confirmação e de check-in</a> a imagem
+            fica atrás do nome, da data e do local. Foto clara ou cheia de detalhe engole esse
+            texto — o filtro empurra a imagem para trás. A prévia acima mostra o resultado.
+          </p>
+        </div>
+        <script>
+          /* Prévia ao vivo: trocar o filtro tem de mostrar o efeito ANTES de salvar,
+             senão a escolha vira tentativa e erro com um Salvar entre cada tentativa.
+             Os valores vêm do PHP para não haver uma segunda tabela aqui. */
+          (function () {
+            var form = document.currentScript.closest('form');
+            var seletor = form.querySelector('[data-filtro]');
+            var previa = form.querySelector('.previa-filtro');
+            if (!seletor || !previa) return;
+            var tabela = <?= json_encode(FILTROS, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+            /* No formulário, e não no seletor: assim recuperar um rascunho — que
+               troca o valor por código e avisa o formulário — também repinta. */
+            form.addEventListener('change', function () {
+              var f = tabela[seletor.value];
+              if (!f) return;
+              previa.querySelector('[data-veu]').style.background = f.veu;
+              previa.querySelector('[data-foto]').style.filter = 'blur(' + f.desfoque + 'px)';
+            });
+          })();
+        </script>
         <div class="campo">
           <label for="e-link">Link</label>
           <input id="e-link" type="text" name="link" maxlength="300" value="<?= h($aberto['link']) ?>"

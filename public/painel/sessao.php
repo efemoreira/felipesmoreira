@@ -472,6 +472,60 @@ function telefone_bonito(string $telefone): string
     return $d;
 }
 
+/**
+ * Número no formato que o wa.me espera: 55 + DDD + número.
+ *
+ * Nasceu no `inscricoes-comum.php` e mudou de casa pela mesma razão do
+ * `telefone_bonito()` logo acima: a lista de pessoas e a de presença montavam o
+ * link na mão, escrevendo `wa.me/55` dentro do href. Três cópias da mesma
+ * conta, e nenhuma delas sabia do nono dígito.
+ *
+ * O `55` só é considerado prefixo de país quando sobra número para um telefone
+ * inteiro embaixo dele: `5599999999` é o celular de um DDD 55, não um número
+ * já internacionalizado.
+ */
+function numero_whatsapp(string $telefone): string
+{
+    $d = so_digitos($telefone);
+    return strlen($d) > 11 && str_starts_with($d, '55') ? $d : '55' . $d;
+}
+
+/**
+ * O MESMO número com o nono dígito do outro jeito — ou `''` quando não há.
+ *
+ * O nono dígito é obrigatório para discar, mas **não** para a conta do
+ * WhatsApp: quem registrou o aparelho antes da mudança e nunca reinstalou
+ * continua com oito dígitos lá dentro. Para essa pessoa o link de 13 dígitos
+ * abre "número inválido" e o de 12 abre a conversa — e existe o caso oposto,
+ * de quem foi cadastrado aqui sem o 9 e tem conta com ele.
+ *
+ * **Não dá para saber de fora qual dos dois é.** O WhatsApp não responde essa
+ * pergunta, e adivinhar erra metade das vezes com quem já está do outro lado.
+ * Por isso a tela oferece os dois links e deixa a escolha para quem está
+ * mandando a mensagem: um clique errado custa uma aba, um número que não
+ * existe custa a conversa.
+ *
+ * Só celular entra: fixo (2 a 5 no começo) nunca ganhou o 9, e telefone com
+ * tamanho estranho não vira palpite.
+ */
+function numero_whatsapp_outro(string $telefone): string
+{
+    $d = so_digitos($telefone);
+    if (strlen($d) > 11 && str_starts_with($d, '55')) {
+        $d = substr($d, 2);
+    }
+    $ddd = substr($d, 0, 2);
+    $resto = substr($d, 2);
+
+    if (strlen($d) === 11 && $resto[0] === '9') {
+        return '55' . $ddd . substr($resto, 1);
+    }
+    if (strlen($d) === 10 && in_array($resto[0], ['6', '7', '8', '9'], true)) {
+        return '55' . $ddd . '9' . $resto;
+    }
+    return '';
+}
+
 /** Escreve a regra só quando ela mudou — assim uma versão nova se conserta sozinha. */
 function fixar_regra(string $arquivo, string $conteudo): void
 {

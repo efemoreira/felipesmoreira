@@ -23,6 +23,8 @@ export type Encontro =
       hora: string;
       local: string;
       imagem: string;
+      /** A chave do véu sobre a imagem, escolhida no painel (ver `filtro.ts`). */
+      filtro: string;
     };
 
 /** O que identifica o encontro: um token OU o outro, nunca os dois. */

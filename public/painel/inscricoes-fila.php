@@ -63,9 +63,7 @@ function aba_da_fila(array $novas, string $buscaIn, callable $formatar): void
           <div>
             <dt>WhatsApp</dt>
             <dd>
-              <a href="https://wa.me/<?= h(numero_whatsapp($i['telefone'])) ?>" target="_blank" rel="noopener">
-                <?= h(telefone_bonito($i['telefone'])) ?>
-              </a>
+              <?php links_whatsapp($i['telefone'], telefone_bonito($i['telefone'])); ?>
             </dd>
           </div>
           <?php if ($i['email'] !== ''): ?>

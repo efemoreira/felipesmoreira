@@ -3,6 +3,7 @@ import React from "react";
 import Link from "next/link";
 import { Icon } from "@/components/icons";
 import { C, FONT_ALFA, FONT_ELITE, FONT_BITTER, borda, sombra } from "@/lib/theme";
+import { filtroDaImagem } from "./filtro";
 
 /**
  * AS PEÇAS de `/presenca` — a moldura, os avisos e os campos.
@@ -199,16 +200,20 @@ export const HeroDoEncontro: React.FC<{
   hora?: string;
   local?: string;
   imagem?: string;
+  /** A chave do véu escolhida no painel (ver `filtro.ts`). */
+  filtro?: string;
   confirmando: boolean;
-}> = ({ titulo, subtitulo, data, hora, local, imagem, confirmando }) => {
+}> = ({ titulo, subtitulo, data, hora, local, imagem, filtro, confirmando }) => {
   const textura =
     "radial-gradient(circle at 18% 20%, rgba(255,203,5,.22), transparent 0 22%), " +
     "radial-gradient(circle at 82% 28%, rgba(255,203,5,.14), transparent 0 18%), " +
     "repeating-linear-gradient(135deg, rgba(255,203,5,.12) 0 8px, transparent 8px 16px), " +
     "linear-gradient(180deg, rgba(14,12,8,.94), rgba(14,12,8,.72))";
-  const fundo = imagem
-    ? `linear-gradient(180deg, rgba(14,12,8,.12), rgba(14,12,8,.78)), url(${imagem})`
-    : textura;
+  /* TRÊS CAMADAS, e não um `background` só, porque o desfoque é da IMAGEM: um
+     `filter` no bloco borraria junto o nome do encontro, que é o que se está
+     tentando deixar legível. Então a foto vai numa camada própria, o véu em
+     outra, e o texto por cima das duas. */
+  const veu = filtroDaImagem(filtro);
 
   return (
     <section
@@ -231,13 +236,31 @@ export const HeroDoEncontro: React.FC<{
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-between",
-          backgroundImage: fundo,
-          backgroundSize: imagem ? "cover" : "auto, auto, auto, cover",
+          backgroundImage: imagem ? undefined : textura,
+          backgroundSize: imagem ? undefined : "auto, auto, auto, cover",
           backgroundPosition: "center",
           backgroundColor: "#0e0c08",
         }}
       >
-        <div>
+        {imagem ? (
+          <>
+            <span
+              style={{
+                position: "absolute",
+                inset: 0,
+                backgroundImage: `url(${imagem})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                filter: veu.desfoque ? `blur(${veu.desfoque}px)` : undefined,
+                /* o borrão apaga a borda da imagem; a escala tira a moldura clara */
+                transform: veu.desfoque ? "scale(1.08)" : undefined,
+              }}
+            />
+            {veu.veu ? <span style={{ position: "absolute", inset: 0, background: veu.veu }} /> : null}
+          </>
+        ) : null}
+
+        <div style={{ position: "relative" }}>
           <span
             style={{
               display: "inline-flex",
@@ -259,7 +282,7 @@ export const HeroDoEncontro: React.FC<{
           </span>
         </div>
 
-        <div>
+        <div style={{ position: "relative" }}>
           <h2
             style={{
               margin: "0 0 6px",

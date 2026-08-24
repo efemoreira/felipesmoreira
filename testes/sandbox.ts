@@ -63,6 +63,22 @@ export interface Sandbox {
    * propósito para exercitar a sessão expirada.
    */
   postar(tela: string, campos: Campos, querystring?: string): Promise<Resposta>;
+  /**
+   * A mesma ação, em `multipart/form-data` — o formulário que tem `<input type="file">`.
+   *
+   * `null` no lugar do arquivo é o campo que a pessoa NÃO preencheu, e é ele
+   * que interessa: o navegador manda a parte assim mesmo, vazia, e o PHP monta
+   * `$_FILES['imagem']` com `UPLOAD_ERR_NO_FILE`. Um teste feito com o POST
+   * urlencoded normal não passa nem perto disso — sem a parte vazia o `$_FILES`
+   * simplesmente não existe, e o caminho que o navegador percorre fica sem
+   * teste nenhum. Foi assim que "Remover esta imagem" ficou sem remover.
+   */
+  postarComArquivo(
+    tela: string,
+    campos: Campos,
+    arquivos: Record<string, Arquivo | null>,
+    querystring?: string,
+  ): Promise<Resposta>;
   /** Uma tela pelo HTTP, com a mesma sessão do `postar()` — para ler o depois. */
   buscar(tela: string, querystring?: string): Promise<Resposta>;
   /** O conteúdo de `dados/<nome>.php`, já em objeto. */
@@ -103,6 +119,13 @@ export type Registro = any;
 
 /** Os campos de um formulário. O array é a caixa marcada várias vezes. */
 export type Campos = Record<string, string | string[] | undefined>;
+
+/** Um arquivo escolhido no `<input type="file">`. */
+export interface Arquivo {
+  nome: string;
+  conteudo: Uint8Array;
+  tipo?: string;
+}
 
 /**
  * Os arquivos que o painel grava em `/dados`, para o `ler()` recusar um nome
@@ -407,6 +430,57 @@ session_write_close();
       });
       /* O corpo do POST é lido e jogado fora de propósito: sem isso o socket
          fica pendurado e o servidor de uma linha só não atende o GET seguinte. */
+      await r.text();
+      return seguir(alvo, r.headers.get("location") ?? "", marca, r.status);
+    },
+    async postarComArquivo(tela, campos, arquivos, querystring = "") {
+      await subir();
+      const marca = stderr.length;
+
+      /* O CORPO É ESCRITO À MÃO, e não com `FormData`.
+         O caso que interessa é o campo de arquivo em branco, e o `FormData` do
+         Node manda esse campo SEM o `filename=""` — vira um campo de texto
+         comum, o `$_FILES` nem se forma, e o teste passa a exercitar um pedido
+         que navegador nenhum faz. O navegador manda a parte com o nome de
+         arquivo vazio, e é ela que o PHP lê como UPLOAD_ERR_NO_FILE. */
+      const LIMITE = "----painel" + Math.random().toString(16).slice(2);
+      const pedacos: Buffer[] = [];
+      const parte = (cabecalho: string, corpo: Buffer) => {
+        pedacos.push(Buffer.from(`--${LIMITE}\r\n${cabecalho}\r\n\r\n`), corpo, Buffer.from("\r\n"));
+      };
+      const campo = (nome: string, valor: string) =>
+        parte(`Content-Disposition: form-data; name="${nome}"`, Buffer.from(valor, "utf8"));
+
+      if (!("csrf" in campos)) {
+        campo("csrf", CSRF);
+      }
+      for (const [nome, valor] of Object.entries(campos)) {
+        if (valor === undefined) continue;
+        if (!Array.isArray(valor)) {
+          campo(nome, valor);
+          continue;
+        }
+        const chave = nome.endsWith("[]") ? nome : `${nome}[]`;
+        for (const v of valor) {
+          campo(chave, v);
+        }
+      }
+      for (const [nome, arquivo] of Object.entries(arquivos)) {
+        parte(
+          `Content-Disposition: form-data; name="${nome}"; filename="${arquivo?.nome ?? ""}"\r\n` +
+            `Content-Type: ${arquivo?.tipo ?? "application/octet-stream"}`,
+          Buffer.from(arquivo?.conteudo ?? new Uint8Array()),
+        );
+      }
+      pedacos.push(Buffer.from(`--${LIMITE}--\r\n`));
+
+      const alvo = `/painel/${tela}.php` + (querystring !== "" ? `?${querystring}` : "");
+      const r = await fetch(base + alvo, {
+        method: "POST",
+        redirect: "manual",
+        headers: { cookie: COOKIE, "content-type": `multipart/form-data; boundary=${LIMITE}` },
+        body: Buffer.concat(pedacos),
+      });
       await r.text();
       return seguir(alvo, r.headers.get("location") ?? "", marca, r.status);
     },
