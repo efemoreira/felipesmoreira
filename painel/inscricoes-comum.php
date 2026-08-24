@@ -139,19 +139,6 @@ function recusa_de_inscricao(array $campos): string
     return '';
 }
 
-/**
- * Número no formato que o wa.me espera: 55 + DDD + número.
- *
- * Mudou de casa junto com a divisão da tela: a senha provisória (que fica na
- * capa) e a ficha da fila precisam dela, e as duas passaram a viver em arquivos
- * diferentes.
- */
-function numero_whatsapp(string $telefone): string
-{
-    $d = so_digitos($telefone);
-    return str_starts_with($d, '55') ? $d : '55' . $d;
-}
-
 function nome_funcao(string $id): string
 {
     return (string) (catalogo_funcoes()['porId'][$id]['nome'] ?? $id);

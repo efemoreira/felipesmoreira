@@ -205,7 +205,7 @@ abrir_pagina('Pessoas');
                   <strong><?= h($p['nome']) ?></strong><br>
                   <span class="dica">
                     <?php if ($p['telefone'] !== ''): ?>
-                      <a href="https://wa.me/55<?= h($p['telefone']) ?>" target="_blank" rel="noopener"><?= h(telefone_bonito($p['telefone'])) ?></a>
+                      <?php links_whatsapp($p['telefone'], telefone_bonito($p['telefone'])); ?>
                     <?php endif; ?>
                     <?php $onde = trim($p['bairro'] . ($p['cidade'] !== '' ? ', ' . $p['cidade'] : ''), ', '); ?>
                     <?= $onde !== '' ? ' · ' . h($onde) : '' ?>

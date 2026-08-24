@@ -231,9 +231,7 @@ function desenhar_presenca(array $aberto, array $eu): void
                     <?php if ($q['telefone'] === ''): ?>
                       sem telefone
                     <?php elseif (pode_ver_telefone($l, $eu)): ?>
-                      <a href="https://wa.me/55<?= h($q['telefone']) ?>" target="_blank" rel="noopener">
-                        <?= h(telefone_bonito($q['telefone'])) ?>
-                      </a>
+                      <?php links_whatsapp($q['telefone'], telefone_bonito($q['telefone'])); ?>
                     <?php else: ?>
                       <?= h(telefone_encoberto($q['telefone'])) ?>
                     <?php endif; ?>
@@ -373,8 +371,7 @@ function desenhar_funil(array $aberto, array $eu, array $vencidos): void
             </header>
             <div class="acoes">
               <?php if ($l['pessoa']['telefone'] !== '' && pode_ver_telefone($l, $eu)): ?>
-                <a class="btn btn-mini" target="_blank" rel="noopener"
-                   href="https://wa.me/55<?= h($l['pessoa']['telefone']) ?>">Abrir WhatsApp</a>
+                <?php links_whatsapp($l['pessoa']['telefone'], 'Abrir WhatsApp', '', 'btn btn-mini'); ?>
               <?php endif; ?>
               <form method="post" style="display:inline">
                 <input type="hidden" name="csrf" value="<?= h(token()) ?>">

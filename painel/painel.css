@@ -400,6 +400,40 @@ input:focus, select:focus, textarea:focus {
 .campo { margin:0 0 16px; }
 .dica { font-size:13.5px; color:var(--texto-min); margin:7px 0 0; line-height:1.5; }
 
+/* ---- a segunda grafia do WhatsApp ----
+   O mesmo número sem (ou com) o nono dígito, ao lado do telefone na lista. É
+   uma saída de emergência para quando o primeiro link diz "número inválido",
+   não uma segunda ação: por isso vem menor, sem virar botão, e separada por um
+   ponto que a cola no telefone em vez de a soltar na linha. */
+.wa-outro { font-size:12px; letter-spacing:.4px; white-space:nowrap; }
+.wa-outro::before { content:" · "; letter-spacing:0; }
+
+/* ---- prévia do filtro da imagem do encontro ----
+   Mostra a foto COM o texto por cima, que é como ela aparece na /presenca.
+   A prévia sem texto escondia justamente o que se está escolhendo aqui. */
+.previa-filtro {
+  position:relative; width:280px; max-width:100%; margin:0 0 12px;
+  border:3px solid var(--linha-2); overflow:hidden; background:#0e0c08;
+}
+.previa-filtro img {
+  display:block; width:100%; height:auto;
+  /* a escala esconde a borda apagada que o desfoque deixa nos cantos */
+  transform:scale(1.06); transform-origin:center;
+}
+.previa-filtro > span { position:absolute; inset:0; }
+.previa-filtro-texto {
+  display:flex; flex-direction:column; justify-content:flex-end; gap:5px;
+  padding:10px 12px; color:#F6F5EF; text-shadow:2px 2px 0 rgba(24,18,3,.55);
+}
+.previa-filtro-texto em {
+  position:absolute; top:10px; left:12px; font-style:normal;
+  background:#FFCB05; color:#181203; padding:3px 7px;
+  font:400 10px/1.4 var(--etiqueta); letter-spacing:1.5px; text-transform:uppercase;
+  text-shadow:none;
+}
+.previa-filtro-texto strong { font-size:19px; line-height:1.15; font-weight:700; }
+.previa-filtro-texto span { font-size:12.5px; color:rgba(246,245,239,.9); }
+
 /* ---- item da agenda: recolhível, arrastável ---- */
 .item { border:3px solid var(--linha); background:var(--realce-1); margin:0 0 12px; }
 .item[open] { background:var(--realce-2); border-color:var(--linha-3); }

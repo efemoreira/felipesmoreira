@@ -92,6 +92,10 @@ if ($metodo === 'GET') {
         'hora'   => $evento['hora'],
         'local'  => $evento['local'],
         'imagem' => $evento['imagem'],
+        /* O véu entre a imagem e o texto que a tela escreve por cima. Vai a
+           chave, e não o CSS: quem desenha é o site, e o catálogo dos dois lados
+           é o mesmo (FILTROS / src/features/presenca/filtro.ts). */
+        'filtro' => $evento['filtro'],
     ]);
 }
 
