@@ -70,10 +70,34 @@ export function validarNome(valor: string): string {
   return "";
 }
 
+/**
+ * O e-mail é opcional, mas quando vem tem de passar aqui E no servidor.
+ *
+ * A régua de lá é `FILTER_VALIDATE_EMAIL`, e a daqui precisa ser pelo menos
+ * tão dura — senão a pessoa vê marca verde nos três passos e leva um "Esse
+ * e-mail parece incompleto" genérico depois de enviar, sem saber qual campo é.
+ * O `[^\s@]+@[^\s@]+\.[^\s@]{2,}` de antes deixava passar dez formatos que o
+ * PHP recusa; o mais comum deles é o acento, que em nome de gente daqui é
+ * regra e não exceção: `joão@gmail.com` passava na tela e morria no envio.
+ *
+ * O que a expressão prende, na ordem em que erra na vida real:
+ *   - acento e qualquer letra fora do ASCII, dos dois lados do @;
+ *   - ponto encostado no @ ou no começo, e ponto dobrado (`maria..silva`);
+ *   - ponto sobrando no fim, que vem de e-mail colado do fim de uma frase;
+ *   - hífen ou `_` na borda do domínio (`@-gmail.com`, `@gm_ail.com`).
+ *
+ * Ela recusa um punhado de coisas que o RFC permite e o PHP aceita — `!` e `#`
+ * no nome, domínio de uma letra só. É a direção segura: a tela ser mais dura
+ * ajuda quem digita, e não barra ninguém que já ia passar. Ver
+ * `testes/contrato/inscricao.test.ts`.
+ */
+const EMAIL =
+  /^[A-Za-z0-9_%+'-]+(\.[A-Za-z0-9_%+'-]+)*@([A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z]{2,}$/;
+
 export function validarEmail(valor: string): string {
   const limpo = valor.trim();
   if (limpo === "") return ""; // opcional
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(limpo)) return "Esse e-mail parece incompleto. Confira o @ e o final.";
+  if (!EMAIL.test(limpo)) return "Esse e-mail não passa. Confira o @ e o final — e e-mail não leva acento.";
   return "";
 }
 

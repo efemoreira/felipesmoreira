@@ -76,6 +76,13 @@ describe("inscrição: a régua da tela e a do servidor", () => {
     envio({ nome: "Ana Lu" }), // 6 letras com espaço: o mínimo que os dois aceitam
     envio({ email: "maria@exemplo.com" }),
     envio({ email: "maria@exemplo.com.br" }),
+    /* O contrário do bloco de recusas: apertar a régua do e-mail não pode ter
+       levado junto o que gente de verdade usa. */
+    envio({ email: "maria.silva+campanha@gmail.com" }),
+    envio({ email: "maria_silva@uol.com.br" }),
+    envio({ email: "maria-silva@bol.com.br" }),
+    envio({ email: "MARIA@GMAIL.COM" }),
+    envio({ email: "maria@sub.dominio.com.br" }),
     envio({ telefone: "8532221100" }), // fixo, 10 dígitos
     envio({ telefone: "85991234567" }),
     envio({ telefone: "11987654321" }),
@@ -111,6 +118,19 @@ describe("inscrição: a régua da tela e a do servidor", () => {
       envio({ telefone: "" }),
       envio({ email: "maria@" }),
       envio({ email: "maria.exemplo.com" }),
+      /* Os dez formatos que a tela dava como bons e o PHP recusava. O primeiro
+         é o que mais aparece: nome de gente daqui tem acento, e quem escreve o
+         e-mail com ele passava pelos três passos para levar um não no fim. */
+      envio({ email: "joão@gmail.com" }),
+      envio({ email: "maria@gmail.côm" }),
+      envio({ email: "maria..silva@gmail.com" }),
+      envio({ email: ".maria@gmail.com" }),
+      envio({ email: "maria.@gmail.com" }),
+      envio({ email: "maria@gmail.com." }),
+      envio({ email: "maria@.gmail.com" }),
+      envio({ email: "maria@gmail..com" }),
+      envio({ email: "maria@-gmail.com" }),
+      envio({ email: "maria@gm_ail.com" }),
       envio({ bairro: "" }),
     ];
 
