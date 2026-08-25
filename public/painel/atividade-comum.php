@@ -99,9 +99,14 @@ function linha_do_tempo(?string $pessoaId = null, int $teto = TETO_ATIVIDADE): a
             }
         }
 
+        /* O nome INTEIRO só para quem já podia ler o cadastro; para o resto, o
+           primeiro nome e a inicial. Sem isto a linha do tempo era uma segunda
+           porta para /painel/pessoas: uma linha por presença, e o nome completo
+           de todo mundo que já leu um QR, para qualquer conta com `eventos`. */
+        $inteiro = pode('pessoas') || tem_capacidade('coordenacao');
         $quem = [];
         foreach (ler_pessoas() as $p) {
-            $quem[$p['id']] = $p['nome'];
+            $quem[$p['id']] = $inteiro ? $p['nome'] : nome_encoberto($p['nome']);
         }
         foreach (ler_presencas() as $l) {
             $e = $eventos[$l['eventoId']] ?? null;

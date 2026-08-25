@@ -62,6 +62,10 @@ Regras importantes:
 - `adm` vê tudo e é a única capacidade que libera `pessoas`.
 - as demais capacidades agrupam áreas de trabalho por natureza.
 - função da pessoa não limita acesso; ela só personaliza mesa, destaque e fluxo.
+- **nome e telefone de gente são de `adm` e `coordenacao`.** Quem tem só
+  `eventos` organiza o encontro e recebe na porta, mas lê o telefone encoberto;
+  quem tem só `comunicacao` não chega a nenhum dos dois. O follow-up depois do
+  encontro é da coordenação, e é por isso que ela abre `eventos` e `agenda`.
 
 Se a tarefa tocar em capacidade, área, navegação ou dado pessoal, confira também
 `docs/painel-ui-e-permissoes.md`.

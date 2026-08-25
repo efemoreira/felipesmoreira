@@ -129,6 +129,10 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     $apagados = 0;
     $zerouPessoas = false;
 
+    /* Lida ANTES de apagar: depois do `unlink` não há mais de onde tirá-la, e é
+       ela que volta para o arquivo logo abaixo. */
+    $eu = usuario_atual();
+
     foreach ($grupos as $chave => $grupo) {
         if (!in_array($chave, $pedidos, true)) {
             continue;
@@ -158,12 +162,28 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     }
 
     if ($zerouPessoas) {
-        /* Sem pessoas não há contas, e a sessão em curso aponta para um id que
-           não existe mais. Derrubar aqui é o que leva a próxima tela para o
-           "criar o primeiro administrador" em vez de para um painel meio
-           carregado que erra na primeira leitura. */
-        derrubar_sessao();
-        header('Location: /painel/', true, 302);
+        /* SUA CONTA FICA, e ela é o que tranca a porta.
+
+           Antes daqui saía um `derrubar_sessao()` e a próxima tela era o "criar
+           o primeiro administrador". Só que essa tela não pergunta quem é: ela
+           aparece para QUALQUER visitante enquanto não houver nenhuma conta, e
+           quem chegasse primeiro em /painel/ viraria administrador do movimento.
+           Zerar a base abria a porta da rua e ia embora.
+
+           Guardar a ficha de quem está zerando resolve as duas pontas: não há
+           janela sem administrador, e quem apagou não se tranca do lado de fora
+           do próprio painel. É a única ficha que sobrevive — o resto do cadastro
+           foi apagado de verdade, como a tela promete. */
+        if ($eu !== null) {
+            gravar_pessoas([$eu]);
+        }
+        $_SESSION['recado'] = [
+            'tipo'  => 'ok',
+            'texto' => $apagados . ' arquivo(s) apagado(s). O cadastro recomeça vazio — '
+                . 'só a sua conta ficou, para o painel não voltar a aceitar que '
+                . 'qualquer visitante crie um administrador.',
+        ];
+        header('Location: /painel/manutencao.php', true, 302);
         exit;
     }
 

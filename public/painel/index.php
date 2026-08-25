@@ -22,8 +22,19 @@ $sucesso = null;
 $acao = (string) ($_POST['acao'] ?? '');
 /* Primeiro acesso é NINGUÉM TER CONTA, e não a lista de pessoas estar vazia:
    depois da unificação a lista tem quem confirmou presença num encontro, e
-   essa gente não abre o painel. */
-$primeiroAcesso = contas() === [];
+   essa gente não abre o painel.
+
+   E É TAMBÉM O ARQUIVO NÃO EXISTIR, que é a metade que faltava. Esta tela não
+   pergunta quem é ninguém: ela aceita que qualquer visitante crie um
+   administrador, e por isso a condição para mostrá-la tem de ser "instalação
+   nova", não "a leitura devolveu vazio". `ler_pessoas()` usa `@include` e
+   devolve `[]` calado quando o arquivo está sem permissão, num disco cheio ou
+   com o OPcache servindo uma versão velha — e em qualquer desses o painel
+   abriria a porta da rua enquanto o cadastro continua inteiro no disco.
+
+   Com o `is_file()`, falha de leitura vira tela de login (que não deixa
+   ninguém entrar) em vez de convite para virar administrador. */
+$primeiroAcesso = contas() === [] && !is_file(ARQ_PESSOAS);
 
 /* A pessoa diz que já entrou no grupo de trabalho. Não dá para conferir do
    nosso lado — o WhatsApp não conta isso —, e não é para conferir: a marca
@@ -56,7 +67,12 @@ if ($acao === 'criar_admin' && $primeiroAcesso) {
     $s1    = (string) ($_POST['senha'] ?? '');
     $s2    = (string) ($_POST['senha2'] ?? '');
 
-    if ($erro = validar_nome_usuario($login)) {
+    /* CSRF não cabe aqui — quem abre esta tela não tem sessão para proteger —,
+       mas a origem cabe, e é a mesma conferência do formulário público: um POST
+       montado em outro site não vira administrador do nosso. */
+    if (!origem_confere()) {
+        $aviso = 'Envio bloqueado.';
+    } elseif ($erro = validar_nome_usuario($login)) {
         $aviso = $erro;
     } elseif ($nome === '') {
         $aviso = 'Diga o nome de quem vai usar esse login.';
@@ -65,7 +81,13 @@ if ($acao === 'criar_admin' && $primeiroAcesso) {
     } elseif ($s1 !== $s2) {
         $aviso = 'As duas senhas não são iguais.';
     } else {
-        $ok = gravar_pessoas([[
+        /* ACRESCENTA, e nunca substitui. Escrito como `gravar_pessoas([[…]])`,
+           isto trocava o arquivo inteiro pelo administrador recém-criado — e o
+           dia em que `ler_pessoas()` devolvesse vazio por falha de leitura, com
+           o cadastro inteiro são no disco, criar o administrador apagaria todo
+           mundo. O `is_file()` lá em cima já não deixa chegar aqui nesse caso;
+           isto é a segunda tranca, para o custo de errar deixar de ser a base. */
+        $ok = gravar_pessoas(array_merge(ler_pessoas(), [[
             'id'          => novo_id_pessoa(),
             'usuario'     => $login,
             'nome'        => mb_substr($nome, 0, 60),
@@ -76,7 +98,7 @@ if ($acao === 'criar_admin' && $primeiroAcesso) {
             'ativo'       => true,
             'trocarSenha' => false,
             'criadoEm'    => date('c'),
-        ]]);
+        ]]));
         if ($ok) {
             $primeiroAcesso = false;
             $sucesso = 'Administrador criado. Entre com o login “' . $login . '”.';
@@ -113,7 +135,13 @@ if ($acao === 'criar_admin' && $primeiroAcesso) {
             exit;
         }
         registrar_falha($chaveTeto);
-        $aviso = ($u !== null && !$u['ativo'])
+        /* "Desativado" só para quem PROVOU ser o dono da conta.
+           Sem o `password_verify` nesta linha, a mensagem respondia a qualquer
+           senha — e virava um jeito de perguntar ao painel quais logins e quais
+           e-mails existem: o genérico diz "não existe ou errei a senha", este
+           diz "existe". Quem sabe a senha já sabe que a conta existe, e para
+           essa pessoa o recado específico é o que evita uma ligação. */
+        $aviso = ($u !== null && !$u['ativo'] && password_verify($senha, $u['hash']))
             ? 'Esse acesso está desativado. Fale com o administrador.'
             : 'Usuário, e-mail ou senha incorretos.';
     }
