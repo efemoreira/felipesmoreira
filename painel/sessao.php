@@ -77,10 +77,19 @@ const CAPACIDADES = [
         'resumo' => 'Os encontros e a programação que aparece no site',
         'areas'  => ['eventos', 'agenda'],
     ],
+    /* Coordenação abre ENCONTROS também, e isso não é acréscimo de conveniência:
+       é a metade que faltava para a regra de dado pessoal fechar. O telefone de
+       quem esteve num encontro é da coordenação (ver `pode_ver_telefone()`), e o
+       follow-up depois do encontro — agradecer, mandar conteúdo, convidar de
+       novo — é trabalho dela. Sem `eventos` aqui, a única pessoa capaz de fazer
+       esse trabalho seria a administração, e a regra viraria "só o adm", que não
+       é o que ela diz. Quem tem só a capacidade Eventos continua organizando o
+       encontro e recebendo gente na porta; o que ela não leva junto é a agenda
+       de telefones do movimento. */
     'coordenacao' => [
         'nome'   => 'Coordenação',
-        'resumo' => 'Quem entra no movimento, os candidatos e a formação do time',
-        'areas'  => ['inscricoes', 'candidatos', 'aulas'],
+        'resumo' => 'Quem entra no movimento, os encontros, os candidatos e a formação do time',
+        'areas'  => ['inscricoes', 'candidatos', 'aulas', 'eventos', 'agenda'],
     ],
     'adm' => [
         'nome'   => 'Administração',
@@ -303,12 +312,19 @@ function h($s): string
 
 function gravar_atomico(string $destino, string $conteudo): bool
 {
-    $tmp = $destino . '.tmp';
+    /* O SUFIXO É SORTEADO de propósito. Com o `.tmp` fixo, o nome do arquivo do
+       meio do caminho era `pessoas.php.tmp` — adivinhável por qualquer um, e
+       fora da regra do .htaccess até a linha acima ser corrigida. Sorteado, ele
+       deixa de ser um endereço que se digita, e duas gravações simultâneas
+       param de disputar o mesmo arquivo temporário. A regra do .htaccess
+       continua sendo a tranca; isto é a segunda. */
+    $tmp = $destino . '.' . bin2hex(random_bytes(8)) . '.tmp';
     if (@file_put_contents($tmp, $conteudo, LOCK_EX) === false) {
         return false;
     }
     @chmod($tmp, 0644);
     if (!@rename($tmp, $destino)) {
+        @unlink($tmp);   // rename falhou: não deixar o meio do caminho no disco
         return false;
     }
 
@@ -568,11 +584,18 @@ function preparar_pastas(): void
 
        As imagens da agenda (/dados/imagens/*.jpg) não entram aqui: a regra é
        por extensão, e elas não são .php nem .json. */
+    /* A ÂNCORA É `(\.|$)`, E NÃO `$` — a diferença é o cadastro inteiro.
+       `gravar_atomico()` escreve `pessoas.php.tmp` antes do rename, e
+       `\.php$` não casa com um nome que termina em `.tmp`: o arquivo ficava de
+       fora da regra, com nome adivinhável, e bastava o rename falhar (disco
+       cheio, permissão trocada) para ele ficar lá para sempre — com telefone,
+       e-mail e os hashes de senha. Agora a extensão vale em qualquer posição, e
+       `.tmp`/`.bak` entram na lista por conta própria. */
     fixar_regra(
         PASTA_DADOS . '/.htaccess',
         "Options -Indexes\n"
-        . "<FilesMatch \"\\.(php|php5|phtml|phar|inc)$\">\n" . $negar . "</FilesMatch>\n"
-        . "<FilesMatch \"\\.json$\">\n" . $negar . "</FilesMatch>\n"
+        . "<FilesMatch \"\\.(php|php5|phtml|phar|inc|tmp|bak)(\\.|$)\">\n" . $negar . "</FilesMatch>\n"
+        . "<FilesMatch \"\\.json(\\.|$)\">\n" . $negar . "</FilesMatch>\n"
         . "<Files \"agenda.json\">\n" . $permitir . "</Files>\n"
     );
 
