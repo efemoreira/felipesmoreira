@@ -1125,15 +1125,31 @@ ruído com moldura.
 **Tela longa pede aba, e formulário pede modal.** O encontro aberto tem
 playbook, cinco peças, lista de gente, follow-up e dados — empilhado, chegar em
 "Pessoas" no celular era rolar às cegas. Foi um índice de âncoras (`.secoes`)
-antes de virar **três abas: Preparo · Pessoas · Dados**, que é a ordem do
-encontro — prepara-se antes, recebe-se durante, e os dados são o ajuste que se
-faz uma vez. A âncora encurtava o caminho sem encurtar a tela: tudo continuava
+antes de virar **abas: Preparo · Pessoas · Follow-up · Dados**, que é a ordem do
+encontro — prepara-se antes, recebe-se durante, o follow-up é nos dias seguintes
+e os dados são o ajuste que se faz uma vez. A âncora encurtava o caminho sem encurtar a tela: tudo continuava
 desenhado embaixo do dedo. E o formulário de novo encontro, que vivia embaixo de
 duas listas com dezenas de itens, virou `<dialog class="modal">`.
 
-- **O follow-up mora dentro de Pessoas**, e não numa quarta aba: é sobre quem
-  veio. O link do hub para um follow-up vencido leva `&aba=pessoas#funil` — a
-  âncora sozinha não abre a aba, e cairia no Preparo.
+- **O follow-up é aba própria** (`eventos-funil.php`). Morou dentro de Pessoas
+  com o argumento de que é sobre quem veio — só que é outro *momento* do mesmo
+  encontro: a lista de presença se usa na porta, e o funil na segunda-feira.
+  Empilhado, ele ficava atrás de cem linhas de presença, no celular, e a fila de
+  pendências aparecia no fim do trabalho da porta — que é quando ninguém a faz.
+  O link do hub leva `&aba=funil#funil`: a âncora sozinha não abre a aba, e
+  cairia no Preparo.
+- **A fila é agrupada por degrau** (D+0 · D+3 · D+7), e não uma lista corrida de
+  nomes: cada degrau é uma mensagem diferente, e na lista corrida quem fazia o
+  follow-up trocava de assunto a cada linha. O selo do degrau saiu de dentro de
+  cada cartão e virou o título do grupo.
+- **Quem já está na estrutura não entra no funil** (`na_estrutura()`: tipo
+  militante, coordenador ou candidato, ou conta no painel). O funil existe para
+  transformar quem apareceu em militância; cobrar "convide para o próximo
+  encontro" de quem organiza o próximo encontro enchia a fila com o time — e
+  fila cheia de trabalho que ninguém vai fazer é fila que se para de abrir. Quem
+  foi **escalado** (`add-time`) está na lista como qualquer um, daí a conta
+  entrar na regra junto com o tipo. A saída do funil é o próprio trabalho dele:
+  mudar o tipo no seletor "O que é" tira a pessoa da fila na hora.
 - **`voltar()` leva a aba junto da âncora** (`aba_da_ancora()`): marcar checklist
   volta para Preparo, marcar presença volta para Pessoas, salvar volta para
   Dados. Redirecionar para a aba errada é o mesmo que perder o que a pessoa
@@ -1435,7 +1451,7 @@ o mesmo desenho, e **tela nova grande deve seguir também**:
 
 - **A divisão é por RESPONSABILIDADE, não por tamanho.** Cada arquivo responde
   uma pergunta inteira: `eventos-presenca.php` responde "quem veio", e responde
-  sozinho — inclusive o funil, que fica lá porque mora na mesma aba.
+  sozinho; o funil saiu para `eventos-funil.php` quando virou aba própria.
 - **`<area>.php` é a ROTA, e `<area>-tela.php` é a tela.** Nunca o contrário: a
   URL é o nome do arquivo, e trocar o que ele contém quebraria a única coisa que
   não dá para renomear.

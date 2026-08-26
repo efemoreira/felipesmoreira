@@ -619,6 +619,21 @@ input[type=file]::file-selector-button {
 .ficha-dados .ficha-funcoes { grid-column:1 / -1; }
 .ficha-dados .ficha-funcoes dd { margin-top:2px; }
 
+/* ---- degraus do follow-up ----
+   O título de cada grupo da aba Follow-up (D+0, D+3, D+7). Separa a lista sem
+   moldura nova: o cartão já tem a dele, e uma caixa dentro da outra dobra a
+   borda em cima da borda. A linha acima é o que diz "aqui muda o assunto" —
+   cada degrau é uma mensagem diferente. */
+.funil-degrau {
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  margin:26px 0 12px; padding-top:16px; border-top:2px dashed var(--linha);
+  font:400 17px/1.25 var(--display); color:var(--titulo); letter-spacing:.3px;
+}
+/* O primeiro degrau vem logo depois da dica: linha e respiro ali seriam a
+   segunda régua horizontal em três centímetros de tela. */
+.funil-degrau:first-of-type { margin-top:0; padding-top:0; border-top:0; }
+.funil-degrau .selo { flex:0 0 auto; }
+
 /* a decisão fica recolhida até o momento de decidir */
 /* herda .btn/.btn-ouro; o marcador padrão do <details> some */
 .decidir > summary { list-style:none; }

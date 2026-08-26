@@ -24,6 +24,7 @@ const TELAS: [tela: string, querystring: string, apelido: string][] = [
   ["eventos", "e=ev-teste", "encontro aberto — Preparo"],
   ["eventos", "e=ev-teste&aba=pessoas", "encontro aberto — Pessoas"],
   ["eventos", "e=ev-teste&aba=pessoas&q=maria", "busca dentro do encontro"],
+  ["eventos", "e=ev-teste&aba=funil", "encontro aberto — Follow-up"],
   ["eventos", "e=ev-teste&aba=dados", "encontro aberto — Dados"],
   ["eventos", "e=nao-existe", "encontro que não existe"],
   ["pessoas", "", "lista de pessoas"],

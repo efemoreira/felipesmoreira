@@ -747,10 +747,40 @@ function dias_desde(string $referencia): int
 }
 
 /**
+ * Quem JÁ ESTÁ na estrutura, e por isso não é lead de follow-up.
+ *
+ * O funil existe para transformar quem apareceu num encontro em militância —
+ * agradecer, mandar conteúdo, convidar de novo. Quem já é militante, quem
+ * coordena, quem é candidato e quem tem conta no painel já fez esse caminho: a
+ * "cobrança" de convidar para o próximo encontro é dirigida a quem organiza o
+ * próximo encontro.
+ *
+ * O efeito prático de não ter essa regra era o funil crescer com o time: cada
+ * encontro devolvia a mesma dezena de nomes da coordenação para a fila de
+ * pendências, e a lista que deveria mostrar contato novo mostrava gente do
+ * grupo. Fila que enche de trabalho que ninguém vai fazer é fila que se para de
+ * abrir — e aí o lead de verdade se perde junto.
+ *
+ * `tem_conta()` entra junto com o tipo porque quem foi ESCALADO no encontro
+ * (`add-time`) está na lista de presença como qualquer um, e ninguém vai mandar
+ * mensagem de "obrigado por ter vindo" para quem estava atrás da mesa.
+ *
+ * A saída do funil é o próprio trabalho do funil: o seletor "O que é" da aba
+ * Pessoas muda o tipo, e a pessoa deixa a fila no mesmo instante.
+ */
+const TIPOS_NA_ESTRUTURA = ['militante', 'coordenador', 'candidato'];
+
+function na_estrutura(array $pessoa): bool
+{
+    return in_array($pessoa['tipo'], TIPOS_NA_ESTRUTURA, true) || tem_conta($pessoa);
+}
+
+/**
  * A etapa do funil que está vencida para esta pessoa, ou null.
  *
  * D+0 agradecer · D+3 mandar conteúdo · D+7 convidar para o próximo.
  * Só conta quem compareceu: quem foi convidado e não veio não entra no funil.
+ * Quem `na_estrutura()` já responde sim também fica fora — ver lá o porquê.
  *
  * O RELÓGIO SAI DE `inicio`, E NÃO DE `data`. `data` é o texto de exibição
  * ("24/08"): `strtotime()` devolve `false` nele e `dias_desde()`, por segurança,
@@ -763,9 +793,12 @@ function dias_desde(string $referencia): int
  * nunca teve instante — ali a data em que a pessoa entrou na lista é a melhor
  * aproximação que existe do dia do encontro.
  */
-function etapa_vencida(array $presenca, array $evento): ?string
+function etapa_vencida(array $presenca, array $evento, ?array $pessoa = null): ?string
 {
     if (!$presenca['compareceu']) {
+        return null;
+    }
+    if ($pessoa !== null && na_estrutura($pessoa)) {
         return null;
     }
     $dias = dias_desde($evento['inicio'] !== '' ? $evento['inicio'] : $presenca['criadoEm']);
@@ -796,6 +829,9 @@ function etapa_vencida(array $presenca, array $evento): ?string
  * Sempre sobre a lista INTEIRA: o follow-up vencido é o que está devendo, e
  * filtrá-lo pela busca da tela seria esconder trabalho.
  *
+ * Quem já está na estrutura não entra — a pessoa é lida aqui e passa para
+ * `etapa_vencida()`, que é onde a regra mora. Ver `na_estrutura()`.
+ *
  * A ordem é a dos encontros e, dentro de cada um, a do nome — determinística,
  * e não "a ordem em que o arquivo foi gravado". É ela que decide de quem é o
  * nome que aparece no recado do hub.
@@ -819,7 +855,7 @@ function follow_ups_vencidos(?array $evento = null): array
         if ($e === null || !isset($quem[$l['pessoaId']])) {
             continue;
         }
-        $etapa = etapa_vencida($l, $e);
+        $etapa = etapa_vencida($l, $e, $quem[$l['pessoaId']]);
         if ($etapa === null) {
             continue;
         }

@@ -300,3 +300,86 @@ describe("ação: apagar encontro", () => {
     );
   });
 });
+
+/**
+ * O FOLLOW-UP: aba própria, e só de quem ainda não é da estrutura.
+ *
+ * Duas regras que a tela não conta sozinha:
+ *
+ * 1. **Quem já é militância não é lead.** Sem isso, cada encontro devolvia o
+ *    time inteiro para a fila de pendências, e a lista que existe para mostrar
+ *    contato novo mostrava gente do grupo. Fila cheia de trabalho que ninguém
+ *    vai fazer é fila que se para de abrir.
+ * 2. **Marcar um degrau volta para `aba=funil`.** Enquanto o funil morava no
+ *    rodapé de Pessoas, o redirecionamento mandava para lá; agora a âncora
+ *    `#funil` só existe na aba dele.
+ */
+describe("ação: o follow-up depois do encontro", () => {
+  /** Põe o encontro no passado e a pessoa com o tipo pedido, com check-in feito. */
+  function encontroJaAconteceu(tipo: string) {
+    const eventos = painel.ler("eventos");
+    const quando = new Date();
+    quando.setDate(quando.getDate() - 5);
+    eventos[0].inicio = quando.toISOString().slice(0, 19) + "-03:00";
+    painel.gravar("eventos", eventos);
+
+    const pessoas = painel.ler("pessoas").map((p) =>
+      p.id === "pes00000000teste" ? { ...p, tipo } : p,
+    );
+    painel.gravar("pessoas", pessoas);
+  }
+
+  test("quem ainda não é da estrutura entra na fila", async () => {
+    encontroJaAconteceu("eleitor");
+    const { html } = await painel.buscar("eventos", `e=${EVENTO}&aba=funil`);
+
+    assert.match(html, /Maria da Silva Sauro/, "o lead sumiu do follow-up");
+    /* O degrau vencido vira título de grupo: cada um é uma mensagem diferente,
+       e escrever "obrigado por ter vindo" junto com "vem no próximo" é o que a
+       lista corrida provocava. */
+    assert.match(html, /funil-degrau/, "a fila deixou de ser agrupada por degrau");
+  });
+
+  test("quem já é militante NÃO entra na fila", async () => {
+    encontroJaAconteceu("militante");
+    const { html } = await painel.buscar("eventos", `e=${EVENTO}&aba=funil`);
+
+    assert.doesNotMatch(
+      html,
+      /Maria da Silva Sauro/,
+      "quem já está na estrutura virou pendência de follow-up — o funil existe para " +
+        "trazer quem está fora, não para cobrar mensagem de quem já entrou",
+    );
+    assert.match(html, /Follow-up vencido \(0\)/, "a contagem não zerou junto");
+  });
+
+  test("o follow-up não aparece mais no rodapé da aba Pessoas", async () => {
+    encontroJaAconteceu("eleitor");
+    const { html } = await painel.buscar("eventos", `e=${EVENTO}&aba=pessoas`);
+
+    assert.doesNotMatch(
+      html,
+      /id="funil"/,
+      "o funil voltou para o fim da lista de presença, atrás da rolagem que ninguém faz",
+    );
+    /* E a aba existe, com o número: é ele que chama de volta na segunda-feira. */
+    assert.match(html, /aba=funil/, "sumiu o caminho para o follow-up");
+  });
+
+  test("marcar um degrau como feito volta para a aba do funil", async () => {
+    encontroJaAconteceu("eleitor");
+    const r = await painel.postar("eventos", {
+      acao: "funil",
+      id: EVENTO,
+      lead: "pr-teste",
+      etapa: "d0",
+    });
+
+    assert.equal(r.location, `/painel/eventos.php?e=${EVENTO}&aba=funil#funil`);
+    assert.notEqual(
+      painel.ler("presencas")[0].funil.d0,
+      "",
+      "o degrau não foi carimbado",
+    );
+  });
+});

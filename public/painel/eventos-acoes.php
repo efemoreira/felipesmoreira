@@ -32,14 +32,18 @@ function avisar(string $tipo, string $texto): void
  * Volta para o encontro, na aba em que a ação aconteceu.
  *
  * A âncora sozinha deixou de bastar quando a tela virou abas: `#funil` não
- * existe no HTML enquanto a aba Pessoas não estiver aberta, e quem marcasse uma
+ * existe no HTML enquanto a aba dele não estiver aberta, e quem marcasse uma
  * presença cairia no Preparo sem entender o que tinha acontecido com a lista.
  * A âncora continua — ela é que rola até o ponto certo dentro da aba.
+ *
+ * `funil` é aba própria desde que o follow-up saiu do rodapé de Pessoas: quem
+ * marca um degrau como feito volta para a fila de onde saiu, e não para a lista
+ * de presença.
  */
 function aba_da_ancora(string $ancora): string
 {
     if ($ancora === 'pessoas' || $ancora === 'funil') {
-        return 'pessoas';
+        return $ancora;
     }
     return str_starts_with($ancora, 'peca-') ? 'preparo' : 'dados';
 }

@@ -6,15 +6,15 @@ declare(strict_types=1);
  * Preparo.
  *
  * Este arquivo é o maestro: calcula o estado que a tela inteira usa, desenha o
- * cabeçalho, o resumo e as abas, e chama o bloco de cada aba. As outras duas
- * abas moram em arquivos próprios (`eventos-presenca.php`, `eventos-dados.php`)
- * porque são longas e independentes; o Preparo fica aqui porque é curto e é a
- * aba padrão — quem abre o arquivo do encontro quer ver primeiro o que a tela
- * mostra por primeiro.
+ * cabeçalho, o resumo e as abas, e chama o bloco de cada aba. As outras abas
+ * moram em arquivos próprios (`eventos-presenca.php`, `eventos-funil.php`,
+ * `eventos-dados.php`) porque são longas e independentes; o Preparo fica aqui
+ * porque é curto e é a aba padrão — quem abre o arquivo do encontro quer ver
+ * primeiro o que a tela mostra por primeiro.
  *
  * A tela é longa por natureza — playbook, cinco peças, lista de gente,
  * follow-up, dados — e empilhada obrigava a rolar às cegas para chegar em
- * "Pessoas" no celular. Foi um índice de âncoras antes de virar três abas.
+ * "Pessoas" no celular. Foi um índice de âncoras antes de virar abas.
  */
 
 require_once __DIR__ . '/agenda-comum.php';  // o relógio e o pipeline de imagem
@@ -23,6 +23,7 @@ require_once __DIR__ . '/eventos-comum.php';  // o modelo do encontro e da prese
 require_once __DIR__ . '/layout.php';  // cabecalho_pagina(), barra_abas(), abrir_modal() — a moldura
 require_once __DIR__ . '/sessao.php';  // h(), limpar_texto(), pode(), combina_com() — o núcleo
 require_once __DIR__ . '/eventos-presenca.php';
+require_once __DIR__ . '/eventos-funil.php';
 require_once __DIR__ . '/eventos-dados.php';
 
 /**
@@ -42,8 +43,13 @@ function tela_do_encontro(array $aberto, array $eu, bool $coordena, ?string $err
        na caixa seria esconder trabalho. */
     $vencidos = $coordena ? follow_ups_vencidos($aberto) : [];
 
-    /* Três abas, na ordem do encontro: PREPARO antes, PESSOAS durante e depois,
-       DADOS é o ajuste que se faz uma vez.
+    /* As abas, na ordem do encontro: PREPARO antes, PESSOAS durante, FOLLOW-UP
+       nos dias seguintes, DADOS é o ajuste que se faz uma vez.
+
+       O follow-up ganhou aba porque é outro momento do mesmo encontro, e não
+       outro assunto: morando no fim da aba Pessoas, ele ficava atrás de cem
+       linhas de presença — no celular, atrás de rolagem que ninguém faz depois
+       que o encontro acabou.
 
        São links (`?aba=…`), como em toda aba do painel: cada uma tem URL
        própria, o Voltar do navegador funciona e dá para mandar no grupo o link
@@ -55,10 +61,17 @@ function tela_do_encontro(array $aberto, array $eu, bool $coordena, ?string $err
            digitado. */
         'pessoas' => ['nome' => 'Pessoas', 'conta' => $naLista],
     ];
-    /* Dados é da coordenação: quem executa marca checklist e recebe gente, não
-       muda data, local nem o que vai para a programação pública. Forçar
+    /* Follow-up e Dados são da coordenação: quem executa marca checklist e
+       recebe gente — não vê telefone, não responde por lead, não muda data,
+       local nem o que vai para a programação pública. Forçar `?aba=funil` ou
        `?aba=dados` na URL cai no Preparo, porque a aba nem existe no array. */
     if ($coordena) {
+        /* O contador só existe quando há o que fazer: nas outras abas ele diz o
+           tamanho da coisa ("12 pessoas"), aqui diria o tamanho da dívida — e um
+           "0" numa pilha ao lado do nome é um alarme aceso para dizer que não há
+           alarme. Sem número, a aba continua lá para quem quiser conferir. */
+        $abasDoEncontro['funil'] = ['nome' => 'Follow-up']
+            + ($vencidos !== [] ? ['conta' => count($vencidos)] : []);
         $abasDoEncontro['dados'] = ['nome' => 'Dados'];
     }
     $aba = (string) ($_GET['aba'] ?? '');
@@ -86,10 +99,9 @@ function tela_do_encontro(array $aberto, array $eu, bool $coordena, ?string $err
 
   <?php if ($aba === 'preparo') { desenhar_preparo($aberto, $familia, $preparo); } ?>
 
-  <?php if ($aba === 'pessoas'): ?>
-    <?php desenhar_presenca($aberto, $eu); ?>
-    <?php if ($coordena) { desenhar_funil($aberto, $eu, $vencidos); } ?>
-  <?php endif; ?>
+  <?php if ($aba === 'pessoas') { desenhar_presenca($aberto, $eu); } ?>
+
+  <?php if ($aba === 'funil' && $coordena) { desenhar_funil($aberto, $eu, $vencidos); } ?>
 
   <?php if ($aba === 'dados' && $coordena) { desenhar_dados($aberto, pessoas_ativas(), $naLista); } ?>
 </div>
@@ -119,7 +131,7 @@ function tela_do_encontro(array $aberto, array $eu, bool $coordena, ?string $err
 /**
  * A faixa de números acima das abas.
  *
- * A tela tem três abas, e o número que importa mora sempre na aba em que a
+ * O número que importa mora sempre na aba em que a
  * pessoa NÃO está: quem marca checklist no Preparo quer saber quantos
  * confirmaram, quem recebe na porta quer saber quanto do preparo ficou de pé.
  * Antes era preciso trocar de aba para consultar e voltar perdendo o lugar.
@@ -198,7 +210,7 @@ function desenhar_resumo_do_encontro(array $aberto, array $vencidos, bool $coord
             'texto' => count($vencidos) === 1
                 ? 'Fazer 1 follow-up vencido'
                 : 'Fazer ' . count($vencidos) . ' follow-ups vencidos',
-            'url'   => '?e=' . rawurlencode($aberto['id']) . '&aba=pessoas#funil',
+            'url'   => '?e=' . rawurlencode($aberto['id']) . '&aba=funil#funil',
             'ouro'  => true,
         ];
     }
