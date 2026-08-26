@@ -2,16 +2,18 @@
 declare(strict_types=1);
 
 /**
- * A ABA PESSOAS de um encontro: quem vem, quem veio, e o follow-up de quem foi.
- *
- * As duas coisas moram no mesmo arquivo porque moram na mesma aba, e é de
- * propósito que o funil não seja uma quarta aba: ele é sobre quem veio, não é
- * um assunto novo. Quem separa os dois na tela separa a pergunta ("quem
- * apareceu?") da consequência dela ("e o que a gente fez depois?").
+ * A ABA PESSOAS de um encontro: quem vem e quem veio.
  *
  * É o bloco mais longo do encontro porque é o que mais faz: o QR da mesa, o
  * link de "vou" que circula no grupo, a escala do time, a tabela de presença e
  * o cadastro de quem chegou sem celular.
+ *
+ * **O follow-up saiu daqui e virou a aba Follow-up** (`eventos-funil.php`).
+ * Ele morava no fim desta aba com o argumento de que é sobre quem veio — só que
+ * na tela isso queria dizer rolar a lista inteira, num celular, para chegar na
+ * fila de pendências, e a fila aparecia sempre no fim do trabalho da porta, que
+ * é quando ninguém a faz. São dois momentos diferentes do mesmo encontro: a
+ * lista é durante, o funil é nos dias seguintes.
  */
 
 require_once __DIR__ . '/eventos-comum.php';  // o modelo do encontro e da presença
@@ -339,52 +341,5 @@ function desenhar_presenca(array $aberto, array $eu): void
       </div>
     </details>
   </fieldset>
-    <?php
-}
-
-/**
- * O follow-up vencido — D+0 agradecer · D+3 conteúdo · D+7 convidar.
- *
- * Quem chama é que confere `pode('agenda')`: o funil é da coordenação, e quem
- * só executa não vê telefone nem responde por lead. A trava mora no chamador
- * porque é ele que já decidiu quais abas desenhar.
- */
-function desenhar_funil(array $aberto, array $eu, array $vencidos): void
-{
-    ?>
-    <fieldset id="funil">
-      <legend>Follow-up vencido (<?= count($vencidos) ?>)</legend>
-      <p class="dica">
-        Lead sem segunda mensagem é lead perdido. D+0 agradecer · D+3 conteúdo · D+7 convite.
-      </p>
-      <?php if ($vencidos === []): ?>
-        <p class="dica" style="margin:0">Nada vencido. Ou ninguém compareceu ainda.</p>
-      <?php else: ?>
-        <?php foreach ($vencidos as [$l, $etapa]): ?>
-          <article class="ficha">
-            <header class="ficha-topo">
-              <span class="ficha-quem">
-                <strong><?= h($l['pessoa']['nome']) ?></strong>
-                <span><?= h(TIPOS_PESSOA[$l['pessoa']['tipo']]) ?> · <?= h(ROTULO_FUNIL[$etapa]) ?></span>
-              </span>
-              <span class="selo selo-off"><?= h(strtoupper($etapa)) ?></span>
-            </header>
-            <div class="acoes">
-              <?php if ($l['pessoa']['telefone'] !== '' && pode_ver_telefone($l, $eu)): ?>
-                <?php links_whatsapp($l['pessoa']['telefone'], 'Abrir WhatsApp', '', 'btn btn-mini'); ?>
-              <?php endif; ?>
-              <form method="post" style="display:inline">
-                <input type="hidden" name="csrf" value="<?= h(token()) ?>">
-                <input type="hidden" name="id" value="<?= h($aberto['id']) ?>">
-                <input type="hidden" name="lead" value="<?= h($l['id']) ?>">
-                <input type="hidden" name="acao" value="funil">
-                <input type="hidden" name="etapa" value="<?= h($etapa) ?>">
-                <button type="submit" class="btn btn-ouro">Marcar como feito</button>
-              </form>
-            </div>
-          </article>
-        <?php endforeach; ?>
-      <?php endif; ?>
-    </fieldset>
     <?php
 }
