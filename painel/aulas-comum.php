@@ -233,6 +233,103 @@ function gravar_progresso(array $tudo): bool
     return true;
 }
 
+/* ===================== o retrato de estudo de uma pessoa ===================== */
+
+/**
+ * Quantos dias sem concluir nada até a formação de alguém contar como travada.
+ *
+ * Sete, porque é o que o plano cobra: o vão entre "foi aprovado" e "já opera" é
+ * onde mais se perde gente, e uma semana parada no meio da formação é o sinal
+ * mais barato que existe de que alguém precisa de um empurrão — antes de a
+ * pessoa sumir de vez.
+ */
+const DIAS_PARA_TRAVAR = 7;
+
+/**
+ * Onde esta pessoa está na formação: o que fez, quando parou e como está.
+ *
+ * `aulas_concluidas()` respondia "quais aulas", que é a pergunta de quem
+ * desenha o /aulas. A coordenação faz outra: **quem precisa de empurrão hoje**.
+ * Ela não se responde com percentual — 30% de currículo não diz se a pessoa
+ * está andando devagar ou parou em maio.
+ *
+ * Os quatro estados saem só do que já está gravado, e nenhum deles inventa
+ * carimbo novo:
+ *
+ *   sem-comecar → tem acesso e não concluiu nada
+ *   travada     → começou, ainda não fechou as Pistas Rápidas, e a última
+ *                 conclusão foi há mais de DIAS_PARA_TRAVAR dias
+ *   andando     → concluiu algo dentro da janela
+ *   rapidas-ok  → fechou o caminho principal; o resto é aprofundamento
+ *
+ * `dias` é `null` para quem não começou: dizer "0 dias parada" sobre quem nunca
+ * abriu uma aula seria contar uma pausa que não existe.
+ */
+function retrato_de_estudo(string $usuarioId, ?int $agora = null): array
+{
+    $agora ??= time();
+    $meu = ler_progresso()[$usuarioId] ?? [];
+
+    $rapidasTodas = array_filter(todas_as_aulas(), fn ($a) => $a['pista'] === 'rapida');
+    $rapidasFeitas = count(array_filter($rapidasTodas, fn ($a) => isset($meu[$a['id']])));
+
+    /* O carimbo de cada conclusão já está no arquivo de progresso; o mais
+       recente deles é a última vez que a pessoa andou. */
+    $ultima = '';
+    foreach ($meu as $quando) {
+        if ((string) $quando > $ultima) {
+            $ultima = (string) $quando;
+        }
+    }
+    $t = $ultima !== '' ? strtotime($ultima) : false;
+    $dias = $t === false ? null : (int) floor(($agora - $t) / 86400);
+
+    if ($meu === []) {
+        $estado = 'sem-comecar';
+    } elseif ($rapidasFeitas >= count($rapidasTodas)) {
+        $estado = 'rapidas-ok';
+    } elseif ($dias !== null && $dias > DIAS_PARA_TRAVAR) {
+        $estado = 'travada';
+    } else {
+        $estado = 'andando';
+    }
+
+    return [
+        'feitas'        => count($meu),
+        'rapidasFeitas' => $rapidasFeitas,
+        'rapidas'       => count($rapidasTodas),
+        'ultima'        => $ultima,
+        'dias'          => $dias,
+        'estado'        => $estado,
+    ];
+}
+
+/** Como cada estado se chama na tela. Uma vez só: a tabela e o placar leem daqui. */
+const ESTADOS_DE_ESTUDO = [
+    'travada'    => 'Travou',
+    'sem-comecar' => 'Não começou',
+    'andando'    => 'Andando',
+    'rapidas-ok' => 'Rápidas completas',
+];
+
+/**
+ * Quem tem acesso à formação — a base de todas as contas desta tela.
+ *
+ * Área 'aulas' é o que dá acesso a EDITAR. Estudar não pede permissão: quem tem
+ * conta abre a formação inteira, e é por isso que a lista aqui é de gente ativa
+ * e aprovada, e não de quem tem a área. Contar só quem edita diria que o
+ * movimento tem três pessoas estudando.
+ */
+function quem_estuda(): array
+{
+    $lista = array_values(array_filter(
+        ler_pessoas(),
+        fn ($u) => $u['ativo'] && $u['usuario'] !== '' && $u['status'] === 'aprovada'
+    ));
+    usort($lista, fn ($a, $b) => strcmp($a['nome'], $b['nome']));
+    return $lista;
+}
+
 /** Os ids das aulas que esta pessoa já concluiu. */
 function aulas_concluidas(string $usuarioId): array
 {
