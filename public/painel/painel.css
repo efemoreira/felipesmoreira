@@ -1023,6 +1023,21 @@ input[type=file]::file-selector-button {
    "tem evento e a parte é sua" */
 .encontro .encontro-peca { margin-top:5px; color:var(--acento); }
 
+/* ---- o grupo de saídas dentro da decisão de um fato ----
+   Um <fieldset> dentro de um <details> que já está dentro de uma .ficha: sem
+   regra própria ele herda a moldura cheia do fieldset e vira a terceira borda
+   em três centímetros de tela. O grupo continua existindo — as caixas do "o que
+   este fato vira?" precisam ser lidas juntas —, mas com linha tracejada, que
+   agrupa sem construir uma caixa nova. */
+.saidas {
+  border:0; border-top:2px dashed var(--linha); background:none;
+  margin:0 0 16px; padding:14px 0 0;
+}
+.saidas > legend {
+  padding:0; margin:0 0 4px; background:none; border:0; box-shadow:none;
+  color:var(--texto-min);
+}
+
 /* ---- cartão de item de lista: encontros, resultados da busca ----
    `.area-cartao` era usada em /painel/eventos e /painel/procurar SEM UMA LINHA
    DE CSS. `<a>` e `<span>` são inline por natureza, então os cartões saíam
