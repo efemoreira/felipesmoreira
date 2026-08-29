@@ -83,8 +83,30 @@ function tela_de_agenda(?string $aviso, ?string $sucesso, ?array $rascunho): voi
           <p class="dica">A primeira palavra sai em ouro na página e na imagem.</p>
         </div>
         <div class="campo">
-          <label for="p">Período</label>
-          <input id="p" type="text" name="periodo" value="<?= h($agenda['periodo'] ?? '') ?>" maxlength="60" placeholder="29/07 a 01/08">
+          <label for="p">Período <span class="dica">— deixe vazio e ele se calcula</span></label>
+          <?php /* VAZIO É O ESTADO BOM, e não a falta de preenchimento. O período
+                   digitado à mão envelhece sozinho: quem esquecia de trocar na
+                   segunda deixava o site anunciando a semana passada, e ninguém
+                   percebia porque a página continuava desenhando. Vazio, quem
+                   responde é o relógio de quem visita — a semana corrente, de
+                   segunda a domingo, no fuso do Ceará.
+
+                   O campo continua existindo para a semana atípica: feriadão,
+                   dois dias de mutirão, "de 2 a 15 de outubro". Escrever aqui é
+                   dizer "esta semana não é uma semana", e aí a mão ganha do
+                   relógio. */ ?>
+          <input id="p" type="text" name="periodo" value="<?= h($agenda['periodo'] ?? '') ?>"
+                 maxlength="60" placeholder="<?= h(periodo_da_semana()) ?>">
+          <p class="dica">
+            <?php if (($agenda['periodo'] ?? '') === ''): ?>
+              A página está mostrando <strong><?= h(periodo_da_semana()) ?></strong>, calculado
+              na hora em que alguém abre — na segunda ele vira sozinho.
+            <?php else: ?>
+              Escrito à mão: a página mostra <strong><?= h($agenda['periodo']) ?></strong> até
+              alguém trocar. Apague para voltar a seguir a semana corrente
+              (<?= h(periodo_da_semana()) ?>).
+            <?php endif; ?>
+          </p>
         </div>
       </div>
       <div class="campo">

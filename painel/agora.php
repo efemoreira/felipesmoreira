@@ -23,6 +23,7 @@ declare(strict_types=1);
  */
 
 require_once __DIR__ . '/sessao.php';
+require_once __DIR__ . '/trilhas.php';   // MESA_DA_FUNCAO e a trilha mínima de cada função
 
 /** Quantas linhas a fila mostra antes de virar "e mais N". */
 /* Quanto tempo um fato aprovado pode ficar sem virar peça antes de virar
@@ -124,7 +125,7 @@ function tarefas_de(array $u): array
                     ? 'Decidir o que fazer com 1 fato aprovado'
                     : "Decidir o que fazer com {$quantos} fatos aprovados",
                 'porque'  => 'passaram da checagem e não viraram peça nenhuma — abra uma saída ou arquive com o motivo',
-                'url'     => '/painel/fatos.php#checados',
+                'url'     => '/painel/fatos.php?aba=decididos#checados',
             ];
         }
     }
@@ -356,7 +357,7 @@ function panorama_de(array $u): array
                 ? 'Todo fato aprovado virou peça ou foi arquivado.'
                 : 'Passaram da checagem e não viraram peça — abra uma saída ou arquive.',
             'estado' => $parados === [] ? 'ok' : $degrau($velho, HORAS_SEM_SAIDA),
-            'url'    => '/painel/fatos.php#checados',
+            'url'    => '/painel/fatos.php?aba=decididos#checados',
         ];
     }
 
@@ -505,30 +506,6 @@ function contagens_por_area(?array $u = null): array
     return $conta;
 }
 
-/**
- * A ferramenta e a ação principal de cada função do movimento.
- *
- * A função NÃO limita acesso — quem abre a área abre a ferramenta inteira.
- * Isto aqui existe para o Olheiro não precisar procurar todo dia onde fica a
- * tela dele, e para o botão do hub dizer o verbo daquela função em vez de um
- * genérico "abrir".
- *
- * 'onde-precisar' fica de fora de propósito: quem escolheu essa função não tem
- * uma mesa fixa, e inventar uma seria mentir para ela.
- */
-const MESA_DA_FUNCAO = [
-    'olheiro'    => ['area' => 'fatos',    'acao' => 'Trazer um fato',        'ancora' => '#trazer'],
-    'checagem'   => ['area' => 'fatos',    'acao' => 'Checar a fila',         'ancora' => '#fila'],
-    'roteirista' => ['area' => 'producao', 'acao' => 'Abrir o quadro',        'ancora' => ''],
-    'design'     => ['area' => 'producao', 'acao' => 'Abrir o quadro',        'ancora' => ''],
-    'editor'     => ['area' => 'producao', 'acao' => 'Abrir o quadro',        'ancora' => ''],
-    'acervo'     => ['area' => 'producao', 'acao' => 'Conferir o publicado',  'ancora' => ''],
-    'local-hora' => ['area' => 'eventos',  'acao' => 'Ver os encontros',      'ancora' => ''],
-    'logistica'  => ['area' => 'eventos',  'acao' => 'Ver os encontros',      'ancora' => ''],
-    'divulgacao' => ['area' => 'eventos',  'acao' => 'Ver os encontros',      'ancora' => ''],
-    'gravacao'   => ['area' => 'eventos',  'acao' => 'Ver os encontros',      'ancora' => ''],
-    'recepcao'   => ['area' => 'eventos',  'acao' => 'Ver os encontros',      'ancora' => ''],
-];
 
 /**
  * As mesas desta pessoa: uma por função registrada, sem repetir a ferramenta.
@@ -541,7 +518,7 @@ function mesas_de(array $u): array
     $mesas = [];
 
     foreach ($u['funcoes'] as $funcao) {
-        $mesa = MESA_DA_FUNCAO[$funcao] ?? null;
+        $mesa = trilha_da_funcao($funcao)['ferramenta'];
         if ($mesa === null || !pode($mesa['area']) || isset($mesas[$mesa['area']])) {
             continue;
         }
@@ -550,7 +527,7 @@ function mesas_de(array $u): array
             'funcao' => $funcao,
             'area'   => $mesa['area'],
             'acao'   => $mesa['acao'],
-            'url'    => DESTINO_AREA[$mesa['area']]['url'] . $mesa['ancora'],
+            'url'    => $mesa['url'],
             'estado' => estado_da_area($mesa['area'], $u),
         ];
     }
@@ -682,6 +659,44 @@ function formacao_de(array $u): ?array
         'aprendidas'    => array_slice(array_reverse($aprendidas), 0, 3),
         'proxima'       => $proxima,
     ];
+}
+
+/**
+ * A TRILHA DE CADA FUNÇÃO DESTA PESSOA, com o que já foi feito marcado.
+ *
+ * `formacao_de()` responde "quanto do currículo você andou"; esta responde
+ * "o que falta para você operar a sua função". A segunda é a que tira alguém
+ * do lugar: percentual de currículo não diz a ninguém o que fazer amanhã, e
+ * "falta a aula da Recepção" diz.
+ *
+ * A regra de quem é a trilha mora em `trilhas.php` — aqui só se cruza com o
+ * progresso, que é o que a torna de UMA pessoa.
+ */
+function trilhas_de(array $u): array
+{
+    if (!pode('aulas')) {
+        return [];
+    }
+    require_once __DIR__ . '/aulas-comum.php';
+    require_once __DIR__ . '/inscricoes-comum.php';   // nome_funcao()
+
+    $feitas = aulas_concluidas($u['id']);
+    $trilhas = [];
+
+    foreach ($u['funcoes'] as $funcao) {
+        $t = trilha_da_funcao($funcao);
+        /* Função sem aula E sem ferramenta é 'onde-precisar': não há trilha
+           para mostrar, e uma linha vazia com o nome dela seria pior que
+           nenhuma. */
+        if ($t['aula'] === null && $t['ferramenta'] === null) {
+            continue;
+        }
+        $t['nome']  = nome_funcao($funcao);
+        $t['feita'] = $t['aula'] !== null && in_array($t['aula']['id'], $feitas, true);
+        $trilhas[] = $t;
+    }
+
+    return $trilhas;
 }
 
 /**

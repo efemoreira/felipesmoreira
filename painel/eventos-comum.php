@@ -419,26 +419,62 @@ function pessoas_ativas(): array
 }
 
 /** Eventos que ainda vão acontecer, do mais próximo para o mais distante. */
+/**
+ * Este encontro já aconteceu?
+ *
+ * A pergunta é DO RELÓGIO, e só dele. Cancelar é outra coisa: um encontro
+ * cancelado para daqui a duas semanas não aconteceu — ele não vai acontecer, o
+ * que é diferente, e a coordenação ainda precisa vê-lo para remarcar ou apagar.
+ * Enquanto "cancelado" contava como "passado", ele sumia da lista de cima e ia
+ * parar embaixo de "Já aconteceram", que é uma afirmação falsa sobre uma data
+ * que nem chegou.
+ *
+ * SEM `inicio`, quem responde é `quando_do_evento()`. Ele lê o `data` quando
+ * aquilo é uma data de verdade (encontro legado, gravado antes de `inicio`
+ * existir) e devolve `PHP_INT_MAX` quando é o texto de exibição — "24/08", sem
+ * ano e sem fuso, sobre o qual não dá para afirmar nada. Na dúvida o encontro
+ * fica entre os que ainda vão acontecer: dizer que já aconteceu seria inventar
+ * um passado. A comparação anterior confrontava esse texto com `date('Y-m-d')`
+ * — "24/08" contra "2026-08-29" —, e o resultado não dependia da data nenhuma
+ * vez: era sempre "futuro" numa lista e nunca "passado" na outra.
+ */
+function evento_ja_aconteceu(array $e): bool
+{
+    if ($e['inicio'] !== '') {
+        return estado_do_evento($e['inicio']) === 'passado';
+    }
+    return quando_do_evento($e) < time();
+}
+
+/**
+ * O que ainda vai acontecer DE VERDADE — sem os cancelados.
+ *
+ * É a resposta para "qual é o próximo encontro do movimento", e por isso o hub
+ * e a mesa de Encontros bebem daqui: anunciar um encontro cancelado como o
+ * próximo seria mandar gente para uma praça vazia.
+ */
 function eventos_proximos(): array
 {
-    $lista = array_values(array_filter(
-        ler_eventos(),
-        fn ($e) => $e['status'] !== 'cancelado'
-            && estado_do_evento($e['inicio']) !== 'passado'
-            && ($e['inicio'] !== '' || $e['data'] === '' || $e['data'] >= date('Y-m-d'))
-    ));
+    return array_values(array_filter(eventos_a_vir(), fn ($e) => $e['status'] !== 'cancelado'));
+}
+
+/**
+ * Tudo que ainda não aconteceu, cancelado inclusive — a lista da tela.
+ *
+ * A tela de Encontros pergunta outra coisa: "quais encontros existem daqui para
+ * frente". O cancelado existe, aparece marcado como CANCELADO no cartão, e é
+ * ali que alguém vai procurá-lo.
+ */
+function eventos_a_vir(): array
+{
+    $lista = array_values(array_filter(ler_eventos(), fn ($e) => !evento_ja_aconteceu($e)));
     usort($lista, fn ($a, $b) => quando_do_evento($a) <=> quando_do_evento($b));
     return $lista;
 }
 
 function eventos_passados(): array
 {
-    $lista = array_values(array_filter(
-        ler_eventos(),
-        fn ($e) => $e['status'] === 'cancelado'
-            || estado_do_evento($e['inicio']) === 'passado'
-            || ($e['inicio'] === '' && $e['data'] !== '' && $e['data'] < date('Y-m-d'))
-    ));
+    $lista = array_values(array_filter(ler_eventos(), 'evento_ja_aconteceu'));
     usort($lista, fn ($a, $b) => quando_do_evento($b) <=> quando_do_evento($a));
     return $lista;
 }

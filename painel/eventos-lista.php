@@ -4,19 +4,42 @@ declare(strict_types=1);
 /**
  * A LISTA de encontros — a tela que `/painel/eventos` mostra sem `?e=`.
  *
- * Duas listas, uma de cada vez: empilhadas, a de "já aconteceram" cresce para
- * sempre e empurra a dos próximos — a que interessa — para fora da tela em duas
- * semanas de campanha. A aba diz o número das duas sem desenhar nenhuma.
+ * DUAS LISTAS, UMA EM CIMA DA OUTRA. Os próximos primeiro, o que já aconteceu
+ * embaixo — a mesma pergunta ("quais encontros existem?") lida de cima para
+ * baixo, sem trocar de aba para saber de que lado está o encontro procurado.
+ *
+ * ISTO SÓ VALE PORQUE O ITEM É UM LINK. Cada linha aqui é nome, família, data,
+ * local e preparo — uma linha que leva para outro lugar, e não um bloco que se
+ * lê inteiro. Vinte links continuam sendo uma lista que se varre com o olho, e
+ * a rolagem vira índice em vez de obstáculo. A mesma decisão em `/painel/fatos`
+ * seria errada, e lá foi tomada ao contrário: ficha, formulário e arquivo são
+ * conteúdo, e empilhados um esconde o outro.
+ *
+ * O que empilhar cobra é o crescimento, e é isso que o TETO paga: o que já
+ * aconteceu não encolhe nunca, e sem limite a lista de baixo empurraria a de
+ * cima para fora da tela em duas semanas de campanha. Embaixo só entram os
+ * quinze mais recentes; o resto se alcança pela busca, que recorta as duas de
+ * uma vez.
  *
  * Mora fora do `eventos.php` pelo mesmo motivo que o encontro aberto: são duas
  * telas diferentes que só dividem a rota, e lê-las juntas era rolar por uma
  * para achar a outra.
  */
 
+require_once __DIR__ . '/agenda-comum.php';  // semana_de(), dia_de() — o recorte de período
 require_once __DIR__ . '/eventos-comum.php';  // o modelo do encontro e da presença
 require_once __DIR__ . '/icones.php';  // icone()
-require_once __DIR__ . '/layout.php';  // cabecalho_pagina(), barra_abas(), abrir_modal() — a moldura
+require_once __DIR__ . '/layout.php';  // cabecalho_pagina(), barra_filtros(), abrir_modal() — a moldura
 require_once __DIR__ . '/sessao.php';  // h(), limpar_texto(), pode(), combina_com() — o núcleo
+
+/**
+ * Quantos encontros já acontecidos a lista de baixo desenha.
+ *
+ * O contador da legenda continua contando TODOS — "Já aconteceram (63)" com
+ * quinze na tela é a verdade dita inteira, e é ela que faz alguém procurar em
+ * vez de rolar atrás de um encontro de abril.
+ */
+const TETO_PASSADOS = 15;
 
 /**
  * Desenha a lista inteira, do cabeçalho ao modal de novo encontro.
@@ -63,18 +86,20 @@ function tela_lista_de_encontros(bool $coordena, ?string $erro, ?string $ok): vo
       <?php endif; ?>
 
       <?php
-      /* Duas listas, uma de cada vez. Empilhadas, a de "já aconteceram" cresce
-         para sempre e empurra a que interessa — a dos próximos — para fora da
-         tela em duas semanas de campanha. A aba diz o número das duas sem
-         desenhar nenhuma das duas. */
-      $proximos = eventos_proximos();
+      /* Duas listas, uma em cima da outra: primeiro o que ainda vai acontecer,
+         depois o que já passou. Quem abre esta tela quase sempre quer a de
+         cima — e continua vendo a de baixo sem trocar de lugar. */
+      /* `eventos_a_vir()`, e não `eventos_proximos()`: a lista da tela mostra o
+         encontro cancelado que ainda não aconteceu, marcado como CANCELADO no
+         cartão. O hub continua com `eventos_proximos()`, que exclui os
+         cancelados — lá a pergunta é "para onde eu vou", e não "o que existe". */
+      $proximos = eventos_a_vir();
       $passados = eventos_passados();
       $quantosTem = count($proximos) + count($passados);
 
-      /* A busca recorta as DUAS listas antes de a aba escolher uma. Sem isso o
-         contador da aba fechada mentiria — diria quantos existem, e não quantos
-         casam com o que foi digitado —, e quem procurasse "Juazeiro" na aba
-         errada veria um zero sem entender que o encontro estava na outra. */
+      /* A busca e o período recortam as DUAS listas, e por isso moram acima das
+         duas. A busca é o caminho para o encontro antigo que não coube no teto
+         da lista de baixo: sem ela, "achar o encontro de abril" viraria rolagem. */
       $buscaEv = limpar_texto($_GET['q'] ?? '', 60);
       if ($buscaEv !== '') {
           $recorte = fn (array $e) => combina_com(
@@ -85,54 +110,131 @@ function tela_lista_de_encontros(bool $coordena, ?string $erro, ?string $ok): vo
           $passados = array_values(array_filter($passados, $recorte));
       }
 
-      $abaEv = ($_GET['aba'] ?? '') === 'passados' ? 'passados' : 'proximos';
-      barra_abas([
-          'proximos' => ['nome' => 'Próximos',       'conta' => count($proximos)],
-          'passados' => ['nome' => 'Já aconteceram', 'conta' => count($passados)],
-      ], $abaEv, 'aba', 'Encontros');
-      $titulo = $abaEv === 'passados' ? 'Já aconteceram' : 'Próximos';
-      $lista  = $abaEv === 'passados' ? $passados : $proximos;
-      ?>
-        <fieldset>
-          <legend>
-            <?= h($titulo) ?> (<?= count($lista) ?><?= $buscaEv !== '' ? ' de ' . $quantosTem : '' ?>)
-          </legend>
+      /* O PERÍODO SEGUE O RELÓGIO, e não uma data digitada. "Esta semana" é a
+         semana corrente de segunda a domingo, no fuso do Ceará — a mesma que o
+         site usa em /programacao, e por isso vem de `semana_de()`, que tem par
+         em TypeScript.
 
-          <?php /* Só aparece quando há o que procurar: com três encontros a caixa
-                   é um controle em cima de uma lista que já cabe na tela. */ ?>
-          <?php if ($quantosTem > 6 || $buscaEv !== ''): ?>
-            <?php barra_busca($buscaEv, 'nome, local, cidade ou data', ['aba' => $abaEv]); ?>
-          <?php endif; ?>
-          <?php if ($lista === [] && $buscaEv !== ''): ?>
-            <?php nada_encontrado($buscaEv, '/painel/eventos.php?aba=' . urlencode($abaEv)); ?>
-          <?php elseif ($lista === [] && $titulo === 'Próximos'): ?>
-            <p class="dica" style="margin:0 0 8px">
-              Nenhum encontro marcado. O primeiro passo é <strong>Local &amp; Hora</strong>: três
-              opções avaliadas (capacidade, custo, acesso, energia, som) antes de fechar qualquer
-              coisa — e a reserva confirmada por escrito. Toque em <strong>Novo encontro</strong>
-              lá em cima e as cinco peças aparecem prontas para dividir.
-            </p>
-          <?php elseif ($lista === []): ?>
-            <p class="dica" style="margin:0">Nada por aqui.</p>
-          <?php endif; ?>
-          <?php foreach ($lista as $e): ?>
-            <?php $p = preparo_do_evento($e); $presentes = count(array_filter(presencas_do_evento($e['id']), fn ($l) => $l['compareceu'])); ?>
-            <a class="area-cartao" href="?e=<?= h($e['id']) ?>">
-              <span class="area-icone"><?= icone('ticket') ?></span>
-              <span class="area-texto">
-                <strong><?= h($e['titulo']) ?></strong>
-                <span>
-                  <?= h(FAMILIAS[$e['familia']]['nome']) ?> ·
-                  <?= h(data_cheia($e)) ?>
-                  <?= $e['local'] !== '' ? ' · ' . h($e['local']) : '' ?><br>
-                  Preparo <?= $p['feito'] ?>/<?= $p['total'] ?>
-                  <?= $presentes > 0 ? ' · ' . $presentes . ' presentes' : '' ?>
-                  <?= $e['status'] === 'cancelado' ? ' · CANCELADO' : '' ?>
-                </span>
+         O padrão é TUDO, de propósito: esta é a tela de trabalho da
+         coordenação, e abrir escondendo os encontros do mês que vem seria
+         esconder trabalho de quem veio justamente preparar. Quem quer o recorte
+         pede por ele.
+
+         Encontro sem horário fica de fora dos dois recortes: dizer que ele é
+         "de hoje" seria inventar uma data que ninguém digitou. Ele continua em
+         "todos". */
+      $quandoEv = (string) ($_GET['quando'] ?? '');
+      if (!in_array($quandoEv, ['hoje', 'semana'], true)) {
+          $quandoEv = '';
+      }
+      if ($quandoEv !== '') {
+          $janela = $quandoEv === 'hoje' ? dia_de() : semana_de();
+          $noPeriodo = fn (array $e) => dentro_do_periodo($e['inicio'], $janela);
+          $proximos = array_values(array_filter($proximos, $noPeriodo));
+          $passados = array_values(array_filter($passados, $noPeriodo));
+      }
+      $recortado = $buscaEv !== '' || $quandoEv !== '';
+
+      /* Um HTML só para as duas listas. Duas cópias do cartão divergiriam na
+         primeira vez que alguém acrescentasse um dado a uma delas. */
+      $cartao = function (array $e): void {
+          $p = preparo_do_evento($e);
+          $presentes = count(array_filter(presencas_do_evento($e['id']), fn ($l) => $l['compareceu']));
+          ?>
+          <a class="area-cartao" href="?e=<?= h($e['id']) ?>">
+            <span class="area-icone"><?= icone('ticket') ?></span>
+            <span class="area-texto">
+              <strong><?= h($e['titulo']) ?></strong>
+              <span>
+                <?= h(FAMILIAS[$e['familia']]['nome']) ?> ·
+                <?= h(data_cheia($e)) ?>
+                <?= $e['local'] !== '' ? ' · ' . h($e['local']) : '' ?><br>
+                Preparo <?= $p['feito'] ?>/<?= $p['total'] ?>
+                <?= $presentes > 0 ? ' · ' . $presentes . ' presentes' : '' ?>
+                <?= $e['status'] === 'cancelado' ? ' · CANCELADO' : '' ?>
               </span>
-            </a>
-          <?php endforeach; ?>
-        </fieldset>
+            </span>
+          </a>
+          <?php
+      };
+      ?>
+
+      <?php /* Só aparece quando há o que procurar: com três encontros os
+               controles ficam em cima de uma lista que já cabe na tela. */ ?>
+      <?php if ($quantosTem > 6 || $recortado): ?>
+        <?php barra_filtros(
+            [
+                ['tipo' => 'busca', 'valor' => $buscaEv, 'dica' => 'nome, local, cidade ou data'],
+                ['tipo' => 'escolha', 'nome' => 'quando', 'rotulo' => 'Quando',
+                 'valor' => $quandoEv, 'vazio' => 'todos',
+                 'opcoes' => ['hoje' => 'Hoje', 'semana' => 'Esta semana']],
+            ],
+            $recortado,
+            '/painel/eventos.php'
+        ); ?>
+      <?php endif; ?>
+
+      <?php if ($quandoEv !== '' && $proximos === [] && $passados === []): ?>
+        <p class="dica" style="margin:0 0 18px">
+          Nenhum encontro <?= $quandoEv === 'hoje' ? 'hoje' : 'nesta semana' ?>
+          (<?= h($quandoEv === 'hoje' ? 'hoje' : periodo_da_semana()) ?>).
+          <a href="/painel/eventos.php">Ver todos</a>.
+        </p>
+      <?php elseif ($buscaEv !== '' && $proximos === [] && $passados === []): ?>
+        <?php /* Uma vez só, e não uma por lista: quem procurou "Juazeiro" e não
+                 achou nada não precisa ler o mesmo aviso duas vezes. */ ?>
+        <?php nada_encontrado($buscaEv, '/painel/eventos.php'); ?>
+      <?php endif; ?>
+
+      <fieldset id="proximos">
+        <legend>
+          Próximos (<?= count($proximos) ?>)
+        </legend>
+
+        <?php if ($proximos === [] && !$recortado): ?>
+          <p class="dica" style="margin:0 0 8px">
+            Nenhum encontro marcado. O primeiro passo é <strong>Local &amp; Hora</strong>: três
+            opções avaliadas (capacidade, custo, acesso, energia, som) antes de fechar qualquer
+            coisa — e a reserva confirmada por escrito. Toque em <strong>Novo encontro</strong>
+            lá em cima e as cinco peças aparecem prontas para dividir.
+          </p>
+        <?php elseif ($proximos === []): ?>
+          <p class="dica" style="margin:0">Nenhum dos próximos casa com o recorte.</p>
+        <?php endif; ?>
+
+        <?php foreach ($proximos as $e): ?>
+          <?php $cartao($e); ?>
+        <?php endforeach; ?>
+      </fieldset>
+
+      <?php /* O TETO É O QUE PERMITE EMPILHAR. A lista de baixo cresce a cada
+               encontro realizado e nunca encolhe; desenhada inteira, ela
+               empurraria os próximos para fora da tela dentro de uma campanha.
+               Quinze é o mesmo corte que as outras telas do painel usam para
+               arquivo, e o que ficou de fora se alcança pela busca. */ ?>
+      <?php $mostrados = array_slice($passados, 0, TETO_PASSADOS); ?>
+      <fieldset id="passados">
+        <legend>
+          Já aconteceram (<?= count($passados) ?><?= $recortado ? ' de ' . $quantosTem : '' ?>)
+        </legend>
+
+        <?php if ($passados === [] && !$recortado): ?>
+          <p class="dica" style="margin:0">Nenhum encontro aconteceu ainda.</p>
+        <?php elseif ($passados === []): ?>
+          <p class="dica" style="margin:0">Nenhum dos já realizados casa com o recorte.</p>
+        <?php endif; ?>
+
+        <?php foreach ($mostrados as $e): ?>
+          <?php $cartao($e); ?>
+        <?php endforeach; ?>
+
+        <?php if (count($passados) > count($mostrados)): ?>
+          <p class="dica" style="margin:12px 0 0">
+            Mostrando os <?= count($mostrados) ?> mais recentes de <?= count($passados) ?>.
+            Procure pelo nome, local ou data para achar um encontro mais antigo.
+          </p>
+        <?php endif; ?>
+      </fieldset>
 
       <?php if ($coordena): ?>
         <?php /* O formulário vivia solto no fim da página, embaixo de duas listas

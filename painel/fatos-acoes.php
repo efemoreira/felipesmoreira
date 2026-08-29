@@ -25,9 +25,25 @@ function avisar(string $tipo, string $texto): void
     $_SESSION['recado'] = ['tipo' => $tipo, 'texto' => $texto];
 }
 
+/**
+ * Para onde a ação volta — a ABA junto da âncora.
+ *
+ * A âncora sozinha parou de bastar quando a tela virou três abas: `#trazer`
+ * aponta para um `<fieldset>` que só existe na aba de trazer, e sem a aba na
+ * URL o navegador pousava no topo de uma fila que não tem esse id. Cada âncora
+ * desta tela pertence a uma aba só, então a aba se deduz dela.
+ *
+ * O erro do formulário é o caso que isso conserta de verdade: ele volta para
+ * `trazer` com o rascunho na sessão, e voltar para a fila jogaria fora o que a
+ * pessoa acabou de digitar diante dos olhos dela.
+ */
 function voltar(string $ancora = ''): void
 {
-    header('Location: /painel/fatos.php' . ($ancora !== '' ? '#' . $ancora : ''), true, 302);
+    $url = '/painel/fatos.php';
+    if ($ancora !== '') {
+        $url .= '?aba=' . ($ancora === 'trazer' ? 'trazer' : 'fila') . '#' . $ancora;
+    }
+    header('Location: ' . $url, true, 302);
     exit;
 }
 

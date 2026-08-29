@@ -258,6 +258,7 @@ $tarefas = tarefas_de($u);
 $panorama = panorama_de($u);
 $atividade = linha_do_tempo();
 $formacao = formacao_de($u);
+$trilhas  = trilhas_de($u);
 
 $negado = (string) ($_GET['negado'] ?? '');
 if ($negado !== '') {
@@ -492,6 +493,29 @@ abrir_pagina('Início');
             <a href="/aulas">/aulas</a> para quando precisar de um ponto específico.
           </p>
         <?php endif; ?>
+
+        <?php /* A TRILHA DA FUNÇÃO, e não mais só o percentual do currículo.
+                 O que trava alguém entre "foi aprovado" e "já opera" quase
+                 nunca é a formação inteira — é a aula da função dela, o
+                 "Pronto quando" daquela entrega e saber em que tela se faz
+                 aquilo. As três numa linha só, por função. */ ?>
+        <?php foreach ($trilhas as $t): ?>
+          <p class="formacao-feitas">
+            <strong>Para operar como <?= h($t['nome']) ?>:</strong>
+            <?php if ($t['aula'] !== null): ?>
+              <a href="/aulas#<?= h($t['aula']['id']) ?>"><?= h($t['aula']['titulo']) ?></a>
+              <span class="selo <?= $t['feita'] ? 'selo-publicado' : 'selo-atencao' ?>">
+                <?= $t['feita'] ? 'aula feita' : $t['aula']['minutos'] . ' min' ?>
+              </span>
+            <?php endif; ?>
+            <?php if ($t['checklist'] !== null): ?>
+              · <?= h($t['checklist']['titulo']) ?>, <?= (int) $t['checklist']['itens'] ?> itens
+            <?php endif; ?>
+            <?php if ($t['ferramenta'] !== null): ?>
+              · <a href="<?= h($t['ferramenta']['url']) ?>"><?= h($t['ferramenta']['acao']) ?></a>
+            <?php endif; ?>
+          </p>
+        <?php endforeach; ?>
       </section>
     <?php endif; ?>
 

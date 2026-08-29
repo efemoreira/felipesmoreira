@@ -4,9 +4,10 @@ declare(strict_types=1);
 /**
  * Fatos do dia — felipesmoreira.com/painel/fatos
  *
- * Duas telas num arquivo, porque são os dois lados da mesma mesa:
- *   1. o Olheiro preenche a Ficha de Fato;
- *   2. a Checagem abre o link e decide.
+ * Uma rota, três abas, porque são três ritmos da mesma mesa:
+ *   1. a Checagem abre o link e decide — é a aba padrão, e o motivo de a tela existir;
+ *   2. o Olheiro preenche a Ficha de Fato;
+ *   3. o registro do que já foi decidido responde "o que foi feito com aquele fato".
  *
  * Quem enxerga o quê é a permissão de sempre (a caixa marcada no usuário).
  * A separação aqui é de tarefa, não de sigilo: qualquer um que abre a área vê a
