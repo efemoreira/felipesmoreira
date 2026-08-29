@@ -81,7 +81,8 @@ Regras:
 ### Agenda e encontros
 
 - A programação pública vem dos encontros; `agenda.php` edita a capa e espelha o que está em `eventos`.
-- Toda conta de tempo sai de `inicio`, nunca de `data`.
+- Toda conta de tempo sai de `inicio`, nunca de `data` — inclusive a de "já aconteceu", que é `evento_ja_aconteceu()`. **Cancelado não é passado:** encontro cancelado com data futura continua entre os que ainda vão acontecer, marcado.
+- A semana corrente vai de **segunda a domingo**, no fuso do Ceará. `semana_de()`/`dia_de()` (PHP) e `semanaDe()`/`diaDe()` (TS) têm de concordar — `testes/contrato/semana.test.ts` prende o par. O período da capa da programação é calculado daí quando o campo do painel está vazio.
 - `estado_do_evento()` (PHP) e `estadoDe()` (TS) têm de concordar.
 - Publicação da agenda acontece ao gravar, não por botão separado.
 
@@ -105,6 +106,7 @@ Regras:
 - O conteúdo das aulas fica em PHP (`public/painel/aulas-conteudo.php`), não em `src/`, para não ir para o bundle público.
 - `/aulas` lê pela API do painel.
 - `checklists.php` é fonte única dos “Pronto quando”.
+- `trilhas.php` é fonte única da trilha mínima por função — a aula, o checklist e a primeira ferramenta. Não escreva uma quarta lista ligando função a aula.
 
 ## Convenções do painel
 
@@ -133,6 +135,7 @@ Regras:
 - O site e o painel precisam funcionar bem em celular.
 - Priorize **scroll vertical apenas** nas telas de trabalho.
 - Tabelas operacionais no painel são suspeitas: se escondem ação ou contexto no celular, devem virar cards/listas.
+- **Empilhar ou separar depende do peso do item, não do número de listas.** Item que é link (nome, data, um estado) empilha — duas listas de links na mesma tela poupam a troca de aba, e a rolagem vira índice; a lista que cresce sem parar ganha teto, com a legenda contando o total e a busca alcançando o resto (ver `eventos-lista.php`). Item que é conteúdo — ficha, formulário longo, registro com motivo — não empilha: vira aba ou destino próprio (ver `fatos-tela.php`).
 - **Toda tabela do painel mora em `<div class="rolagem cartoes">`.** `.rolagem` segura o desktop; `.cartoes` desmonta a tabela em cartões abaixo de 700 px. Cada `<td>` leva `data-rotulo` com o texto do `<th>` — no cartão não há cabeçalho para olhar. `.meia`/`.terco` põem blocos lado a lado, `.tarde` desce o secundário e `.rodape` separa as ações. Um HTML só: não escreva uma segunda árvore para o celular.
 - Ações dentro de uma célula vão em `<div class="acoes-celula">`, não em `<form style="display:inline">`.
 - **Duas ações ou mais na linha viram menu**: `menu_acoes()` desenha os três pontinhos e guarda os itens (links, POSTs com csrf, item de risco). Um botão visível por linha é o teto — `testes/contrato/mobile.test.ts` prende a regra.

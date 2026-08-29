@@ -32,6 +32,7 @@ require_once $raiz . '/sessao.php';
 require_once $raiz . '/agenda-comum.php';
 require_once $raiz . '/inscricoes-comum.php';
 require_once $raiz . '/producao-comum.php';
+require_once $raiz . '/trilhas.php';
 
 /** As funções que o teste pode chamar, e só elas. */
 const PONTES = [
@@ -49,6 +50,10 @@ const PONTES = [
     'numero_whatsapp',
     'numero_whatsapp_outro',
     'recusa_de_inscricao',
+    'trilha_da_funcao',
+    'semana_de',
+    'dia_de',
+    'periodo_da_semana',
 ];
 
 $entrada = json_decode((string) file_get_contents('php://stdin'), true);

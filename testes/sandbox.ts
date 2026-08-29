@@ -90,7 +90,7 @@ export interface Sandbox {
    * `normalizar_*()` de lá que decide o que é um registro válido, e um teste
    * que escreve direto no disco semeia fichas que o painel nunca produziria.
    */
-  gravar(nome: string, linhas: Registro[]): void;
+  gravar(nome: string, linhas: Registro[] | Record<string, Registro>): void;
 
   /** Apaga tudo que o painel gravou e semeia de novo — o estado limpo do teste. */
   ressemear(): void;
@@ -532,9 +532,12 @@ require __DIR__ . '/painel/eventos-comum.php';
 require __DIR__ . '/painel/fatos-comum.php';
 require __DIR__ . '/painel/producao-comum.php';
 require __DIR__ . '/painel/candidatos-comum.php';
+require __DIR__ . '/painel/aulas-comum.php';
 /* O nome do arquivo nem sempre é o nome da função: os cards do quadro moram
-   em \`producao.php\` e quem os grava é \`gravar_cards()\`. */
-$comoGrava = ['producao' => 'gravar_cards'];
+   em \`producao.php\` e quem os grava é \`gravar_cards()\`, e o progresso da
+   formação é gravado por \`gravar_progresso()\`. O progresso é o único que não
+   é lista: ele é um mapa de pessoa para as aulas que ela concluiu. */
+$comoGrava = ['producao' => 'gravar_cards', 'aulas-progresso' => 'gravar_progresso'];
 $fn = $comoGrava[$argv[1]] ?? ('gravar_' . str_replace('-', '_', $argv[1]));
 if (!function_exists($fn)) {
   fwrite(STDERR, "não sei gravar {$argv[1]} (procurei {$fn})\\n");

@@ -6,7 +6,18 @@ import { Icon, IconName } from "@/components/icons";
 import CompartilharClient from "./CompartilharClient";
 import { C, BORDA, sigla, temaDe, type Agenda, type ItemAgenda, sombra, sombraErguida, sombraAfundada } from "./tipos";
 import { CAMINHO_AGENDA_AO_VIVO, normalizarAgenda } from "./dados";
-import { emOrdem, estadoDe, estaAoVivo, idEmDestaque, quantosPassaram, type Estado } from "./tempo";
+import {
+  dentroDoPeriodo,
+  diaDe,
+  emOrdem,
+  estadoDe,
+  estaAoVivo,
+  idEmDestaque,
+  periodoDaSemana,
+  quantosPassaram,
+  semanaDe,
+  type Estado,
+} from "./tempo";
 
 const FONT_ALFA = "var(--font-alfa), serif";
 const FONT_ELITE = "var(--font-elite), monospace";
@@ -64,7 +75,29 @@ const ProgramacaoClient: React.FC<{ semente: Agenda }> = ({ semente }) => {
     return () => window.clearInterval(t);
   }, []);
 
-  const itens = useMemo(() => agenda.programacao ?? [], [agenda]);
+  const todos = useMemo(() => agenda.programacao ?? [], [agenda]);
+
+  /**
+   * O RECORTE DE PERÍODO — "esta semana" por padrão.
+   *
+   * A página se chama Programação da Semana e mostrava tudo o que o painel
+   * publicou, inclusive encontro de três semanas atrás (só mais apagado). Quem
+   * abre no domingo à noite quer saber o que vem, não o que passou em julho.
+   *
+   * Começa em `semana` porque é o que o título promete; "hoje" é para quem já
+   * sabe que vai sair de casa, e "tudo" continua a um toque para quem procura
+   * um encontro específico.
+   */
+  const [recorte, setRecorte] = useState<"hoje" | "semana" | "tudo">("semana");
+
+  /* ANTES DO RELÓGIO ACORDAR, MOSTRA TUDO. O HTML do build e o primeiro render
+     do cliente precisam sair iguais — recortar por uma data no servidor
+     congelaria a semana da compilação dentro do HTML estático. */
+  const itens = useMemo(() => {
+    if (!agora || recorte === "tudo") return todos;
+    const janela = recorte === "hoje" ? diaDe(agora) : semanaDe(agora);
+    return todos.filter((i) => dentroDoPeriodo(i, janela));
+  }, [todos, recorte, agora]);
 
   /**
    * O cartão de evento para o buscador.
@@ -80,7 +113,9 @@ const ProgramacaoClient: React.FC<{ semente: Agenda }> = ({ semente }) => {
    */
   const schemaEventos = useMemo(() => {
     if (!agora) return null;
-    const futuros = itens.filter(
+    /* `todos`, e não o recorte: o que o buscador indexa não pode depender do
+       botão que a pessoa apertou na tela. */
+    const futuros = todos.filter(
       (i) => i.inicio && estadoDe(i, agora) !== "passado" && estadoDe(i, agora) !== "sem-horario",
     );
     if (futuros.length === 0) return null;
@@ -107,7 +142,7 @@ const ProgramacaoClient: React.FC<{ semente: Agenda }> = ({ semente }) => {
         },
       })),
     });
-  }, [itens, agora]);
+  }, [todos, agora]);
   const ordenados = useMemo(() => emOrdem(itens, agora ?? undefined), [itens, agora]);
   const destaque = useMemo(() => (agora ? idEmDestaque(itens, agora) : null), [itens, agora]);
   const passados = agora ? quantosPassaram(itens, agora) : 0;
@@ -195,10 +230,17 @@ const ProgramacaoClient: React.FC<{ semente: Agenda }> = ({ semente }) => {
             )}
           </h1>
 
-          {agenda.periodo && (
+          {/* O PERÍODO SEGUE O RELÓGIO quando a coordenação não escreveu um.
+              Digitado à mão ele envelhecia sozinho: quem esquecia de trocar na
+              segunda deixava o site anunciando a semana passada, e a página
+              continuava desenhando sem sinal de que estava errada.
+
+              O campo do painel continua ganhando quando está preenchido — é
+              para a semana atípica, o feriadão, o mutirão de duas semanas. */}
+          {(agenda.periodo || agora) && (
             <p className="ag-periodo">
               <Icon name="calendar" size={14} />
-              <span>{agenda.periodo}</span>
+              <span>{agenda.periodo || (agora ? periodoDaSemana(agora) : "")}</span>
             </p>
           )}
 
@@ -210,10 +252,40 @@ const ProgramacaoClient: React.FC<{ semente: Agenda }> = ({ semente }) => {
           </div>
         </header>
 
+        {/* ===== O recorte de período =====
+            Só depois de o relógio acordar: sem ele os três botões não teriam o
+            que recortar, e o HTML do build sairia com um estado marcado que o
+            primeiro render do cliente contradiria. */}
+        {agora && todos.length > 0 && (
+          <div className="ag-recorte" role="group" aria-label="Período">
+            {(
+              [
+                ["hoje", "Hoje"],
+                ["semana", "Esta semana"],
+                ["tudo", "Tudo"],
+              ] as const
+            ).map(([chave, rotulo]) => (
+              <button
+                key={chave}
+                type="button"
+                className={recorte === chave ? "ag-recorte-on" : undefined}
+                aria-pressed={recorte === chave}
+                onClick={() => setRecorte(chave)}
+              >
+                {rotulo}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* ===== Lista da programação ===== */}
         {itens.length === 0 ? (
           <p className="ag-vazio">
-            A agenda desta semana ainda está sendo fechada. Volte já já.
+            {todos.length === 0
+              ? "A agenda desta semana ainda está sendo fechada. Volte já já."
+              : recorte === "hoje"
+                ? "Nada marcado para hoje. Toque em “Esta semana” para ver o resto."
+                : "Nada marcado para esta semana. Toque em “Tudo” para ver o que já vem depois."}
           </p>
         ) : (
           <ol className="ag-lista">
@@ -250,8 +322,8 @@ const ProgramacaoClient: React.FC<{ semente: Agenda }> = ({ semente }) => {
           {passados > 0 && (
             <p>
               {passados === 1
-                ? "1 evento desta semana já aconteceu e aparece mais apagado."
-                : `${passados} eventos desta semana já aconteceram e aparecem mais apagados.`}
+                ? "1 evento desta lista já aconteceu e aparece mais apagado."
+                : `${passados} eventos desta lista já aconteceram e aparecem mais apagados.`}
             </p>
           )}
           <p>
@@ -449,6 +521,28 @@ const css = `
   }
 
   .ag-compartilhar { margin-top: 22px; }
+
+  /* O recorte de período. Três alvos de 44px, como o resto do site: quem lê
+     esta página está no celular, em pé, e o dedo é o mouse. */
+  .ag-recorte {
+    display: flex; justify-content: center; flex-wrap: wrap;
+    gap: 8px; margin: 0 0 22px;
+  }
+  .ag-recorte button {
+    font-family: ${FONT_ELITE}; font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
+    color: ${C.cream}; background: rgba(24,18,3,.85);
+    padding: 11px 16px; min-height: 44px; cursor: pointer;
+    border: 2px solid ${C.gold};
+    box-shadow: ${sombra("rente", C.sombraNoite)};
+    transition: transform .12s ease, box-shadow .12s ease, background .12s ease, color .12s ease;
+  }
+  .ag-recorte button:hover { transform: translate(-2px,-2px); box-shadow: ${sombraErguida("rente", C.sombraNoite)}; }
+  .ag-recorte button:active { transform: translate(2px,2px); box-shadow: ${sombraAfundada("rente", C.sombraNoite)}; }
+  /* O escolhido é ouro cheio: num grupo de três, "qual está ligado" precisa se
+     ler antes do texto, e não depender de uma borda um pouco mais grossa. */
+  .ag-recorte .ag-recorte-on {
+    color: ${C.ink}; background: ${C.gold};
+  }
 
   .ag-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 16px; }
   .ag-item { animation: agIn .5s ease-out backwards; animation-delay: calc(.06s * var(--i, 0)); }

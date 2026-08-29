@@ -2,16 +2,27 @@
 declare(strict_types=1);
 
 /**
- * A TELA de `/painel/fatos`: o recorte, a moldura e a ordem dos blocos.
+ * A TELA de `/painel/fatos`: o recorte, a moldura e as abas.
  *
- * A ordem não é decorativa. FILA primeiro (o que está esperando decisão), depois
- * TRAZER (o que entra) e por último o REGISTRO do que já foi decidido. Quem abre
- * esta tela abre para zerar a fila; trazer fato é o segundo motivo, e consultar
- * o histórico é o terceiro.
+ * SÃO TRÊS RITMOS, E NÃO TRÊS BLOCOS. Zerar a fila, cadastrar uma ficha nova e
+ * consultar o que já foi decidido acontecem em momentos diferentes do dia, e
+ * empilhados viravam uma rolagem em que quem abriu para DECIDIR atravessava um
+ * formulário longo, e quem abriu para TRAZER atravessava fila e histórico antes
+ * de começar. Cada um virou aba.
+ *
+ * A ABA AQUI E A ROLAGEM EM `/painel/eventos` seguem a mesma régua, e não duas.
+ * O que decide é o peso do item: lá cada linha é um LINK — nome e data — e
+ * vinte deles continuam sendo uma lista que se varre com o olho; aqui cada item
+ * é CONTEÚDO que se lê inteiro, e o que vem embaixo do primeiro deixa de existir
+ * para quem chegou agora.
+ *
+ * A tela é, antes de tudo, mesa de decisão: a aba abre na FILA, sempre. Trazer
+ * é o segundo motivo de alguém abrir isto, e consultar o registro é o terceiro
+ * — é essa a ordem da barra.
  *
  * O RECORTE É CALCULADO AQUI, como nas outras telas grandes: a busca e o filtro
- * de categoria só existem para virar estas listas, e o contador de cada bloco
- * tem de concordar com o que o bloco lista.
+ * de categoria só existem para virar estas listas, e o contador de cada aba tem
+ * de concordar com o que a aba lista.
  */
 
 require_once __DIR__ . '/fatos-comum.php';
@@ -57,11 +68,30 @@ function tela_de_fatos(array $eu, ?string $erro, ?string $ok, array $rascunho): 
         $corrigindo = null;   // a trava do POST desenhada na tela: formulário que vai ser recusado não se mostra
     }
 
-    $fila      = $peneirar(fatos_com_status('a-checar'));
-    $checados  = array_slice($peneirar(array_reverse(fatos_com_status('ok-checado'))), 0, 15);
-    $pendentes = array_slice($peneirar(array_reverse(fatos_com_status('pendente'))), 0, 15);
-    $arquivados = array_slice($peneirar(array_reverse(fatos_com_status('arquivado'))), 0, 15);
+    $fila = $peneirar(fatos_com_status('a-checar'));
+
+    /* O contador da aba conta o RECORTE INTEIRO; a lista mostra os 15 mais
+       recentes. São dois números diferentes de propósito — "Já decididos (48)"
+       responde quanto o arquivo tem, e a lista responde o que aconteceu por
+       último. Contar o que sobrou da fatia diria "15" para sempre. */
+    $todosChecados   = $peneirar(array_reverse(fatos_com_status('ok-checado')));
+    $todosPendentes  = $peneirar(array_reverse(fatos_com_status('pendente')));
+    $todosArquivados = $peneirar(array_reverse(fatos_com_status('arquivado')));
+    $quantosDecididos = count($todosChecados) + count($todosPendentes) + count($todosArquivados);
+
+    $checados   = array_slice($todosChecados, 0, 15);
+    $pendentes  = array_slice($todosPendentes, 0, 15);
+    $arquivados = array_slice($todosArquivados, 0, 15);
     $quantosFatos = count(ler_fatos());
+
+    /* A aba abre na fila. Corrigir uma ficha é ação da fila, e o `?editar=` que
+       chega junto de outra aba abriria um modal por cima de uma tela que fala de
+       outra coisa. */
+    $pedida = (string) ($_GET['aba'] ?? '');
+    $abaFa = in_array($pedida, ['trazer', 'decididos'], true) ? $pedida : 'fila';
+    if ($abaFa !== 'fila') {
+        $corrigindo = null;
+    }
 
     $quando = function (string $iso): string {
         $t = strtotime($iso);
@@ -87,9 +117,21 @@ abrir_pagina('Fatos do dia');
 
   <?php recado($erro, $ok); ?>
 
-  <?php /* O filtro só aparece quando há o que filtrar: com quatro fatos ele é
-           dois controles em cima de uma lista que já cabe na tela. */ ?>
-  <?php if ($quantosFatos > 6 || $buscaFa !== '' || $catF !== ''): ?>
+  <?php
+  barra_abas([
+      'fila'      => ['nome' => 'Esperando checagem', 'conta' => count($fila)],
+      /* Sem contador: a aba não é uma lista, é a ficha em branco. Um número ali
+         seria o número de quê? */
+      'trazer'    => ['nome' => 'Trazer um fato'],
+      'decididos' => ['nome' => 'Já decididos', 'conta' => $quantosDecididos],
+  ], $abaFa, 'aba', 'Fatos do dia');
+  ?>
+
+  <?php /* O filtro some no formulário: não há o que peneirar numa ficha em
+           branco. Nas outras duas abas ele só aparece quando há o que filtrar —
+           com quatro fatos são dois controles em cima de uma lista que já cabe
+           na tela. */ ?>
+  <?php if ($abaFa !== 'trazer' && ($quantosFatos > 6 || $buscaFa !== '' || $catF !== '')): ?>
     <?php
       $opcoesCat = [];
       foreach (CATEGORIAS as $chave => $nome) {
@@ -105,16 +147,21 @@ abrir_pagina('Fatos do dia');
                'valor' => $catF, 'vazio' => 'todas', 'opcoes' => $opcoesCat],
           ],
           $buscaFa !== '' || $catF !== '',
-          '/painel/fatos.php'
+          '/painel/fatos.php?aba=' . $abaFa,
+          ['aba' => $abaFa]
       );
     ?>
   <?php endif; ?>
 
-  <?php bloco_fila($fila, $eu, $buscaFa, $quando); ?>
-
-  <?php bloco_trazer($rascunho); ?>
-
-  <?php bloco_decididos($checados, $pendentes, $arquivados, $buscaFa, $quando); ?>
+  <?php
+  if ($abaFa === 'fila') {
+      bloco_fila($fila, $eu, $buscaFa, $quando);
+  } elseif ($abaFa === 'trazer') {
+      bloco_trazer($rascunho);
+  } else {
+      bloco_decididos($checados, $pendentes, $arquivados, $buscaFa, $quando);
+  }
+  ?>
 
   <?php /* O modal fica no fim do documento, e não dentro do <fieldset> nem da
            tabela: <dialog> aninhado ali é HTML inválido, e o navegador

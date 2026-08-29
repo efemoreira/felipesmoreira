@@ -18,7 +18,6 @@ import { montarSandbox, type Sandbox } from "../sandbox.ts";
 const TELAS: [tela: string, querystring: string, apelido: string][] = [
   ["index", "", "hub"],
   ["eventos", "", "lista de encontros"],
-  ["eventos", "aba=passados", "encontros já passados"],
   ["eventos", "q=benfica", "busca de encontro"],
   ["eventos", "novo=1", "modal de novo encontro"],
   ["eventos", "e=ev-teste", "encontro aberto — Preparo"],
@@ -37,6 +36,8 @@ const TELAS: [tela: string, querystring: string, apelido: string][] = [
   ["candidatos", "aba=listas", "listas de candidatos"],
   ["candidatos", "novo=1", "modal de candidato"],
   ["fatos", "", "fatos do dia"],
+  ["fatos", "aba=trazer", "ficha de fato novo"],
+  ["fatos", "aba=decididos", "fatos já decididos"],
   ["fatos", "q=obra", "busca de fato"],
   ["producao", "", "quadro de produção"],
   ["producao", "dono=atrasados", "recorte de atrasados"],

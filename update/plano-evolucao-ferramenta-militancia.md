@@ -1,311 +1,579 @@
 # Plano de evolucao da ferramenta de organizacao da militancia
 
-Data: 2026-08-23 (terceira rodada)
-
-## Objetivo deste documento
-
-Este arquivo e um retrato do estado atual do projeto, com foco em quatro
-perguntas:
-
-1. o que ja foi feito;
-2. o que foi bem feito e pode ser considerado fechado;
-3. o que esta parcialmente resolvido;
-4. o que ainda falta e deve vir antes de novas ideias.
-
-Nao e um plano especulativo. E um quadro de progresso e prioridade.
-
-## O que mudou nesta rodada
-
-A rodada anterior fechou a **garantia**. Esta fechou a frente que era a
-prioridade 1 do proprio plano: **a auditoria mobile-first das telas de trabalho
-do painel**. As treze tabelas do painel deixaram de depender de arrastar para o
-lado.
-
-| item da sequencia anterior | estado |
-| --- | --- |
-| 1. Auditoria mobile-first das telas de trabalho | **feito no painel** — as 13 tabelas viraram cartao no celular e a regra esta presa por teste |
-| 2. Testes de navegador do funil publico | **parcial** — segue a decisao de nao entrar Playwright; foco e erro de rede no DOM continuam sem cobertura |
-| 3. Segunda passada em home, programacao e aulas | ainda nao |
-| 4. P2 de experiencia de campanha | ainda nao |
-
-Validacoes executadas nesta rodada:
-
-- `npm test` — **171 testes, 42 suites, tudo passando** (eram 167);
-- `npm run test:tipos`, `npm run lint`, `npx eslint testes/` — limpos;
-- `npm run build` — 17 rotas.
-
-### A auditoria mobile do painel
-
-**Um padrao so, e um HTML so.** `<div class="rolagem cartoes">` em volta de
-toda tabela do painel: `.rolagem` segura o desktop, e `.cartoes` desmonta a
-tabela abaixo de 700px — cada `<tr>` vira cartao, cada `<td>` vira bloco, e o
-`data-rotulo` de cada celula entra no lugar do cabecalho que sumiu.
-
-> **A alternativa era escrever duas arvores para a mesma lista.** Quem mantem
-> duas mantem duas e conserta uma — e a que conserta e sempre a do desktop,
-> porque e a que a coordenacao ve. A semantica de tabela continua inteira em
-> tela larga.
-
-Tres larguras de bloco resolvem o resto: cheia por padrao, `.meia` para o par
-que so se le junto (confirmou × compareceu) e `.terco` para a trinca do funil
-de origens. `.tarde` desce o que na linha era so mais uma coluna, e `.rodape`
-separa por uma linha tracejada o que se FAZ do que se le.
-
-| tela | o que mudou no celular |
-| --- | --- |
-| `eventos-presenca.php` | a pior tela do plano: cada pessoa e um cartao, os dois estados lado a lado em botao de largura inteira, o tipo num seletor proprio e o **Tirar** isolado no rodape |
-| `pessoas-lista.php` | tipo e encontros sobem em par; login e funcoes descem — quem procura alguem pergunta "e apoiador?" e "ja apareceu?" antes de "qual e o login?" |
-| `candidatos-tela.php` | numero e estado em par, as tres acoes no rodape do cartao |
-| `municao.php` | fonte e estado em par, as tres acoes no rodape |
-| `agenda-tela.php` | a programacao vira lista vertical |
-| `inscricoes-origens.php` | os tres degraus em tercos, na mesma faixa: a leitura do relatorio e a QUEDA de um para o outro, e empilhados eles viram tres numeros soltos |
-| `inscricoes-decididas.php`, `fatos-decididos.php` (3), `aulas.php`, `pessoas-ficha.php` | arquivo e relatorio: tabela no desktop, cartao no celular |
-| `inscricoes-tela.php` | era a **unica sem `.rolagem`**: em tela estreita ela nao ganhava barra, ela empurrava a pagina para o lado |
-
-**Dois defeitos de layout que so apareceriam no telefone foram fechados na
-origem:** a foto do candidato e a coluna "Onde" da agenda sao opcionais, e o
-`<td>` delas carregava uma quebra de linha solta. Vazio com espaco em branco
-nao e `:empty` — os dois viravam um buraco de 12px no cartao. Os `if` agora
-abrem e fecham colados nas bordas do `<td>`.
-
-**A regra ficou presa por teste** (`testes/contrato/mobile.test.ts`, 4 testes):
-toda tabela do painel dentro de `.rolagem.cartoes`, nenhuma `.rolagem` sozinha,
-o bloco de CSS no lugar e nenhuma celula `.meia`/`.terco` sem rotulo.
-
-> **Este teste existe para a proxima tabela.** As treze de hoje ja estao
-> convertidas; o que se perde sem teste e a tabela numero catorze, escrita daqui
-> a tres meses copiando a linha errada de uma tela antiga — e descoberta por
-> alguem xingando o telefone numa noite de encontro.
-
-Um efeito colateral, de proposito: `.acoes-celula` substituiu o
-`style="display:inline"` que os `<form>` de acao carregavam dentro das celulas.
-Os botoes de Municao passaram de `.btn` para `.btn-mini`, como em todas as
-outras listas do painel.
-
-## O que esta feito
-
-### 1. Testes de acao: o POST deixou de ser o ponto cego
-
-Era a maior lacuna do quadro anterior. Com as telas grandes ja cortadas, o risco
-tinha deixado de ser "nao consigo refatorar" e passado a ser **"refatorei e
-quebrei o POST"** — e o POST e onde moram as regras que nao tem desfazer.
-
-`testes/acoes/` cobre seis telas operacionais **e** o relatorio de origem, e cada teste confere **as duas metades**: o que
-ficou no arquivo em `/dados` e o que a pessoa le na tela seguinte.
-
-| arquivo | as regras que ele prende |
-| --- | --- |
-| `inscricoes` | aprovar da conta a ficha que ja existe, e nao cria uma segunda; recusar nao apaga ninguem |
-| `eventos` | `voltar()` leva a **aba** junto da ancora; encontro com gente na lista nao se apaga |
-| `pessoas` | o ultimo administrador nao se rebaixa, nao se desativa e nao se apaga; juntar nao sobrescreve |
-| `fatos` | quem traz o fato nao checa o fato — e o admin que destrava escreve o porque |
-| `producao` | a regra do ledger **avisa e nao bloqueia**; card publicado e rastro |
-| `candidatos` | o cargo confere os digitos; sem numero nao vai ao ar; a ordem da lista e a da colinha |
-| `origens` | o relatorio ordena por quem militou, nao por barulho; e quem veio pela URL limpa fica fora da tabela |
+Data: 2026-08-29
 
-**A acao sobe num `php -S`, e a tela continua no CLI.** Toda acao termina em
-`header('Location: …')` + `exit`, e no SAPI de linha de comando o `header()` e um
-nada: o teste nao teria como ver para onde a gravacao mandou. Nenhuma dependencia
-nova — `php -S` ja vem na caixa, como o `node:test`.
+## Tese do plano
 
-**Dois defeitos reais apareceram na primeira execucao:**
+Daqui para frente, a evolucao da ferramenta deve ser guiada por dois eixos e
+uma frente estrutural de escala:
 
-- **nome so de espacos criava pessoa sem nome.** `normalizar_pessoa()` conferia
-  `empty($p['nome'])` no campo cru — e `"   "` e string nao-vazia —, e so depois
-  `limpar_texto()` a reduzia a `''`. Pelo mesmo portao passava candidato: numero
-  de urna na colinha sem nome ao lado. Corrigido no portao unico;
-- **o corte de `inscricoes.php` perdia o recado e a senha provisoria.** O bloco
-  extraido continuava relendo a sessao que a rota ja tinha esvaziado. As 18 telas
-  comparadas continuaram identicas byte a byte — o instantaneo e um GET com
-  sessao vazia, e nao ve recado. Quem pegou foi o teste de acao.
+1. **estudo** — fazer mais gente aprender o suficiente para operar bem;
+2. **crescimento** — fazer mais gente entrar, voltar e virar militancia ativa;
+3. **arquitetura operacional** — fazer o trabalho certo aparecer no lugar certo,
+   sem depender de adivinhar aba, de rolar demais ou de lembrar onde um bloco
+   fica escondido.
 
-### 2. O funil publico, sem navegador
+O painel e o site publico ja sairam da fase de arrumacao basica. A pergunta nao
+e mais “como organizar a ferramenta”, e sim “como usar a ferramenta para formar
+mais gente e crescer melhor”.
 
-**Decisao tomada nesta rodada:** nao entra Playwright. Ele baixa binarios de
-navegador e bate de frente com duas regras escritas no repositorio — "sem
-framework de teste" e "cada dependencia e uma que alguem vai ter de auditar antes
-de um deploy de campanha".
+Os dois primeiros eixos dizem para onde o movimento precisa andar. O terceiro
+garante que a ferramenta continue legivel quando o uso real cresce. Nao e uma
+frente paralela de capricho visual: e a condicao para estudo e crescimento
+virarem rotina de trabalho, e nao conhecimento de quem decorou o painel.
 
-O que foi coberto sem dependencia nenhuma, em `testes/contrato/inscricao.test.ts`:
+## Objetivo
 
-- **a regua da tela contra a regua do servidor**, nas duas direcoes;
-- **a passagem de bastao de `/presenca` para `/queroajudar`** — as duas listas
-  lidas do codigo, e nao copiadas para o teste;
-- **a mascara do telefone** contra o `so_digitos()` do PHP.
+Transformar a ferramenta em um sistema que:
 
-Para isso a regua do servidor precisou sair de dentro do endpoint: era uma
-sequencia de `if` no meio de `api/inscricao.php`, e o que esta solto no meio de um
-endpoint nao se chama de fora. Hoje e `recusa_de_inscricao()`.
+- converte curiosos em militantes ativos;
+- reduz o tempo entre inscrição e primeira tarefa útil;
+- transforma presença em encontro em entrada de base e não só em lista;
+- acelera a formação por função;
+- deixa explícitas no menu e na tela as rotinas que já viraram trabalho próprio;
+- mostra com clareza o que faz crescer e o que só gera volume.
 
-> **A divergencia que doi tem direcao.** Se o servidor recusar algo que a tela deu
-> como bom, a pessoa preenche os tres passos, ve marca verde em todo campo e leva
-> um "nao deu" generico no fim — e vai embora. O contrario e de proposito.
+## Norte do produto
 
-**Fica de fora, e continua pendente:** o que so um navegador ve — foco depois da
-troca de passo, e o comportamento em erro de rede dentro do DOM.
+### Eixo 1 — estudo
 
-### 3. `inscricoes.php` foi cortada
+O sistema precisa responder:
 
-Ultima tela monolitica. De **528 linhas para 52**, no mesmo desenho das outras
-seis:
+- quem entrou e ainda não começou a estudar;
+- quem começou e travou;
+- quem já pode assumir uma função;
+- que aula ou checklist destrava o próximo passo de cada pessoa.
 
-| arquivo | linhas | responsabilidade |
-| --- | ---: | --- |
-| `inscricoes.php` | 52 | so a rota |
-| `inscricoes-acoes.php` | 153 | o POST inteiro |
-| `inscricoes-tela.php` | 204 | cabecalho, panorama, abas e busca |
-| `inscricoes-fila.php` | 172 | a aba de trabalho |
-| `inscricoes-decididas.php` | 79 | a aba de arquivo |
-| `inscricoes-origens.php` | 122 | a aba de conversao (nova) |
+### Eixo 2 — crescimento
 
-Provado com **18 telas de conteudo identico**, e cada modulo abre sozinho.
+O sistema precisa responder:
 
-### 4. Os tokens que faltavam no lado Next
+- de onde as pessoas estão vindo;
+- quais canais e militantes trazem gente que realmente milita;
+- quais encontros geram inscrição, presença recorrente e nova função;
+- em quais cidades o crescimento está virando base local de verdade.
 
-A moldura do cordel — o `3px solid` — estava escrita a mao em **87 lugares, em 20
-arquivos**, com nove cores diferentes ao lado. O `3` e identidade, nao estilo: e
-o que faz o site e o painel parecerem o mesmo produto, e o painel ja guardava o
-dele num token do `:root`.
+## Ativos que ja existem
 
-Hoje sai de `borda()` / `BORDA`, em `@/lib/theme`. O texto de leitura
-(`fontSize: 15.5` com `lineHeight: 1.55`, em oito arquivos) virou `TEXTO.corpo`.
+O produto ja tem infraestrutura forte para esta fase. O plano novo parte disso,
+em vez de abrir frentes paralelas.
 
-**As duas trocas sairam com markup byte a byte identico nas 17 rotas.**
+### Base pronta para estudo
 
-> **A sombra dura virou token depois — e a decisao de desenho esta tomada.**
-> Ela aparecia em 17 combinacoes de deslocamento e opacidade, o que nao era
-> repeticao e sim deriva. A escolha: **uma opacidade so** (`C.sombra`), e a
-> altura carregada pelo deslocamento, em **tres degraus** — `rente` 3,
-> `cartao` 5, `alto` 8. Sai de `sombra()`, com `sombraErguida()` e
-> `sombraAfundada()` para hover e clique. Ver a secao "A escala da sombra dura",
-> mais abaixo.
+- `/aulas` e `/painel/aulas` ja existem como sistema de formação.
+- O currículo já está dividido em Pista Rápida e Pista Lenta.
+- O convite do Dia 0 já existe.
+- `checklists.php` já sustenta a ideia de “pronto para operar”.
+- O catálogo de funções já existe em `funcoes.json`.
+- O hub já mostra parte do próximo passo, via mesa da função e formação.
 
-### 5. O relatorio de conversao por origem
+### Base pronta para crescimento
 
-A infraestrutura de `?de=` existia desde sempre e ninguem conseguia responder a
-pergunta que ela existe para responder. A aba **"De onde vem"** responde:
+- `/queroajudar` já cria ou reaproveita a pessoa sem duplicar cadastro.
+- `/presenca` já distingue confirmar de comparecer.
+- O fluxo por origem (`?de=`) já existe.
+- A aba “De onde vêm” já mede `chegaram` → `aprovadas` → `militaram`.
+- O painel já consegue agrupar base por cidade e bairro.
+- O funil D+0 / D+3 / D+7 de encontro já existe.
 
-**Tres degraus, e nao dois** — `chegaram` → `aprovadas` → **`militaram`** (apareceu
-em pelo menos um encontro). O terceiro e o unico que nao depende de a pessoa dizer
-que vem.
+### Base pronta para operar isso sem quebrar
 
-> **A ordem e por quem militou, e o total so desempata.** Ordenar pelo total poria
-> no topo justamente a origem que enche a fila e nao entrega.
+- As telas grandes do painel já foram divididas por responsabilidade.
+- A navegação já mora em `layout.php`, e só lá — o que permite promover uma
+  rotina para a lateral sem duplicar menu pelo painel.
+- O painel já tem contrato de mobile para tabela virar cartão.
+- Ações críticas já estão cobertas por `testes/acoes/`.
+- Contratos PHP ↔ TS já estão cobertos por `testes/contrato/`.
+- A suíte principal está verde.
+
+## O problema agora
+
+O sistema já coleta mais sinal do que transforma em direção.
+
+Hoje ele já sabe muita coisa sobre:
 
-Era um `<details>` recolhido no meio da fila, com duas colunas. Faltava o degrau
-que decide.
+- inscrição;
+- origem;
+- presença;
+- formação;
+- tarefa;
+- função;
+- encontro.
 
-## O que continua parcial
+Mas ainda falta transformar isso em quatro movimentos de produto:
+
+1. **estudar**;
+2. **entrar em ação**;
+3. **voltar**;
+4. **trazer mais gente que presta**.
+
+E falta uma segunda transformação, mais estrutural: parte do painel já cresceu
+além do desenho que o ajudou a nascer.
+
+Hoje há três sintomas claros:
+
+- abas que começaram como atalho local já escondem rotinas inteiras;
+- listas e formulários de ritmos diferentes ainda disputam a mesma tela;
+- algumas áreas de estudo e acompanhamento já respondem perguntas diferentes,
+  mas continuam penduradas no mesmo lugar.
+
+Sem corrigir isso, a ferramenta até coleta mais sinal, mas custa mais energia
+para ser usada como sistema de direção.
+
+## Condicao de escala: a estrutura do painel precisa crescer junto
+
+### Regra para decidir o que continua em aba
+
+Daqui para frente, a régua deve ser simples:
+
+- **fica em aba** o que ainda é recorte do mesmo objeto, na mesma sessão de
+  trabalho;
+- **sobe para o menu lateral** o que já responde uma pergunta própria, tem
+  rotina recorrente e é aberto como destino, não como detalhe;
+- **sai da mesma tela** o que acontece em ritmos diferentes, como fila para
+  decidir e formulário longo para cadastrar;
+- **nunca vira scroll gigante** o que pode ser resolvido melhor por aba ou por
+  destino próprio na lateral.
+
+Em outras palavras: aba e menu lateral são as duas soluções principais para
+segurar legibilidade quando o uso cresce. O anti-padrão é empilhar blocos
+grandes a ponto de transformar uma rotina inteira em rolagem longa.
+
+### O que decide se pode empilhar: o peso do item, não o número de listas
+
+Esta é a distinção que faltava, e sem ela a régua acima erra nos dois sentidos.
+
+**Duas listas de links empilham bem.** Um item que é uma linha — nome, data, um
+número de estado — e cuja função é *levar para outro lugar* não disputa a tela
+com o que vem depois dele. Vinte linhas de link continuam sendo uma lista que se
+varre com o olho; a rolagem é o índice, não o obstáculo. Foi o caso de
+`/painel/eventos`: “Próximos” e “Já aconteceram” são o mesmo tipo de item, e
+separá-los por aba obrigava a adivinhar de que lado estava o encontro procurado.
+
+**Dois blocos de conteúdo não empilham.** Um item que se LÊ inteiro — uma ficha
+aberta, um formulário de doze campos, um registro com motivo e histórico — ocupa
+tela sozinho, e o que vem embaixo dele deixa de existir para quem chegou pela
+primeira vez. Foi o caso de `/painel/fatos`: fila de decisão, ficha em branco e
+arquivo eram três coisas que se leem inteiras, e empilhadas obrigavam quem veio
+decidir a atravessar um formulário longo.
+
+A pergunta prática, então, não é “são duas listas?”. É:
+
+- **o item é um link ou é conteúdo?** Link empilha; conteúdo não.
+- **o que vem embaixo cresce sem parar?** Se cresce, empilhar exige teto — a
+  lista de baixo desenha as N mais recentes, a legenda conta todas, e a busca
+  alcança o resto.
+- **as duas coisas se leem na mesma sessão de trabalho?** Se sim, a rolagem é
+  mais barata que a troca de aba, porque a aba esconde metade da resposta.
+
+### Avaliacao inicial do que hoje esta dividido em abas
+
+- **Encontros — próximos / já aconteceram:** **decidido: uma lista em cima da
+  outra, na mesma tela.** Cada item é um link de uma linha — nome, família, data,
+  local e preparo —, e não um bloco que se lê inteiro; duas listas dessas
+  empilham sem uma esconder a outra. Trocar de aba, ao contrário, obrigava a
+  adivinhar de que lado estava o encontro procurado. O preço de empilhar — a
+  lista de baixo cresce para sempre — é pago por um teto de quinze na lista dos
+  realizados, com o contador dizendo o total e a busca alcançando o resto.
+- **Inscrições — fila / decididas / de onde vêm:** fila e decididas ainda podem
+  seguir como recorte local da mesma área; “De onde vêm” já é leitura de
+  coordenação e deve ser tratada como forte candidata a destino próprio.
+- **Candidatos — candidatos / listas:** já são duas rotinas diferentes.
+  Se continuarem na mesma área, precisam ser sustentadas por abas claras; se o
+  uso confirmar cadência própria, uma das duas sobe para a lateral.
+- **Pessoas — tipo de pessoa:** deve continuar em aba. Ali a aba é filtro
+  permanente da mesma lista, e não uma área escondida.
+- **Encontro aberto — preparo / pessoas / follow-up / dados:** ainda pode ficar
+  local ao encontro enquanto seguir sendo navegação dentro do mesmo objeto.
+  O ponto de atenção é o follow-up: se virar fila transversal entre encontros,
+  deixa de ser aba e ganha lugar próprio.
 
-### Mobile first das telas
+### Mudancas essenciais ja identificadas
 
-O painel esta fechado: as treze tabelas viram cartao no celular, a navegacao ja
-descia para a barra do rodape, as abas sao links com URL propria, o quadro de
-Producao ja empilha e os campos ja respeitam o minimo de 16px do Safari.
+#### 1. Encontros: as duas listas na mesma tela, com teto — FEITO
 
-O que continua parcial mora **fora da tabela**:
+`/painel/eventos` mostra “Próximos” e “Já aconteceram” uma em cima da outra. A
+aba resolvia a rolagem e criava outro custo: quem procurava um encontro tinha de
+adivinhar de que lado ele estava, e o contador da aba fechada era a única pista.
 
-- **modais longos** — leitura e acao com o viewport preso ainda nao foram
-  medidos;
-- **filtros e barras de busca** — o `.filtros-busca` ja cai para uma coluna aos
-  600px, mas a quebra de botao ao lado de campo nao foi conferida tela a tela;
-- **o site publico** — a rolagem horizontal global ja esta travada e os campos
-  ja estao em 16px, mas home, programacao e aulas ainda nao passaram pela
-  segunda passada (ver mais abaixo);
-- **medir de verdade** — o que existe hoje e leitura de codigo e de regra CSS.
-  Falta abrir as telas num aparelho e confirmar que nao sobrou rolagem lateral
-  em nenhuma tela de uso cotidiano.
+O que impede a rolagem gigante não é mais a aba, e sim o teto:
 
-### Estado visual das areas operacionais
+- a lista de baixo desenha os quinze mais recentes, e a legenda conta todos;
+- a busca fica acima das duas e recorta as duas de uma vez — é por ela que se
+  alcança o encontro antigo que não coube no teto;
+- a de cima, que é o trabalho, vem primeiro e não depende do tamanho da de baixo.
 
-Melhorou no hub, na fila e nos medidores. Ainda falta espalhar o mesmo rigor para
-Fatos e Producao, e reduzir texto em contexto de uso rapido no celular.
+Duas coisas foram corrigidas junto:
 
-### O lado Next
+- **cancelado deixou de ser sinônimo de passado.** Encontro cancelado para daqui
+  a duas semanas não aconteceu — ele não vai acontecer, o que é diferente, e a
+  coordenação ainda precisa vê-lo para remarcar. Ele volta para a lista de cima,
+  marcado como CANCELADO; o hub continua sem ele, porque lá a pergunta é "para
+  onde eu vou".
+- **o período recorta pelo relógio.** "Hoje" e "Esta semana" saem de `dia_de()` e
+  `semana_de()`, as mesmas janelas que o site usa — o padrão continua sendo tudo,
+  porque esta é a mesa de trabalho e abrir escondendo o mês que vem esconderia
+  trabalho de quem veio preparar.
 
-A inscricao e a presenca ja estao bem divididas. Continuam pendentes de uma
-segunda passada: **home, programacao e aulas**. Com `borda()`, `TEXTO` e agora
-`sombra()` no lugar, a proxima passada tem onde se apoiar: a arrumacao de tokens
-acabou, e o que sobra e a divisao das telas.
+#### 2. Fatos: separar a lista operacional do formulario de novo fato
 
-Na presença houve mais um passo já implementado: o fluxo de `/presenca` ganhou
-hero com imagem real do encontro quando houver, textura de fallback quando não
-houver e cards mais intencionais para os formulários de “vou” e “cheguei”.
+`/painel/fatos` hoje mistura três ritmos diferentes:
 
-Isso **não entra como fechado ainda**. Falta testar e avaliar:
+- zerar a fila;
+- consultar o que já foi decidido;
+- preencher uma ficha nova.
 
-- legibilidade com imagem muito clara, muito escura ou sem imagem;
-- leitura dos dois modos (`confirmacao` vs `chegada`) com a nova capa;
-- comportamento no celular, especialmente em conexões lentas e telas pequenas;
-- se o banner melhora o contexto sem empurrar o formulário demais para baixo.
+Isso precisa ser cortado. A tela principal de fatos deve ser, antes de tudo,
+mesa de decisão. O cadastro de novo fato precisa ganhar fluxo próprio — por aba
+própria, modal curto quando couber, ou destino lateral separado.
 
-Leitura correta:
+O objetivo é simples: quem abriu para decidir não deve disputar a mesma rolagem
+com um formulário longo; quem veio cadastrar não precisa atravessar histórico e
+fila para começar.
 
-- a mudança de UX/UI da presença já existe no código;
-- o status dela é **implementada, mas ainda pendente de validação visual e de uso**.
+#### 3. Estudo: separar gestao de conteudo, acompanhamento e prontidao
 
-### Autosave
+A frente de estudo já não cabe numa única noção de “Aulas”. Hoje estão muito
+misturados:
 
-Existe em agenda, encontro novo, dados do encontro e candidato. Continua em aberto
-se vale expandir para inscricoes, fatos e producao.
+- gestão do conteúdo e do vídeo;
+- link e porta de entrada do Dia 0;
+- acompanhamento de quem estudou, travou e avançou;
+- leitura de prontidão por função, que o plano já pede para nascer.
 
-## O que falta, por prioridade
+O próximo corte do estudo deve produzir ao menos três superfícies claras,
+organizadas por abas bem definidas ou por novos destinos laterais, nunca por
+uma página que empilha tudo:
 
-### 1. Fechar a auditoria mobile fora da tabela
+- **conteúdo da formação** — editar vídeo, publicar, revisar o que está no ar;
+- **acompanhamento de estudo** — ver quem começou, travou, concluiu e precisa de
+  empurrão;
+- **trilhas e prontidão** — ligar função, checklist, aula e primeira ferramenta.
 
-O painel nao depende mais de arrastar para o lado. O que sobra da frente:
+Isso significa dar ao estudo sua própria arquitetura de operação: uma área que
+pode abrir outras seções por abas ou pela lateral, mas não continuar como uma
+única tela longa de edição.
 
-- abrir as telas **num aparelho de verdade** e confirmar que nao sobrou rolagem
-  lateral em nenhuma tela de uso cotidiano — o que existe hoje e leitura de
-  regra CSS, e regra CSS nao e medicao;
-- revisar **modais longos**, para garantir leitura e acao sem viewport presa;
-- revisar **filtros e barras de busca**, para evitar quebra ruim de botao ao
-  lado de campo;
-- conferir os agrupamentos de acao que ficaram fora de tabela — Fatos e
-  Producao, onde o rigor de estado visual ainda nao foi espalhado.
+#### 4. O menu lateral deve nomear as rotinas que ja viraram mesa propria
 
-Saida esperada:
+O painel já resolveu o problema difícil: a navegação mora em um só lugar. Agora
+precisa usar essa vantagem.
 
-- um painel que se usa inteiro no celular sem "puxar pro lado para descobrir" o
-  resto da informacao. **A parte que dependia de tabela ja esta.**
+As próximas promoções naturais para a lateral são:
 
-### 2. Testes de navegador, se e quando
+- relatórios e leituras que já têm cadência própria, como “De onde vêm”;
+- mesas que já deixaram de ser detalhe de outra área, como listas de candidatos;
+- frentes do estudo que já exigem acompanhamento contínuo, e não só edição.
 
-So se a decisao sobre a dependencia mudar. O que sobrou sem cobertura e o foco
-depois da troca de passo e o erro de rede dentro do DOM.
+Não é para explodir o menu sem critério. É para escolher, caso a caso, entre
+aba e lateral para evitar que trabalho recorrente continue preso em telas longas
+demais.
 
-### 3. Segunda passada em home, programacao e aulas
+## Plano por eixo
 
-As tres telas publicas que ainda nao passaram pela divisao que a inscricao e a
-presenca ja tiveram.
+## 1. Estudo
 
-Antes disso, vale uma checagem curta da presença já redesenhada, para decidir se
-o hero/banner entrou como melhoria real ou só como peso visual.
+### Meta
 
-### 4. P2 de experiencia de campanha
+Reduzir o tempo entre “foi aprovado” e “já consegue operar uma função real”.
 
-- modo de campo para recepcao e contextos de uso em pe;
-- "proximo passo" por pessoa, guiado por funcao, area e formacao.
+### O que construir
 
-## Arquivos grandes que continuam grandes, e por que
+#### 1.1 Trilha mínima por função
 
-| Arquivo | Linhas | Leitura correta |
-| --- | ---: | --- |
-| `sessao.php` | 1184 | nucleo de sessao, permissao e modelo. Nao e o problema das telas monoliticas |
-| `aulas-conteudo.php` | 1095 | e conteudo, nao tela operacional |
-| `layout.php` | 975 | cresceu com busca, rascunho e helpers; candidato a corte por peca, sem urgencia |
-| `eventos-comum.php` | 856 | dominio rico e coeso; densidade, nao mistura de POST com HTML |
-| `agora.php` | 718 | fonte unica de fila e panorama; mesmo caso |
+Cada função precisa ter uma resposta objetiva para:
 
-## Regra de ouro para a proxima fase
+- qual é a primeira aula obrigatória;
+- qual é a primeira checklist obrigatória;
+- qual é a primeira ferramenta do painel que a pessoa precisa usar.
 
-Antes de inventar coisa nova, fechar o que ja esta parcialmente resolvido.
+Saída esperada:
 
-O gargalo ja nao e "como organizar", nem "como terminar sem reabrir risco", nem
-"a lista de trabalho nao cabe no telefone": os cortes sao provados por comparacao
-de saida, as regras estao presas por teste de acao, e a tabela do painel agora
-vira cartao por padrao — com teste que pega a proxima que nascer horizontal.
+- o sistema deixa de formar genericamente e passa a formar para entrada em ação.
 
-**O que sobra e o que nenhum teste toma no lugar de alguem**: abrir as telas num
-aparelho e olhar. A auditoria mobile fechou a parte que se prova lendo codigo; a
-que falta se prova com o telefone na mao.
+#### 1.2 Próximo passo individual de estudo
+
+O painel já precisa mostrar, por pessoa:
+
+- última aula feita;
+- próxima rápida recomendada;
+- se já pode operar;
+- se ainda falta checklist, presença ou prática.
+
+Saída esperada:
+
+- a formação para de ser catálogo e vira percurso.
+
+#### 1.3 Estado de prontidão
+
+Além de “fez aula”, o sistema precisa distinguir:
+
+- estudando;
+- pronto para acompanhar;
+- pronto para executar com supervisão;
+- pronto para tocar sozinho.
+
+Saída esperada:
+
+- coordenação deixa de decidir isso só por memória ou impressão de grupo.
+
+#### 1.4 Ponte estudo → ferramenta
+
+Cada pessoa aprovada deveria chegar no painel com:
+
+- convite do Dia 0;
+- trilha inicial por função;
+- link direto para a primeira ferramenta que faz sentido para ela.
+
+Saída esperada:
+
+- estudo e ferramenta deixam de competir; um passa a empurrar o outro.
+
+### Métricas mínimas de estudo
+
+- aprovadas que abriram o Dia 0;
+- aprovadas que fizeram a primeira rápida;
+- pessoas que concluíram a trilha mínima da função;
+- tempo médio entre aprovação e primeira ação real no painel;
+- pessoas que começaram a estudar e travaram por mais de 7 dias.
+
+## 2. Crescimento
+
+### Meta
+
+Medir e aumentar a entrada de gente que não só se inscreve, mas milita.
+
+### O que construir
+
+#### 2.1 Relatório de origem em modo de decisão
+
+A aba “De onde vêm” já mede bem o funil. O próximo passo é transformar isso em
+ferramenta de decisão da coordenação.
+
+Ela precisa responder:
+
+- quem traz volume;
+- quem traz conversão;
+- quem traz presença recorrente;
+- que tipo de origem vale repetir;
+- que tipo de origem vale parar de empurrar.
+
+Saída esperada:
+
+- crescimento deixa de ser discussão abstrata e vira rotina de leitura semanal.
+
+#### 2.2 Conversão por encontro
+
+Além de origem, o sistema precisa medir encontro como máquina de crescimento:
+
+- quantos confirmaram;
+- quantos compareceram;
+- quantos se inscreveram depois;
+- quantos foram aprovados depois;
+- quantos realmente militaram depois.
+
+Saída esperada:
+
+- encontro deixa de ser só evento e vira degrau do funil.
+
+#### 2.3 Crescimento regional
+
+O agrupamento por cidade e bairro já existe. O próximo passo é transformá-lo em
+leitura de expansão:
+
+- onde já há massa para núcleo;
+- onde há só gente isolada;
+- onde um encontro deveria ser presencial;
+- onde um mutirão digital já não basta.
+
+Saída esperada:
+
+- crescimento deixa de ser só online e vira territorial.
+
+#### 2.4 Reativação
+
+O sistema já conhece gente que:
+
+- se inscreveu e esfriou;
+- confirmou e faltou;
+- compareceu e sumiu;
+- estudou e parou.
+
+Precisa transformar isso em lista operacional de reativação.
+
+Saída esperada:
+
+- parte da base volta a crescer sem depender só de gente nova.
+
+### Métricas mínimas de crescimento
+
+- chegaram;
+- aprovadas;
+- militaram;
+- militaram de novo;
+- assumiram função;
+- viraram recrutador de outra pessoa.
+
+## 3. Estudo e crescimento juntos
+
+### Meta
+
+Parar de tratar crescimento e formação como áreas separadas.
+
+### O que construir
+
+#### 3.1 Da presença para a formação
+
+Quem compareceu e ainda não é do movimento já recebe o convite de entrada. O
+próximo passo é garantir o encadeamento inteiro:
+
+- encontro;
+- inscrição;
+- aprovação;
+- Dia 0;
+- primeira função;
+- primeira tarefa.
+
+#### 3.2 Da formação para a contribuição
+
+Fazer aula não pode terminar em “estudou”. Deve terminar em:
+
+- abriu uma ferramenta;
+- executou uma peça da função;
+- entrou no ciclo de operação da área.
+
+#### 3.3 Da contribuição para multiplicação
+
+Quem já opera precisa ter meios de crescer a base:
+
+- levar gente para encontro;
+- compartilhar por origem atribuída;
+- puxar mais gente para a função.
+
+Saída esperada:
+
+- o sistema passa a produzir militantes que também expandem o próprio sistema.
+
+## 4. UX como motor de estudo e crescimento
+
+### Meta
+
+Tirar atrito das etapas que mais impactam entrada, ação e retorno.
+
+### Prioridades de UX
+
+#### 4.1 Painel mobile em uso real
+
+A parte estrutural da auditoria mobile já avançou muito. O que falta agora é
+validar uso real em aparelho:
+
+- modais longos;
+- filtros e busca;
+- listas de trabalho em fluxo corrido;
+- clareza de ação no polegar.
+
+#### 4.2 Fluxo público de presença
+
+O hero/banner e os cards novos de `/presenca` já existem, mas ainda precisam de
+validação de uso:
+
+- se melhoram contexto ou só empurram o formulário;
+- se distinguem bem `confirmacao` e `chegada`;
+- se continuam bons em conexão ruim e tela pequena.
+
+#### 4.3 Segunda passada do front público
+
+As maiores pendências públicas hoje continuam em:
+
+- home;
+- programação;
+- aulas.
+
+O foco aqui não é só aparência. É clareza de percurso:
+
+- entrar;
+- entender;
+- estudar;
+- agir.
+
+## Ritmo de execução
+
+## 0 a 30 dias
+
+- revisar cada uso atual de abas com a régua “recorte local x rotina própria”; 
+- ~~decidir em encontros o que continua em aba~~ — **feito**: as duas listas
+  ficaram na mesma tela, com teto na dos realizados;
+- ~~separar a mesa de fatos do fluxo de cadastrar fato novo~~ — **feito**: fila,
+  trazer e decididos viraram três abas, e a tela abre na fila;
+- fazer o primeiro corte da frente de estudo com seções claras de conteúdo,
+  acompanhamento e prontidão, sem concentrar tudo numa única tela;
+- transformar estudo e crescimento em métricas visíveis no painel;
+- ~~definir trilha mínima por função~~ — **feito**: `trilhas.php` liga função a
+  aula, checklist e primeira ferramenta, e o hub mostra a da pessoa;
+- ~~fazer a agenda seguir a data atual~~ — **feito**: a semana corrente virou
+  fonte única (PHP + TS), o período da capa se calcula sozinho quando o campo
+  está vazio, e /programacao abre na semana com Hoje · Esta semana · Tudo;
+- validar a presença redesenhada em aparelho real;
+- fechar leitura operacional da aba de origem;
+- mapear reativação básica por estado da pessoa.
+
+## 30 a 60 dias
+
+- subir para a lateral as primeiras rotinas que já saíram do tamanho de aba;
+- dar ao estudo um lugar próprio de acompanhamento, separado da edição de vídeo;
+- decidir se “Listas” de candidatos e “De onde vêm” já viram destinos próprios;
+- painel de estudo por pessoa e por função;
+- leitura de conversão por encontro;
+- lista operacional de quem travou entre aprovação e primeira ação;
+- leitura territorial por cidade e bairro.
+
+## 60 a 90 dias
+
+- consolidar a nova arquitetura operacional do painel com menu lateral mais
+  fiel às mesas reais de trabalho;
+- prontidão por função;
+- ponte automatizada entre formação e primeira ferramenta;
+- reativação por cohort;
+- coordenação semanal baseada em estudo e crescimento, não só em fila do dia.
+
+## O que nao deve liderar a proxima fase
+
+Nao sao frentes descartadas. So deixaram de ser o eixo principal.
+
+- refatoração estrutural sem ganho claro em estudo ou crescimento;
+- promoção de aba para menu sem rotina real por trás dela;
+- documentação além do necessário;
+- melhoria visual sem impacto em entrada, leitura ou ação;
+- métrica nova que não leve a decisão operacional.
+
+## O que continua como suporte
+
+- testes continuam obrigatórios para proteger o que já existe;
+- contratos PHP ↔ TS continuam críticos;
+- mobile-first continua disciplina de produto, sobretudo no painel;
+- arquivos centrais grandes (`sessao.php`, `layout.php`, `agora.php`, `eventos-comum.php`) seguem pedindo cuidado, mas não precisam liderar o roadmap.
+
+## Perguntas que o produto precisa conseguir responder ao fim desta fase
+
+- quem entrou esta semana e ainda não começou a estudar?
+- quem estudou, mas ainda não assumiu função?
+- que encontro mais gera base ativa, e não só inscrição?
+- que origem mais converte em gente que milita?
+- em que cidade já existe massa suficiente para coordenação local?
+- que função mais perde gente entre aprender e fazer?
+- quem do time já virou multiplicador de gente nova?
+
+## Regra de ouro
+
+O crescimento certo não é o que enche formulário. É o que gera militância que
+volta, aprende, faz e traz mais gente.
+
+O estudo certo não é o que soma aula concluída. É o que coloca mais gente em
+condição real de operar uma função.
+
+E a arquitetura certa é a que deixa esse caminho visível, nomeado e usável no
+painel, escolhendo bem entre aba e menu lateral, e nunca empurrando trabalho
+recorrente para um scroll gigante.
+
+O plano de evolução da ferramenta, daqui para frente, deve ser medido por essas
+duas respostas.

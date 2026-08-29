@@ -193,3 +193,35 @@ describe("ação: enviar fato novo", () => {
     assert.equal(novo.autorId, ADMIN, "sem autor não dá para aplicar 'quem traz não checa'");
   });
 });
+
+describe("ação: a volta leva a aba junto da âncora", () => {
+  /**
+   * A tela virou três abas — fila, trazer e decididos — e cada âncora pertence
+   * a uma delas. Sem a aba na URL o `#trazer` aponta para um `<fieldset>` que a
+   * fila não desenha: o navegador pousa no topo da tela errada, e no caso do
+   * erro de formulário a pessoa perde de vista o que acabou de digitar.
+   */
+  test("erro ao trazer volta para a aba de trazer, com o que foi digitado", async () => {
+    const hoje = new Date().toISOString().slice(0, 10);
+    const r = await painel.postar("fatos", {
+      acao: "enviar",
+      oQue: "Ponte interditada sem aviso em Maracanaú",
+      quem: "",
+      fonteUrl: "https://diariooficial.ce.gov.br/ponte",
+      fonteData: hoje,
+    });
+
+    assert.equal(r.location, "/painel/fatos.php?aba=trazer#trazer");
+    assert.match(
+      r.html,
+      /Ponte interditada sem aviso em Maracanaú/,
+      "o rascunho voltou para uma aba onde o formulário nem está desenhado",
+    );
+  });
+
+  test("decidir volta para a fila, que é de onde a decisão saiu", async () => {
+    const r = await painel.postar("fatos", { acao: "aprovar", id: FATO });
+
+    assert.equal(r.location, "/painel/fatos.php?aba=fila#fila");
+  });
+});

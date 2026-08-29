@@ -5,8 +5,9 @@ declare(strict_types=1);
  * A FILA DA CHECAGEM e a porta de entrada do Olheiro.
  *
  * As duas moram juntas porque são as duas pontas do mesmo movimento: alguém
- * traz, alguém confere. A fila vem primeiro na tela e neste arquivo — a meta do
- * manual é que **nada durma sem status**, e o que está esperando decisão pesa
+ * traz, alguém confere. Na tela elas viraram duas abas — são ritmos diferentes
+ * do dia —, mas a fila vem primeiro nas duas, na barra e neste arquivo: a meta
+ * do manual é que **nada durma sem status**, e o que está esperando decisão pesa
  * mais que o próximo fato a entrar.
  *
  * A fila é ordenada do MAIS ANTIGO para o mais novo, ao contrário de todas as
@@ -101,7 +102,11 @@ function bloco_fila(array $fila, array $eu, string $buscaFa, callable $quando): 
                  mesmo motivo do bloco acima, quem não pode nem vê os botões. */ ?>
         <?php if (posso_mexer($f, $eu)): ?>
           <div class="acoes" style="margin:0 0 12px">
-            <?php botao_modal('corrigir-fato', 'Corrigir a ficha', 'editar=' . urlencode($f['id']) . '#fila', 'btn btn-mini'); ?>
+            <?php /* O `aba=fila` no link não é enfeite: `botao_modal()` monta a URL do
+                     zero, e sem ele a correção abriria numa tela recém-recarregada
+                     na aba padrão — que por sorte é esta, mas deixaria de ser no
+                     dia em que o padrão mudasse. */ ?>
+            <?php botao_modal('corrigir-fato', 'Corrigir a ficha', 'aba=fila&editar=' . urlencode($f['id']) . '#fila', 'btn btn-mini'); ?>
             <form method="post" style="display:inline"
                   onsubmit="return confirm('Apagar esta ficha da fila? Ela não foi decidida, então nada aponta para ela — mas não tem desfazer.')">
               <input type="hidden" name="csrf" value="<?= h(token()) ?>">
@@ -206,10 +211,15 @@ function bloco_fila(array $fila, array $eu, string $buscaFa, callable $quando): 
 }
 
 /**
- * "Trazer um fato" — o formulário do Olheiro, sempre visível.
+ * "Trazer um fato" — a ficha do Olheiro, na aba dela.
  *
- * Não é modal: trazer fato é a ação mais frequente da tela, e ação frequente
- * não se esconde atrás de um clique.
+ * Continua sem ser modal: a ficha tem doze campos, e modal longo no celular é
+ * uma caixa que rola dentro de uma página que rola. Mas também deixou de morar
+ * embaixo da fila — trazer e decidir são dois momentos do dia, e empilhados o
+ * formulário ficava no caminho de quem abriu para zerar a fila.
+ *
+ * A aba é o clique a mais que isso custa, e é um clique nomeado na barra: quem
+ * vem trazer fato vê para onde ir antes de rolar qualquer coisa.
  */
 function bloco_trazer(array $rascunho): void
 {

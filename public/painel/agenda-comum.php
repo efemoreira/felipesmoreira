@@ -78,6 +78,13 @@ const FILTRO_PADRAO = 'medio';
 
 const DIAS = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
 
+/* Os meses por extenso e em minúscula — é assim que eles entram no período
+   ("29 de agosto a 4 de setembro"), e não como número. `strftime()` faria isso
+   sozinho, mas depende do locale instalado no servidor: na Hostinger sai em
+   inglês, e o site anunciaria "29 de August". */
+const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+               'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+
 /* As mesmas cores de src/app/programacao/tipos.ts — a prévia tem de mostrar o
    cartão como ele vai sair na página, não uma aproximação. */
 const TEMAS = [
@@ -222,6 +229,103 @@ function estado_do_evento(string $inicio, ?int $agora = null): string
         return 'futuro';
     }
     return $agora < $t + DURACAO_PADRAO_MIN * 60 ? 'agora' : 'passado';
+}
+
+/* ===================== a semana corrente ===================== */
+
+/**
+ * A SEMANA VAI DE SEGUNDA A DOMINGO, no fuso do Ceará.
+ *
+ * Espelha `semanaDe()` em `src/features/programacao/tempo.ts`. As duas existem
+ * pelo motivo de sempre: o site calcula no navegador de quem visita, e o painel
+ * calcula no PHP — e se discordarem, o encontro de domingo aparece "nesta
+ * semana" num lado e "na semana que vem" no outro.
+ *
+ * SEGUNDA, e não domingo: "a agenda desta semana" é lida por quem organiza
+ * trabalho, e o domingo à noite pertence à semana que está acabando, não à que
+ * vai começar. É também o que o ISO-8601 chama de semana.
+ *
+ * O fuso é o do Ceará, e não o do servidor, pelo mesmo motivo de
+ * `partes_de_exibicao()`: a Hostinger roda em UTC, e às 22h de domingo o
+ * servidor já está na segunda — a semana viraria seis horas cedo demais.
+ *
+ * Devolve os dois instantes em ISO: `inicio` é segunda 00:00 e `fim` é o
+ * primeiro instante da segunda seguinte. O intervalo é fechado na frente e
+ * aberto atrás (`inicio <= t < fim`), que é o que evita o domingo 23:59:59
+ * ficar de fora por um segundo.
+ */
+function semana_de(?int $agora = null): array
+{
+    $fuso = new DateTimeZone('America/Fortaleza');
+    $hoje = (new DateTimeImmutable('@' . ($agora ?? time())))->setTimezone($fuso);
+    $segunda = $hoje->modify('monday this week')->setTime(0, 0);
+
+    return [
+        'inicio' => $segunda->format('c'),
+        'fim'    => $segunda->modify('+7 days')->format('c'),
+    ];
+}
+
+/** O dia de hoje, do primeiro instante ao primeiro instante de amanhã. */
+function dia_de(?int $agora = null): array
+{
+    $fuso = new DateTimeZone('America/Fortaleza');
+    $hoje = (new DateTimeImmutable('@' . ($agora ?? time())))->setTimezone($fuso)->setTime(0, 0);
+
+    return [
+        'inicio' => $hoje->format('c'),
+        'fim'    => $hoje->modify('+1 day')->format('c'),
+    ];
+}
+
+/**
+ * O instante cai dentro do período? Vazio ou ilegível devolve false.
+ *
+ * `dentro_do_periodo`, e não `dentro_da_janela`: `fatos-comum.php` já tem uma
+ * `dentro_da_janela()`, que responde outra pergunta (se o fato está dentro das
+ * 48h do manual). Duas funções com o mesmo nome no mesmo processo é erro fatal
+ * do PHP, e as duas telas se cruzam no hub.
+ *
+ * Encontro sem horário nunca "é desta semana": afirmar isso seria inventar uma
+ * data que ninguém digitou. Ele continua existindo na lista sem recorte.
+ */
+function dentro_do_periodo(string $inicio, array $janela): bool
+{
+    if ($inicio === '') {
+        return false;
+    }
+    $t = strtotime($inicio);
+    $de = strtotime($janela['inicio']);
+    $ate = strtotime($janela['fim']);
+    if ($t === false || $de === false || $ate === false) {
+        return false;
+    }
+    return $t >= $de && $t < $ate;
+}
+
+/**
+ * "29 de agosto a 4 de setembro" — o período escrito por extenso.
+ *
+ * É o que substitui o campo digitado à mão na capa da programação, que
+ * envelhecia sozinho: quem esquecia de trocar deixava o site anunciando a
+ * semana passada. O mês só se repete quando a semana atravessa a virada.
+ */
+function periodo_da_semana(?int $agora = null): string
+{
+    $fuso = new DateTimeZone('America/Fortaleza');
+    $semana = semana_de($agora);
+    $de  = (new DateTimeImmutable($semana['inicio']))->setTimezone($fuso);
+    /* O fim da janela é a segunda seguinte; o domingo é o dia anterior a ela. */
+    $ate = (new DateTimeImmutable($semana['fim']))->setTimezone($fuso)->modify('-1 day');
+
+    $mesDe  = MESES[(int) $de->format('n') - 1];
+    $mesAte = MESES[(int) $ate->format('n') - 1];
+
+    if ($mesDe === $mesAte) {
+        return (int) $de->format('j') . ' a ' . (int) $ate->format('j') . ' de ' . $mesAte;
+    }
+    return (int) $de->format('j') . ' de ' . $mesDe
+        . ' a ' . (int) $ate->format('j') . ' de ' . $mesAte;
 }
 
 /**

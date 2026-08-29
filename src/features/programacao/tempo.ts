@@ -73,3 +73,128 @@ export function idEmDestaque(itens: ItemAgenda[], agora: Date = new Date()): str
 export function quantosPassaram(itens: ItemAgenda[], agora: Date = new Date()): number {
   return itens.filter((i) => estadoDe(i, agora) === "passado").length;
 }
+
+/* ===================== a semana corrente ===================== */
+
+/** O fuso do Ceará, escrito uma vez: o resto do arquivo pergunta a ele. */
+const FUSO = "America/Fortaleza";
+
+/**
+ * Os meses por extenso — é assim que eles entram no período ("29 de agosto a
+ * 4 de setembro"). Escritos à mão, e não por `toLocaleDateString`, porque o
+ * espelho em PHP também os escreve à mão: o `strftime()` de lá depende do
+ * locale instalado no servidor, e na Hostinger sai em inglês.
+ */
+const MESES = [
+  "janeiro", "fevereiro", "março", "abril", "maio", "junho",
+  "julho", "agosto", "setembro", "outubro", "novembro", "dezembro",
+];
+
+export interface Janela {
+  /** O primeiro instante que entra. */
+  inicio: Date;
+  /** O primeiro instante que já NÃO entra — o intervalo é `inicio <= t < fim`. */
+  fim: Date;
+}
+
+/**
+ * Que dia e que hora são no Ceará, independentemente de onde o navegador está.
+ *
+ * Quem abre a página em Lisboa às 2h da manhã ainda está lendo a agenda de
+ * Fortaleza, onde é o dia anterior. Sem isto, "hoje" seria o hoje de quem olha,
+ * e não o hoje do encontro.
+ */
+function partesNoCeara(agora: Date): { ano: number; mes: number; dia: number; semana: number } {
+  const f = new Intl.DateTimeFormat("en-CA", {
+    timeZone: FUSO,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    weekday: "short",
+  });
+  const p = Object.fromEntries(f.formatToParts(agora).map((x) => [x.type, x.value]));
+  const ordem = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  return {
+    ano: Number(p.year),
+    mes: Number(p.month),
+    dia: Number(p.day),
+    /* 0 = segunda, 6 = domingo — a mesma origem que o PHP usa. */
+    semana: ordem.indexOf(p.weekday as string),
+  };
+}
+
+/**
+ * O deslocamento do Ceará em relação ao UTC, em minutos, naquele instante.
+ *
+ * Fortaleza não tem horário de verão desde 2019, mas ler o deslocamento em vez
+ * de escrever `-03:00` é o que impede este arquivo de mentir se isso mudar.
+ */
+function minutosDoCeara(quando: Date): number {
+  const comoUtc = new Date(quando.toLocaleString("en-US", { timeZone: "UTC" }));
+  const comoCeara = new Date(quando.toLocaleString("en-US", { timeZone: FUSO }));
+  return Math.round((comoCeara.getTime() - comoUtc.getTime()) / 60_000);
+}
+
+/** Meia-noite no Ceará do dia informado, como instante absoluto. */
+function meiaNoiteNoCeara(ano: number, mes: number, dia: number, referencia: Date): Date {
+  const palpite = Date.UTC(ano, mes - 1, dia, 0, 0, 0);
+  return new Date(palpite - minutosDoCeara(referencia) * 60_000);
+}
+
+/**
+ * A SEMANA VAI DE SEGUNDA A DOMINGO, no fuso do Ceará.
+ *
+ * Espelha `semana_de()` em `public/painel/agenda-comum.php`. As duas existem
+ * porque uma roda no navegador de quem visita e a outra no PHP que monta o
+ * painel — e se discordarem, o encontro de domingo aparece "nesta semana" num
+ * lado e "na semana que vem" no outro.
+ *
+ * SEGUNDA, e não domingo: "a agenda desta semana" é lida por quem organiza
+ * trabalho, e o domingo à noite pertence à semana que está acabando.
+ */
+export function semanaDe(agora: Date = new Date()): Janela {
+  const { ano, mes, dia, semana } = partesNoCeara(agora);
+  const inicio = meiaNoiteNoCeara(ano, mes, dia - semana, agora);
+  return { inicio, fim: new Date(inicio.getTime() + 7 * 86_400_000) };
+}
+
+/** O dia de hoje no Ceará, do primeiro instante ao primeiro instante de amanhã. */
+export function diaDe(agora: Date = new Date()): Janela {
+  const { ano, mes, dia } = partesNoCeara(agora);
+  const inicio = meiaNoiteNoCeara(ano, mes, dia, agora);
+  return { inicio, fim: new Date(inicio.getTime() + 86_400_000) };
+}
+
+/**
+ * O item cai dentro da janela?
+ *
+ * Item sem horário nunca "é desta semana": afirmar isso seria inventar uma data
+ * que ninguém digitou. Ele fica fora dos recortes e só aparece em "tudo".
+ */
+export function dentroDoPeriodo(item: ItemAgenda, janela: Janela): boolean {
+  if (!item.inicio) return false;
+  const t = Date.parse(item.inicio);
+  if (Number.isNaN(t)) return false;
+  return t >= janela.inicio.getTime() && t < janela.fim.getTime();
+}
+
+/**
+ * "29 de agosto a 4 de setembro" — o período escrito por extenso.
+ *
+ * É o que substitui o campo digitado à mão na capa da programação, que
+ * envelhecia sozinho: quem esquecia de trocar deixava o site anunciando a
+ * semana passada.
+ */
+export function periodoDaSemana(agora: Date = new Date()): string {
+  const { inicio, fim } = semanaDe(agora);
+  /* O fim da janela é a segunda seguinte; o domingo é o dia anterior a ela. */
+  const domingo = new Date(fim.getTime() - 86_400_000);
+
+  const de = partesNoCeara(inicio);
+  const ate = partesNoCeara(domingo);
+
+  if (de.mes === ate.mes) {
+    return `${de.dia} a ${ate.dia} de ${MESES[ate.mes - 1]}`;
+  }
+  return `${de.dia} de ${MESES[de.mes - 1]} a ${ate.dia} de ${MESES[ate.mes - 1]}`;
+}
