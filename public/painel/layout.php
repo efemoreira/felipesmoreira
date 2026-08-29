@@ -24,7 +24,7 @@ require_once __DIR__ . '/icones.php';
 require_once __DIR__ . '/agora.php';
 
 /** Versão do CSS — muda junto com o painel.css para furar o cache do navegador. */
-const VERSAO_ESTILO = '22';
+const VERSAO_ESTILO = '23';
 
 /**
  * Os grupos da navegação, na ordem em que aparecem.

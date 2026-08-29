@@ -86,9 +86,9 @@ function tela_lista_de_encontros(bool $coordena, ?string $erro, ?string $ok): vo
       <?php endif; ?>
 
       <?php
-      /* Duas listas, uma em cima da outra: primeiro o que ainda vai acontecer,
-         depois o que já passou. Quem abre esta tela quase sempre quer a de
-         cima — e continua vendo a de baixo sem trocar de lugar. */
+      /* Duas listas, uma de cada vez. A aba escolhe qual desenhar e mostra o
+         número da outra — quem procura um encontro vê pelo contador de que lado
+         ele está, sem ter de rolar até lá. */
       /* `eventos_a_vir()`, e não `eventos_proximos()`: a lista da tela mostra o
          encontro cancelado que ainda não aconteceu, marcado como CANCELADO no
          cartão. O hub continua com `eventos_proximos()`, que exclui os
@@ -159,6 +159,21 @@ function tela_lista_de_encontros(bool $coordena, ?string $erro, ?string $ok): vo
       };
       ?>
 
+      <?php
+      /* A ABA ABRE NOS PRÓXIMOS, sempre: é o trabalho. O contador da outra
+         continua visível, e é ele que responde "existe histórico?" sem custar
+         uma rolagem.
+
+         Os contadores contam o RECORTE, e não a base: procurar "Juazeiro" com a
+         aba dizendo o total faria o zero da lista parecer defeito. */
+      $pedidaEv = (string) ($_GET['aba'] ?? '');
+      $abaEv = $pedidaEv === 'passados' ? 'passados' : 'proximos';
+      barra_abas([
+          'proximos' => ['nome' => 'Próximos',       'conta' => count($proximos)],
+          'passados' => ['nome' => 'Já aconteceram', 'conta' => count($passados)],
+      ], $abaEv, 'aba', 'Encontros');
+      ?>
+
       <?php /* Só aparece quando há o que procurar: com três encontros os
                controles ficam em cima de uma lista que já cabe na tela. */ ?>
       <?php if ($quantosTem > 6 || $recortado): ?>
@@ -170,7 +185,8 @@ function tela_lista_de_encontros(bool $coordena, ?string $erro, ?string $ok): vo
                  'opcoes' => ['hoje' => 'Hoje', 'semana' => 'Esta semana']],
             ],
             $recortado,
-            '/painel/eventos.php'
+            '/painel/eventos.php?aba=' . $abaEv,
+            ['aba' => $abaEv]
         ); ?>
       <?php endif; ?>
 
@@ -178,63 +194,64 @@ function tela_lista_de_encontros(bool $coordena, ?string $erro, ?string $ok): vo
         <p class="dica" style="margin:0 0 18px">
           Nenhum encontro <?= $quandoEv === 'hoje' ? 'hoje' : 'nesta semana' ?>
           (<?= h($quandoEv === 'hoje' ? 'hoje' : periodo_da_semana()) ?>).
-          <a href="/painel/eventos.php">Ver todos</a>.
+          <a href="/painel/eventos.php?aba=<?= h($abaEv) ?>">Ver todos</a>.
         </p>
       <?php elseif ($buscaEv !== '' && $proximos === [] && $passados === []): ?>
         <?php /* Uma vez só, e não uma por lista: quem procurou "Juazeiro" e não
                  achou nada não precisa ler o mesmo aviso duas vezes. */ ?>
-        <?php nada_encontrado($buscaEv, '/painel/eventos.php'); ?>
+        <?php nada_encontrado($buscaEv, '/painel/eventos.php?aba=' . $abaEv); ?>
       <?php endif; ?>
 
-      <fieldset id="proximos">
-        <legend>
-          Próximos (<?= count($proximos) ?>)
-        </legend>
+      <?php if ($abaEv === 'proximos'): ?>
+        <fieldset id="proximos">
+          <legend>
+            Próximos (<?= count($proximos) ?><?= $recortado ? ' de ' . $quantosTem : '' ?>)
+          </legend>
 
-        <?php if ($proximos === [] && !$recortado): ?>
-          <p class="dica" style="margin:0 0 8px">
-            Nenhum encontro marcado. O primeiro passo é <strong>Local &amp; Hora</strong>: três
-            opções avaliadas (capacidade, custo, acesso, energia, som) antes de fechar qualquer
-            coisa — e a reserva confirmada por escrito. Toque em <strong>Novo encontro</strong>
-            lá em cima e as cinco peças aparecem prontas para dividir.
-          </p>
-        <?php elseif ($proximos === []): ?>
-          <p class="dica" style="margin:0">Nenhum dos próximos casa com o recorte.</p>
-        <?php endif; ?>
+          <?php if ($proximos === [] && !$recortado): ?>
+            <p class="dica" style="margin:0 0 8px">
+              Nenhum encontro marcado. O primeiro passo é <strong>Local &amp; Hora</strong>: três
+              opções avaliadas (capacidade, custo, acesso, energia, som) antes de fechar qualquer
+              coisa — e a reserva confirmada por escrito. Toque em <strong>Novo encontro</strong>
+              lá em cima e as cinco peças aparecem prontas para dividir.
+            </p>
+          <?php elseif ($proximos === []): ?>
+            <p class="dica" style="margin:0">Nenhum dos próximos casa com o recorte.</p>
+          <?php endif; ?>
 
-        <?php foreach ($proximos as $e): ?>
-          <?php $cartao($e); ?>
-        <?php endforeach; ?>
-      </fieldset>
+          <?php foreach ($proximos as $e): ?>
+            <?php $cartao($e); ?>
+          <?php endforeach; ?>
+        </fieldset>
+      <?php else: ?>
+        <?php /* O TETO vale mesmo em aba própria: "já aconteceram" não encolhe
+                 nunca, e rolar cento e vinte encontros para achar o de abril é
+                 pior que procurar por ele. Quinze é o mesmo corte que as outras
+                 telas do painel usam para arquivo. */ ?>
+        <?php $mostrados = array_slice($passados, 0, TETO_PASSADOS); ?>
+        <fieldset id="passados">
+          <legend>
+            Já aconteceram (<?= count($passados) ?><?= $recortado ? ' de ' . $quantosTem : '' ?>)
+          </legend>
 
-      <?php /* O TETO É O QUE PERMITE EMPILHAR. A lista de baixo cresce a cada
-               encontro realizado e nunca encolhe; desenhada inteira, ela
-               empurraria os próximos para fora da tela dentro de uma campanha.
-               Quinze é o mesmo corte que as outras telas do painel usam para
-               arquivo, e o que ficou de fora se alcança pela busca. */ ?>
-      <?php $mostrados = array_slice($passados, 0, TETO_PASSADOS); ?>
-      <fieldset id="passados">
-        <legend>
-          Já aconteceram (<?= count($passados) ?><?= $recortado ? ' de ' . $quantosTem : '' ?>)
-        </legend>
+          <?php if ($passados === [] && !$recortado): ?>
+            <p class="dica" style="margin:0">Nenhum encontro aconteceu ainda.</p>
+          <?php elseif ($passados === []): ?>
+            <p class="dica" style="margin:0">Nenhum dos já realizados casa com o recorte.</p>
+          <?php endif; ?>
 
-        <?php if ($passados === [] && !$recortado): ?>
-          <p class="dica" style="margin:0">Nenhum encontro aconteceu ainda.</p>
-        <?php elseif ($passados === []): ?>
-          <p class="dica" style="margin:0">Nenhum dos já realizados casa com o recorte.</p>
-        <?php endif; ?>
+          <?php foreach ($mostrados as $e): ?>
+            <?php $cartao($e); ?>
+          <?php endforeach; ?>
 
-        <?php foreach ($mostrados as $e): ?>
-          <?php $cartao($e); ?>
-        <?php endforeach; ?>
-
-        <?php if (count($passados) > count($mostrados)): ?>
-          <p class="dica" style="margin:12px 0 0">
-            Mostrando os <?= count($mostrados) ?> mais recentes de <?= count($passados) ?>.
-            Procure pelo nome, local ou data para achar um encontro mais antigo.
-          </p>
-        <?php endif; ?>
-      </fieldset>
+          <?php if (count($passados) > count($mostrados)): ?>
+            <p class="dica" style="margin:12px 0 0">
+              Mostrando os <?= count($mostrados) ?> mais recentes de <?= count($passados) ?>.
+              Procure pelo nome, local ou data para achar um encontro mais antigo.
+            </p>
+          <?php endif; ?>
+        </fieldset>
+      <?php endif; ?>
 
       <?php if ($coordena): ?>
         <?php /* O formulário vivia solto no fim da página, embaixo de duas listas

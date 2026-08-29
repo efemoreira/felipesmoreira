@@ -139,42 +139,40 @@ Em outras palavras: aba e menu lateral são as duas soluções principais para
 segurar legibilidade quando o uso cresce. O anti-padrão é empilhar blocos
 grandes a ponto de transformar uma rotina inteira em rolagem longa.
 
-### O que decide se pode empilhar: o peso do item, não o número de listas
+### O que se empilha é o item, não a lista
 
-Esta é a distinção que faltava, e sem ela a régua acima erra nos dois sentidos.
+A aba resolve **duas listas na mesma área**: elas continuam em abas, e o
+contador de cada uma diz o que tem do outro lado sem custar uma rolagem. A
+pergunta de empilhar é outra, e acontece um nível abaixo — dentro de uma lista.
 
-**Duas listas de links empilham bem.** Um item que é uma linha — nome, data, um
-número de estado — e cuja função é *levar para outro lugar* não disputa a tela
-com o que vem depois dele. Vinte linhas de link continuam sendo uma lista que se
-varre com o olho; a rolagem é o índice, não o obstáculo. Foi o caso de
-`/painel/eventos`: “Próximos” e “Já aconteceram” são o mesmo tipo de item, e
-separá-los por aba obrigava a adivinhar de que lado estava o encontro procurado.
+**Item que é link empilha, e precisa de respiro.** Nome, data, um número de
+estado, e a função de levar para outro lugar. Vinte deles são uma lista que se
+varre com o olho, em pilha vertical, um cartão embaixo do outro com espaço entre
+eles. O erro aqui não é empilhar: é empilhar sem desenho. Em `/painel/eventos` os
+cartões eram `<a>` e `<span>` sem uma linha de CSS — inline por natureza —, e a
+lista saía como um parágrafo corrido, com o título de um encontro colado no
+preparo do anterior.
 
-**Dois blocos de conteúdo não empilham.** Um item que se LÊ inteiro — uma ficha
-aberta, um formulário de doze campos, um registro com motivo e histórico — ocupa
-tela sozinho, e o que vem embaixo dele deixa de existir para quem chegou pela
-primeira vez. Foi o caso de `/painel/fatos`: fila de decisão, ficha em branco e
-arquivo eram três coisas que se leem inteiras, e empilhadas obrigavam quem veio
-decidir a atravessar um formulário longo.
+**Bloco que é conteúdo não fica embaixo de outro.** Uma ficha com decisão, um
+formulário de doze campos, um registro com motivo e histórico: cada um ocupa
+tela sozinho, e o que vem embaixo deixa de existir para quem chegou agora. Foi o
+caso de `/painel/fatos` e de `/painel/aulas` — os dois viraram abas.
 
-A pergunta prática, então, não é “são duas listas?”. É:
+A pergunta prática, então:
 
-- **o item é um link ou é conteúdo?** Link empilha; conteúdo não.
-- **o que vem embaixo cresce sem parar?** Se cresce, empilhar exige teto — a
-  lista de baixo desenha as N mais recentes, a legenda conta todas, e a busca
-  alcança o resto.
-- **as duas coisas se leem na mesma sessão de trabalho?** Se sim, a rolagem é
-  mais barata que a troca de aba, porque a aba esconde metade da resposta.
+- **é uma lista ou um bloco?** Lista de links empilha em pilha vertical, com
+  espaço entre os itens; bloco de conteúdo vira aba.
+- **a lista cresce sem parar?** Se cresce, ganha teto — desenha as N mais
+  recentes, a legenda conta todas, e a busca alcança o resto.
 
 ### Avaliacao inicial do que hoje esta dividido em abas
 
-- **Encontros — próximos / já aconteceram:** **decidido: uma lista em cima da
-  outra, na mesma tela.** Cada item é um link de uma linha — nome, família, data,
-  local e preparo —, e não um bloco que se lê inteiro; duas listas dessas
-  empilham sem uma esconder a outra. Trocar de aba, ao contrário, obrigava a
-  adivinhar de que lado estava o encontro procurado. O preço de empilhar — a
-  lista de baixo cresce para sempre — é pago por um teto de quinze na lista dos
-  realizados, com o contador dizendo o total e a busca alcançando o resto.
+- **Encontros — próximos / já aconteceram:** **decidido: continuam em abas.** O
+  estudo era sobre promover uma delas para o menu lateral, e a resposta é não —
+  são o mesmo objeto na mesma sessão de trabalho. O que estava errado era o
+  desenho da lista dentro da aba: os cartões não tinham CSS nenhum e saíam
+  colados. A lista dos realizados ganhou teto de quinze, com o contador dizendo
+  o total e a busca alcançando o resto.
 - **Inscrições — fila / decididas / de onde vêm:** fila e decididas ainda podem
   seguir como recorte local da mesma área; “De onde vêm” já é leitura de
   coordenação e deve ser tratada como forte candidata a destino próprio.
@@ -190,18 +188,28 @@ A pergunta prática, então, não é “são duas listas?”. É:
 
 ### Mudancas essenciais ja identificadas
 
-#### 1. Encontros: as duas listas na mesma tela, com teto — FEITO
+#### 1. Encontros: as abas ficam; o que faltava era desenho de lista — FEITO
 
-`/painel/eventos` mostra “Próximos” e “Já aconteceram” uma em cima da outra. A
-aba resolvia a rolagem e criava outro custo: quem procurava um encontro tinha de
-adivinhar de que lado ele estava, e o contador da aba fechada era a única pista.
+O estudo era “aba ou destino próprio na lateral”, e a resposta é **aba**:
+“Próximos” e “Já aconteceram” são recortes do mesmo objeto, lidos na mesma
+sessão de trabalho, e o contador da aba fechada já responde “existe histórico?”
+sem custar uma rolagem.
 
-O que impede a rolagem gigante não é mais a aba, e sim o teto:
+O problema real estava um nível abaixo, dentro da lista: `.area-cartao` não tinha
+uma linha de CSS. `<a>` e `<span>` são inline, então os cartões saíam colados e a
+lista virava um parágrafo corrido — o título de um encontro encostando no preparo
+do anterior. Agora é uma pilha vertical com respiro, o mesmo desenho do cartão de
+encontro do hub, porque é a mesma coisa.
 
-- a lista de baixo desenha os quinze mais recentes, e a legenda conta todos;
-- a busca fica acima das duas e recorta as duas de uma vez — é por ela que se
-  alcança o encontro antigo que não coube no teto;
-- a de cima, que é o trabalho, vem primeiro e não depende do tamanho da de baixo.
+Três coisas foram junto:
+
+- a lista dos realizados ganhou **teto de quinze**, com a legenda contando todos
+  e a busca alcançando o resto — ela não encolhe nunca;
+- a busca e o período recortam antes de a aba escolher, e os contadores contam o
+  recorte: procurar “Juazeiro” com a aba dizendo o total faria o zero da lista
+  parecer defeito;
+- `/painel/procurar` usa a mesma classe e estava com o mesmo defeito — corrigiu
+  junto.
 
 Duas coisas foram corrigidas junto:
 

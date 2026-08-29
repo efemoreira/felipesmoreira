@@ -80,26 +80,25 @@ before(() => {
 });
 after(() => painel.fechar());
 
-describe("fumaça: as duas listas de encontros, empilhadas", () => {
-  test("as duas aparecem na mesma tela, com o contador inteiro de cada uma", () => {
+describe("fumaça: as duas listas de encontros, uma de cada vez", () => {
+  test("a aba abre nos próximos e conta as duas", () => {
     const { html, erros, status } = painel.abrir("eventos", "");
 
     assert.equal(status, 0, `o PHP saiu com ${status}:\n${erros}`);
-    /* Quatro: os três confirmados mais o cancelado, que ainda não aconteceu. */
-    assert.match(html, /Próximos \([45]\)/, "a lista dos próximos não foi desenhada");
-    /* 18 ou 19: o encontro semeado para hoje às 10h já passou se o teste rodar
-       à tarde, e então ele conta aqui em vez de nos próximos. */
-    assert.match(html, /Já aconteceram \(1[89]\)/, "a lista dos realizados não foi desenhada");
+    /* Quatro ou cinco: os três confirmados, o cancelado que ainda não
+       aconteceu, e o de hoje às 10h se o teste rodar de manhã. */
+    assert.match(html, /Próximos \([45]\)/, "o contador dos próximos não foi desenhado");
+    /* O contador da outra aba aparece mesmo sem ela estar aberta: é ele que
+       responde "existe histórico?" sem custar uma rolagem. */
+    assert.match(html, /Já aconteceram<span>1[89]<\/span>/, "a aba fechada não diz quantos tem");
 
-    /* A ordem importa: o trabalho vem antes do arquivo. */
-    assert.ok(
-      html.indexOf("Próximos (") < html.indexOf("Já aconteceram ("),
-      "o que já aconteceu ficou por cima do que ainda vai acontecer",
-    );
+    /* Abre nos próximos: o que já passou não é desenhado até alguém pedir. */
+    assert.match(html, /Encontro futuro 1/);
+    assert.doesNotMatch(html, /Encontro antigo 18/, "a aba fechada desenhou a lista dela");
   });
 
   test("o teto corta a lista de baixo, e diz que cortou", () => {
-    const { html } = painel.abrir("eventos", "");
+    const { html } = painel.abrir("eventos", "aba=passados");
 
     /* O mais recente entra; o mais antigo fica de fora — e a linha do corte
        conta a verdade inteira, que é o que faz alguém procurar em vez de rolar. */
@@ -112,15 +111,25 @@ describe("fumaça: as duas listas de encontros, empilhadas", () => {
   });
 
   test("a busca alcança o que o teto cortou, e recorta as duas listas", () => {
-    const { html } = painel.abrir("eventos", "q=Encontro+antigo+01");
+    const { html } = painel.abrir("eventos", "aba=passados&q=Encontro+antigo+01");
 
     assert.match(html, /Encontro antigo 01/, "a busca não alcança o que ficou fora do teto");
-    assert.match(html, /Próximos \(0\)/, "a busca não recortou a lista de cima");
+    assert.match(html, /Próximos<span>0<\/span>/, "a busca não recortou a aba fechada");
     assert.match(html, /Já aconteceram \(1 de 23\)/, "o contador da busca não diz de quantos");
   });
 });
 
 describe("o recorte de período segue o relógio", () => {
+  /**
+   * As duas abas juntas. O encontro semeado para hoje às 10h está nos próximos
+   * de manhã e nos realizados à tarde — e as duas coisas são certas. O que o
+   * recorte promete é que ele continua NA TELA quando se pede "hoje", e some
+   * quando se pede outra coisa; de que lado ele cai é o relógio que decide.
+   */
+  const nasDuasAbas = (quando: string) =>
+    painel.abrir("eventos", `quando=${quando}`).html +
+    painel.abrir("eventos", `aba=passados&quando=${quando}`).html;
+
   /**
    * "Hoje" e "esta semana" saem de `dia_de()` e `semana_de()`, que têm par em
    * TypeScript e são as mesmas janelas que o site usa em /programacao. O que
@@ -128,29 +137,28 @@ describe("o recorte de período segue o relógio", () => {
    * filtra nada continua desenhando a tela inteira e passa despercebido.
    */
   test("“hoje” deixa só o encontro de hoje, e o de 2099 fica de fora", () => {
-    const { html, erros } = painel.abrir("eventos", "quando=hoje");
+    const hoje = nasDuasAbas("hoje");
 
-    assert.equal(erros.trim(), "", erros);
-    assert.match(html, /Mutirão de hoje no Montese/, "o encontro de hoje sumiu do recorte de hoje");
-    assert.doesNotMatch(html, /Encontro futuro 1/, "o recorte de hoje deixou passar 2099");
-    assert.doesNotMatch(html, /Encontro antigo 18/, "o recorte de hoje deixou passar 2020");
+    assert.match(hoje, /Mutirão de hoje no Montese/, "o encontro de hoje sumiu do recorte de hoje");
+    assert.doesNotMatch(hoje, /Encontro futuro 1/, "o recorte de hoje deixou passar 2099");
+    assert.doesNotMatch(hoje, /Encontro antigo 18/, "o recorte de hoje deixou passar 2020");
   });
 
   test("“esta semana” também alcança o de hoje, e continua sem os outros", () => {
-    const { html } = painel.abrir("eventos", "quando=semana");
+    const semana = nasDuasAbas("semana");
 
-    assert.match(html, /Mutirão de hoje no Montese/, "hoje não está nesta semana");
-    assert.doesNotMatch(html, /Encontro futuro 1/);
+    assert.match(semana, /Mutirão de hoje no Montese/, "hoje não está nesta semana");
+    assert.doesNotMatch(semana, /Encontro futuro 1/);
   });
 
   test("sem recorte, a tela abre com tudo — é a mesa de trabalho", () => {
     /* O padrão importa: abrir escondendo o encontro do mês que vem esconderia
        trabalho de quem veio justamente preparar. */
-    const { html } = painel.abrir("eventos", "");
+    const tudo = nasDuasAbas("");
 
-    assert.match(html, /Mutirão de hoje no Montese/);
-    assert.match(html, /Encontro futuro 1/);
-    assert.match(html, /Encontro antigo 18/);
+    assert.match(tudo, /Mutirão de hoje no Montese/);
+    assert.match(tudo, /Encontro futuro 1/);
+    assert.match(tudo, /Encontro antigo 18/);
   });
 });
 
@@ -165,9 +173,12 @@ describe("cancelado não é sinônimo de já aconteceu", () => {
   test("o cancelado que ainda não aconteceu fica na lista de cima, marcado", () => {
     const { html } = painel.abrir("eventos", "");
 
-    const cima = html.slice(html.indexOf("Próximos ("), html.indexOf("Já aconteceram ("));
-    assert.match(cima, /Encontro cancelado do Pirambu/, "o cancelado futuro caiu na lista errada");
-    assert.match(cima, /CANCELADO/, "o cartão não diz que o encontro está cancelado");
+    assert.match(html, /Encontro cancelado do Pirambu/, "o cancelado futuro caiu na aba errada");
+    assert.match(html, /CANCELADO/, "o cartão não diz que o encontro está cancelado");
+
+    /* E não está do outro lado. */
+    const passados = painel.abrir("eventos", "aba=passados").html;
+    assert.doesNotMatch(passados, /Encontro cancelado do Pirambu/);
   });
 
   test("mas o hub não o anuncia como o próximo encontro do movimento", () => {

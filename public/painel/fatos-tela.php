@@ -10,11 +10,11 @@ declare(strict_types=1);
  * formulário longo, e quem abriu para TRAZER atravessava fila e histórico antes
  * de começar. Cada um virou aba.
  *
- * A ABA AQUI E A ROLAGEM EM `/painel/eventos` seguem a mesma régua, e não duas.
- * O que decide é o peso do item: lá cada linha é um LINK — nome e data — e
- * vinte deles continuam sendo uma lista que se varre com o olho; aqui cada item
- * é CONTEÚDO que se lê inteiro, e o que vem embaixo do primeiro deixa de existir
- * para quem chegou agora.
+ * `/painel/eventos` também é dividido em abas, e pelo mesmo motivo. O que muda
+ * lá é o item DENTRO da aba: encontro é um link de uma linha, então a lista dele
+ * é uma pilha vertical de cartões. Aqui cada item é conteúdo que se lê inteiro —
+ * uma ficha com decisão, um formulário de doze campos —, e por isso nem a aba
+ * nem a lista dentro dela podem empilhar dois assuntos.
  *
  * A tela é, antes de tudo, mesa de decisão: a aba abre na FILA, sempre. Trazer
  * é o segundo motivo de alguém abrir isto, e consultar o registro é o terceiro

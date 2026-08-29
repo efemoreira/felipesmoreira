@@ -1023,6 +1023,40 @@ input[type=file]::file-selector-button {
    "tem evento e a parte é sua" */
 .encontro .encontro-peca { margin-top:5px; color:var(--acento); }
 
+/* ---- cartão de item de lista: encontros, resultados da busca ----
+   `.area-cartao` era usada em /painel/eventos e /painel/procurar SEM UMA LINHA
+   DE CSS. `<a>` e `<span>` são inline por natureza, então os cartões saíam
+   colados um no outro e o título encostava no subtítulo: a lista de encontros
+   virava um parágrafo corrido — "PANFLETAÇO … Preparo 0/21 REUNIÃO …".
+
+   O desenho é o mesmo de `.encontro` no hub, de propósito: são a mesma coisa
+   (um link de uma linha para um encontro), e duas aparências para a mesma coisa
+   ensinariam duas. O que muda é o ícone no lugar do bloco de data. */
+.area-cartao {
+  display:flex; align-items:flex-start; gap:14px; text-decoration:none; color:var(--texto);
+  padding:14px 16px; margin:0 0 12px; min-height:44px;
+  border:3px solid var(--linha); background:var(--realce-1);
+  transition:border-color .12s ease, background .12s ease;
+}
+.area-cartao:last-child { margin-bottom:0; }
+.area-cartao:hover { border-color:var(--ouro); background:var(--realce-2); }
+.area-cartao:focus-visible { outline:3px solid var(--foco-borda); outline-offset:3px; }
+.area-cartao .area-icone {
+  flex:0 0 auto; display:grid; place-items:center;
+  width:44px; height:44px; color:var(--acento);
+  border:2px solid var(--ouro); background:var(--superficie);
+}
+.area-cartao .area-texto { flex:1 1 auto; min-width:0; }
+/* `display:block` no título é o que separa o nome do resto: sem ele os dois
+   <span> ficam na mesma linha e o cartão vira uma frase só. */
+.area-cartao .area-texto > strong {
+  display:block; font:400 17px/1.25 var(--display); color:var(--texto);
+  letter-spacing:.3px; margin:0 0 5px;
+}
+.area-cartao .area-texto > span {
+  display:block; font-size:13.5px; line-height:1.55; color:var(--texto-fraco);
+}
+
 /* ---- 4. a formação ---- */
 .formacao {
   padding:18px; border:3px solid var(--linha); background:var(--superficie);
