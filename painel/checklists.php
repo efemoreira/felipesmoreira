@@ -123,6 +123,17 @@ const CHECKLISTS = [
         ],
     ],
 
+    'follow-up' => [
+        'titulo' => 'Pronto quando',
+        'itens'  => [
+            'Cada pessoa que compareceu recebeu a mensagem do dia seguinte, pelo nome.',
+            'A mensagem de D+3 leva um conteúdo, e não só um "e aí?".',
+            'O convite de D+7 diz QUAL encontro e QUANDO — convite sem data não é convite.',
+            'Quem respondeu e voltou virou Militante na ficha, e saiu do funil.',
+            'Quem não respondeu em três tentativas ficou na lista de reativação, não no esquecimento.',
+        ],
+    ],
+
     'recepcao' => [
         'titulo' => 'Pronto quando',
         'itens'  => [

@@ -54,7 +54,7 @@ $ok   = ($recado['tipo'] ?? '') === 'ok'   ? $recado['texto'] : null;
 $aberto = achar_evento(limpar_texto($_GET['e'] ?? '', 40));
 
 if ($aberto === null) {
-    tela_lista_de_encontros($coordena, $erro, $ok);
+    tela_lista_de_encontros($coordena, $eu, $erro, $ok);
 } else {
     tela_do_encontro($aberto, $eu, $coordena, $erro, $ok);
 }

@@ -65,6 +65,11 @@ const MESA_DA_FUNCAO = [
     'divulgacao' => ['area' => 'eventos',  'acao' => 'Ver os encontros',      'destino' => ''],
     'gravacao'   => ['area' => 'eventos',  'acao' => 'Ver os encontros',      'destino' => ''],
     'recepcao'   => ['area' => 'eventos',  'acao' => 'Ver os encontros',      'destino' => ''],
+    /* O Follow-up é o único dos Encontros cuja mesa NÃO é um encontro: a fila
+       dele atravessa todos, e escolher um encontro antes de começar é a
+       pergunta errada — a mensagem de hoje é para quem venceu hoje, e não para
+       quem veio ao encontro tal. */
+    'follow-up'  => ['area' => 'eventos',  'acao' => 'Abrir o follow-up',     'destino' => '?aba=follow-up#funil'],
 ];
 
 /**

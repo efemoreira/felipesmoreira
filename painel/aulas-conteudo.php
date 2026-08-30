@@ -1012,7 +1012,13 @@ const CURRICULO = [
         'titulo'  => 'Lead sem segunda mensagem é lead perdido',
         'resumo'  => 'O funil de follow-up: D+0, D+3, D+7 e as quatro classes de contato. Cada uma recebe um tratamento diferente.',
         'minutos' => 6,
-        'funcoes' => ['recepcao'],
+        /* A função vem PRIMEIRO na lista porque é ela que a trilha mínima
+           procura: sem uma aula com o id `follow-up`, `trilha_da_funcao()` cai
+           na primeira do currículo que cita a função — esta. A Recepção
+           continua citada porque quem recebe na porta precisa saber o que vem
+           depois, mas a mesa dela é o dia do encontro, e esta é a semana
+           seguinte. */
+        'funcoes' => ['follow-up', 'recepcao'],
         'ferramenta' => '/painel/eventos',
         'blocos'  => [
             ['tipo' => 'texto', 'texto' => 'Captar contato é só metade do trabalho. Uma pessoa que veio ao encontro, deu o WhatsApp e nunca mais ouviu falar da gente custou o mesmo que uma que virou militante — e não rendeu nada.'],
@@ -1027,8 +1033,10 @@ const CURRICULO = [
                 ['Militante', 'Quer ajudar', 'Convite para a formação e uma função com dono'],
                 ['Apoiador ou liderança', 'Abre portas, tem base própria', 'Contato pessoal da coordenação, nunca mensagem de massa'],
             ]],
-            ['tipo' => 'aviso', 'texto' => 'A Recepção capta, mas o funil precisa de um dono na coordenação. Lista de contato sem dono é lista que ninguém cobra — e lead sem segunda mensagem é lead perdido.'],
-            ['tipo' => 'texto', 'texto' => 'A ferramenta de Eventos mostra quem está vencido em cada etapa do funil, para a coordenação cobrar sem precisar abrir planilha nenhuma.'],
+            ['tipo' => 'aviso', 'texto' => 'A Recepção capta, mas o funil tem dono próprio: a função Follow-up. Lista de contato sem dono é lista que ninguém cobra — e lead sem segunda mensagem é lead perdido.'],
+            ['tipo' => 'texto', 'texto' => 'A ferramenta de Eventos tem uma aba de Follow-up com todo mundo que está vencido, de todos os encontros juntos — não é preciso abrir encontro por encontro nem planilha nenhuma.'],
+            ['tipo' => 'texto', 'texto' => 'Quem não responde às três mensagens não se perde: entra na lista de reativação, em Pessoas, onde a conversa recomeça pelo motivo certo — “você confirmou e não veio”, e não um “oi” solto meses depois.'],
+            ['tipo' => 'checklist', 'id' => 'follow-up'],
         ],
     ],
 

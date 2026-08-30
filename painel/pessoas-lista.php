@@ -17,6 +17,8 @@ declare(strict_types=1);
 require_once __DIR__ . '/eventos-comum.php';  // o modelo do encontro e da presença
 require_once __DIR__ . '/inscricoes-comum.php';  // nome_funcao()
 require_once __DIR__ . '/layout.php';  // cabecalho_pagina(), barra_abas(), abrir_modal() — a moldura
+require_once __DIR__ . '/pessoas-reativar.php';  // bloco_reativacao() — o recorte por estado
+require_once __DIR__ . '/reativacao.php';  // a régua de quem esfriou
 require_once __DIR__ . '/pessoas-comum.php';  // duplicatas e a fila de entrada
 require_once __DIR__ . '/sessao.php';  // h(), limpar_texto(), pode(), combina_com() — o núcleo
 require_once __DIR__ . '/pessoas-ficha.php';
@@ -42,7 +44,10 @@ function tela_de_pessoas(?string $erro, ?string $ok, ?array $senhaNova): void
     $editando = achar_pessoa(limpar_texto($_GET['editar'] ?? '', 40));
     $busca   = limpar_texto($_GET['q'] ?? '', 60);
     $filtro  = limpar_texto($_GET['tipo'] ?? '', 20);
-    if (!isset(TIPOS_PESSOA[$filtro])) {
+    /* `reativar` não é um tipo de pessoa — é um recorte por ESTADO, e entra na
+       mesma barra porque a pergunta ("quem eu abro agora?") é a mesma. Quem
+       decide quem entra nele é `reativacao.php`. */
+    if (!isset(TIPOS_PESSOA[$filtro]) && $filtro !== 'reativar') {
         $filtro = '';
     }
     $cidadeF = cidade_valida($_GET['cidade'] ?? '');
@@ -68,7 +73,7 @@ function tela_de_pessoas(?string $erro, ?string $ok, ?array $senhaNova): void
             return $digitos !== '' && $p['telefone'] !== '' && str_contains($p['telefone'], $digitos);
         }));
     }
-    if ($filtro !== '') {
+    if ($filtro !== '' && $filtro !== 'reativar') {
         $todas = array_values(array_filter($todas, fn ($p) => $p['tipo'] === $filtro));
     }
     if ($cidadeF !== '') {
@@ -139,21 +144,33 @@ abrir_pagina('Pessoas');
   foreach (TIPOS_PESSOA as $chave => $rotulo) {
       $abasTipo[$chave] = ['nome' => $rotulo, 'conta' => $porTipo[$chave] ?? 0];
   }
-  barra_abas($abasTipo, $filtro, 'tipo', 'Tipo de pessoa');
+  /* Por último, e separada das outras pelo sentido: as de cima são "o que a
+     pessoa é", esta é "o que aconteceu com ela". */
+  $abasTipo['reativar'] = ['nome' => 'A reativar', 'conta' => quantas_para_reativar()];
+  barra_abas($abasTipo, $filtro, 'tipo', 'Recorte da base');
   ?>
 
   <?php bloco_duplicatas($duplicatas); ?>
 
   <?php if ($aberta !== null) { bloco_ficha($aberta); } ?>
+
+  <?php /* A reativação é outra lista, e não esta com um filtro: agrupa por
+           motivo, ordena por quem esfriou faz menos tempo e diz o que falar.
+           Ver `pessoas-reativar.php`. */ ?>
+  <?php if ($filtro === 'reativar'): ?>
+    <?php bloco_reativacao(pessoas_para_reativar(), $busca); ?>
+  <?php else: ?>
   <?php /* ============ a lista ============ */ ?>
   <fieldset id="lista">
     <legend>
-      <?= $filtro === '' ? 'Todas' : h(TIPOS_PESSOA[$filtro]) ?>
+      <?= $filtro === '' ? 'Todas' : h(TIPOS_PESSOA[$filtro] ?? $filtro) ?>
       (<?= count($todas) ?><?= $busca !== '' || $filtro !== '' || $cidadeF !== '' ? ' de ' . count(ler_pessoas()) : '' ?>)
     </legend>
 
     <div class="acoes" style="margin:0 0 18px">
-      <?php botao_modal('nova-pessoa', 'Cadastrar pessoa', 'novo=1' . ($filtro !== '' ? '&tipo=' . urlencode($filtro) : '')); ?>
+      <?php /* `reativar` fica de fora: ele não é tipo, e prefixá-lo no
+               cadastro criaria pessoa com um tipo que não existe. */ ?>
+      <?php botao_modal('nova-pessoa', 'Cadastrar pessoa', 'novo=1' . ($filtro !== '' && $filtro !== 'reativar' ? '&tipo=' . urlencode($filtro) : '')); ?>
     </div>
 
     <?php /* O recorte por TIPO é aba, lá em cima — é a pergunta que se faz toda
@@ -251,6 +268,7 @@ abrir_pagina('Pessoas');
       </div>
     <?php endif; ?>
   </fieldset>
+  <?php endif; ?>
 
   <?php /* ============ os modais ============
            No fim do documento, e não dentro do <fieldset>: <dialog> aninhado em
