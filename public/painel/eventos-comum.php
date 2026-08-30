@@ -896,6 +896,12 @@ function follow_ups_vencidos(?array $evento = null): array
             continue;
         }
         $l['pessoa'] = $quem[$l['pessoaId']];
+        /* O ENCONTRO VAI JUNTO. A aba de dentro de um encontro já sabe de qual
+           encontro se trata; a fila transversal não — e é o nome dele que a
+           mensagem cita ("obrigado por ter vindo ao Benfica"). Resolver isso na
+           tela custaria uma busca por linha, com a lista de encontros já
+           indexada aqui do lado. */
+        $l['evento'] = $e;
         $vencidos[] = [$l, $etapa];
     }
 

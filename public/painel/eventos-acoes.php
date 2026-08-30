@@ -50,6 +50,15 @@ function aba_da_ancora(string $ancora): string
 
 function voltar(string $eventoId = '', string $ancora = ''): void
 {
+    /* A FILA TRANSVERSAL PEDE A VOLTA PARA ELA MESMA. Quem marca a décima
+       mensagem do dia na aba Follow-up não escolheu abrir aquele encontro —
+       chegou nele pela fila. Devolver para a tela do encontro seria trocar a
+       lista de trabalho por um contexto que a pessoa não pediu, a cada clique.
+       O `volta=fila` vem escondido no formulário daquela tela, e só de lá. */
+    if (($_POST['volta'] ?? '') === 'fila') {
+        header('Location: /painel/eventos.php?aba=follow-up#funil', true, 302);
+        exit;
+    }
     $url = '/painel/eventos.php' . ($eventoId !== '' ? '?e=' . urlencode($eventoId) : '');
     if ($eventoId !== '' && $ancora !== '') {
         $url .= '&aba=' . urlencode(aba_da_ancora($ancora));

@@ -65,6 +65,7 @@ Regras:
 - `tipo` != `funcoes` != `capacidades`.
 - `pessoas` é área com dado pessoal e fica restrita à administração.
 - Telefone é chave natural de reconciliação; presença é relação, não cópia.
+- `reativacao.php` é a régua única de quem esfriou (faltou, nunca entrou, parou de estudar, sumiu). É derivada — não existe campo “reativar”, e ninguém sai da lista por ser chamado, só por voltar.
 
 ### Inscrição e presença
 

@@ -257,6 +257,28 @@
       ]
     },
     {
+      "id": "follow-up",
+      "nome": "Follow-up",
+      "grupo": "eventos",
+      "icone": "whatsapp",
+      "resumo": "Você fala com quem apareceu num encontro nos dias seguintes — e é isso que transforma visita em militante.",
+      "entrega": "Cada pessoa que compareceu recebe as três mensagens do funil: agradecimento, conteúdo e convite para o próximo.",
+      "ritmo": "Alguns minutos por dia na semana depois de cada encontro. É conversa no WhatsApp, uma pessoa por vez.",
+      "detalhe": [
+        "No dia seguinte ao encontro: agradeça pelo nome e chame para o canal do movimento.",
+        "Três dias depois: mande um conteúdo que tenha a ver com o que a pessoa foi ver.",
+        "Uma semana depois: convide para o próximo encontro, dizendo qual e quando.",
+        "Quem responde e volta vira militante na ficha — e sai do funil.",
+        "Quem esfriou entra na lista de reativação; ali a conversa recomeça pelo motivo certo."
+      ],
+      "areas": [
+        "eventos",
+        "aulas",
+        "fatos",
+        "producao"
+      ]
+    },
+    {
       "id": "onde-precisar",
       "nome": "Onde precisar",
       "grupo": "outro",

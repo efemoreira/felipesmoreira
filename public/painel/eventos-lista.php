@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/agenda-comum.php';  // semana_de(), dia_de() — o recorte de período
 require_once __DIR__ . '/eventos-comum.php';  // o modelo do encontro e da presença
+require_once __DIR__ . '/eventos-followup.php';  // bloco_follow_up() — a fila transversal
 require_once __DIR__ . '/icones.php';  // icone()
 require_once __DIR__ . '/layout.php';  // cabecalho_pagina(), barra_filtros(), abrir_modal() — a moldura
 require_once __DIR__ . '/sessao.php';  // h(), limpar_texto(), pode(), combina_com() — o núcleo
@@ -47,7 +48,7 @@ const TETO_PASSADOS = 15;
  * `$erro` e `$ok` vêm do recado guardado na sessão pela ação anterior — é o
  * outro lado do POST-redirect-GET.
  */
-function tela_lista_de_encontros(bool $coordena, ?string $erro, ?string $ok): void
+function tela_lista_de_encontros(bool $coordena, array $eu, ?string $erro, ?string $ok): void
 {
     abrir_pagina('Encontros');
     ?>
@@ -167,16 +168,34 @@ function tela_lista_de_encontros(bool $coordena, ?string $erro, ?string $ok): vo
          Os contadores contam o RECORTE, e não a base: procurar "Juazeiro" com a
          aba dizendo o total faria o zero da lista parecer defeito. */
       $pedidaEv = (string) ($_GET['aba'] ?? '');
-      $abaEv = $pedidaEv === 'passados' ? 'passados' : 'proximos';
-      barra_abas([
+      $abaEv = in_array($pedidaEv, ['passados', 'follow-up'], true) ? $pedidaEv : 'proximos';
+
+      /* O FOLLOW-UP É DA COORDENAÇÃO — quem só executa não vê telefone nem
+         responde por lead, e a aba nem existe para ele. A mesma trava da aba
+         de follow-up dentro do encontro. */
+      $vencidos = $coordena ? follow_ups_vencidos() : [];
+      if (!$coordena && $abaEv === 'follow-up') {
+          $abaEv = 'proximos';
+      }
+
+      $abasEv = [
           'proximos' => ['nome' => 'Próximos',       'conta' => count($proximos)],
           'passados' => ['nome' => 'Já aconteceram', 'conta' => count($passados)],
-      ], $abaEv, 'aba', 'Encontros');
+      ];
+      if ($coordena) {
+          /* A terceira aba não lista encontros, e sim GENTE — é a fila da
+             função Follow-up, que atravessa todos os encontros. Ela mora aqui
+             porque é da área de Encontros e usa a mesma busca; o que ela não
+             pode é continuar só dentro de um encontro, onde a pergunta "quem
+             hoje?" obrigava a abrir dez telas para ser respondida. */
+          $abasEv['follow-up'] = ['nome' => 'Follow-up', 'conta' => count($vencidos)];
+      }
+      barra_abas($abasEv, $abaEv, 'aba', 'Encontros');
       ?>
 
       <?php /* Só aparece quando há o que procurar: com três encontros os
                controles ficam em cima de uma lista que já cabe na tela. */ ?>
-      <?php if ($quantosTem > 6 || $recortado): ?>
+      <?php if ($abaEv !== 'follow-up' && ($quantosTem > 6 || $recortado)): ?>
         <?php barra_filtros(
             [
                 ['tipo' => 'busca', 'valor' => $buscaEv, 'dica' => 'nome, local, cidade ou data'],
@@ -190,7 +209,13 @@ function tela_lista_de_encontros(bool $coordena, ?string $erro, ?string $ok): vo
         ); ?>
       <?php endif; ?>
 
-      <?php if ($quandoEv !== '' && $proximos === [] && $passados === []): ?>
+      <?php if ($abaEv === 'follow-up'): ?>
+        <?php barra_busca($buscaEv, 'nome, cidade ou encontro', ['aba' => 'follow-up']); ?>
+      <?php endif; ?>
+
+      <?php if ($abaEv === 'follow-up'): ?>
+        <?php /* nada a dizer sobre listas de encontro nesta aba */ ?>
+      <?php elseif ($quandoEv !== '' && $proximos === [] && $passados === []): ?>
         <p class="dica" style="margin:0 0 18px">
           Nenhum encontro <?= $quandoEv === 'hoje' ? 'hoje' : 'nesta semana' ?>
           (<?= h($quandoEv === 'hoje' ? 'hoje' : periodo_da_semana()) ?>).
@@ -202,7 +227,9 @@ function tela_lista_de_encontros(bool $coordena, ?string $erro, ?string $ok): vo
         <?php nada_encontrado($buscaEv, '/painel/eventos.php?aba=' . $abaEv); ?>
       <?php endif; ?>
 
-      <?php if ($abaEv === 'proximos'): ?>
+      <?php if ($abaEv === 'follow-up'): ?>
+        <?php bloco_follow_up($eu, $vencidos, $buscaEv); ?>
+      <?php elseif ($abaEv === 'proximos'): ?>
         <fieldset id="proximos">
           <legend>
             Próximos (<?= count($proximos) ?><?= $recortado ? ' de ' . $quantosTem : '' ?>)

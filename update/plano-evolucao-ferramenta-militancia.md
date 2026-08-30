@@ -181,10 +181,12 @@ A pergunta prática, então:
   uso confirmar cadência própria, uma das duas sobe para a lateral.
 - **Pessoas — tipo de pessoa:** deve continuar em aba. Ali a aba é filtro
   permanente da mesma lista, e não uma área escondida.
-- **Encontro aberto — preparo / pessoas / follow-up / dados:** ainda pode ficar
-  local ao encontro enquanto seguir sendo navegação dentro do mesmo objeto.
-  O ponto de atenção é o follow-up: se virar fila transversal entre encontros,
-  deixa de ser aba e ganha lugar próprio.
+- **Encontro aberto — preparo / pessoas / follow-up / dados:** continuam locais
+  ao encontro. **O follow-up virou fila transversal, como o plano previu**, e
+  ganhou lugar próprio: uma terceira aba na lista de `/painel/eventos`, com
+  todos os vencidos de todos os encontros juntos. A aba dentro do encontro
+  continua, para quem está trabalhando naquele encontro; a diferença é a
+  pergunta — “quem hoje?” não se responde abrindo dez telas.
 
 ### Mudancas essenciais ja identificadas
 
@@ -450,6 +452,20 @@ Fazer aula não pode terminar em “estudou”. Deve terminar em:
 - executou uma peça da função;
 - entrou no ciclo de operação da área.
 
+#### 3.2b O follow-up tem dono — FEITO
+
+A função **Follow-up** entrou no `/queroajudar`, e com ela a trilha inteira: a
+aula do funil (Dia 5), o “Pronto quando” próprio e a mesa — a fila transversal
+em `/painel/eventos?aba=follow-up`.
+
+Era o buraco mais visível do catálogo: o funil D+0 · D+3 · D+7 existia desde o
+começo e não tinha responsável, e a lista de reativação nasceu na mesma
+situação. As duas são conversa com gente, uma por uma, nos dias **entre** os
+encontros — ritmo diferente do da Recepção, que trabalha no dia.
+
+O encadeamento agora fecha: encontro → presença → follow-up → militante; e quem
+não responde às três mensagens cai na reativação em vez de sumir.
+
 #### 3.3 Da contribuição para multiplicação
 
 Quem já opera precisa ter meios de crescer a base:
@@ -523,7 +539,10 @@ O foco aqui não é só aparência. É clareza de percurso:
   está vazio, e /programacao abre na semana com Hoje · Esta semana · Tudo;
 - validar a presença redesenhada em aparelho real;
 - fechar leitura operacional da aba de origem;
-- mapear reativação básica por estado da pessoa.
+- ~~mapear reativação básica por estado da pessoa~~ — **feito**: `reativacao.php`
+  classifica quem esfriou em quatro motivos derivados do que já está gravado, a
+  lista abre em `/painel/pessoas?tipo=reativar` agrupada pelo que dizer em cada
+  caso, e o hub chama para ela.
 
 ## 30 a 60 dias
 

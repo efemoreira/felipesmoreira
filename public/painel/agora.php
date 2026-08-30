@@ -130,6 +130,28 @@ function tarefas_de(array $u): array
         }
     }
 
+    /* ---------- Pessoas: quem esfriou e ainda dá para chamar ----------
+       Vem depois das filas de decisão de propósito: não é urgente, e não tem
+       prazo do manual vencendo. É a tarefa que some da semana sem ninguém
+       notar — e é justamente por isso que ela precisa estar na lista, e não
+       na memória de quem coordena. */
+    if (pode('pessoas')) {
+        require_once __DIR__ . '/reativacao.php';
+        $esfriaram = quantas_para_reativar();
+        if ($esfriaram > 0) {
+            $tarefas[] = [
+                'area'    => 'pessoas',
+                'icone'   => 'users',
+                'urgente' => false,
+                'texto'   => $esfriaram === 1
+                    ? 'Chamar de volta 1 pessoa que esfriou'
+                    : "Chamar de volta {$esfriaram} pessoas que esfriaram",
+                'porque'  => 'já disseram sim uma vez — quem já veio custa uma mensagem, e um inscrito novo custa um encontro inteiro',
+                'url'     => '/painel/pessoas.php?tipo=reativar#reativar',
+            ];
+        }
+    }
+
     /* ---------- Produção: o que está com esta pessoa ---------- */
     if (pode('producao')) {
         require_once __DIR__ . '/producao-comum.php';
@@ -201,7 +223,12 @@ function tarefas_de(array $u): array
                     : "Fazer o follow-up de {$quantos} pessoas",
                 'porque'  => mb_strtolower(ROTULO_FUNIL[$primeiraEtapa])
                     . ' — o passo venceu e lead sem segunda mensagem é lead perdido',
-                'url'     => '/painel/eventos.php?e=' . rawurlencode($primeiroLead['eventoId']) . '&aba=funil#funil',
+                /* A FILA, e não o encontro do primeiro da fila. Enquanto o
+                   follow-up só existia dentro de um encontro, mandar para lá
+                   era o melhor possível — e escondia as outras dezenove
+                   pessoas, que estavam em outros encontros. Agora há uma tela
+                   com todas. */
+                'url'     => '/painel/eventos.php?aba=follow-up#funil',
             ];
         }
 
