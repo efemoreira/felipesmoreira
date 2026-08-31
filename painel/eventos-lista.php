@@ -112,7 +112,7 @@ function tela_lista_de_encontros(bool $coordena, array $eu, ?string $erro, ?stri
       }
 
       /* O PERÍODO SEGUE O RELÓGIO, e não uma data digitada. "Esta semana" é a
-         semana corrente de segunda a domingo, no fuso do Ceará — a mesma que o
+         semana corrente de domingo a sábado, no fuso do Ceará — a mesma que o
          site usa em /programacao, e por isso vem de `semana_de()`, que tem par
          em TypeScript.
 
