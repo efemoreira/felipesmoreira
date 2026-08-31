@@ -234,35 +234,40 @@ function estado_do_evento(string $inicio, ?int $agora = null): string
 /* ===================== a semana corrente ===================== */
 
 /**
- * A SEMANA VAI DE SEGUNDA A DOMINGO, no fuso do Ceará.
+ * A SEMANA VAI DE DOMINGO A SÁBADO, no fuso do Ceará.
  *
  * Espelha `semanaDe()` em `src/features/programacao/tempo.ts`. As duas existem
  * pelo motivo de sempre: o site calcula no navegador de quem visita, e o painel
  * calcula no PHP — e se discordarem, o encontro de domingo aparece "nesta
  * semana" num lado e "na semana que vem" no outro.
  *
- * SEGUNDA, e não domingo: "a agenda desta semana" é lida por quem organiza
- * trabalho, e o domingo à noite pertence à semana que está acabando, não à que
- * vai começar. É também o que o ISO-8601 chama de semana.
+ * DOMINGO, e não segunda: a programação é lida como calendário de parede, onde
+ * a linha da semana abre no domingo. Com a semana ISO, o domingo caía no fim da
+ * lista, colado no sábado da semana anterior — e o encontro de domingo, que é
+ * o mais comum na rua, aparecia como o rabo da semana que estava acabando.
  *
  * O fuso é o do Ceará, e não o do servidor, pelo mesmo motivo de
- * `partes_de_exibicao()`: a Hostinger roda em UTC, e às 22h de domingo o
- * servidor já está na segunda — a semana viraria seis horas cedo demais.
+ * `partes_de_exibicao()`: a Hostinger roda em UTC, e às 22h de sábado o
+ * servidor já está no domingo — a semana viraria seis horas cedo demais.
  *
- * Devolve os dois instantes em ISO: `inicio` é segunda 00:00 e `fim` é o
- * primeiro instante da segunda seguinte. O intervalo é fechado na frente e
- * aberto atrás (`inicio <= t < fim`), que é o que evita o domingo 23:59:59
+ * Devolve os dois instantes em ISO: `inicio` é domingo 00:00 e `fim` é o
+ * primeiro instante do domingo seguinte. O intervalo é fechado na frente e
+ * aberto atrás (`inicio <= t < fim`), que é o que evita o sábado 23:59:59
  * ficar de fora por um segundo.
  */
 function semana_de(?int $agora = null): array
 {
     $fuso = new DateTimeZone('America/Fortaleza');
     $hoje = (new DateTimeImmutable('@' . ($agora ?? time())))->setTimezone($fuso);
-    $segunda = $hoje->modify('monday this week')->setTime(0, 0);
+    /* Contando os dias para trás, e não com `modify('sunday this week')`: para o
+       PHP a semana é a do ISO-8601 (segunda a domingo), então "sunday this week"
+       devolve o domingo do FIM da semana — seis dias à frente, e não o de trás. */
+    $diasDesdeDomingo = (int) $hoje->format('w');  // 0 = domingo
+    $domingo = $hoje->modify('-' . $diasDesdeDomingo . ' days')->setTime(0, 0);
 
     return [
-        'inicio' => $segunda->format('c'),
-        'fim'    => $segunda->modify('+7 days')->format('c'),
+        'inicio' => $domingo->format('c'),
+        'fim'    => $domingo->modify('+7 days')->format('c'),
     ];
 }
 
@@ -315,7 +320,7 @@ function periodo_da_semana(?int $agora = null): string
     $fuso = new DateTimeZone('America/Fortaleza');
     $semana = semana_de($agora);
     $de  = (new DateTimeImmutable($semana['inicio']))->setTimezone($fuso);
-    /* O fim da janela é a segunda seguinte; o domingo é o dia anterior a ela. */
+    /* O fim da janela é o domingo seguinte; o sábado é o dia anterior a ela. */
     $ate = (new DateTimeImmutable($semana['fim']))->setTimezone($fuso)->modify('-1 day');
 
     $mesDe  = MESES[(int) $de->format('n') - 1];

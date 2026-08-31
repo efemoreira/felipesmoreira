@@ -16,6 +16,7 @@ import {
   periodoDaSemana,
   quantosPassaram,
   semanaDe,
+  soFuturos,
   type Estado,
 } from "./tempo";
 
@@ -40,6 +41,21 @@ const ICONES_VALIDOS: IconName[] = [
 
 const iconeSeguro = (nome: string | undefined, padrao: IconName): IconName =>
   nome && (ICONES_VALIDOS as string[]).includes(nome) ? (nome as IconName) : padrao;
+
+/**
+ * O que a página diz quando o recorte não sobrou nada.
+ *
+ * São três silêncios diferentes, e dizer a mesma frase nos três mandaria a
+ * pessoa para um botão que também está vazio. Agora que o que já passou sai da
+ * lista, "nada marcado" quase sempre quer dizer "já aconteceu" — e é isso que
+ * precisa estar escrito, senão a página parece quebrada.
+ */
+const recadoDeVazio = (quantosPublicados: number, recorte: "hoje" | "semana" | "tudo"): string => {
+  if (quantosPublicados === 0) return "A agenda desta semana ainda está sendo fechada. Volte já já.";
+  if (recorte === "tudo") return "Nada mais marcado por enquanto. A próxima semana sai já já.";
+  if (recorte === "hoje") return "Nada mais marcado para hoje. Toque em “Esta semana” para ver o resto.";
+  return "Nada mais marcado para esta semana. Toque em “Tudo” para ver o que vem depois.";
+};
 
 const ProgramacaoClient: React.FC<{ semente: Agenda }> = ({ semente }) => {
   /* A semente vem do build (bom para SEO e para o primeiro paint). Se o painel
@@ -93,11 +109,23 @@ const ProgramacaoClient: React.FC<{ semente: Agenda }> = ({ semente }) => {
   /* ANTES DO RELÓGIO ACORDAR, MOSTRA TUDO. O HTML do build e o primeiro render
      do cliente precisam sair iguais — recortar por uma data no servidor
      congelaria a semana da compilação dentro do HTML estático. */
-  const itens = useMemo(() => {
-    if (!agora || recorte === "tudo") return todos;
-    const janela = recorte === "hoje" ? diaDe(agora) : semanaDe(agora);
-    return todos.filter((i) => dentroDoPeriodo(i, janela));
-  }, [todos, recorte, agora]);
+  const janela = useMemo(() => {
+    if (!agora || recorte === "tudo") return null;
+    return recorte === "hoje" ? diaDe(agora) : semanaDe(agora);
+  }, [recorte, agora]);
+
+  const noRecorte = useMemo(
+    () => (janela ? todos.filter((i) => dentroDoPeriodo(i, janela)) : todos),
+    [todos, janela],
+  );
+
+  /* E, dentro do recorte, SÓ O QUE AINDA VAI ACONTECER — inclusive em "tudo".
+     O evento que já passou não é agenda: quem abre a página quer saber o que
+     vem. Ele continua inteiro no painel, que é onde a coordenação o procura. */
+  const itens = useMemo(
+    () => (agora ? soFuturos(noRecorte, agora) : noRecorte),
+    [noRecorte, agora],
+  );
 
   /**
    * O cartão de evento para o buscador.
@@ -145,7 +173,9 @@ const ProgramacaoClient: React.FC<{ semente: Agenda }> = ({ semente }) => {
   }, [todos, agora]);
   const ordenados = useMemo(() => emOrdem(itens, agora ?? undefined), [itens, agora]);
   const destaque = useMemo(() => (agora ? idEmDestaque(itens, agora) : null), [itens, agora]);
-  const passados = agora ? quantosPassaram(itens, agora) : 0;
+  /* Quantos o recorte tinha e a lista deixou de fora por já terem acontecido —
+     contados na mesma janela que a lista, para o rodapé não falar de outra. */
+  const passados = agora ? quantosPassaram(noRecorte, agora) : 0;
 
   return (
     <div style={{ position: "relative", minHeight: "100dvh", background: C.night }}>
@@ -280,13 +310,7 @@ const ProgramacaoClient: React.FC<{ semente: Agenda }> = ({ semente }) => {
 
         {/* ===== Lista da programação ===== */}
         {itens.length === 0 ? (
-          <p className="ag-vazio">
-            {todos.length === 0
-              ? "A agenda desta semana ainda está sendo fechada. Volte já já."
-              : recorte === "hoje"
-                ? "Nada marcado para hoje. Toque em “Esta semana” para ver o resto."
-                : "Nada marcado para esta semana. Toque em “Tudo” para ver o que já vem depois."}
-          </p>
+          <p className="ag-vazio">{recadoDeVazio(todos.length, recorte)}</p>
         ) : (
           <ol className="ag-lista">
             {ordenados.map((item, i) => (
@@ -322,8 +346,8 @@ const ProgramacaoClient: React.FC<{ semente: Agenda }> = ({ semente }) => {
           {passados > 0 && (
             <p>
               {passados === 1
-                ? "1 evento desta lista já aconteceu e aparece mais apagado."
-                : `${passados} eventos desta lista já aconteceram e aparecem mais apagados.`}
+                ? "1 evento deste período já aconteceu e saiu da lista."
+                : `${passados} eventos deste período já aconteceram e saíram da lista.`}
             </p>
           )}
           <p>

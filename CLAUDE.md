@@ -83,7 +83,8 @@ Regras:
 
 - A programação pública vem dos encontros; `agenda.php` edita a capa e espelha o que está em `eventos`.
 - Toda conta de tempo sai de `inicio`, nunca de `data` — inclusive a de "já aconteceu", que é `evento_ja_aconteceu()`. **Cancelado não é passado:** encontro cancelado com data futura continua entre os que ainda vão acontecer, marcado.
-- A semana corrente vai de **segunda a domingo**, no fuso do Ceará. `semana_de()`/`dia_de()` (PHP) e `semanaDe()`/`diaDe()` (TS) têm de concordar — `testes/contrato/semana.test.ts` prende o par. O período da capa da programação é calculado daí quando o campo do painel está vazio.
+- A semana corrente vai de **domingo a sábado**, no fuso do Ceará. `semana_de()`/`dia_de()` (PHP) e `semanaDe()`/`diaDe()` (TS) têm de concordar — `testes/contrato/semana.test.ts` prende o par. O período da capa da programação é calculado daí quando o campo do painel está vazio.
+- **A /programacao só mostra o que ainda vai acontecer**, em todos os recortes — inclusive "tudo", que quer dizer "tudo o que vem", não o histórico. O corte é `soFuturos()`, e vale também no pôster de compartilhar e na lista "o que está no ar" do `agenda.php`. Histórico é do painel, em `/painel/eventos`.
 - `estado_do_evento()` (PHP) e `estadoDe()` (TS) têm de concordar.
 - Publicação da agenda acontece ao gravar, não por botão separado.
 

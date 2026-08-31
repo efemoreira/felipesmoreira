@@ -18,6 +18,7 @@ import {
 import { CHAPA } from "@/features/missao/data";
 import { dataPorExtenso, faseEm } from "@/lib/eleicao";
 import { C, temaDe, sigla, type Agenda, type ItemAgenda } from "./tipos";
+import { soFuturos } from "./tempo";
 
 export { canvasParaBlob };
 
@@ -125,7 +126,10 @@ export async function gerarPoster(agenda: Agenda, formato: Formato = "9:16"): Pr
   const ELITE = familia("--font-elite", "monospace");
   const BITTER = familia("--font-bitter", "serif");
 
-  const itens = agenda.programacao ?? [];
+  /* O mesmo corte da página: o cartaz é para circular no grupo hoje, e um PNG
+     com o encontro da semana passada dentro é o jeito mais rápido de a agenda
+     parecer desatualizada — ele viaja e não se corrige depois. */
+  const itens = soFuturos(agenda.programacao ?? []);
   const imagens = await Promise.all(
     itens.map((i) => (i.imagem ? carregarImagem(i.imagem) : Promise.resolve(null))),
   );

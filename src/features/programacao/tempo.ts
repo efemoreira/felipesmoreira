@@ -74,6 +74,24 @@ export function quantosPassaram(itens: ItemAgenda[], agora: Date = new Date()): 
   return itens.filter((i) => estadoDe(i, agora) === "passado").length;
 }
 
+/**
+ * O QUE JÁ ACONTECEU SAI DA LISTA.
+ *
+ * A página se chama Programação e é lida por quem quer saber o que vem. Manter
+ * o encontro de terça passada, mesmo apagado, gastava a tela com o que já não
+ * dá para fazer e fazia a agenda inteira parecer velha — no celular era um
+ * evento e meio por tela de rolagem até chegar no que ainda vale.
+ *
+ * Vale em QUALQUER recorte, inclusive "tudo": ali "tudo" quer dizer tudo o que
+ * ainda vai acontecer, e não o arquivo histórico. O histórico é do painel, em
+ * `/painel/eventos`, onde a coordenação precisa dele.
+ *
+ * Item sem horário fica: ninguém pode afirmar que ele passou.
+ */
+export function soFuturos(itens: ItemAgenda[], agora: Date = new Date()): ItemAgenda[] {
+  return itens.filter((i) => estadoDe(i, agora) !== "passado");
+}
+
 /* ===================== a semana corrente ===================== */
 
 /** O fuso do Ceará, escrito uma vez: o resto do arquivo pergunta a ele. */
@@ -113,12 +131,12 @@ function partesNoCeara(agora: Date): { ano: number; mes: number; dia: number; se
     weekday: "short",
   });
   const p = Object.fromEntries(f.formatToParts(agora).map((x) => [x.type, x.value]));
-  const ordem = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const ordem = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   return {
     ano: Number(p.year),
     mes: Number(p.month),
     dia: Number(p.day),
-    /* 0 = segunda, 6 = domingo — a mesma origem que o PHP usa. */
+    /* 0 = domingo, 6 = sábado — a mesma origem que o PHP usa. */
     semana: ordem.indexOf(p.weekday as string),
   };
 }
@@ -142,15 +160,17 @@ function meiaNoiteNoCeara(ano: number, mes: number, dia: number, referencia: Dat
 }
 
 /**
- * A SEMANA VAI DE SEGUNDA A DOMINGO, no fuso do Ceará.
+ * A SEMANA VAI DE DOMINGO A SÁBADO, no fuso do Ceará.
  *
  * Espelha `semana_de()` em `public/painel/agenda-comum.php`. As duas existem
  * porque uma roda no navegador de quem visita e a outra no PHP que monta o
  * painel — e se discordarem, o encontro de domingo aparece "nesta semana" num
  * lado e "na semana que vem" no outro.
  *
- * SEGUNDA, e não domingo: "a agenda desta semana" é lida por quem organiza
- * trabalho, e o domingo à noite pertence à semana que está acabando.
+ * DOMINGO, e não segunda: quem abre `/programacao` lê a semana como lê um
+ * calendário de parede, onde o domingo abre a linha — e a maior parte dos
+ * encontros de rua é justamente de fim de semana. Com a semana começando na
+ * segunda, o domingo caía no fim da lista, colado no sábado da semana anterior.
  */
 export function semanaDe(agora: Date = new Date()): Janela {
   const { ano, mes, dia, semana } = partesNoCeara(agora);
@@ -187,11 +207,11 @@ export function dentroDoPeriodo(item: ItemAgenda, janela: Janela): boolean {
  */
 export function periodoDaSemana(agora: Date = new Date()): string {
   const { inicio, fim } = semanaDe(agora);
-  /* O fim da janela é a segunda seguinte; o domingo é o dia anterior a ela. */
-  const domingo = new Date(fim.getTime() - 86_400_000);
+  /* O fim da janela é o domingo seguinte; o sábado é o dia anterior a ela. */
+  const sabado = new Date(fim.getTime() - 86_400_000);
 
   const de = partesNoCeara(inicio);
-  const ate = partesNoCeara(domingo);
+  const ate = partesNoCeara(sabado);
 
   if (de.mes === ate.mes) {
     return `${de.dia} a ${ate.dia} de ${MESES[ate.mes - 1]}`;

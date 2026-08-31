@@ -25,6 +25,14 @@ function tela_de_agenda(?string $aviso, ?string $sucesso, ?array $rascunho): voi
        alguém editou um encontro e a regravação falhou, a tela tem de mostrar a
        verdade (o que existe), não o retrato velho do arquivo. */
     $itens = itens_publicos();
+    /* SÓ O QUE AINDA VAI ACONTECER, como em /programacao. Esta lista se chama
+       "o que está no ar": com o encontro da semana passada aqui, ela afirmava
+       estar no ar uma coisa que o site já não desenha. O histórico é de
+       `/painel/eventos`, na aba "Já aconteceram". */
+    $itens = array_values(array_filter(
+        $itens,
+        fn (array $it) => estado_do_evento($it['inicio'] ?? '') !== 'passado'
+    ));
 
     /* Sobrou item no agenda.json que nunca virou encontro? Só então o botão de
        importar aparece — o site rodou meses com a agenda digitada aqui, e esses
@@ -89,7 +97,7 @@ function tela_de_agenda(?string $aviso, ?string $sucesso, ?array $rascunho): voi
                    segunda deixava o site anunciando a semana passada, e ninguém
                    percebia porque a página continuava desenhando. Vazio, quem
                    responde é o relógio de quem visita — a semana corrente, de
-                   segunda a domingo, no fuso do Ceará.
+                   domingo a sábado, no fuso do Ceará.
 
                    O campo continua existindo para a semana atípica: feriadão,
                    dois dias de mutirão, "de 2 a 15 de outubro". Escrever aqui é
@@ -100,7 +108,7 @@ function tela_de_agenda(?string $aviso, ?string $sucesso, ?array $rascunho): voi
           <p class="dica">
             <?php if (($agenda['periodo'] ?? '') === ''): ?>
               A página está mostrando <strong><?= h(periodo_da_semana()) ?></strong>, calculado
-              na hora em que alguém abre — na segunda ele vira sozinho.
+              na hora em que alguém abre — no domingo ele vira sozinho.
             <?php else: ?>
               Escrito à mão: a página mostra <strong><?= h($agenda['periodo']) ?></strong> até
               alguém trocar. Apague para voltar a seguir a semana corrente
@@ -130,7 +138,8 @@ function tela_de_agenda(?string $aviso, ?string $sucesso, ?array $rascunho): voi
     <fieldset>
 <legend>O que está no ar (<?= count($itens) ?>)</legend>
       <p class="dica" style="margin:0 0 14px">
-        Esta lista não se edita aqui. <strong>Cada linha é um encontro</strong> —
+        Esta lista não se edita aqui, e mostra só o que ainda vai acontecer — é o
+        mesmo corte da página. <strong>Cada linha é um encontro</strong> —
         marcado em <a href="/painel/eventos.php">Encontros</a>, com a chave “aparecer
         na programação” ligada. Era o contrário antes: a live se cadastrava aqui e o
         encontro lá, os dois com data própria, e a mesma coisa existia duas vezes com
@@ -152,7 +161,7 @@ function tela_de_agenda(?string $aviso, ?string $sucesso, ?array $rascunho): voi
 
       <?php if ($itens === []): ?>
         <p class="dica" style="margin:0">
-          Nada na programação ainda. <a href="/painel/eventos.php">Marque um encontro</a> —
+          Nada por vir na programação. <a href="/painel/eventos.php">Marque um encontro</a> —
           ele entra aqui sozinho, porque o padrão é aparecer.
         </p>
       <?php else: ?>
