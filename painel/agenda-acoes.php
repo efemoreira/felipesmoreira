@@ -39,9 +39,16 @@ function montar_agenda_do_post(array $post, array &$recados): array
         }
     }
 
+    /* O período escrito à mão vai CARIMBADO com a semana em que foi escrito:
+       é o que faz ele expirar sozinho na virada, em vez de anunciar para sempre
+       uma semana que já acabou. Campo vazio não carimba nada — quem responde
+       passa a ser o relógio. Ver `periodo_em_cartaz()`. */
+    $periodo = limpar_texto($post['periodo'] ?? '', 80);
+
     return [
         'titulo'       => limpar_texto($post['titulo'] ?? '', 80) ?: 'Agenda da Semana',
-        'periodo'      => limpar_texto($post['periodo'] ?? '', 80),
+        'periodo'      => $periodo,
+        'periodoSemana' => $periodo !== '' ? semana_de()['inicio'] : '',
         'chamada'      => limpar_texto($post['chamada'] ?? '', 200),
         'disponivelEm' => $canais,
         'programacao'  => [],  // preenchida por quem chama, com itens_publicos()

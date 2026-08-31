@@ -117,6 +117,7 @@ function agenda_atual(): array
     return [
         'titulo'       => 'Agenda da Semana',
         'periodo'      => '',
+        'periodoSemana' => '',
         'chamada'      => '',
         'disponivelEm' => CANAIS_PADRAO,
         'programacao'  => [],
@@ -315,6 +316,38 @@ function dentro_do_periodo(string $inicio, array $janela): bool
  * envelhecia sozinho: quem esquecia de trocar deixava o site anunciando a
  * semana passada. O mês só se repete quando a semana atravessa a virada.
  */
+/**
+ * O PERÍODO QUE VAI PARA A TELA — o escrito à mão, enquanto ele valer.
+ *
+ * Espelha `periodoVigente()` em `src/features/programacao/tempo.ts`; o site lê
+ * o mesmo `agenda.json` e tem de chegar à mesma frase, senão o painel promete
+ * um período e a página mostra outro.
+ *
+ * O campo existe para a semana atípica (o feriadão, o mutirão de dois dias).
+ * O que ele não sabia fazer era parar: quem escrevia "24/08 a 30/08" e não
+ * voltava na semana seguinte deixava o site anunciando uma semana encerrada, e
+ * a página continuava desenhando sem sinal de que estava mentindo.
+ *
+ * Por isso o texto vai gravado com o domingo da semana em que foi escrito.
+ * Escrever ali é dizer "ESTA semana não é uma semana" — e uma frase sobre a
+ * semana corrente expira sozinha quando ela vira. Texto sem carimbo (o que
+ * ficou gravado antes disto) conta como vencido: ninguém sabe de que semana
+ * ele falava.
+ */
+function periodo_em_cartaz(array $agenda, ?int $agora = null): string
+{
+    $escrito = trim((string) ($agenda['periodo'] ?? ''));
+    $carimbo = trim((string) ($agenda['periodoSemana'] ?? ''));
+    if ($escrito !== '' && $carimbo !== '') {
+        $quando = strtotime($carimbo);
+        $desta  = strtotime(semana_de($agora)['inicio']);
+        if ($quando !== false && $desta !== false && $quando === $desta) {
+            return $escrito;
+        }
+    }
+    return periodo_da_semana($agora);
+}
+
 function periodo_da_semana(?int $agora = null): string
 {
     $fuso = new DateTimeZone('America/Fortaleza');
