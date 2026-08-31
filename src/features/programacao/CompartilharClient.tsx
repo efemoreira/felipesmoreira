@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/icons";
 import { C, BORDA, type Agenda, sombra, sombraErguida, sombraAfundada } from "./tipos";
+import { periodoVigente } from "./tempo";
 import { FORMATOS, canvasParaBlob, gerarPoster, nomeArquivo, type Formato } from "./poster";
 
 const FONT_ALFA = "var(--font-alfa), serif";
@@ -92,7 +93,9 @@ const CompartilharClient: React.FC<{ agenda: Agenda }> = ({ agenda }) => {
         await navigator.share({
           files: [arquivo],
           title: agenda.titulo,
-          text: `${agenda.titulo}${agenda.periodo ? ` — ${agenda.periodo}` : ""} · @moreiramissao`,
+          /* O mesmo período do cartaz e da página — a legenda viaja junto com
+             a imagem, e uma semana vencida escrita ali não tem mais conserto. */
+          text: `${agenda.titulo} — ${periodoVigente(agenda)} · @moreiramissao`,
         });
         return;
       } catch {

@@ -55,6 +55,13 @@ export interface Canal {
 export interface Agenda {
   titulo: string;
   periodo?: string;
+  /**
+   * O domingo da semana em que o `periodo` foi escrito à mão, em ISO.
+   *
+   * É o prazo de validade do texto: sem ele — ou com ele apontando para uma
+   * semana que já virou — quem responde é o relógio. Ver `periodoVigente()`.
+   */
+  periodoSemana?: string;
   chamada?: string;
   disponivelEm?: Canal[];
   programacao: ItemAgenda[];

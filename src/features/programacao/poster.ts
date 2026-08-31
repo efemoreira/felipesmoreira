@@ -18,7 +18,7 @@ import {
 import { CHAPA } from "@/features/missao/data";
 import { dataPorExtenso, faseEm } from "@/lib/eleicao";
 import { C, temaDe, sigla, type Agenda, type ItemAgenda } from "./tipos";
-import { soFuturos } from "./tempo";
+import { periodoVigente, soFuturos } from "./tempo";
 
 export { canvasParaBlob };
 
@@ -130,6 +130,9 @@ export async function gerarPoster(agenda: Agenda, formato: Formato = "9:16"): Pr
      com o encontro da semana passada dentro é o jeito mais rápido de a agenda
      parecer desatualizada — ele viaja e não se corrige depois. */
   const itens = soFuturos(agenda.programacao ?? []);
+  /* O mesmo período que a página mostra: o cartaz é o que circula no grupo, e
+     é justamente nele que uma semana vencida fica sem conserto. */
+  const periodo = periodoVigente(agenda);
   const imagens = await Promise.all(
     itens.map((i) => (i.imagem ? carregarImagem(i.imagem) : Promise.resolve(null))),
   );
@@ -147,7 +150,7 @@ export async function gerarPoster(agenda: Agenda, formato: Formato = "9:16"): Pr
     52 +
     28 + // pílula kicker + respiro
     96 + // título
-    (agenda.periodo ? 60 + 22 : 0) +
+    (periodo ? 60 + 22 : 0) +
     (linhasChamada.length ? linhasChamada.length * 42 + 14 : 0) +
     38;
 
@@ -255,8 +258,8 @@ export async function gerarPoster(agenda: Agenda, formato: Formato = "9:16"): Pr
   ctx.restore();
   y += tamTitulo + 26;
 
-  if (agenda.periodo) {
-    y += pilula(ctx, agenda.periodo.toUpperCase(), cx, y, {
+  if (periodo) {
+    y += pilula(ctx, periodo.toUpperCase(), cx, y, {
       font: `26px ${ELITE}`,
       fundo: C.gold,
       cor: C.ink,

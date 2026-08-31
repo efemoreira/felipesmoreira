@@ -62,6 +62,12 @@ export function normalizarAgenda(bruto: unknown): Agenda | null {
   return {
     titulo,
     periodo: texto(o.periodo, 60) || undefined,
+    /* Só entra se for um instante legível: é com ele que se decide se o texto
+       digitado ainda vale, e carimbo ilegível tem de valer como sem carimbo. */
+    periodoSemana: (() => {
+      const v = texto(o.periodoSemana, 30);
+      return v && !Number.isNaN(Date.parse(v)) ? v : undefined;
+    })(),
     chamada: texto(o.chamada, 200) || undefined,
     disponivelEm: Array.isArray(o.disponivelEm)
       ? o.disponivelEm

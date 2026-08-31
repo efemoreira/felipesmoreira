@@ -4,6 +4,7 @@ import {
   semanaDe,
   diaDe,
   periodoDaSemana,
+  periodoVigente,
   dentroDoPeriodo,
   soFuturos,
 } from "../../src/features/programacao/tempo.ts";
@@ -82,6 +83,40 @@ describe("semana e dia: o PHP e o TypeScript leem o mesmo relógio", () => {
     MOMENTOS.forEach(([nome, iso], i) => {
       assert.equal(periodoDaSemana(new Date(iso)), doPhp[i], `${nome}: o período divergiu`);
     });
+  });
+
+  /**
+   * O período escrito à mão no painel só vale para a semana em que foi escrito.
+   * Sem isto ele nunca parava: "24/08 a 30/08" ficou no ar semanas depois, e a
+   * página desenhava normalmente — é o defeito mais visível que a agenda teve,
+   * porque é a primeira linha embaixo do título.
+   */
+  test("o período escrito à mão vence na virada da semana, dos dois lados", () => {
+    const naSemana = "2026-08-26T12:00:00-03:00";  // quarta
+    const naOutra = "2026-09-02T12:00:00-03:00";  // quarta seguinte
+    const carimbo = semanaDe(new Date(naSemana)).inicio.toISOString();
+    const capa = { periodo: "feirão de 24 a 30", periodoSemana: carimbo };
+
+    const doPhp = chamarPhp([
+      { fn: "periodo_em_cartaz", args: [capa, Math.floor(Date.parse(naSemana) / 1000)] },
+      { fn: "periodo_em_cartaz", args: [capa, Math.floor(Date.parse(naOutra) / 1000)] },
+      /* Sem carimbo — o que já estava gravado antes da regra existir. */
+      { fn: "periodo_em_cartaz", args: [{ periodo: "24/08 a 30/08" }, Math.floor(Date.parse(naSemana) / 1000)] },
+    ]) as string[];
+
+    assert.equal(periodoVigente(capa, new Date(naSemana)), "feirão de 24 a 30");
+    assert.equal(periodoVigente(capa, new Date(naOutra)), "30 de agosto a 5 de setembro");
+    assert.equal(
+      periodoVigente({ periodo: "24/08 a 30/08" }, new Date(naSemana)),
+      "23 a 29 de agosto",
+      "texto sem carimbo tem de contar como vencido: ninguém sabe de que semana ele falava",
+    );
+
+    assert.deepEqual(
+      doPhp,
+      ["feirão de 24 a 30", "30 de agosto a 5 de setembro", "23 a 29 de agosto"],
+      "o PHP e o TypeScript discordaram sobre o período em cartaz",
+    );
   });
 
   test("a semana é de domingo a sábado, e o domingo abre a que está começando", () => {

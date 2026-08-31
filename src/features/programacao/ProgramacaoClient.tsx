@@ -13,7 +13,7 @@ import {
   estadoDe,
   estaAoVivo,
   idEmDestaque,
-  periodoDaSemana,
+  periodoVigente,
   quantosPassaram,
   semanaDe,
   soFuturos,
@@ -265,12 +265,17 @@ const ProgramacaoClient: React.FC<{ semente: Agenda }> = ({ semente }) => {
               segunda deixava o site anunciando a semana passada, e a página
               continuava desenhando sem sinal de que estava errada.
 
-              O campo do painel continua ganhando quando está preenchido — é
-              para a semana atípica, o feriadão, o mutirão de duas semanas. */}
+              O campo do painel continua ganhando enquanto for da semana em que
+              foi escrito — é para a semana atípica, o feriadão, o mutirão. Na
+              virada ele vence e o relógio volta a responder. */}
           {(agenda.periodo || agora) && (
             <p className="ag-periodo">
               <Icon name="calendar" size={14} />
-              <span>{agenda.periodo || (agora ? periodoDaSemana(agora) : "")}</span>
+              {/* Antes do relógio acordar sai o que veio no arquivo, para o HTML
+                  do build e o primeiro render baterem; depois quem decide é
+                  `periodoVigente()`, que só deixa o texto escrito à mão passar
+                  enquanto ele for da semana corrente. */}
+              <span>{agora ? periodoVigente(agenda, agora) : agenda.periodo}</span>
             </p>
           )}
 

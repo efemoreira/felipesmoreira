@@ -92,27 +92,32 @@ function tela_de_agenda(?string $aviso, ?string $sucesso, ?array $rascunho): voi
         </div>
         <div class="campo">
           <label for="p">Período <span class="dica">— deixe vazio e ele se calcula</span></label>
-          <?php /* VAZIO É O ESTADO BOM, e não a falta de preenchimento. O período
-                   digitado à mão envelhece sozinho: quem esquecia de trocar na
-                   segunda deixava o site anunciando a semana passada, e ninguém
-                   percebia porque a página continuava desenhando. Vazio, quem
-                   responde é o relógio de quem visita — a semana corrente, de
-                   domingo a sábado, no fuso do Ceará.
+          <?php /* VAZIO É O ESTADO BOM, e não a falta de preenchimento. Vazio,
+                   quem responde é o relógio de quem visita — a semana corrente,
+                   de domingo a sábado, no fuso do Ceará.
 
                    O campo continua existindo para a semana atípica: feriadão,
                    dois dias de mutirão, "de 2 a 15 de outubro". Escrever aqui é
                    dizer "esta semana não é uma semana", e aí a mão ganha do
-                   relógio. */ ?>
+                   relógio — MAS SÓ ATÉ A SEMANA VIRAR. O texto vai gravado com o
+                   domingo da semana em que foi escrito, e vence junto com ela:
+                   era assim que "24/08 a 30/08" continuava no ar em setembro,
+                   sem ninguém perceber, porque a página desenhava igual. */ ?>
           <input id="p" type="text" name="periodo" value="<?= h($agenda['periodo'] ?? '') ?>"
                  maxlength="60" placeholder="<?= h(periodo_da_semana()) ?>">
           <p class="dica">
             <?php if (($agenda['periodo'] ?? '') === ''): ?>
               A página está mostrando <strong><?= h(periodo_da_semana()) ?></strong>, calculado
               na hora em que alguém abre — no domingo ele vira sozinho.
+            <?php elseif (periodo_em_cartaz($agenda) === trim((string) $agenda['periodo'])): ?>
+              Escrito à mão: a página mostra <strong><?= h($agenda['periodo']) ?></strong>
+              <strong>até este sábado</strong>. Depois disso ele vence e a página volta
+              sozinha para a semana corrente — escreva de novo se a próxima também
+              for atípica. Apague para voltar já.
             <?php else: ?>
-              Escrito à mão: a página mostra <strong><?= h($agenda['periodo']) ?></strong> até
-              alguém trocar. Apague para voltar a seguir a semana corrente
-              (<?= h(periodo_da_semana()) ?>).
+              <strong>Este texto venceu.</strong> Foi escrito para outra semana, então a
+              página já está mostrando <strong><?= h(periodo_da_semana()) ?></strong>, que é
+              a semana corrente. Apague o campo, ou escreva o período desta semana.
             <?php endif; ?>
           </p>
         </div>

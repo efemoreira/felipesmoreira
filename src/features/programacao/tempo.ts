@@ -1,4 +1,4 @@
-import type { ItemAgenda } from "./tipos";
+import type { Agenda, ItemAgenda } from "./tipos";
 
 /**
  * O que a agenda sabe sobre o relógio.
@@ -205,6 +205,38 @@ export function dentroDoPeriodo(item: ItemAgenda, janela: Janela): boolean {
  * envelhecia sozinho: quem esquecia de trocar deixava o site anunciando a
  * semana passada.
  */
+/**
+ * O PERÍODO QUE VAI PARA A TELA — o escrito à mão, enquanto ele valer.
+ *
+ * O campo do painel existe para a semana atípica ("2 a 15 de outubro", o
+ * feriadão, o mutirão de dois dias). O problema é que ele nunca sabia parar:
+ * quem escrevia "24/08 a 30/08" e não voltava na semana seguinte deixava o site
+ * anunciando uma semana que já tinha acabado, e a página continuava desenhando
+ * sem sinal nenhum de que estava mentindo. Era o defeito mais visível da
+ * agenda, porque é a primeira linha que se lê embaixo do título.
+ *
+ * Agora o texto vem carimbado com a semana em que foi escrito. Escrever ali é
+ * dizer "ESTA semana não é uma semana" — uma frase sobre a semana corrente, que
+ * naturalmente expira quando ela vira. Passada a virada, o relógio volta a
+ * responder, e o pior caso deixa de ser uma data errada para ser a data certa.
+ *
+ * Texto sem carimbo (o que já estava gravado antes disto) conta como vencido:
+ * ninguém sabe de que semana ele falava.
+ */
+export function periodoVigente(
+  agenda: Pick<Agenda, "periodo" | "periodoSemana">,
+  agora: Date = new Date(),
+): string {
+  const escrito = agenda.periodo?.trim();
+  if (escrito && agenda.periodoSemana) {
+    const carimbo = Date.parse(agenda.periodoSemana);
+    if (!Number.isNaN(carimbo) && carimbo === semanaDe(agora).inicio.getTime()) {
+      return escrito;
+    }
+  }
+  return periodoDaSemana(agora);
+}
+
 export function periodoDaSemana(agora: Date = new Date()): string {
   const { inicio, fim } = semanaDe(agora);
   /* O fim da janela é o domingo seguinte; o sábado é o dia anterior a ela. */
