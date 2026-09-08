@@ -5,7 +5,6 @@ import { Icon, IconName } from "@/components/icons";
 import { BORDA, C, FONT_ALFA, FONT_ELITE, FONT_BITTER, borda, sombra, sombraErguida, sombraAfundada } from "@/lib/theme";
 import { FaixaEleicao } from "@/components/FaixaEleicao";
 import { SigaCandidatos } from "@/features/candidatos/SigaCandidatos";
-import { GRUPO_GERAL } from "@/lib/contato";
 
 const profile = {
   name: "Felipe Moreira",
@@ -27,35 +26,32 @@ type LinkCard = {
 };
 
 /**
- * O primeiro degrau da escada: entrar no grupo, sem formulário nenhum.
- *
- * Era "manda a palavra EQUIPE" para o WhatsApp da coordenação — o degrau
- * dependia de uma pessoa estar disponível pra responder, e quem chegava de
- * madrugada esperava até o dia seguinte. Agora é o link do grupo, que resolve
- * na hora.
- *
- * É o **geral**, e não o de trabalho: quem clica aqui ainda não decidiu nada, e
- * o grupo de trabalho é de quem já tem conta no painel. Ver `@/lib/contato`.
- */
-const PRIMEIRO_DEGRAU = GRUPO_GERAL;
-
-/**
  * Um cartão em destaque, não três.
  *
  * Antes, "Quero ajudar", "Programação" e "Heróis" eram todos `accent` e
  * disputavam o mesmo clique — o efeito de destacar tudo é não destacar nada.
- * Agora o ouro é só do degrau de entrada, e a ordem desce por compromisso:
- * entrar no grupo (10 segundos) → saber quem sou → ler o plano → assumir
- * função → o resto.
+ * O ouro continua sendo de um só: o degrau de entrada.
+ *
+ * ESSE DEGRAU AGORA É "QUERO AJUDAR". Antes era o link do grupo do WhatsApp,
+ * que saía do site — a home entregava o visitante a um aplicativo antes de ele
+ * saber quem é o candidato, e quem voltava não voltava para lugar nenhum. Como
+ * primeiro degrau ele era barato demais para significar alguma coisa: entrar
+ * num grupo custa dez segundos e não é compromisso nenhum.
+ *
+ * A escada continua descendo por compromisso, só que inteira dentro do site:
+ * assumir função → saber quem sou → ler o plano → o resto. O convite do grupo
+ * continua existindo onde ele faz sentido — no fim do /plano e depois da
+ * inscrição, para quem já leu alguma coisa antes de entrar.
  */
 const links: LinkCard[] = [
   {
-    icon: "bolt",
-    title: "Entrar pro grupo",
-    subtitle: "O grupo de quem acompanha a Missão no Ceará",
+    icon: "flag",
+    title: "Quero ajudar",
+    subtitle: "Escolha sua função na militância",
     description:
-      "O primeiro passo é entrar no grupo do WhatsApp. Sem formulário, sem cadastro, sem esperar ninguém responder",
-    href: PRIMEIRO_DEGRAU,
+      "Escolha como quer ajudar o movimento no Ceará — comunicação, eventos ou onde precisar — e a coordenação entra em contato",
+    href: "/queroajudar",
+    internal: true,
     accent: true,
   },
   {
@@ -83,15 +79,6 @@ const links: LinkCard[] = [
     description:
       "O que cada função entrega e quanto tempo pede — de Olheiro a Recepção — antes de você decidir",
     href: "/funcoes",
-    internal: true,
-  },
-  {
-    icon: "flag",
-    title: "Quero ajudar",
-    subtitle: "Escolha sua função na militância",
-    description:
-      "Escolha como quer ajudar o movimento no Ceará — comunicação, eventos ou onde precisar — e a coordenação entra em contato",
-    href: "/queroajudar",
     internal: true,
   },
   {
