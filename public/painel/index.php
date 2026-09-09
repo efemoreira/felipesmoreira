@@ -39,6 +39,25 @@ $primeiroAcesso = contas() === [] && !is_file(ARQ_PESSOAS);
 /* A pessoa diz que já entrou no grupo de trabalho. Não dá para conferir do
    nosso lado — o WhatsApp não conta isso —, e não é para conferir: a marca
    serve para o painel parar de cobrar, e quem mentir só engana a si mesmo. */
+/* A pessoa diz que postou a peça da semana. Também não dá para conferir — o
+   Instagram não conta isso para a gente —, e vale a mesma razão do grupo: a
+   marca serve para o painel parar de cobrar, e o número que sobra ("14 de 30
+   postaram") é o retrato mais honesto que existe de quem está ativo. */
+if ($acao === 'postei-a-peca' && token_valido()) {
+    require_once __DIR__ . '/kit-comum.php';
+    $eu = usuario_atual();
+    if ($eu !== null) {
+        $mutirao = ler_mutirao();
+        $semana = chave_da_semana();
+        if (isset($mutirao[$semana]['escalados'][$eu['id']])) {
+            $mutirao[$semana]['escalados'][$eu['id']] = 'postou';
+            gravar_mutirao($mutirao);
+        }
+    }
+    header('Location: /painel/', true, 302);
+    exit;
+}
+
 if ($acao === 'entrei-no-grupo' && token_valido()) {
     $eu = usuario_atual();
     if ($eu !== null) {
@@ -614,6 +633,48 @@ abrir_pagina('Início');
           Quem está com selo parou em algum ponto. Uma mensagem custa menos que um
           encontro inteiro para trazer gente nova.
         </p>
+      </section>
+    <?php endif; ?>
+
+    <?php /* A PEÇA DA SEMANA — o cartão que existe para quem não tem área
+             nenhuma. A corrente da comunicação exige seis pessoas em seis
+             funções no mesmo dia; isto exige uma pessoa e cinco minutos.
+
+             O link é individual, com o `?de=` dela: é o que transforma
+             "compartilhe" em trabalho que se mede — sem ele não há como saber
+             qual militante traz gente. */ ?>
+    <?php
+      require_once __DIR__ . '/kit-comum.php';
+      $mutiraoHub = mutirao_da_semana();
+      $meuEstado = $mutiraoHub['escalados'][$u['id']] ?? '';
+    ?>
+    <?php if ($mutiraoHub['peca'] !== null && $meuEstado !== ''): ?>
+      <section class="cartao-grupo" id="mutirao">
+        <span class="cartao-grupo-icone"><?= icone('broadcast', 28) ?></span>
+        <h2>A peça desta semana</h2>
+        <p>
+          <strong><?= h($mutiraoHub['peca']['numero']) ?></strong> —
+          <?= h($mutiraoHub['peca']['frase']) ?>
+        </p>
+        <p class="dica"><?= h($mutiraoHub['peca']['fonte']) ?></p>
+        <div class="acoes">
+          <button class="btn btn-ouro" type="button"
+                  data-copiar="<?= h(mensagem_do_mutirao($mutiraoHub['peca'], $u)) ?>">
+            Copiar o texto e o link
+          </button>
+        </div>
+        <?php if ($meuEstado === 'postou'): ?>
+          <p class="dica" style="margin-top:10px"><strong>Você já postou esta semana.</strong> Obrigado.</p>
+        <?php else: ?>
+          <form method="post" class="cartao-grupo-feito">
+            <input type="hidden" name="csrf" value="<?= h(token()) ?>">
+            <input type="hidden" name="acao" value="postei-a-peca">
+            <button class="btn btn-mini" type="submit">Já postei</button>
+          </form>
+          <p class="dica">
+            O link já vai com o seu nome: é assim que a coordenação sabe quem trouxe gente.
+          </p>
+        <?php endif; ?>
       </section>
     <?php endif; ?>
 

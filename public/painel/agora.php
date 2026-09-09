@@ -269,6 +269,29 @@ function tarefas_de(array $u): array
         }
     }
 
+    /* ---------- A peça da semana ----------
+       FORA DE QUALQUER `pode()`, e este é o ponto: o mutirão existe justamente
+       para quem não tem área nenhuma. A peça já vem pronta, não depende de
+       ninguém a montante, e é o que gente aprovada esta semana consegue fazer
+       hoje — sem esperar formação, sem esperar a corrente da comunicação se
+       montar.
+
+       O link leva o `?de=` da pessoa: é o que separa "compartilhe" de trabalho
+       que se mede. */
+    require_once __DIR__ . '/kit-comum.php';
+    $mutirao = mutirao_da_semana();
+    if ($mutirao['peca'] !== null
+        && ($mutirao['escalados'][$u['id']] ?? '') === 'escalado') {
+        $tarefas[] = [
+            'area'    => 'index',
+            'icone'   => 'broadcast',
+            'urgente' => false,
+            'texto'   => 'Postar a peça da semana',
+            'porque'  => $mutirao['peca']['numero'] . ' — ' . apelido_curto($mutirao['peca']['frase'], 60),
+            'url'     => '/painel/#mutirao',
+        ];
+    }
+
     /* ---------- A escala furada — só de quem coordena ----------
        `pecas_a_resolver()` junta as três situações numa pendência só, porque em
        todas elas a peça está sem ninguém garantido e o trabalho é o mesmo: achar

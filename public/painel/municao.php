@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/layout.php';
 require_once __DIR__ . '/kit-comum.php';
+require_once __DIR__ . '/pessoas-comum.php';  // achar_pessoa() — o mutirão é gente
 exigir_area('municao');
 
 $eu = usuario_atual();
@@ -137,6 +138,58 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             avisar('erro', 'Não consegui gravar as peças.');
         }
         voltar();
+    }
+
+    /* ---- o mutirão da semana ---- */
+    if (in_array($acao, ['mutirao-peca', 'mutirao-postou'], true)) {
+        $mutirao = ler_mutirao();
+        $semana = chave_da_semana();
+        $linha = $mutirao[$semana] ?? ['peca' => '', 'escalados' => []];
+
+        if ($acao === 'mutirao-peca') {
+            $pedida = limpar_texto($_POST['peca'] ?? '', 40);
+            $existe = false;
+            foreach (ler_pecas() as $pc) {
+                $existe = $existe || ($pc['id'] === $pedida && $pc['publicada']);
+            }
+            if ($pedida !== '' && !$existe) {
+                avisar('erro', 'Essa peça não está no ar. Publique antes de escalar o mutirão.');
+                voltar('mutirao');
+            }
+            $linha['peca'] = $pedida;
+
+            /* ESCALA TODO MUNDO QUE TEM CONTA ATIVA, e não uma lista escolhida a
+               dedo. A peça já vem pronta e não depende de ninguém a montante:
+               não há por que peneirar quem pode postar. Quem não quiser, não
+               posta — e isso aparece, que é o ponto. */
+            $escalados = [];
+            foreach (ler_pessoas() as $pessoa) {
+                if ($pessoa['ativo'] && tem_conta($pessoa)) {
+                    /* Quem já postou nesta semana continua postado: trocar a
+                       peça no meio da semana não pode apagar trabalho feito. */
+                    $escalados[$pessoa['id']] = $linha['escalados'][$pessoa['id']] ?? 'escalado';
+                }
+            }
+            $linha['escalados'] = $escalados;
+            avisar('ok', $pedida === ''
+                ? 'Semana sem peça. Ninguém vai ser cobrado.'
+                : 'Peça da semana definida para ' . count($escalados) . ' pessoas.');
+        }
+
+        if ($acao === 'mutirao-postou') {
+            $quem = limpar_texto($_POST['quem'] ?? '', 40);
+            if (!isset($linha['escalados'][$quem])) {
+                avisar('erro', 'Essa pessoa não está no mutirão desta semana.');
+                voltar('mutirao');
+            }
+            $linha['escalados'][$quem] = $linha['escalados'][$quem] === 'postou' ? 'escalado' : 'postou';
+        }
+
+        $mutirao[$semana] = $linha;
+        if (!gravar_mutirao($mutirao)) {
+            avisar('erro', 'Não consegui gravar o mutirão.');
+        }
+        voltar('mutirao');
     }
 
     avisar('erro', 'Ação desconhecida.');
@@ -300,6 +353,99 @@ abrir_pagina('Munição');
   ); ?>
 
   <?php recado($erro, $ok); ?>
+
+  <?php /* ============ O MUTIRÃO DA SEMANA ============
+           Vem ANTES da lista de peças porque é o trabalho: a lista é o acervo.
+           Quem abre esta tela na segunda-feira vem escalar a semana, não
+           revisar o que já existe.
+
+           A corrente da comunicação (Olheiro → … → Acervo) só produz com os
+           seis elos vivos no mesmo dia, e só se monta se seis pessoas
+           escolherem seis funções. O mutirão é o contrário: cada um age
+           sozinho, com a peça já pronta. É o que gente nova consegue fazer na
+           semana em que entra. */ ?>
+  <?php
+    $mutirao = mutirao_da_semana();
+    $noArKit = array_values(array_filter(ler_pecas(), fn ($p) => $p['publicada']));
+    $postaram = count(array_filter($mutirao['escalados'], fn ($e) => $e === 'postou'));
+  ?>
+  <fieldset id="mutirao">
+    <legend>
+      O mutirão desta semana
+      <?php if ($mutirao['peca'] !== null): ?>
+        — <?= $postaram ?> de <?= count($mutirao['escalados']) ?> postaram
+      <?php endif; ?>
+    </legend>
+
+    <?php if ($noArKit === []): ?>
+      <p class="dica" style="margin:0">
+        Nenhuma peça no ar ainda. <strong>Crie e publique a peça da semana aqui embaixo</strong> —
+        é ela que o mutirão vai espalhar.
+      </p>
+    <?php else: ?>
+      <form method="post" class="linha g2">
+        <input type="hidden" name="csrf" value="<?= h(token()) ?>">
+        <input type="hidden" name="acao" value="mutirao-peca">
+        <div class="campo">
+          <label for="m-peca">A peça desta semana</label>
+          <select id="m-peca" name="peca">
+            <option value="">— nenhuma —</option>
+            <?php foreach ($noArKit as $pc): ?>
+              <option value="<?= h($pc['id']) ?>" <?= $mutirao['peca'] !== null && $mutirao['peca']['id'] === $pc['id'] ? 'selected' : '' ?>>
+                <?= h($pc['numero']) ?> — <?= h(mb_substr($pc['frase'], 0, 48)) ?>
+              </option>
+            <?php endforeach; ?>
+          </select>
+          <p class="dica">Escalar põe a peça no Início de todo mundo que tem conta.</p>
+        </div>
+        <div class="campo" style="justify-content:flex-end">
+          <button class="btn btn-ouro" type="submit">Escalar a semana</button>
+        </div>
+      </form>
+
+      <?php if ($mutirao['peca'] !== null): ?>
+        <?php /* A MENSAGEM DO GRUPO, sem atribuição: é o aviso de que a semana
+                 começou. A versão COM `?de=` é individual e sai no Início de
+                 cada pessoa — atribuição de grupo não atribui nada. */ ?>
+        <div class="acoes" style="margin:16px 0 0">
+          <button class="btn" type="button" data-copiar="<?= h(mensagem_do_mutirao($mutirao['peca'])) ?>">
+            Copiar o aviso para o grupo
+          </button>
+        </div>
+
+        <?php $faltam = array_keys(array_filter($mutirao['escalados'], fn ($e) => $e !== 'postou')); ?>
+        <?php if ($faltam !== []): ?>
+          <details class="decidir" style="margin-top:16px">
+            <summary class="btn">Quem ainda não postou (<?= count($faltam) ?>)</summary>
+            <div class="decidir-corpo">
+              <p class="dica" style="margin:0 0 12px">
+                O link de cada uma leva o <code>?de=</code> dela — é o que diz qual militante
+                traz gente. Sem isso, "compartilhe" não vira conta nenhuma.
+              </p>
+              <?php foreach ($faltam as $id): ?>
+                <?php $pessoa = achar_pessoa($id); ?>
+                <?php if ($pessoa === null) { continue; } ?>
+                <div class="escalado">
+                  <span class="escalado-quem"><strong><?= h($pessoa['nome']) ?></strong></span>
+                  <div class="acoes-celula">
+                    <?php if ($pessoa['telefone'] !== ''): ?>
+                      <?php links_whatsapp($pessoa['telefone'], 'Mandar a peça', mensagem_do_mutirao($mutirao['peca'], $pessoa), 'btn btn-mini'); ?>
+                    <?php endif; ?>
+                    <form method="post">
+                      <input type="hidden" name="csrf" value="<?= h(token()) ?>">
+                      <input type="hidden" name="acao" value="mutirao-postou">
+                      <input type="hidden" name="quem" value="<?= h($id) ?>">
+                      <button class="btn btn-mini" type="submit">Postou</button>
+                    </form>
+                  </div>
+                </div>
+              <?php endforeach; ?>
+            </div>
+          </details>
+        <?php endif; ?>
+      <?php endif; ?>
+    <?php endif; ?>
+  </fieldset>
 
   <fieldset id="pecas">
     <legend>As peças (<?= $noAr ?> no ar de <?= count($pecasKit) ?>)</legend>

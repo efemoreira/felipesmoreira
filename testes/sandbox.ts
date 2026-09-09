@@ -144,6 +144,7 @@ const DADOS = new Set([
   "aulas",
   "aulas-progresso",
   "kit",
+  "mutirao",
   "inscricoes-limite",
   "tentativas",
   "segredo",
@@ -533,11 +534,17 @@ require __DIR__ . '/painel/fatos-comum.php';
 require __DIR__ . '/painel/producao-comum.php';
 require __DIR__ . '/painel/candidatos-comum.php';
 require __DIR__ . '/painel/aulas-comum.php';
+require __DIR__ . '/painel/kit-comum.php';
 /* O nome do arquivo nem sempre é o nome da função: os cards do quadro moram
    em \`producao.php\` e quem os grava é \`gravar_cards()\`, e o progresso da
    formação é gravado por \`gravar_progresso()\`. O progresso é o único que não
-   é lista: ele é um mapa de pessoa para as aulas que ela concluiu. */
-$comoGrava = ['producao' => 'gravar_cards', 'aulas-progresso' => 'gravar_progresso'];
+   é lista: ele é um mapa de pessoa para as aulas que ela concluiu — e o
+   mutirão é o segundo, um mapa de semana para o que foi combinado nela. */
+$comoGrava = [
+  'producao' => 'gravar_cards',
+  'aulas-progresso' => 'gravar_progresso',
+  'kit' => 'gravar_pecas',
+];
 $fn = $comoGrava[$argv[1]] ?? ('gravar_' . str_replace('-', '_', $argv[1]));
 if (!function_exists($fn)) {
   fwrite(STDERR, "não sei gravar {$argv[1]} (procurei {$fn})\\n");
