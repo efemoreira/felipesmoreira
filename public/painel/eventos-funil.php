@@ -86,7 +86,16 @@ function desenhar_funil(array $aberto, array $eu, array $vencidos): void
               </header>
               <div class="acoes">
                 <?php if ($l['pessoa']['telefone'] !== '' && pode_ver_telefone($l, $eu)): ?>
-                  <?php links_whatsapp($l['pessoa']['telefone'], 'Abrir WhatsApp', '', 'btn btn-mini'); ?>
+                  <?php /* A MENSAGEM VAI PRONTA. Enquanto o botão abria conversa
+                           vazia, escrever do zero vinte e cinco vezes era o
+                           trabalho que não acontecia — e o funil morria no D+0:
+                           dez agradecimentos, um conteúdo, zero convites. */ ?>
+                  <?php links_whatsapp(
+                      $l['pessoa']['telefone'],
+                      ROTULO_FUNIL[$etapa],
+                      mensagem_de_funil($l['pessoa'], $aberto, $etapa),
+                      'btn btn-ouro'
+                  ); ?>
                 <?php endif; ?>
                 <form method="post" style="display:inline">
                   <input type="hidden" name="csrf" value="<?= h(token()) ?>">
@@ -94,7 +103,10 @@ function desenhar_funil(array $aberto, array $eu, array $vencidos): void
                   <input type="hidden" name="lead" value="<?= h($l['id']) ?>">
                   <input type="hidden" name="acao" value="funil">
                   <input type="hidden" name="etapa" value="<?= h($etapa) ?>">
-                  <button type="submit" class="btn btn-ouro">Marcar como feito</button>
+                  <?php /* Sem ouro: o botão de apertar agora é o de MANDAR. Marcar
+                         vem depois, e dois botões dourados na mesma linha
+                         não destacam nada. */ ?>
+              <button type="submit" class="btn">Marcar como feito</button>
                 </form>
               </div>
             </article>

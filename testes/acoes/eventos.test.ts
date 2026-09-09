@@ -2,7 +2,7 @@ import { test, describe, before, beforeEach, after } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
 import path from "node:path";
-import { montarSandbox, type Sandbox } from "../sandbox.ts";
+import { montarSandbox, ADMIN, type Sandbox } from "../sandbox.ts";
 
 /**
  * AÇÃO: o encontro — criar, marcar o checklist, tirar alguém da lista, apagar.
@@ -380,6 +380,392 @@ describe("ação: o follow-up depois do encontro", () => {
       painel.ler("presencas")[0].funil.d0,
       "",
       "o degrau não foi carimbado",
+    );
+  });
+});
+
+/**
+ * A ESCALA — quem responde por cada peça, e o que essa pessoa respondeu.
+ *
+ * `responsaveis[peça]` já existia e sozinho não era escala: era um rótulo cinza
+ * ao lado da peça, que a pessoa escalada nunca via. O que faltava era o outro
+ * lado, `aceites[peça]` — e com ele uma regra que não se vê lendo a tela:
+ *
+ * **Trocar de pessoa na peça zera a resposta da anterior.** O aceite é de quem
+ * foi convidado, não da peça. Sem isto, o "topou" de quem saiu ficava colado em
+ * quem entrou, e a coordenação via a peça resolvida sem que ninguém tivesse
+ * sido avisado — o defeito exato que a escala existe para acabar, de volta e
+ * em silêncio.
+ */
+describe("ação: a escala das cinco peças", () => {
+  /* O seed é de família `publico`, e ali a peça da porta é a CAPTAÇÃO: na rua
+     não há mesa de recepção, há gente com celular nas pontas. */
+  const PECA = "captacao";
+
+  /** O encontro do seed, com a peça já escalada e com a resposta dada. */
+  function comPecaDe(chave: string, quem: string, aceite: string) {
+    const e = painel.ler("eventos")[0];
+    painel.gravar("eventos", [{
+      ...e,
+      responsaveis: { ...e.responsaveis, [chave]: [quem] },
+      aceites: { ...e.aceites, [chave]: { [quem]: aceite } },
+      convidadoEm: { ...e.convidadoEm, [chave]: { [quem]: "2026-02-01T10:00:00-03:00" } },
+    }]);
+    return e;
+  }
+
+  test("escalar alguém grava o nome e deixa a resposta em branco", async () => {
+    const e = painel.ler("eventos")[0];
+    await painel.postar(
+      "eventos",
+      dadosDoEncontro(e, { [`resp[${PECA}][]`]: ADMIN }),
+    );
+
+    const salvo = painel.ler("eventos")[0];
+    assert.deepEqual(salvo.responsaveis[PECA], [ADMIN]);
+    /* Escolhida no `<select>` não é o mesmo que convidada: enquanto ninguém
+       mandou o convite, o silêncio é de quem coordena, não da pessoa. */
+    /* `[]`, e não `{}`: array vazio do PHP não tem como dizer se é lista ou
+       mapa, e o `var_export` grava `array()` — que chega aqui como lista. */
+    assert.deepEqual(
+      salvo.aceites[PECA],
+      [],
+      "escolher no select não pode nascer como convite já mandado",
+    );
+  });
+
+  test("trocar de pessoa na peça zera a resposta da anterior", async () => {
+    const e = comPecaDe(PECA, ADMIN, "topou");
+    await painel.postar(
+      "eventos",
+      dadosDoEncontro(e, { [`resp[${PECA}][]`]: "pes00000000teste" }),
+    );
+
+    const salvo = painel.ler("eventos")[0];
+    assert.deepEqual(salvo.responsaveis[PECA], ["pes00000000teste"]);
+    /* `[]`, e não `{}`: array vazio do PHP não tem como dizer se é lista ou
+       mapa, e o `var_export` grava `array()` — que chega aqui como lista. */
+    assert.deepEqual(
+      salvo.aceites[PECA],
+      [],
+      "o “topou” de quem saiu ficou colado em quem entrou — a peça parece resolvida e ninguém foi avisado",
+    );
+    assert.deepEqual(salvo.convidadoEm[PECA], [], "o relógio do convite é do convite, não da peça");
+  });
+
+  test("salvar o encontro sem mexer na peça preserva a resposta", async () => {
+    const e = comPecaDe(PECA, ADMIN, "topou");
+    await painel.postar(
+      "eventos",
+      dadosDoEncontro(e, { [`resp[${PECA}][]`]: ADMIN }),
+    );
+
+    /* Trocar o horário do encontro não desconvida ninguém: quem topou continua
+       tendo topado, e a coordenação não precisa refazer a escala a cada
+       correção de local. */
+    assert.equal(painel.ler("eventos")[0].aceites[PECA][ADMIN], "topou");
+  });
+
+  test("resposta que não existe no catálogo não vira estado novo", () => {
+    const e = painel.ler("eventos")[0];
+    painel.gravar("eventos", [{
+      ...e,
+      responsaveis: { ...e.responsaveis, [PECA]: [ADMIN] },
+      aceites: { ...e.aceites, [PECA]: { [ADMIN]: "talvez" } },
+    }]);
+
+    /* O arquivo é gravado por várias telas; um valor estranho não pode virar um
+       estado que nenhuma delas sabe desenhar. Mesma régua de `status`. */
+    assert.deepEqual(painel.ler("eventos")[0].aceites[PECA], []);
+  });
+});
+
+/**
+ * O CARTAZ DO QR PRECISA SER ACHADO NA VÉSPERA.
+ *
+ * O bloco do QR mora na aba Pessoas — onde se trabalha DURANTE o evento. Quem
+ * prepara cartaz procura antes, e não achava: a folha de impressão existia e
+ * ficava ociosa. Num ato de rua com centenas de pessoas, o QR no banner é a
+ * diferença entre levar os contatos para casa e só contar quem apareceu.
+ */
+describe("a caminho do cartaz do QR", () => {
+  test("encontro que ainda vem oferece imprimir o cartaz", async () => {
+    const { html } = await painel.buscar("eventos", `e=${EVENTO}`);
+    assert.match(html, /Imprimir o cartaz do QR/);
+    assert.match(html, /aba=pessoas#qr/);
+  });
+
+  test("o bloco do QR tem a âncora que esse caminho procura", async () => {
+    const { html } = await painel.buscar("eventos", `e=${EVENTO}&aba=pessoas`);
+    /* Sem o id, o link cai no topo da aba e a pessoa rola procurando — que é o
+       mesmo trabalho que o botão existe para tirar. */
+    assert.match(html, /class="qr-bloco" id="qr"/);
+  });
+
+  test("encontro sem token não oferece cartaz nenhum", async () => {
+    const e = painel.ler("eventos")[0];
+    painel.gravar("eventos", [{ ...e, token: "" }]);
+    const { html } = await painel.buscar("eventos", `e=${EVENTO}`);
+    assert.doesNotMatch(html, /Imprimir o cartaz do QR/);
+  });
+});
+
+/**
+ * AS PEÇAS SÃO DA FAMÍLIA, E NÃO DO CATÁLOGO.
+ *
+ * As cinco valiam para todo mundo: um jantar com empresários e um adesivaço de
+ * setecentas pessoas recebiam Local & Hora, Logística, Divulgação, Gravação e
+ * Recepção. Metade das peças de qualquer encontro era trabalho que ninguém ia
+ * fazer — e é a melhor explicação para nenhuma escala ter sido preenchida em
+ * seis encontros: ninguém escala uma lista que não descreve o que está fazendo.
+ */
+describe("as peças de cada família", () => {
+  /** Troca a família do encontro semeado, que nasce em `publico`. */
+  function comFamilia(familia: string) {
+    const e = painel.ler("eventos")[0];
+    painel.gravar("eventos", [{ ...e, familia, feitos: {}, responsaveis: {} }]);
+  }
+
+  test("a rua oferece material, adesivagem e fila — e não oferece mesa de recepção", async () => {
+    const { html } = await painel.buscar("eventos", `e=${EVENTO}&aba=preparo`);
+    assert.match(html, /Material de rua/);
+    assert.match(html, /Adesivagem/);
+    assert.match(html, /Fila e trânsito/);
+    assert.match(html, /Captação/);
+    /* Na rua não há mesa na entrada: quem capta anda com o celular. */
+    assert.doesNotMatch(html, /id="peca-recepcao"/);
+  });
+
+  test("a formação interna volta a ter Recepção, e não tem peça de rua", async () => {
+    comFamilia("militancia");
+    const { html } = await painel.buscar("eventos", `e=${EVENTO}&aba=preparo`);
+    assert.match(html, /id="peca-recepcao"/);
+    assert.doesNotMatch(html, /id="peca-adesivagem"/);
+  });
+
+  test("o relacional não oferece Gravação — a trava da própria família proíbe", async () => {
+    /* "Sem câmera aberta gravando conversa privada" está escrito no playbook
+       desta família. Oferecer a peça seria a tela convidando para o que o
+       playbook proíbe duas linhas acima. */
+    comFamilia("relacional");
+    const { html } = await painel.buscar("eventos", `e=${EVENTO}&aba=preparo`);
+    assert.match(html, /Travas desta família/);
+    assert.doesNotMatch(html, /id="peca-gravacao"/);
+  });
+
+  test("uma live não tem porta nem logística", async () => {
+    comFamilia("digital");
+    const { html } = await painel.buscar("eventos", `e=${EVENTO}&aba=preparo`);
+    assert.doesNotMatch(html, /id="peca-recepcao"/);
+    assert.doesNotMatch(html, /id="peca-logistica"/);
+    assert.match(html, /id="peca-divulgacao"/);
+  });
+
+  test("peça fora da família NÃO some quando já tem dono", async () => {
+    /* Encontro antigo foi criado quando as cinco valiam para todos. Fazer o
+       nome de quem foi escalado desaparecer porque a régua mudou seria apagar
+       trabalho de alguém sem avisar. */
+    const e = painel.ler("eventos")[0];
+    painel.gravar("eventos", [{
+      ...e,
+      responsaveis: { ...e.responsaveis, recepcao: [ADMIN] },
+    }]);
+    const { html } = await painel.buscar("eventos", `e=${EVENTO}&aba=preparo`);
+    assert.match(html, /id="peca-recepcao"/);
+  });
+
+  test("o formulário da escala oferece as mesmas peças que o Preparo cobra", async () => {
+    /* O invariante que impede o apagão silencioso: as duas telas e a gravação
+       passam pela MESMA `pecas_do_evento()`. Se um dia a aba Dados desenhar um
+       conjunto e o `salvar` varrer outro, o que não foi desenhado volta a ser
+       gravado como vazio — e ninguém vê acontecer. */
+    const preparo = await painel.buscar("eventos", `e=${EVENTO}&aba=preparo`);
+    const dados = await painel.buscar("eventos", `e=${EVENTO}&aba=dados`);
+
+    const noPreparo = [...preparo.html.matchAll(/id="peca-([a-z-]+)"/g)].map((m) => m[1]);
+    const nosDados = [...new Set(
+      [...dados.html.matchAll(/name="resp\[([a-z-]+)\]\[\]"/g)].map((m) => m[1]),
+    )];
+
+    assert.ok(noPreparo.length > 0, "o Preparo não desenhou peça nenhuma");
+    assert.deepEqual(nosDados, noPreparo);
+  });
+});
+
+/**
+ * MONTAR A ESCALA A PARTIR DE QUEM PEDIU A FUNÇÃO.
+ *
+ * A primeira versão disto copiava o time do encontro anterior — e não tinha de
+ * onde copiar: em seis encontros, nenhuma peça foi escalada uma única vez.
+ * Partida a frio. A semente certa estava do outro lado do sistema o tempo todo:
+ * **81% das pessoas escolheram função ao se inscrever, e ninguém as chamou.**
+ */
+describe("ação: montar a escala", () => {
+  /** Gente com função pedida, com e sem conta no painel. */
+  function comGente(fichas: Record<string, unknown>[]) {
+    const base = painel.ler("pessoas");
+    painel.gravar("pessoas", [...base, ...fichas.map((f, i) => ({
+      id: `p-escala-${i}`,
+      nome: `Pessoa ${i}`,
+      telefone: "85988880000",
+      tipo: "militante",
+      ativo: true,
+      criadoEm: "2026-03-01T10:00:00-03:00",
+      ...f,
+    }))]);
+  }
+
+  test("preenche a peça vazia com quem pediu aquela função", async () => {
+    comGente([{ nome: "Ana Divulga", funcoes: ["divulgacao"] }]);
+
+    const r = await painel.postar("eventos", { acao: "montar-escala", id: EVENTO });
+    assert.equal(r.status, 302);
+    assert.deepEqual(painel.ler("eventos")[0].responsaveis.divulgacao, ["p-escala-0"]);
+  });
+
+  test("quem pediu Recepção serve para a Captação da rua", async () => {
+    /* A Captação não existia quando 29 pessoas escolheram Recepção — elas
+       pegaram a coisa mais próxima que havia no catálogo. Sem o viveiro, a
+       sugestão sai vazia justamente na peça com mais voluntários. */
+    comGente([{ nome: "Rita Porta", funcoes: ["recepcao"] }]);
+
+    await painel.postar("eventos", { acao: "montar-escala", id: EVENTO });
+    assert.deepEqual(painel.ler("eventos")[0].responsaveis.captacao, ["p-escala-0"]);
+  });
+
+  test("não sobrescreve peça que já tem gente", async () => {
+    comGente([{ nome: "Ana Divulga", funcoes: ["divulgacao"] }]);
+    const e = painel.ler("eventos")[0];
+    painel.gravar("eventos", [{ ...e, responsaveis: { ...e.responsaveis, divulgacao: [ADMIN] } }]);
+
+    await painel.postar("eventos", { acao: "montar-escala", id: EVENTO });
+    /* Sobrescrever escala feita perderia num clique o trabalho de quem escalou
+       à mão — e ninguém aperta um botão de novo depois disso. */
+    assert.deepEqual(painel.ler("eventos")[0].responsaveis.divulgacao, [ADMIN]);
+  });
+
+  test("a mesma pessoa não cobre duas peças no mesmo encontro", async () => {
+    comGente([{ nome: "Zé Faz-Tudo", funcoes: ["divulgacao", "gravacao", "captacao"] }]);
+
+    await painel.postar("eventos", { acao: "montar-escala", id: EVENTO });
+    const resp = painel.ler("eventos")[0].responsaveis;
+    const vezes = Object.values(resp).flat().filter((id) => id === "p-escala-0").length;
+    assert.equal(vezes, 1, "o mesmo nome apareceu em duas linhas da escala");
+  });
+
+  test("prefere quem foi escalada menos vezes", async () => {
+    comGente([
+      { nome: "Ana Veterana", funcoes: ["divulgacao"] },
+      { nome: "Bia Novata", funcoes: ["divulgacao"] },
+    ]);
+    /* A veterana já trabalhou noutro encontro. Sem o desempate, a lista sai
+       sempre na mesma ordem e a mesma pessoa leva todos os sábados enquanto as
+       outras esperam ser chamadas. */
+    const e = painel.ler("eventos")[0];
+    painel.gravar("eventos", [e, {
+      ...e, id: "ev-antigo", titulo: "Encontro antigo",
+      inicio: new Date(Date.now() - 30 * 86_400_000).toISOString(),
+      responsaveis: { divulgacao: ["p-escala-0"] },
+    }]);
+
+    await painel.postar("eventos", { acao: "montar-escala", id: EVENTO });
+    const alvo = painel.ler("eventos").find((x) => x.id === EVENTO)!;
+    assert.deepEqual(alvo.responsaveis.divulgacao, ["p-escala-1"]);
+  });
+
+  test("não propõe quem saiu do movimento", async () => {
+    comGente([{ nome: "Saiu Fora", funcoes: ["divulgacao"], ativo: false }]);
+
+    await painel.postar("eventos", { acao: "montar-escala", id: EVENTO });
+    /* Nome inativo na escala devolve uma peça que parece resolvida e não está. */
+    assert.deepEqual(painel.ler("eventos")[0].responsaveis.divulgacao, []);
+  });
+
+  test("sem ninguém para sugerir, diz o que fazer em vez de gravar vazio", async () => {
+    const r = await painel.postar("eventos", { acao: "montar-escala", id: EVENTO });
+    assert.match(r.html, /ninguém pediu essas funções ainda/);
+  });
+});
+
+/**
+ * O CONVITE E A ESCALA EM TEXTO.
+ *
+ * A escala existia no banco e nunca chegava em ninguém: o nome aparecia cinza
+ * ao lado da peça e a pessoa não era avisada. No sábado, todo mundo fazia tudo
+ * com o que tinha. O painel não é onde o trabalho acontece — é de onde sai a
+ * mensagem.
+ */
+describe("a escala vira mensagem", () => {
+  const PECA = "captacao";
+
+  function escalada(estado = "") {
+    const e = painel.ler("eventos")[0];
+    painel.gravar("eventos", [{
+      ...e,
+      responsaveis: { ...e.responsaveis, [PECA]: [ADMIN] },
+      ...(estado ? { aceites: { [PECA]: { [ADMIN]: estado } } } : {}),
+    }]);
+  }
+
+  test("o convite leva os itens do checklist dentro da mensagem", async () => {
+    /* Maria tem telefone e está `pendente`: escalar quem ainda não tem conta é
+       o caso normal, não a exceção — das 72 na fila, 58 escolheram função. */
+    const e = painel.ler("eventos")[0];
+    painel.gravar("eventos", [{
+      ...e,
+      responsaveis: { ...e.responsaveis, [PECA]: ["pes00000000teste"] },
+    }]);
+    const { html } = await painel.buscar("eventos", `e=${EVENTO}&aba=preparo`);
+
+    assert.match(html, /wa\.me\/5585999990000\?text=/, "o convite não virou link de WhatsApp");
+    /* Quem recebe precisa saber o tamanho do que está aceitando ANTES de
+       responder — "abra o painel para ver o que é" é o pedido que ninguém
+       atende. Os itens vão no corpo, percent-encoded no href. */
+    assert.match(html, /QR%20do%20encontro%20impresso%20no%20cartaz/);
+    assert.match(html, /Topa%3F/);
+  });
+
+  test("a escala em texto marca a peça vazia como falta alguém", async () => {
+    const { html } = await painel.buscar("eventos", `e=${EVENTO}&aba=preparo`);
+    assert.match(html, /Copiar a escala para o grupo/);
+    /* É o pedido de voluntário se escrevendo sozinho, no lugar em que as
+       pessoas já estão. */
+    assert.match(html, /falta alguém/);
+  });
+
+  test("quem recusou sai da escala que vai para o grupo", async () => {
+    escalada("nao-posso");
+    const { html } = await painel.buscar("eventos", `e=${EVENTO}&aba=preparo`);
+    /* O grupo precisa ler quem VAI estar lá. Nome riscado transformaria o
+       recado numa ata. */
+    assert.doesNotMatch(html, /Capta&ccedil;&atilde;o — Coordena/);
+  });
+
+  test("marcar “Convidei” carimba a hora, e marcar de novo não zera a espera", async () => {
+    escalada();
+    await painel.postar("eventos", {
+      acao: "aceite", id: EVENTO, peca: PECA, quem: ADMIN, estado: "convidado",
+    });
+    const primeiro = painel.ler("eventos")[0].convidadoEm[PECA][ADMIN];
+    assert.ok(primeiro, "o convite não foi carimbado");
+
+    await painel.postar("eventos", {
+      acao: "aceite", id: EVENTO, peca: PECA, quem: ADMIN, estado: "convidado",
+    });
+    /* Quem já esperava três dias continua esperando três dias: reabrir a
+       contagem esconderia justamente a peça que precisa ser recolocada. */
+    assert.equal(painel.ler("eventos")[0].convidadoEm[PECA][ADMIN], primeiro);
+  });
+
+  test("não aceita resposta de quem não está na peça", async () => {
+    escalada();
+    await painel.postar("eventos", {
+      acao: "aceite", id: EVENTO, peca: PECA, quem: "pes00000000teste", estado: "topou",
+    });
+    assert.deepEqual(
+      Object.keys(painel.ler("eventos")[0].aceites[PECA] ?? {}),
+      [],
+      "gravou resposta de alguém que não foi escalado",
     );
   });
 });

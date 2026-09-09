@@ -553,6 +553,70 @@ abrir_pagina('Início');
            vira o último bloco de uma página rolada no celular não é prioridade
            nenhuma — e o celular é de onde vem a maioria. */ ?>
   <aside class="hub-lado">
+    <?php
+      require_once __DIR__ . '/pessoas-comum.php';  // minha_gente(), lider_de()
+      require_once __DIR__ . '/reativacao.php';     // motivo_de_reativacao()
+      $quemMeAcompanha = lider_de($u);
+      $minhaGente = pode_liderar($u) ? minha_gente($u) : [];
+    ?>
+
+    <?php /* QUEM TE ACOMPANHA — uma linha, e é a que responde ao "entrei num
+             grupo de oitenta pessoas e não me senti parte". Numa lista grande
+             ninguém é chamado pelo nome; aqui há UM nome, com o WhatsApp ao
+             lado, e ele é de alguém que responde por você. */ ?>
+    <?php if ($quemMeAcompanha !== null): ?>
+      <section class="cartao-grupo">
+        <span class="cartao-grupo-icone"><?= icone('heartHandshake', 28) ?></span>
+        <h2>Quem te acompanha</h2>
+        <p><strong><?= h($quemMeAcompanha['nome']) ?></strong> — é com ela que você fala primeiro.</p>
+        <?php if ($quemMeAcompanha['telefone'] !== ''): ?>
+          <div class="acoes">
+            <?php links_whatsapp($quemMeAcompanha['telefone'], 'Chamar no WhatsApp', '', 'btn btn-ouro'); ?>
+          </div>
+        <?php endif; ?>
+      </section>
+    <?php endif; ?>
+
+    <?php /* SUA GENTE — o outro lado da mesma coisa.
+             Nome e WhatsApp, e mais nada: e-mail, endereço e ficha continuam só
+             em `pessoas`, que é `adm`. Quem lidera acompanha gente; não recebe a
+             agenda do movimento junto.
+
+             A ordem é de quem está mais parada primeiro: a lista é de trabalho,
+             e o trabalho é justamente quem não deu sinal. */ ?>
+    <?php if ($minhaGente !== []): ?>
+      <section class="cartao-grupo" id="minha-gente">
+        <span class="cartao-grupo-icone"><?= icone('users', 28) ?></span>
+        <h2>Sua gente (<?= count($minhaGente) ?>)</h2>
+        <ul class="gente-lista">
+          <?php foreach ($minhaGente as $g): ?>
+            <?php
+              /* O MOTIVO SAI DA MESMA RÉGUA DA REATIVAÇÃO, e não de uma nova:
+                 duas contas de "quem esfriou" divergiriam na primeira mudança
+                 de prazo, e quem lidera veria um recado diferente do da
+                 coordenação sobre a mesma pessoa. */
+              $motivo = motivo_de_reativacao($g);
+            ?>
+            <li>
+              <span class="gente-quem">
+                <strong><?= h($g['nome']) ?></strong>
+                <?php if ($motivo !== null): ?>
+                  <span class="selo selo-atencao"><?= h($motivo['nome']) ?></span>
+                <?php endif; ?>
+              </span>
+              <?php if ($g['telefone'] !== ''): ?>
+                <?php links_whatsapp($g['telefone'], 'Chamar', '', 'btn btn-mini'); ?>
+              <?php endif; ?>
+            </li>
+          <?php endforeach; ?>
+        </ul>
+        <p class="dica">
+          Quem está com selo parou em algum ponto. Uma mensagem custa menos que um
+          encontro inteiro para trazer gente nova.
+        </p>
+      </section>
+    <?php endif; ?>
+
     <section class="cartao-grupo" id="grupo">
       <span class="cartao-grupo-icone"><?= icone('whatsapp', 28) ?></span>
       <h2>Grupo de trabalho</h2>

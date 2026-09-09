@@ -159,7 +159,7 @@ function tratar_acoes_de_evento(array $eu, bool $coordena): void
                 voltar();
             }
             republicar_agenda();
-            avisar('ok', 'Encontro criado. Agora escale as cinco peças.');
+            avisar('ok', 'Encontro criado. Agora escale as peças desta família.');
             voltar($novo['id']);
         }
 
@@ -220,8 +220,20 @@ function tratar_acoes_de_evento(array $eu, bool $coordena): void
                        não precisa lembrar de reescolher o véu. */
                     $filtro = (string) ($_POST['filtro'] ?? '');
                     $e['filtro'] = isset(FILTROS[$filtro]) ? $filtro : FILTRO_PADRAO;
-                    foreach (array_keys(PECAS) as $peca) {
-                        $e['responsaveis'][$peca] = limpar_texto($_POST['resp'][$peca] ?? '', 40);
+                    /* AS PEÇAS DA FAMÍLIA, e não o catálogo inteiro: o
+                       formulário só desenha as da família, e varrer todas
+                       gravaria vazio — apagando a escala de uma peça que a tela
+                       nem chegou a mostrar.
+
+                       QUEM SAI DA PEÇA PERDE O ACEITE SOZINHO, e não há linha
+                       aqui para isso: `gravar_eventos()` normaliza na escrita, e
+                       `normalizar_evento()` só guarda resposta de quem está na
+                       lista. O aceite é da dupla pessoa-peça — sem isso, o
+                       "topou" de quem saiu ficaria colado na peça e ela
+                       apareceria resolvida sem ninguém ter sido avisado. */
+                    foreach (pecas_do_evento($e) as $peca) {
+                        $pedidos = $_POST['resp'][$peca] ?? [];
+                        $e['responsaveis'][$peca] = is_array($pedidos) ? $pedidos : [$pedidos];
                     }
                 }
             }
@@ -239,6 +251,84 @@ function tratar_acoes_de_evento(array $eu, bool $coordena): void
         }
 
         /* ---------- apagar o encontro (coordenação) ---------- */
+        /* ---------- montar a escala a partir de quem pediu a peça ---------- */
+        if ($acao === 'montar-escala') {
+            exigir_coordenacao($coordena, $alvo['id']);
+
+            $sugestao = escala_sugerida($alvo);
+            if ($sugestao === []) {
+                /* Duas causas, e a mensagem diz as duas porque o remédio é
+                   diferente: ou a escala já está feita, ou ninguém no movimento
+                   pediu essas funções — e nesse caso o caminho é o catálogo em
+                   /queroajudar, não esta tela. */
+                avisar('erro', 'Não tenho quem sugerir: ou as peças já têm gente, ou ninguém pediu essas funções ainda.');
+                voltar($alvo['id'], 'dados');
+            }
+
+            $eventos = ler_eventos();
+            foreach ($eventos as &$e) {
+                if ($e['id'] !== $alvo['id']) {
+                    continue;
+                }
+                /* SÓ PREENCHE O VAZIO — `escala_sugerida()` já pula peça com
+                   gente, e a garantia mora lá. Sobrescrever escala feita seria
+                   perder o trabalho de quem escalou à mão num clique só. */
+                foreach ($sugestao as $peca => $gente) {
+                    $e['responsaveis'][$peca] = $gente;
+                }
+            }
+            unset($e);
+
+            if (!gravar_eventos($eventos)) {
+                avisar('erro', 'Não consegui gravar em /dados.');
+                voltar($alvo['id'], 'dados');
+            }
+            $quantas = count($sugestao);
+            avisar('ok', $quantas === 1
+                ? 'Uma peça ganhou um nome. Confira e mande os convites.'
+                : $quantas . ' peças ganharam nome. Confira e mande os convites.');
+            voltar($alvo['id'], 'dados');
+        }
+
+        /* ---------- a resposta de quem foi convidado ---------- */
+        if ($acao === 'aceite') {
+            exigir_coordenacao($coordena, $alvo['id']);
+
+            $peca = limpar_texto($_POST['peca'] ?? '', 40);
+            $quem = limpar_texto($_POST['quem'] ?? '', 40);
+            $novo = (string) ($_POST['estado'] ?? '');
+            if (!isset(PECAS[$peca]) || $quem === ''
+                || ($novo !== '' && !in_array($novo, ESTADOS_ESCALA, true))) {
+                avisar('erro', 'Resposta inválida.');
+                voltar($alvo['id'], 'dados');
+            }
+
+            $eventos = ler_eventos();
+            foreach ($eventos as &$e) {
+                if ($e['id'] !== $alvo['id'] || !in_array($quem, $e['responsaveis'][$peca], true)) {
+                    continue;
+                }
+                if ($novo === '') {
+                    unset($e['aceites'][$peca][$quem], $e['convidadoEm'][$peca][$quem]);
+                } else {
+                    $e['aceites'][$peca][$quem] = $novo;
+                    /* O relógio do silêncio começa a contar do CONVITE, e só
+                       dele: marcar "topou" depois não pode reabrir a contagem, e
+                       marcar convidado duas vezes não pode zerá-la — quem já
+                       esperava três dias continua esperando três dias. */
+                    if ($novo === 'convidado' && ($e['convidadoEm'][$peca][$quem] ?? '') === '') {
+                        $e['convidadoEm'][$peca][$quem] = date('c');
+                    }
+                }
+            }
+            unset($e);
+
+            if (!gravar_eventos($eventos)) {
+                avisar('erro', 'Não consegui gravar em /dados.');
+            }
+            voltar($alvo['id'], 'dados');
+        }
+
         if ($acao === 'apagar') {
             exigir_coordenacao($coordena, $alvo['id']);
 

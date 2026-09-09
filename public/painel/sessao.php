@@ -91,6 +91,19 @@ const CAPACIDADES = [
         'resumo' => 'Quem entra no movimento, os encontros, os candidatos e a formação do time',
         'areas'  => ['inscricoes', 'candidatos', 'aulas', 'eventos', 'agenda'],
     ],
+    /* NÃO ABRE TELA NENHUMA — `areas` vazio, e de propósito.
+       Ela habilita um bloco no Início: a lista de quem esta pessoa acompanha.
+       `pessoas` continua só em `adm`, e a diferença é o recorte: quem lidera vê
+       NOME e WHATSAPP da própria gente, e não a agenda do movimento.
+
+       Existe como capacidade, e não como efeito de alguém ter preenchido o
+       campo `lider` numa ficha, porque dar acesso a dado pessoal precisa ser uma
+       decisão registrada — e não uma consequência lateral de organizar times. */
+    'lideranca' => [
+        'nome'   => 'Liderança',
+        'resumo' => 'Acompanha um punhado de gente: vê nome e WhatsApp de quem está sob ela',
+        'areas'  => [],
+    ],
     'adm' => [
         'nome'   => 'Administração',
         'resumo' => 'Tudo, inclusive a lista de pessoas com dado pessoal',
@@ -500,6 +513,20 @@ function telefone_bonito(string $telefone): string
  * inteiro embaixo dele: `5599999999` é o celular de um DDD 55, não um número
  * já internacionalizado.
  */
+/**
+ * "Maria da Silva Sauro" -> "Maria" — o nome quando só o primeiro cabe.
+ *
+ * Não confundir com `nome_encoberto()`, que existe para ESCONDER quem é numa
+ * tela em que o nome inteiro seria vazamento. Aqui não há nada a esconder: é a
+ * escala do encontro, lida por quem coordena, e o primeiro nome basta porque a
+ * peça mostra quatro pessoas numa linha só.
+ */
+function primeiro_nome(string $nome): string
+{
+    $partes = array_values(array_filter(explode(' ', trim($nome))));
+    return $partes === [] ? 'Alguém' : $partes[0];
+}
+
 function numero_whatsapp(string $telefone): string
 {
     $d = so_digitos($telefone);
@@ -703,6 +730,13 @@ function normalizar_pessoa($p): ?array
             fn ($f) => limpar_texto($f, 40),
             is_array($p['funcoes'] ?? null) ? $p['funcoes'] : []
         ))),
+
+        /* ---- quem acompanha esta pessoa ----
+           Um id de pessoa, e nada mais. É a camada que faltava entre o
+           coordenador e oitenta e sete pessoas: sem ela tudo funila em quem tem
+           `coordenacao`, que é uma pessoa só, e "não consigo acompanhar todos"
+           deixa de ser falta de disciplina e passa a ser aritmética. */
+        'lider' => limpar_texto($p['lider'] ?? '', 40),
 
         /* ---- conta no painel: tudo vazio quando não tem ---- */
         'usuario'      => $conta,

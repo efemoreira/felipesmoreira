@@ -67,7 +67,7 @@ function desenhar_presenca(array $aberto, array $eu): void
 
     <?php if ($aberto['token'] !== ''): ?>
       <?php $urlPresenca = url_presenca($aberto); ?>
-      <div class="qr-bloco">
+      <div class="qr-bloco" id="qr">
         <div class="qr-papel">
           <!-- o desenho entra aqui pelo /painel/vendor/qrcode.js -->
           <div class="qr-arte" data-qr="<?= h($urlPresenca) ?>"></div>

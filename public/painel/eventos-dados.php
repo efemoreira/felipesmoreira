@@ -32,6 +32,28 @@ function desenhar_dados(array $aberto, array $time, int $naLista): void
     ?>
     <fieldset id="dados">
       <legend>Dados do encontro</legend>
+
+      <?php /* MONTAR A ESCALA — form próprio, e fora do de salvar: form dentro
+               de form é inválido, e o botão precisa gravar sozinho para a
+               sugestão aparecer já marcada nas listas abaixo.
+
+               Só aparece quando há peça vazia. Botão que não faz nada é pior
+               que botão nenhum: quem clica e não vê mudança conclui que a tela
+               está quebrada. */ ?>
+      <?php if (pecas_sem_dono($aberto) !== []): ?>
+        <form method="post" class="montar-escala">
+          <input type="hidden" name="csrf" value="<?= h(token()) ?>">
+          <input type="hidden" name="id" value="<?= h($aberto['id']) ?>">
+          <input type="hidden" name="acao" value="montar-escala">
+          <button class="btn btn-ouro" type="submit">Montar a escala</button>
+          <p class="dica" style="margin:8px 0 0">
+            Preenche as peças vazias com quem <strong>pediu aquela função</strong> ao se
+            inscrever, começando por quem foi escalado menos vezes. Não mexe no que
+            você já escalou à mão.
+          </p>
+        </form>
+      <?php endif; ?>
+
       <?php /* Rascunho por encontro, e não um só para a tela: dois encontros
                abertos em duas abas não podem dividir o mesmo guardado. */ ?>
       <form method="post" enctype="multipart/form-data"
@@ -208,22 +230,79 @@ function desenhar_dados(array $aberto, array $time, int $naLista): void
           </div>
         </div>
 
-        <p class="dica">Quem responde por cada peça:</p>
-        <div class="linha g2">
-          <?php foreach (PECAS as $chave => $peca): ?>
-            <div class="campo">
-              <label for="resp-<?= h($chave) ?>"><?= h($peca['nome']) ?></label>
-              <select id="resp-<?= h($chave) ?>" name="resp[<?= h($chave) ?>]">
-                <option value="">— ninguém ainda —</option>
-                <?php foreach ($time as $p): ?>
-                  <option value="<?= h($p['id']) ?>" <?= $aberto['responsaveis'][$chave] === $p['id'] ? 'selected' : '' ?>>
+        <?php /* UMA LISTA POR PEÇA, e não um `<select>`: numa peça de rua não
+                 trabalha uma pessoa, trabalham três ou quatro nas pontas do
+                 movimento de gente. Enquanto cabia um nome só, a escala de um
+                 ato grande era impossível de escrever — e o que não cabe na
+                 ferramenta acontece fora dela, no grito.
+
+                 Cada peça vem recolhida: nove peças abertas com a lista inteira
+                 do movimento em cada uma é um paredão que ninguém lê. O resumo
+                 no `<summary>` diz quem já está lá, que é a pergunta de quem
+                 abre esta aba. */ ?>
+        <p class="dica" style="margin:0 0 4px">Quem responde por cada peça — pode ser mais de uma pessoa:</p>
+        <p class="dica" style="margin:0 0 14px">
+          Quem <strong>pediu a função</strong> aparece primeiro, marcado. É de lá que sai a sugestão do botão acima.
+        </p>
+
+        <?php foreach (pecas_do_evento($aberto) as $chave): ?>
+          <?php
+            $peca = PECAS[$chave];
+            $escalados = $aberto['responsaveis'][$chave];
+            $candidatos = quem_pediu_a_peca($chave);
+            $pediram = array_column($candidatos, 'id');
+
+            /* A LISTA É A UNIÃO: quem tem conta, quem pediu esta função e quem
+               já está escalado.
+
+               Quem pediu entra MESMO SEM CONTA, e é o ponto: das setenta e duas
+               pessoas na fila, cinquenta e oito escolheram função ao se
+               inscrever — e o convite vai por WhatsApp, que não pede login. A
+               regra antiga, de listar só quem tem conta, existia para o seletor
+               não virar despejo de quem foi cadastrado na porta de um encontro;
+               essa gente tem `funcoes` vazio, então o filtro por função já a
+               deixa de fora sem precisar da conta como peneira.
+
+               Quem já está escalado entra sempre: se a caixa dela não for
+               desenhada, o POST não a manda de volta e salvar a apagaria. */
+            $ordenado = $time;
+            foreach (array_merge($candidatos, array_map('achar_pessoa', $escalados)) as $extra) {
+                if ($extra !== null && !in_array($extra['id'], array_column($ordenado, 'id'), true)) {
+                    $ordenado[] = $extra;
+                }
+            }
+            usort($ordenado, fn ($a, $b) => [!in_array($a['id'], $pediram, true), $a['nome']]
+                                        <=> [!in_array($b['id'], $pediram, true), $b['nome']]);
+            $nomes = [];
+            foreach ($escalados as $id) {
+                $p = achar_pessoa($id);
+                $nomes[] = $p === null ? '—' : $p['nome'];
+            }
+          ?>
+          <details class="decidir peca-escala">
+            <summary class="btn">
+              <?= h($peca['nome']) ?>
+              — <?= $nomes === [] ? 'ninguém ainda' : h(implode(', ', $nomes)) ?>
+            </summary>
+            <div class="decidir-corpo">
+              <?php if (count($ordenado) > 8): ?>
+                <?php filtro_de_marcacao('escala-' . $chave, 'nome'); ?>
+              <?php endif; ?>
+              <div id="escala-<?= h($chave) ?>">
+                <?php foreach ($ordenado as $p): ?>
+                  <label class="check">
+                    <input type="checkbox" name="resp[<?= h($chave) ?>][]" value="<?= h($p['id']) ?>"
+                      <?= in_array($p['id'], $escalados, true) ? 'checked' : '' ?>>
                     <?= h($p['nome']) ?>
-                  </option>
+                    <?php if (in_array($p['id'], $pediram, true)): ?>
+                      <span class="selo selo-ok">pediu esta função</span>
+                    <?php endif; ?>
+                  </label>
                 <?php endforeach; ?>
-              </select>
+              </div>
             </div>
-          <?php endforeach; ?>
-        </div>
+          </details>
+        <?php endforeach; ?>
 
         <div class="campo">
           <label for="e-obs">Observações</label>

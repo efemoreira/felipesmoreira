@@ -92,7 +92,7 @@ describe("follow-up: a fila atravessa os encontros", () => {
     semearDoisEncontros();
     const html = fila();
 
-    assert.match(html, /Agradecer e chamar para o canal/);
+    assert.match(html, /Agradecer pelo nome e puxar conversa/);
   });
 
   test("quem já é da estrutura não entra na fila", () => {
@@ -168,5 +168,73 @@ describe("follow-up: o hub manda para a fila, e não para um encontro", () => {
     assert.match(html, /Fazer o follow-up de 2 pessoas/);
     assert.match(html, /eventos\.php\?aba=follow-up#funil/);
     assert.doesNotMatch(html, /eventos\.php\?e=ev-ontem&amp;aba=funil/);
+  });
+});
+
+/**
+ * AS TRÊS MENSAGENS SAEM PRONTAS.
+ *
+ * O funil existe desde o começo e morria no primeiro degrau: de 25 pessoas que
+ * compareceram, 10 receberam o agradecimento, 1 recebeu conteúdo e nenhuma foi
+ * convidada de volta. O botão abria **conversa vazia** — e escrever a mensagem
+ * do zero, uma por uma, vinte e cinco vezes, é o trabalho que não acontece.
+ */
+describe("follow-up: a mensagem vai pronta", () => {
+  test("o D+0 cita o encontro pelo nome e não empurra ninguém para o grupo", () => {
+    semearDoisEncontros();
+    const html = fila();
+
+    /* "Obrigado por ter vindo" é genérico; citar o encontro é conversa. */
+    assert.match(html, /Roda%20de%20conversa%20no%20Pirambu/);
+    /* E NÃO manda para o grupo: jogar quem acabou de aparecer num grupo de
+       oitenta pessoas é a receita do "entrei e não me senti parte". A primeira
+       mensagem é de gente para gente, e o que ela pede é resposta. */
+    assert.doesNotMatch(html, /chat\.whatsapp\.com/);
+    assert.match(html, /O%20que%20voc%C3%AA%20achou/);
+  });
+
+  /** Alguém que já recebeu D+0 e D+3: a fila só mostra o degrau vencido mais
+      antigo de cada pessoa, então sem isto nunca se chega ao convite. */
+  function jaNoD7() {
+    painel.gravar("presencas", painel.ler("presencas").map((pr) =>
+      pr.id === "pr-b" ? { ...pr, funil: { d0: diasAtras(8), d3: diasAtras(5), d7: "" } } : pr));
+  }
+
+  test("o D+7 leva o próximo encontro com data e link de confirmar", () => {
+    semearDoisEncontros();
+    /* Um encontro futuro, para o convite ter o que citar. */
+    painel.gravar("eventos", [
+      ...painel.ler("eventos"),
+      {
+        ...encontroHa(-14, "ev-vem", "Bandeiraço na Raquel de Queiroz"),
+        tokenConfirmacao: "c".repeat(16),
+      },
+    ]);
+    jaNoD7();
+    const html = fila();
+
+    assert.match(html, /Bandeira%C3%A7o%20na%20Raquel/, "o convite não citou o próximo encontro");
+    /* Convite sem data e sem porta de entrada não é convite. */
+    assert.match(html, /presenca%3Fc%3Dcccc/);
+  });
+
+  test("sem próximo encontro marcado, o D+7 não promete o que não existe", () => {
+    semearDoisEncontros();
+    jaNoD7();
+    const html = fila();
+
+    /* Dizer "aparece no próximo" sem data é o convite que ninguém atende — e é
+       melhor a coordenação ler isto e ir marcar um encontro. */
+    assert.match(html, /Ainda%20n%C3%A3o%20tenho%20a%20data/);
+  });
+
+  test("o botão de mandar é o dourado; marcar como feito vem depois", () => {
+    semearDoisEncontros();
+    const html = fila();
+
+    /* Dois botões dourados na mesma linha não destacam nada, e o primeiro
+       movimento é MANDAR. */
+    assert.match(html, /class="btn btn-ouro"[^>]*href="https:\/\/wa\.me/);
+    assert.match(html, /<button type="submit" class="btn">Marcar como feito/);
   });
 });

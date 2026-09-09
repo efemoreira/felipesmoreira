@@ -257,6 +257,94 @@
       ]
     },
     {
+      "id": "material-rua",
+      "nome": "Material de rua",
+      "grupo": "eventos",
+      "icone": "flag",
+      "resumo": "Você garante que bandeira, adesivo e panfleto cheguem na rua e voltem — e que ninguém fique de mãos vazias.",
+      "entrega": "O material separado por lote, com dono, e a sobra recolhida no fim.",
+      "ritmo": "Por evento de rua. Separa na véspera e trabalha durante o ato.",
+      "detalhe": [
+        "Estime a quantidade pelo público esperado e separe na véspera, não no dia.",
+        "Divida em lotes com um dono cada: quem leva, quem entrega, quem devolve.",
+        "Monte um ponto de apoio com a reserva do que costuma acabar primeiro.",
+        "Fora da janela legal, só material institucional — sem número de urna.",
+        "No fim, recolha a sobra: panfleto no chão é multa e é a imagem que fica do ato."
+      ],
+      "areas": [
+        "eventos",
+        "aulas",
+        "fatos",
+        "producao"
+      ]
+    },
+    {
+      "id": "adesivagem",
+      "nome": "Adesivagem",
+      "grupo": "eventos",
+      "icone": "ticket",
+      "resumo": "Você aplica o adesivo no carro de quem quiser — com balde, água e detergente, do jeito que não descola nem borbulha.",
+      "entrega": "Carros adesivados sem dano, sem fila parada na via e sem sujeira no chão.",
+      "ritmo": "Por adesivaço. Chega antes para montar o kit e trabalha durante o ato.",
+      "detalhe": [
+        "Monte o kit: balde, água, detergente neutro, espátula ou rodinho e pano seco.",
+        "Só adesive com o dono do carro presente e de acordo.",
+        "Nunca cubra placa, farol, retrovisor ou o campo de visão do vidro.",
+        "Combine a fila com quem cuida de Fila e trânsito — carro parado na via é risco.",
+        "Devolva a sobra ao ponto de apoio e deixe o chão limpo."
+      ],
+      "areas": [
+        "eventos",
+        "aulas",
+        "fatos",
+        "producao"
+      ]
+    },
+    {
+      "id": "fila-transito",
+      "nome": "Fila e trânsito",
+      "grupo": "eventos",
+      "icone": "world",
+      "resumo": "Você organiza os carros e as filas para o ato fluir — e para ninguém se machucar nem ficar preso.",
+      "entrega": "Entrada e saída funcionando, fila com começo e fim visíveis, via nunca bloqueada.",
+      "ritmo": "Por evento de rua. Define o desenho antes e fica em pé durante o ato.",
+      "detalhe": [
+        "Defina entrada e saída antes de começar, sem parar a via.",
+        "Use colete: quem organiza precisa ser reconhecível de longe.",
+        "Dê à fila um começo e um fim visíveis, e diga às pessoas quanto falta.",
+        "Mantenha passagem livre para pedestre, morador e ambulância, o tempo todo.",
+        "Não dirija o trânsito no lugar do agente público — se travar, chame quem tem competência."
+      ],
+      "areas": [
+        "eventos",
+        "aulas",
+        "fatos",
+        "producao"
+      ]
+    },
+    {
+      "id": "captacao",
+      "nome": "Captação",
+      "grupo": "eventos",
+      "icone": "mail",
+      "resumo": "Você é a Recepção da rua: leva o QR no colete e no cartaz, e transforma quem passou em contato do movimento.",
+      "entrega": "Os contatos do ato cadastrados no mesmo dia, prontos para o follow-up.",
+      "ritmo": "Por evento de rua. Trabalha o ato inteiro, nas pontas do movimento de gente.",
+      "detalhe": [
+        "Imprima o QR do encontro no cartaz e nos coletes, e teste antes de sair de casa.",
+        "Fique nas pontas: entrada, fila e saída — é onde a pessoa tem as mãos livres.",
+        "Deixe a pessoa se cadastrar sabendo; nunca escaneie no lugar dela.",
+        "Combine a meta antes: sem número, ninguém sabe se o ato rendeu.",
+        "Entregue a lista à coordenação no mesmo dia — o follow-up começa em 24h."
+      ],
+      "areas": [
+        "eventos",
+        "aulas",
+        "fatos",
+        "producao"
+      ]
+    },
+    {
       "id": "follow-up",
       "nome": "Follow-up",
       "grupo": "eventos",

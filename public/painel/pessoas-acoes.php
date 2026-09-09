@@ -74,6 +74,11 @@ function tratar_acoes_de_pessoa(): void
             $ficha['bairro'] = $_POST['bairro'] ?? '';
             $ficha['observacao'] = $_POST['observacao'] ?? '';
             $ficha['funcoes'] = (array) ($_POST['funcoes'] ?? []);
+            /* NINGUÉM ACOMPANHA A SI MESMO: o `<select>` já não se oferece, mas
+               um POST montado à mão passaria — e a pessoa sumiria da própria
+               lista sem nunca aparecer na de outra. */
+            $pedido = limpar_texto($_POST['lider'] ?? '', 40);
+            $ficha['lider'] = $pedido === ($ficha['id'] ?? '') ? '' : $pedido;
             $ficha['capacidades'] = capacidades_do_post();
             /* As áreas do formulário são só o ajuste fino: normalizar_pessoa()
                acrescenta por cima o que as capacidades já liberam. */

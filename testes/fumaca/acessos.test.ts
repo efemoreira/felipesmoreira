@@ -95,21 +95,24 @@ describe("acesso: o nome inteiro não escorre pela linha do tempo", () => {
 });
 
 describe("acesso: o seletor de responsável lista contas, não o cadastro", () => {
-  test("quem nunca teve login não vira opção de <select>", () => {
+  test("quem nunca teve login não vira opção da escala", () => {
     /* `pessoas_ativas()` filtrava só por `ativo`, que é `true` na ficha de quem
-       foi cadastrada na porta de um encontro. O seletor de "quem responde por
+       foi cadastrada na porta de um encontro. A lista de "quem responde por
        esta peça" virava um despejo do cadastro inteiro numa tela que não é
-       sobre pessoas. */
+       sobre pessoas.
+
+       A escala virou caixa de marcar quando a peça passou a aceitar mais de uma
+       pessoa — mas o recorte é o mesmo, e é ele que este teste prende. */
     const { html } = painel.abrir("eventos", "e=ev-teste&aba=dados");
 
-    assert.match(html, /<select id="resp-/, "a aba Dados perdeu os seletores de responsável");
+    assert.match(html, /name="resp\[/, "a aba Dados perdeu a escala das peças");
     assert.doesNotMatch(
       html,
-      new RegExp(`<option value="pes00000000teste"[^>]*>\\s*${NOME}`),
-      "o seletor de responsável listou alguém que não tem conta no painel",
+      /value="pes00000000teste"/,
+      "a escala listou alguém que não tem conta no painel",
     );
     /* E continua listando quem tem conta — a trava recorta, não desliga. */
-    assert.match(html, /Coordenação de Teste/, "o seletor deixou de listar quem tem conta");
+    assert.match(html, /Coordenação de Teste/, "a escala deixou de listar quem tem conta");
   });
 });
 

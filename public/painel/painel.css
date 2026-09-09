@@ -619,6 +619,77 @@ input[type=file]::file-selector-button {
 .ficha-dados .ficha-funcoes { grid-column:1 / -1; }
 .ficha-dados .ficha-funcoes dd { margin-top:2px; }
 
+/* ---- quem está escalado numa peça ----
+   Fica dentro do corpo da peça, acima do checklist: primeiro quem faz, depois o
+   que fazer. Empilha no celular porque nome, estado e quatro botões não cabem
+   numa linha de 360 px — e o botão que sai da tela é o que não é apertado. */
+.escalados { margin:0 0 16px; padding-bottom:14px; border-bottom:1px dashed var(--linha); }
+.escalado {
+  display:flex; flex-wrap:wrap; gap:10px; align-items:center;
+  justify-content:space-between; padding:8px 0;
+}
+.escalado + .escalado { border-top:1px solid var(--linha-2); }
+.escalado-quem { display:flex; flex-wrap:wrap; gap:8px; align-items:center; min-width:0; }
+
+/* ---- a escala de cada peça ----
+   Uma peça por linha, recolhida. Nove peças abertas com a lista do movimento
+   dentro de cada uma é um paredão que ninguém lê; o `<summary>` já responde a
+   pergunta de quem abre a aba, que é "quem está em quê". */
+.peca-escala { margin:0 0 10px; }
+.peca-escala > summary { width:100%; text-align:left; }
+
+/* O botão de montar fica acima do formulário de salvar, e separado dele: são
+   duas gravações diferentes, e coladas pareceriam o mesmo botão em dois passos. */
+.montar-escala { margin:0 0 20px; padding-bottom:18px; border-bottom:1px dashed var(--linha); }
+
+/* ---- a lista de quem você acompanha ----
+   Pilha vertical com respiro: `<li>` com `<a>` e `<span>` dentro sai como
+   parágrafo corrido se ninguém desenhar, e é o mesmo defeito que a `.area-cartao`
+   teve por meses. */
+.gente-lista { list-style:none; margin:0 0 12px; padding:0; text-align:left; }
+.gente-lista li {
+  display:flex; flex-wrap:wrap; gap:8px; align-items:center;
+  justify-content:space-between; padding:10px 0;
+}
+.gente-lista li + li { border-top:1px solid var(--linha-2); }
+.gente-quem { display:flex; flex-wrap:wrap; gap:8px; align-items:center; min-width:0; }
+
+/* ---- aprovar em lote ----
+   Gruda no topo da lista: com setenta e duas fichas, um botão no fim é um botão
+   que exige rolar a fila inteira depois de marcar a última — e rolar de volta
+   para conferir. */
+.lote {
+  position:sticky; top:0; z-index:4;
+  display:flex; flex-wrap:wrap; gap:12px; align-items:center;
+  margin:0 0 18px; padding:12px 0;
+  background:linear-gradient(180deg,var(--fundo) 70%,var(--fundo-fade));
+}
+/* O seletor de líder dentro da barra: rótulo em cima, campo embaixo, e sem
+   esticar — a barra é uma linha de controles, não um formulário. */
+.campo-lote { display:flex; flex-direction:column; gap:4px; margin:0; }
+.campo-lote > span { font-size:13px; color:var(--texto-min); }
+
+/* A caixa fica antes da inicial, no canto do cartão, e com alvo de toque
+   inteiro: marcar setenta e duas exige acertar de primeira, no polegar. */
+.check-lote { flex:0 0 auto; min-width:44px; min-height:44px; margin:0; display:flex; align-items:center; }
+
+/* ---- convidar a fila para um encontro ----
+   Fica ENTRE a ficha e o <details> da decisão, e não dentro dele: convidar e
+   decidir são momentos diferentes. Convidar acontece em lote, dezenas de vezes
+   seguidas para o mesmo encontro; decidir é uma pessoa por vez, e por isso
+   continua recolhido. Um dentro do outro obrigaria a abrir o formulário de
+   login para mandar uma mensagem de WhatsApp.
+
+   `flex-wrap` porque no celular os dois botões e o selo não cabem lado a lado,
+   e o que não pode acontecer é o "Copiar o texto" sair da tela. */
+.convite {
+  display:flex; flex-wrap:wrap; gap:10px; align-items:center;
+  margin:14px 0 0; padding-top:14px; border-top:1px dashed var(--linha);
+}
+/* O <form> é inline-flex pelo mesmo motivo de `.acoes-celula form`: sem isso
+   ele é bloco e quebra a linha antes do botão de copiar. */
+.convite-envio { display:inline-flex; margin:0; }
+
 /* ---- degraus do follow-up ----
    O título de cada grupo da aba Follow-up (D+0, D+3, D+7). Separa a lista sem
    moldura nova: o cartão já tem a dele, e uma caixa dentro da outra dobra a

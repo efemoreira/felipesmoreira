@@ -203,3 +203,109 @@ describe("ação: juntar duplicata", () => {
     assert.ok(painel.ler("pessoas").some((p) => p.id === sumir), "uma das contas foi apagada");
   });
 });
+
+/**
+ * QUEM ACOMPANHA QUEM.
+ *
+ * Oitenta e sete pessoas e um coordenador: a camada intermediária deixou de ser
+ * melhoria e virou aritmética. O que este bloco prende é a regra de dado
+ * pessoal que o campo `lider` poderia furar sem ninguém decidir isso.
+ */
+describe("pessoas: a camada de liderança", () => {
+  /** Duas pessoas: uma sob a conta de teste, outra sob qualquer outro líder. */
+  function comGente(lider = ADMIN) {
+    painel.gravar("pessoas", [
+      ...painel.ler("pessoas"),
+      {
+        id: "seg-1", nome: "Seguida Um", telefone: "85966660000",
+        tipo: "militante", status: "aprovada", ativo: true, lider,
+        criadoEm: "2026-01-03T10:00:00-03:00",
+      },
+      {
+        id: "seg-2", nome: "De Outro Time", telefone: "85955550000",
+        tipo: "militante", status: "aprovada", ativo: true, lider: "outro-qualquer",
+        criadoEm: "2026-01-03T10:00:00-03:00",
+      },
+    ]);
+  }
+
+  test("o campo grava e a ficha aponta para quem acompanha", async () => {
+    comGente();
+    await painel.postar("pessoas", {
+      acao: "salvar", id: "seg-1", nome: "Seguida Um", tipo: "militante", lider: ADMIN,
+    });
+    assert.equal(painel.ler("pessoas").find((p) => p.id === "seg-1")!.lider, ADMIN);
+  });
+
+  test("ninguém acompanha a si mesmo, nem por POST montado à mão", async () => {
+    comGente();
+    await painel.postar("pessoas", {
+      acao: "salvar", id: "seg-1", nome: "Seguida Um", tipo: "militante", lider: "seg-1",
+    });
+    /* A pessoa sumiria da própria lista sem nunca aparecer na de outra. */
+    assert.equal(painel.ler("pessoas").find((p) => p.id === "seg-1")!.lider, "");
+  });
+
+  test("quem lidera vê a própria gente no Início — e só ela", async () => {
+    comGente();
+    const { html } = await painel.buscar("");
+
+    /* Só o bloco: o nome de quem foi cadastrado recentemente aparece também na
+       linha do tempo do hub, e asserção sobre a página inteira mediria a tela
+       errada. */
+    const de = html.indexOf('id="minha-gente"');
+    assert.ok(de > 0, "o bloco de quem você acompanha não foi desenhado");
+    const bloco = html.slice(de, html.indexOf("</section>", de));
+
+    assert.match(bloco, /Sua gente \(1\)/);
+    assert.match(bloco, /Seguida Um/);
+    /* `pessoas` está só em `adm` de propósito: quem lidera acompanha gente, não
+       recebe a agenda do movimento junto. */
+    assert.doesNotMatch(bloco, /De Outro Time/);
+  });
+
+  test("sem a capacidade, ter gente apontada não abre lista nenhuma", async () => {
+    /* DUAS CHAVES: o campo `lider` organiza times; a capacidade decide quem vê
+       dado pessoal. Se preencher o campo bastasse, a regra de `pessoas` estaria
+       furada por efeito lateral de organizar um time. */
+    comGente();
+    painel.trocarCapacidades("eventos");
+    const { html } = await painel.buscar("");
+
+    assert.doesNotMatch(html, /Sua gente/);
+  });
+
+  test("a fusão de fichas preserva quem acompanha", async () => {
+    comGente();
+    painel.gravar("pessoas", [
+      ...painel.ler("pessoas"),
+      { id: "dup-1", nome: "Seguida Um", telefone: "85966660000",
+        tipo: "militante", status: "", ativo: true, criadoEm: "2026-04-01T10:00:00-03:00" },
+    ]);
+
+    await painel.postar("pessoas", { acao: "juntar", id: "seg-1", outra: "dup-1" });
+    assert.equal(painel.ler("pessoas").find((p) => p.id === "seg-1")!.lider, ADMIN);
+  });
+});
+
+describe("pessoas: o filtro de quem acompanha", () => {
+  test("recorta por líder, e “ninguém ainda” acha quem ficou de fora", async () => {
+    painel.gravar("pessoas", [
+      ...painel.ler("pessoas"),
+      { id: "com-lider", nome: "Tem Quem Chame", tipo: "militante", status: "aprovada",
+        ativo: true, lider: ADMIN, criadoEm: "2026-01-03T10:00:00-03:00" },
+      { id: "sem-ninguem", nome: "Ficou Sozinha", tipo: "militante", status: "aprovada",
+        ativo: true, criadoEm: "2026-01-03T10:00:00-03:00" },
+    ]);
+
+    const sob = await painel.buscar("pessoas", `lider=${ADMIN}`);
+    assert.match(sob.html, /Tem Quem Chame/);
+    assert.doesNotMatch(sob.html, /Ficou Sozinha/);
+
+    /* É o recorte que mais importa numa base grande: quem não está sob ninguém
+       é quem some sem ninguém notar. */
+    const sozinhas = await painel.buscar("pessoas", "lider=sem-lider");
+    assert.match(sozinhas.html, /Ficou Sozinha/);
+    assert.doesNotMatch(sozinhas.html, /Tem Quem Chame/);
+  });
+});

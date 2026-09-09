@@ -54,6 +54,31 @@ function formulario_pessoa(?array $aberta, array $catalogo): void
         </div>
       </div>
 
+      <?php /* QUEM ACOMPANHA — a camada que faltava entre a coordenação e
+               oitenta e sete pessoas. Só quem tem a capacidade de liderar entra
+               na lista: apontar para alguém que não pode ver a própria gente
+               seria marcar um campo que não faz nada, e campo que não faz nada
+               é a pior espécie de defeito, porque parece resolvido. */ ?>
+      <?php $lideres = possiveis_lideres(); ?>
+      <?php if ($lideres !== []): ?>
+        <div class="campo">
+          <label for="f-lider<?= $s ?>">Quem acompanha esta pessoa</label>
+          <select id="f-lider<?= $s ?>" name="lider">
+            <option value="">— ninguém ainda —</option>
+            <?php foreach ($lideres as $l): ?>
+              <?php if (($aberta['id'] ?? '') === $l['id']) { continue; } ?>
+              <option value="<?= h($l['id']) ?>" <?= ($aberta['lider'] ?? '') === $l['id'] ? 'selected' : '' ?>>
+                <?= h($l['nome']) ?>
+              </option>
+            <?php endforeach; ?>
+          </select>
+          <p class="dica">
+            Ela passa a ver o nome desta pessoa no Início de quem acompanha — e esta
+            pessoa passa a ver quem chamar primeiro.
+          </p>
+        </div>
+      <?php endif; ?>
+
       <div class="linha g3">
         <div class="campo">
           <label for="f-tel<?= $s ?>">WhatsApp</label>

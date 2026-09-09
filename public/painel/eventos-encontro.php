@@ -97,7 +97,7 @@ function tela_do_encontro(array $aberto, array $eu, bool $coordena, ?string $err
 
   <?php barra_abas($abasDoEncontro, $aba, 'aba', 'Seções do encontro'); ?>
 
-  <?php if ($aba === 'preparo') { desenhar_preparo($aberto, $familia, $preparo); } ?>
+  <?php if ($aba === 'preparo') { desenhar_preparo($aberto, $familia, $preparo, $coordena); } ?>
 
   <?php if ($aba === 'pessoas') { desenhar_presenca($aberto, $eu); } ?>
 
@@ -224,6 +224,22 @@ function desenhar_resumo_do_encontro(array $aberto, array $vencidos, bool $coord
             'ouro'  => $faltamDias !== null && $faltamDias <= 2,
         ];
     }
+    /* O CARTAZ DO QR, ANTES DO ENCONTRO.
+       O bloco do QR mora na aba Pessoas, que é onde se trabalha DURANTE o
+       evento — e quem prepara cartaz procura na véspera, não no dia. A folha de
+       impressão já existe (`@media print` no painel.css); o que faltava era o
+       caminho até ela aparecer na hora em que a pergunta é feita.
+
+       Não é detalhe de conveniência: num ato de rua com centenas de pessoas, o
+       QR impresso no banner e no colete é a diferença entre levar os contatos
+       para casa e contar quantos apareceram. */
+    if ($aberto['token'] !== '' && ($faltamDias === null || $faltamDias >= 0)) {
+        $proximas[] = [
+            'texto' => 'Imprimir o cartaz do QR',
+            'url'   => '?e=' . rawurlencode($aberto['id']) . '&aba=pessoas#qr',
+            'ouro'  => $faltamDias !== null && $faltamDias <= 2,
+        ];
+    }
     if ($faltamDias !== null && $faltamDias <= 0 && $compareceram === 0 && $naLista > 0) {
         $proximas[] = [
             'texto' => 'Marcar quem chegou',
@@ -253,7 +269,7 @@ function desenhar_resumo_do_encontro(array $aberto, array $vencidos, bool $coord
  * As peças não conferidas nascem abertas e as prontas nascem fechadas — quem
  * abre esta aba vem terminar o que falta, não revisar o que já está feito.
  */
-function desenhar_preparo(array $aberto, array $familia, array $preparo): void
+function desenhar_preparo(array $aberto, array $familia, array $preparo, bool $coordena): void
 {
     ?>
   <fieldset>
@@ -274,23 +290,105 @@ function desenhar_preparo(array $aberto, array $familia, array $preparo): void
   </fieldset>
 
   <fieldset id="preparo">
-    <legend>As cinco peças — preparo <?= $preparo['feito'] ?>/<?= $preparo['total'] ?></legend>
+    <?php /* "As peças", e não "as cinco": elas passaram a depender da família, e
+             um número escrito na legenda vira mentira na primeira live. */ ?>
+    <legend>As peças — preparo <?= $preparo['feito'] ?>/<?= $preparo['total'] ?></legend>
 
-    <?php foreach (PECAS as $chave => $peca): ?>
+    <?php /* A SAÍDA QUE MAIS IMPORTA. A organização acontece no WhatsApp e vai
+             continuar acontecendo: uma tela que exige entrar nela para saber
+             quem faz o quê no sábado perde para uma mensagem no grupo, sempre.
+             Peça vazia sai como "falta alguém" — o pedido de voluntário se
+             escrevendo sozinho, no lugar em que as pessoas já estão. */ ?>
+    <div class="acoes" style="margin:0 0 20px">
+      <button class="btn" type="button" data-copiar="<?= h(escala_em_texto($aberto)) ?>">
+        Copiar a escala para o grupo
+      </button>
+    </div>
+
+    <?php foreach (pecas_do_evento($aberto) as $chave): ?>
+      <?php $peca = PECAS[$chave]; ?>
       <?php
         $lista = checklist($peca['checklist']);
         $marcados = $aberto['feitos'][$chave] ?? [];
-        $responsavel = achar_pessoa($aberto['responsaveis'][$chave]);
+        /* TODOS OS NOMES, e o estado de cada um. Com quatro pessoas na Captação,
+           mostrar só a primeira faria as outras três desaparecerem da tela em
+           que o trabalho é conferido — e quem sumiu da tela some do encontro. */
+        $donos = [];
+        foreach ($aberto['responsaveis'][$chave] as $id) {
+            $p = achar_pessoa($id);
+            if ($p === null) {
+                continue;
+            }
+            $estado = $aberto['aceites'][$chave][$id] ?? '';
+            $donos[] = primeiro_nome($p['nome'])
+                . ($estado === 'topou' ? ' ✓' : ($estado === 'nao-posso' ? ' ✕' : ''));
+        }
       ?>
       <details class="item" id="peca-<?= h($chave) ?>" <?= count($marcados) < count($lista['itens']) ? 'open' : '' ?>>
         <summary class="item-topo">
           <span class="item-num" aria-hidden="true"><?= count($marcados) === count($lista['itens']) ? '✓' : '·' ?></span>
           <span class="item-resumo">
             <strong><?= h($peca['nome']) ?></strong>
-            <span><?= count($marcados) ?>/<?= count($lista['itens']) ?><?= $responsavel ? ' · ' . h($responsavel['nome']) : ' · sem dono' ?></span>
+            <span><?= count($marcados) ?>/<?= count($lista['itens']) ?> · <?= $donos === [] ? 'sem dono' : h(implode(', ', $donos)) ?></span>
           </span>
         </summary>
         <div class="item-corpo">
+          <?php /* O CONVITE MORA AQUI, e não na aba Dados, por duas razões. A
+                   primeira é de trabalho: Dados é onde se DECIDE quem faz, uma
+                   vez; Preparo é onde se COBRA, várias. A segunda é de HTML: a
+                   escala em Dados vive dentro do formulário de salvar, e form
+                   dentro de form é inválido — aqui cada item já é um form solto.
+
+                   Só quem coordena: o telefone do time é dado pessoal, e cobrar
+                   resposta é trabalho de quem chamou. */ ?>
+          <?php if ($coordena && $aberto['responsaveis'][$chave] !== []): ?>
+            <div class="escalados">
+              <?php foreach ($aberto['responsaveis'][$chave] as $id): ?>
+                <?php
+                  $p = achar_pessoa($id);
+                  if ($p === null) { continue; }
+                  $estado = $aberto['aceites'][$chave][$id] ?? '';
+                ?>
+                <div class="escalado">
+                  <span class="escalado-quem">
+                    <strong><?= h($p['nome']) ?></strong>
+                    <span class="selo <?= $estado === 'topou' ? 'selo-ok' : ($estado === 'nao-posso' ? 'selo-off' : 'selo-cinza') ?>">
+                      <?= h(ROTULO_ESCALA[$estado] ?? '') ?>
+                    </span>
+                  </span>
+                  <div class="acoes-celula">
+                    <?php if ($p['telefone'] !== ''): ?>
+                      <?php links_whatsapp($p['telefone'], 'Convidar', mensagem_de_escala($p, $aberto, $chave), 'btn btn-mini'); ?>
+                    <?php endif; ?>
+                    <?php
+                      /* Os três estados como botões, e não como `<select>`: são
+                         três toques diferentes no celular, feitos em momentos
+                         diferentes, e um seletor obrigaria a abrir, escolher e
+                         confirmar para dizer "topou". */
+                      $botoes = [
+                          'convidado' => 'Convidei',
+                          'topou'     => 'Topou',
+                          'nao-posso' => 'Não pode',
+                      ];
+                    ?>
+                    <?php foreach ($botoes as $valor => $rotulo): ?>
+                      <?php if ($estado === $valor) { continue; } ?>
+                      <form method="post">
+                        <input type="hidden" name="csrf" value="<?= h(token()) ?>">
+                        <input type="hidden" name="id" value="<?= h($aberto['id']) ?>">
+                        <input type="hidden" name="acao" value="aceite">
+                        <input type="hidden" name="peca" value="<?= h($chave) ?>">
+                        <input type="hidden" name="quem" value="<?= h($id) ?>">
+                        <input type="hidden" name="estado" value="<?= h($valor) ?>">
+                        <button class="btn btn-mini" type="submit"><?= h($rotulo) ?></button>
+                      </form>
+                    <?php endforeach; ?>
+                  </div>
+                </div>
+              <?php endforeach; ?>
+            </div>
+          <?php endif; ?>
+
           <?php foreach ($lista['itens'] as $i => $texto): ?>
             <form method="post" class="risco-linha">
               <input type="hidden" name="csrf" value="<?= h(token()) ?>">
