@@ -232,28 +232,72 @@ function tarefas_de(array $u): array
             ];
         }
 
-        /* Encontro chegando com checklist pela metade. */
+        /* ---------- A SUA peça, e não o preparo do encontro inteiro ----------
+           Aqui morava o defeito que fazia todo mundo fazer tudo: a tarefa
+           "Preparar <encontro>" disparava para QUALQUER conta com `eventos`, com
+           o agregado das marcações de todas as peças. Ninguém era avisado de que
+           era a Recepção; todos eram avisados de que o encontro precisava ser
+           preparado — e no sábado cada um fazia o que dava com o que tinha.
+
+           Agora quem executa recebe a peça que é dela, com o número dela. */
         foreach (eventos_proximos() as $e) {
-            $preparo = preparo_do_evento($e);
-            if ($preparo['total'] === 0 || $preparo['feito'] >= $preparo['total']) {
-                continue;
-            }
-            /* `dias_ate_o_dia()` e não `strtotime($e['data'])`: `data` é
-               texto de exibição ("24/08"), e a conta em cima dele era feita a
-               partir de 1970 — todo encontro futuro caía aqui como "é hoje" e
-               urgente. Ver o comentário da função, em agenda-comum.php. */
             $faltam = dias_ate_o_dia($e['inicio']);
             if ($faltam !== null && $faltam > 7) {
                 continue;  // ainda não é hora de cobrar
             }
+            foreach (pecas_do_evento($e) as $chave) {
+                if (!in_array($u['id'], $e['responsaveis'][$chave], true)) {
+                    continue;
+                }
+                if (($e['aceites'][$chave][$u['id']] ?? '') === 'nao-posso') {
+                    continue;  // ela já disse que não pode; cobrar seria insistir
+                }
+                $p = preparo_da_peca($e, $chave);
+                if ($p['total'] > 0 && $p['feito'] >= $p['total']) {
+                    continue;
+                }
+                $tarefas[] = [
+                    'area'    => 'eventos',
+                    'icone'   => 'ticket',
+                    'urgente' => $faltam !== null && $faltam <= 2,
+                    'texto'   => 'Você é ' . PECAS[$chave]['nome'] . ' em “' . apelido_curto($e['titulo'], 24) . '”',
+                    'porque'  => $p['feito'] . ' de ' . $p['total'] . ' conferidos'
+                        . ($faltam === null ? '' : ($faltam <= 0 ? ' — é hoje' : ($faltam === 1 ? ' — é amanhã' : " — faltam {$faltam} dias"))),
+                    'url'     => '/painel/eventos.php?e=' . rawurlencode($e['id']) . '&aba=preparo#peca-' . $chave,
+                ];
+            }
+        }
+    }
+
+    /* ---------- A escala furada — só de quem coordena ----------
+       `pecas_a_resolver()` junta as três situações numa pendência só, porque em
+       todas elas a peça está sem ninguém garantido e o trabalho é o mesmo: achar
+       alguém. Sem isto a escala existia e ninguém era cobrado por ela — que foi
+       exatamente como seis encontros seguidos aconteceram com zero peças
+       escaladas, sem uma única tela reclamar. */
+    if (pode('agenda')) {
+        require_once __DIR__ . '/eventos-comum.php';
+
+        foreach (eventos_proximos() as $e) {
+            $abertas = pecas_a_resolver($e);
+            if ($abertas === []) {
+                continue;
+            }
+            $faltam = dias_ate_o_dia($e['inicio']);
+            if ($faltam !== null && $faltam > 14) {
+                continue;
+            }
+            $quantas = count($abertas);
             $tarefas[] = [
                 'area'    => 'eventos',
-                'icone'   => 'ticket',
-                'urgente' => $faltam !== null && $faltam <= 2,
-                'texto'   => 'Preparar “' . apelido_curto($e['titulo']) . '”',
-                'porque'  => $preparo['feito'] . ' de ' . $preparo['total'] . ' conferidos'
-                    . ($faltam === null ? '' : ($faltam <= 0 ? ' — é hoje' : ($faltam === 1 ? ' — é amanhã' : " — faltam {$faltam} dias"))),
-                'url'     => '/painel/eventos.php?e=' . rawurlencode($e['id']),
+                'icone'   => 'users',
+                'urgente' => $faltam !== null && $faltam <= 3,
+                'texto'   => $quantas === 1
+                    ? PECAS[$abertas[0]]['nome'] . ' sem ninguém em “' . apelido_curto($e['titulo'], 22) . '”'
+                    : $quantas . ' peças sem ninguém em “' . apelido_curto($e['titulo'], 22) . '”',
+                'porque'  => 'sem dono, recusada ou convidada sem resposta'
+                    . ($faltam === null ? '' : ($faltam <= 0 ? ' — é hoje' : " — faltam {$faltam} dias")),
+                'url'     => '/painel/eventos.php?e=' . rawurlencode($e['id']) . '&aba=dados#dados',
             ];
             break;  // um encontro por vez: a fila não é a agenda
         }

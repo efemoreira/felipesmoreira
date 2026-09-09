@@ -214,6 +214,19 @@ function desenhar_resumo_do_encontro(array $aberto, array $vencidos, bool $coord
             'ouro'  => true,
         ];
     }
+    /* A ESCALA FURADA VEM ANTES DO PREPARO, e não é ordem arbitrária: checklist
+       sem dono não se resolve conferindo item, se resolve achando gente. Cobrar
+       o preparo de uma peça que não tem ninguém é cobrar de ninguém. */
+    $aResolver = $coordena ? pecas_a_resolver($aberto) : [];
+    if ($aResolver !== [] && ($faltamDias === null || $faltamDias >= 0)) {
+        $proximas[] = [
+            'texto' => count($aResolver) === 1
+                ? 'Achar quem faz ' . PECAS[$aResolver[0]]['nome']
+                : 'Achar gente para ' . count($aResolver) . ' peças',
+            'url'   => '?e=' . rawurlencode($aberto['id']) . '&aba=dados#dados',
+            'ouro'  => $faltamDias !== null && $faltamDias <= 3,
+        ];
+    }
     if ($preparo['total'] > 0 && $preparo['feito'] < $preparo['total']
         && ($faltamDias === null || $faltamDias >= 0)) {
         $proximas[] = [
@@ -271,6 +284,9 @@ function desenhar_resumo_do_encontro(array $aberto, array $vencidos, bool $coord
  */
 function desenhar_preparo(array $aberto, array $familia, array $preparo, bool $coordena): void
 {
+    /* Mesma lista da barra de ações lá em cima, e da tarefa do Início: uma
+       régua só para "esta peça está furada". */
+    $aResolver = $coordena ? pecas_a_resolver($aberto) : [];
     ?>
   <fieldset>
     <legend>Playbook — <?= h($familia['nome']) ?></legend>
@@ -329,7 +345,21 @@ function desenhar_preparo(array $aberto, array $familia, array $preparo, bool $c
           <span class="item-num" aria-hidden="true"><?= count($marcados) === count($lista['itens']) ? '✓' : '·' ?></span>
           <span class="item-resumo">
             <strong><?= h($peca['nome']) ?></strong>
-            <span><?= count($marcados) ?>/<?= count($lista['itens']) ?> · <?= $donos === [] ? 'sem dono' : h(implode(', ', $donos)) ?></span>
+            <span>
+              <?= count($marcados) ?>/<?= count($lista['itens']) ?> ·
+              <?php if ($donos === []): ?>
+                <?php /* "sem dono" era texto cinza que não cobrava nada de
+                         ninguém — dava para chegar no sábado com cinco peças
+                         vazias sem uma só tela reclamar. Agora ele é selo, e
+                         some da lista de pendências quando alguém assume. */ ?>
+                <span class="selo <?= in_array($chave, $aResolver, true) ? 'selo-off' : 'selo-cinza' ?>">sem dono</span>
+              <?php else: ?>
+                <?= h(implode(', ', $donos)) ?>
+                <?php if (in_array($chave, $aResolver, true)): ?>
+                  <span class="selo selo-off">sem resposta</span>
+                <?php endif; ?>
+              <?php endif; ?>
+            </span>
           </span>
         </summary>
         <div class="item-corpo">

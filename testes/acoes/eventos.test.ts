@@ -769,3 +769,73 @@ describe("a escala vira mensagem", () => {
     );
   });
 });
+
+/**
+ * A ESCALA FURADA PRECISA COBRAR ALGUÉM.
+ *
+ * "Sem dono" era texto cinza que não cobrava nada: dava para chegar no sábado
+ * com cinco peças vazias sem uma só tela reclamar — e foi assim que seis
+ * encontros seguidos aconteceram com zero peças escaladas.
+ */
+describe("as pendências da escala", () => {
+  test("peça essencial sem ninguém vira ação no encontro e tarefa no Início", async () => {
+    const encontro = await painel.buscar("eventos", `e=${EVENTO}`);
+    assert.match(encontro.html, /Achar gente para \d+ peças|Achar quem faz/);
+
+    const inicio = await painel.buscar("");
+    assert.match(inicio.html, /peças sem ninguém em|sem ninguém em “/);
+  });
+
+  test("escala completa não cobra nada", async () => {
+    const e = painel.ler("eventos")[0];
+    const cheia: Record<string, string[]> = {};
+    /* Público cobra local-hora, logistica, divulgacao, gravacao e captacao. */
+    for (const p of ["local-hora", "logistica", "divulgacao", "gravacao", "captacao"]) {
+      cheia[p] = [ADMIN];
+    }
+    painel.gravar("eventos", [{ ...e, responsaveis: cheia }]);
+
+    const { html } = await painel.buscar("eventos", `e=${EVENTO}`);
+    /* Cobrança que não some quando o trabalho é feito vira ruído, e ruído
+       ensina a ignorar a tela. */
+    assert.doesNotMatch(html, /Achar gente para|Achar quem faz/);
+  });
+
+  test("peça opcional vazia não cobra — adesivagem não é de toda caminhada", async () => {
+    const e = painel.ler("eventos")[0];
+    const cheia: Record<string, string[]> = {};
+    for (const p of ["local-hora", "logistica", "divulgacao", "gravacao", "captacao"]) {
+      cheia[p] = [ADMIN];
+    }
+    painel.gravar("eventos", [{ ...e, responsaveis: cheia }]);
+
+    const { html } = await painel.buscar("eventos", `e=${EVENTO}&aba=preparo`);
+    /* Ela aparece na tela, oferecida, e sem selo de erro: quem faz adesivaço
+       escala, quem faz bandeiraço ignora, e nenhum dos dois recebe alarme. */
+    assert.match(html, /id="peca-adesivagem"/);
+    assert.doesNotMatch(html, /Achar quem faz Adesivagem/);
+  });
+
+  test("quem é escalada vê a SUA peça no Início, e não o preparo do encontro", async () => {
+    const e = painel.ler("eventos")[0];
+    painel.gravar("eventos", [{ ...e, responsaveis: { ...e.responsaveis, captacao: [ADMIN] } }]);
+
+    const { html } = await painel.buscar("");
+    /* Aqui morava o "todos fazem tudo": a tarefa antiga disparava para qualquer
+       conta com `eventos`, com o agregado das cinco peças. */
+    assert.match(html, /Você é Captação em/);
+    assert.doesNotMatch(html, /Preparar “/);
+  });
+
+  test("quem disse que não pode não é cobrada de novo", async () => {
+    const e = painel.ler("eventos")[0];
+    painel.gravar("eventos", [{
+      ...e,
+      responsaveis: { ...e.responsaveis, captacao: [ADMIN] },
+      aceites: { captacao: { [ADMIN]: "nao-posso" } },
+    }]);
+
+    const { html } = await painel.buscar("");
+    assert.doesNotMatch(html, /Você é Captação em/, "cobrou quem já avisou que não pode");
+  });
+});
