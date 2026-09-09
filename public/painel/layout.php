@@ -41,7 +41,7 @@ const VERSAO_ESTILO = '29';
 const GRUPOS_NAV = [
     'Comunicação' => ['fatos', 'producao', 'municao', 'estudio'],
     'Encontros'   => ['eventos', 'agenda'],
-    'Coordenação' => ['inscricoes', 'candidatos', 'aulas', 'pessoas'],
+    'Coordenação' => ['inscricoes', 'candidatos', 'aulas', 'pessoas', 'caixa'],
 ];
 
 /** Rótulos curtos, para caber na barra do celular. */
@@ -56,6 +56,7 @@ const ROTULO_CURTO = [
     'pessoas'    => 'Pessoas',
     'inscricoes' => 'Inscrições',
     'candidatos' => 'Candidatos',
+    'caixa'      => 'Caixa',
 ];
 
 /** fechar_pagina() precisa saber se abriu a moldura, para não fechar div à toa. */

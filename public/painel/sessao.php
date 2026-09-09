@@ -48,6 +48,7 @@ const AREAS = [
     'inscricoes' => 'Inscrições da militância',
     'candidatos' => 'Candidatos',
     'pessoas'    => 'Pessoas e dados pessoais',
+    'caixa'      => 'Caixa',
 ];
 
 /**
@@ -58,6 +59,10 @@ const AREAS = [
  * capacidades são o jeito normal de conceder; as áreas continuam por baixo para
  * a exceção — tirar o Estúdio de alguém de Comunicação sem inventar uma
  * capacidade nova.
+ *
+ * **`pessoas` e `caixa` só entram em `adm`, de propósito.** Dinheiro segue a
+ * mesma régua do dado pessoal: acesso a ele não acompanha o trabalho do dia,
+ * acompanha a responsabilidade sobre ele.
  *
  * **`pessoas` só entra em `adm`, de propósito.** É a tela com telefone, e-mail e
  * endereço de todo mundo: acesso a dado pessoal não acompanha o trabalho do dia,
@@ -307,6 +312,7 @@ const DESTINO_AREA = [
     'inscricoes' => ['url' => '/painel/inscricoes.php', 'resumo' => 'Aprovar quem se inscreveu em /queroajudar e mandar o acesso'],
     'candidatos' => ['url' => '/painel/candidatos.php', 'resumo' => 'Nome de urna, número e @ de cada candidato — a colinha que o eleitor leva'],
     'pessoas'    => ['url' => '/painel/pessoas.php', 'resumo' => 'Todo mundo do movimento: quem é, o que faz, em que encontros esteve'],
+    'caixa'      => ['url' => '/painel/caixa.php', 'resumo' => 'Todo real que entra e sai, com origem — e os dois caixas nunca somados juntos'],
 ];
 
 /**

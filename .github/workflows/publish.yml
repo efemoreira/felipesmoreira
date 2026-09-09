@@ -72,6 +72,7 @@ jobs:
           RewriteRule ^painel/inscricoes/?$ /painel/inscricoes.php [L]
           RewriteRule ^painel/candidatos/?$ /painel/candidatos.php [L]
           RewriteRule ^painel/pessoas/?$ /painel/pessoas.php [L]
+          RewriteRule ^painel/caixa/?$ /painel/caixa.php [L]
           RewriteRule ^painel/procurar/?$ /painel/procurar.php [L]
           RewriteRule ^painel/conta/?$ /painel/conta.php [L]
           RewriteRule ^painel/manutencao/?$ /painel/manutencao.php [L]

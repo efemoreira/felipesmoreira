@@ -46,6 +46,7 @@ const ICONE_AREA = [
     'inscricoes' => 'flag',
     'candidatos' => 'users',
     'pessoas'    => 'users',
+    'caixa'      => 'book',
 ];
 
 /** SVG inline, no mesmo traço do site (stroke 2, ponta e junta arredondadas). */
