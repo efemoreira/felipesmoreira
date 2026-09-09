@@ -75,6 +75,7 @@ function tratar_acoes_de_pessoa(): void
             $ficha['observacao'] = $_POST['observacao'] ?? '';
             $ficha['funcoes'] = (array) ($_POST['funcoes'] ?? []);
             $ficha['redes'] = (array) ($_POST['redes'] ?? []);
+            $ficha['grupo'] = $_POST['grupo'] ?? ($ficha['grupo'] ?? '');
             /* NINGUÉM ACOMPANHA A SI MESMO: o `<select>` já não se oferece, mas
                um POST montado à mão passaria — e a pessoa sumiria da própria
                lista sem nunca aparecer na de outra. */

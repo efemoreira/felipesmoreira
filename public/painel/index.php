@@ -680,13 +680,18 @@ abrir_pagina('Início');
 
     <section class="cartao-grupo" id="grupo">
       <span class="cartao-grupo-icone"><?= icone('whatsapp', 28) ?></span>
-      <h2>Grupo de trabalho</h2>
+      <h2><?= $quemMeAcompanha !== null ? 'Seu grupo' : 'Grupo de trabalho' ?></h2>
       <p>
-        Entre no grupo para acompanhar avisos e novidade dos trabalhos da
-        militância da Missão no Ceará.
+        <?php if ($quemMeAcompanha !== null): ?>
+          O grupo de quem <?= h(primeiro_nome($quemMeAcompanha['nome'])) ?> acompanha.
+          É um punhado de gente, e é onde você vai ser chamada pelo nome.
+        <?php else: ?>
+          Entre no grupo para acompanhar avisos e novidade dos trabalhos da
+          militância da Missão no Ceará.
+        <?php endif; ?>
       </p>
       <div class="acoes">
-        <a class="btn btn-ouro" href="<?= h(GRUPO_TRABALHO) ?>" target="_blank" rel="noopener">
+        <a class="btn btn-ouro" href="<?= h(grupo_de($u)) ?>" target="_blank" rel="noopener">
           Entrar no grupo
         </a>
       </div>

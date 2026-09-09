@@ -73,6 +73,24 @@ function formulario_pessoa(?array $aberta, array $catalogo): void
         </p>
       </div>
 
+      <?php /* O SUB-GRUPO DE QUEM LIDERA. Um grupo só, com todo mundo dentro,
+               é onde ninguém é chamado pelo nome — e é a razão mais direta de
+               alguém entrar no movimento e não se sentir parte. Só aparece para
+               quem acompanha gente: campo de grupo numa ficha que não lidera é
+               campo que ninguém preenche e que confunde quem lê. */ ?>
+      <?php if ($aberta !== null && pode_liderar($aberta)): ?>
+        <div class="campo">
+          <label for="f-grupo<?= $s ?>">O grupo de quem ela acompanha</label>
+          <input id="f-grupo<?= $s ?>" name="grupo" type="url" maxlength="200"
+                 placeholder="https://chat.whatsapp.com/…"
+                 value="<?= h($aberta['grupo'] ?? '') ?>">
+          <p class="dica">
+            Quem tem esta pessoa como líder passa a receber este convite no lugar do
+            grupo geral — no Início e na mensagem de acesso.
+          </p>
+        </div>
+      <?php endif; ?>
+
       <?php /* QUEM ACOMPANHA — a camada que faltava entre a coordenação e
                oitenta e sete pessoas. Só quem tem a capacidade de liderar entra
                na lista: apontar para alguém que não pode ver a própria gente

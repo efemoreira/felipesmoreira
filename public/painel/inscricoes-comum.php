@@ -680,6 +680,10 @@ function aprovar_pessoa(array &$pessoas, string $id, string $login, array $caps,
             'senha'    => $provisoria,
             'telefone' => $p['telefone'],
             'funcoes'  => $p['funcoes'],
+            /* Resolvido AQUI, com a ficha já atualizada: o líder acabou de ser
+               marcado nesta mesma função, e `grupo_de()` lida a partir do
+               arquivo devolveria o grupo antigo — o arquivo só é gravado depois. */
+            'grupo'    => $lider === '' ? grupo_de($p) : grupo_de(['lider' => $lider]),
         ];
     }
     unset($p);
@@ -710,6 +714,15 @@ function mensagem_de_acesso(array $acesso, ?array $proximo = null): string
         . 'Usuário: ' . $acesso['usuario'] . "\n"
         . 'Senha provisória: ' . $acesso['senha'] . "\n\n"
         . "No primeiro acesso o site vai pedir para você criar sua própria senha.\n\n";
+
+    /* O GRUPO DELA, e não o geral: com a divisão por líder, quem chega cai num
+       lugar com um punhado de gente e alguém que responde por ela. Mandar o
+       grupo de todo mundo na primeira mensagem é entregar a pessoa a uma sala
+       onde ninguém a chama pelo nome — que é como se perde quem acabou de
+       dizer sim. */
+    if (($acesso['grupo'] ?? '') !== '') {
+        $texto .= "O seu grupo é este:\n" . $acesso['grupo'] . "\n\n";
+    }
 
     $funcao = funcao_pedida(['funcoes' => $acesso['funcoes'] ?? []]);
     if ($funcao !== '') {

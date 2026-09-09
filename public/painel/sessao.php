@@ -324,6 +324,30 @@ const DESTINO_AREA = [
  */
 const GRUPO_TRABALHO = 'https://chat.whatsapp.com/C8rQeoCzJpz6vObwyRFAbt';
 
+/**
+ * O GRUPO DESTA PESSOA — o do líder dela, ou o geral.
+ *
+ * Um grupo só, com todo mundo dentro, é onde ninguém é chamado pelo nome — e é
+ * a razão mais direta de alguém entrar no movimento e não se sentir parte. Com
+ * a divisão por líder, cada pessoa cai num lugar onde há um punhado de gente e
+ * alguém que responde por ela.
+ *
+ * O geral não deixa de existir: ele é o piso de quem ainda não tem líder, e o
+ * canal do que é de todo mundo.
+ */
+function grupo_de(array $pessoa): string
+{
+    if (($pessoa['lider'] ?? '') === '') {
+        return GRUPO_TRABALHO;
+    }
+    foreach (ler_pessoas() as $p) {
+        if ($p['id'] === $pessoa['lider'] && $p['grupo'] !== '') {
+            return $p['grupo'];
+        }
+    }
+    return GRUPO_TRABALHO;
+}
+
 /** O contato oficial. Não existe e-mail: este é o único canal. */
 const WHATSAPP_COORDENACAO = 'https://wa.me/5585981872972';
 
@@ -770,6 +794,19 @@ function normalizar_pessoa($p): ?array
             )),
             fn ($r) => isset(REDES[$r])
         )),
+
+        /* ---- o grupo de quem lidera ----
+           Só faz sentido para quem acompanha gente: é o link do sub-grupo dela.
+           Fica na FICHA, e não numa constante, porque assim um líder novo entra
+           sem deploy — e porque um mapa `chave => link` no código teria de ser
+           mantido em sincronia com o campo `lider` das fichas, que é onde a
+           divisão de fato mora. */
+        /* `limpar_link()` mora em `agenda-comum.php`, que depende DESTE arquivo:
+           chamá-la aqui inverteria a dependência. A régua é curta e basta —
+           convite de grupo é sempre https, e o que não for vira vazio em vez de
+           virar um `javascript:` colado numa tela do painel. */
+        'grupo' => str_starts_with(mb_strtolower(trim((string) ($p['grupo'] ?? ''))), 'https://')
+            ? limpar_texto($p['grupo'], 200) : '',
 
         /* ---- quem acompanha esta pessoa ----
            Um id de pessoa, e nada mais. É a camada que faltava entre o

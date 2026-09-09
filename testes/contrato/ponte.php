@@ -33,6 +33,7 @@ require_once $raiz . '/agenda-comum.php';
 require_once $raiz . '/inscricoes-comum.php';
 require_once $raiz . '/producao-comum.php';
 require_once $raiz . '/trilhas.php';
+require_once $raiz . '/eventos-comum.php';  // token_de_escala(), url_do_convite()
 
 /** As funções que o teste pode chamar, e só elas. */
 const PONTES = [
@@ -55,6 +56,8 @@ const PONTES = [
     'dia_de',
     'periodo_da_semana',
     'periodo_em_cartaz',
+    'token_de_escala',
+    'url_do_convite',
 ];
 
 $entrada = json_decode((string) file_get_contents('php://stdin'), true);

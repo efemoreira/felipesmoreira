@@ -485,6 +485,35 @@ function url_presenca(array $evento): string
 }
 
 /**
+ * O TOKEN DO CONVITE DE ESCALA — derivado, e não guardado.
+ *
+ * Mesmo padrão do QR de presença e do convite do Dia 0: sai do segredo do site
+ * e dos três dados que identificam o convite, então o servidor recalcula em vez
+ * de armazenar. Não há tabela de convites para envelhecer, e trocar a pessoa de
+ * peça invalida o link antigo sozinho.
+ *
+ * O id da pessoa vai na URL junto do token porque o token não é reversível —
+ * ele é assinatura, não chave. Id de pessoa não é segredo; o que o token
+ * impede é alguém responder no lugar de outra.
+ */
+function token_de_escala(string $pessoaId, string $eventoId, string $peca): string
+{
+    return substr(hash_hmac('sha256', "escala:{$pessoaId}|{$eventoId}|{$peca}", segredo()), 0, 24);
+}
+
+/** O link que a pessoa abre para dizer se topa. Vazio quando falta dado. */
+function url_do_convite(array $pessoa, array $evento, string $peca): string
+{
+    if ($pessoa['id'] === '' || $evento['id'] === '' || !isset(PECAS[$peca])) {
+        return '';
+    }
+    return raiz_do_site() . '/convite?p=' . rawurlencode($pessoa['id'])
+        . '&e=' . rawurlencode($evento['id'])
+        . '&f=' . rawurlencode($peca)
+        . '&t=' . token_de_escala($pessoa['id'], $evento['id'], $peca);
+}
+
+/**
  * O CONVITE DE UMA PEÇA, pronto para o WhatsApp.
  *
  * **Os itens do checklist vão NO CORPO da mensagem**, e não atrás de um link.
@@ -515,7 +544,16 @@ function mensagem_de_escala(array $pessoa, array $evento, string $peca): string
         $texto .= "\n";
     }
 
-    return $texto . 'Topa? Me responde aqui — se não puder dessa vez, tudo bem, só me avisa para eu chamar outra pessoa.';
+    $link = url_do_convite($pessoa, $evento, $peca);
+    if ($link === '') {
+        return $texto . 'Topa? Me responde aqui — se não puder dessa vez, tudo bem, só me avisa para eu chamar outra pessoa.';
+    }
+    /* O LINK EVITA A COBRANÇA DE VOLTA. Sem ele, quem coordena manda o convite,
+       espera a resposta no WhatsApp e ainda tem de vir marcar no painel — três
+       passos para uma pessoa, vezes nove peças. Com ele a resposta chega
+       sozinha, e quem coordena só olha o que ficou sem. */
+    return $texto . "Topa? Responde aqui em um toque:\n" . $link
+        . "\n\nSe não puder dessa vez, tudo bem — é só dizer que não, ali mesmo.";
 }
 
 /**
