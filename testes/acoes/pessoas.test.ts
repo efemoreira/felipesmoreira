@@ -283,7 +283,7 @@ describe("pessoas: a camada de liderança", () => {
         tipo: "militante", status: "", ativo: true, criadoEm: "2026-04-01T10:00:00-03:00" },
     ]);
 
-    await painel.postar("pessoas", { acao: "juntar", id: "seg-1", outra: "dup-1" });
+    await painel.postar("pessoas", { acao: "juntar", id: "seg-1", sumir: "dup-1" });
     assert.equal(painel.ler("pessoas").find((p) => p.id === "seg-1")!.lider, ADMIN);
   });
 });
@@ -307,5 +307,58 @@ describe("pessoas: o filtro de quem acompanha", () => {
     const sozinhas = await painel.buscar("pessoas", "lider=sem-lider");
     assert.match(sozinhas.html, /Ficou Sozinha/);
     assert.doesNotMatch(sozinhas.html, /Tem Quem Chame/);
+  });
+});
+
+/**
+ * AS REDES PROFISSIONAIS — o quarto eixo da ficha.
+ *
+ * `tipo` diz o que a pessoa É, `funcoes` o que ela FAZ, `capacidades` o que ela
+ * ABRE. Faltava de que rede ela FAZ PARTE: um médico pode ser eleitor,
+ * militante ou coordenador, e a rede não muda. É por ela que se monta a lista
+ * curada de um encontro relacional — que o manual pede curta e por convite
+ * pessoal, nunca por grupo.
+ */
+describe("pessoas: as redes profissionais", () => {
+  test("grava só o que existe no catálogo", async () => {
+    await painel.postar("pessoas", {
+      acao: "salvar", nome: "Dra. Ana", tipo: "apoiador",
+      "redes[]": ["medicos", "inventada"],
+    });
+
+    const nova = painel.ler("pessoas").find((p) => p.nome === "Dra. Ana")!;
+    /* O arquivo é gravado por mais de uma tela: chave estranha não pode virar
+       uma rede que nenhuma delas sabe desenhar. */
+    assert.deepEqual(nova.redes, ["medicos"]);
+  });
+
+  test("o filtro devolve a lista curta daquela rede", async () => {
+    painel.gravar("pessoas", [
+      ...painel.ler("pessoas"),
+      { id: "med-1", nome: "Doutora Saúde", tipo: "apoiador", status: "", ativo: true,
+        redes: ["medicos"], criadoEm: "2026-01-03T10:00:00-03:00" },
+      { id: "adv-1", nome: "Doutor Direito", tipo: "apoiador", status: "", ativo: true,
+        redes: ["advogados"], criadoEm: "2026-01-03T10:00:00-03:00" },
+    ]);
+
+    const { html } = await painel.buscar("pessoas", "rede=medicos");
+    assert.match(html, /Doutora Saúde/);
+    assert.doesNotMatch(html, /Doutor Direito/);
+  });
+
+  test("a fusão de fichas soma as redes", async () => {
+    painel.gravar("pessoas", [
+      ...painel.ler("pessoas"),
+      { id: "dupla-a", nome: "Dois Chapéus", telefone: "85944440000", tipo: "apoiador",
+        status: "", ativo: true, redes: ["medicos"], criadoEm: "2026-01-03T10:00:00-03:00" },
+      { id: "dupla-b", nome: "Dois Chapéus", telefone: "85944440000", tipo: "apoiador",
+        status: "", ativo: true, redes: ["educacao"], criadoEm: "2026-04-03T10:00:00-03:00" },
+    ]);
+
+    await painel.postar("pessoas", { acao: "juntar", id: "dupla-a", sumir: "dupla-b" });
+    /* Um advogado que também é professor não deixa de ser nenhum dos dois
+       porque a ficha duplicada foi juntada. */
+    const juntada = painel.ler("pessoas").find((p) => p.id === "dupla-a")!;
+    assert.deepEqual([...juntada.redes].sort(), ["educacao", "medicos"]);
   });
 });

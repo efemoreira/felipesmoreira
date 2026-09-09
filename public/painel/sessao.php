@@ -148,6 +148,35 @@ const TIPOS_PESSOA = [
 ];
 
 /**
+ * AS REDES PROFISSIONAIS — o quarto eixo da ficha.
+ *
+ * `tipo` diz o que a pessoa É, `funcoes` diz o que ela FAZ, `capacidades` diz o
+ * que ela ABRE. Faltava de que rede ela FAZ PARTE — e é um eixo diferente dos
+ * três: um médico pode ser eleitor, militante ou coordenador, e a rede não muda.
+ *
+ * A máquina do encontro já existe: `FAMILIAS['relacional']` traz o playbook, o
+ * material e as seis travas jurídicas, e o §5.4 do manual descreve o formato.
+ * O que faltava era saber quem chamar — e o Manual pede lista **curta e curada**
+ * com convite pessoal, nunca grupo de WhatsApp. É exatamente o que um filtro por
+ * rede produz.
+ *
+ * Lista fechada, pelo mesmo motivo que `CARGOS` é lista: "Médicos", "medicos" e
+ * "Médicas e médicos" digitados por três pessoas viram três redes no filtro, e
+ * a lista curada deixa de ser curada.
+ *
+ * NADA DISSO É PÚBLICO. Rede profissional não vira página no site.
+ */
+const REDES = [
+    'medicos'     => ['nome' => 'Saúde',     'resumo' => 'Médicos, enfermagem e quem trabalha na ponta do SUS'],
+    'advogados'   => ['nome' => 'Direito',   'resumo' => 'Advocacia, defensoria e quem entende de conformidade'],
+    'empresarios' => ['nome' => 'Negócios',  'resumo' => 'Quem emprega, quem toca comércio e quem abre porta'],
+    'educacao'    => ['nome' => 'Educação',  'resumo' => 'Professores, direção de escola e quem forma gente'],
+    'seguranca'   => ['nome' => 'Segurança', 'resumo' => 'Polícia, bombeiros e quem conhece a violência por dentro'],
+    'igrejas'     => ['nome' => 'Igrejas',   'resumo' => 'Liderança religiosa e quem tem comunidade própria'],
+    'campo'       => ['nome' => 'Campo',     'resumo' => 'Produtores, cooperativas e o interior que trabalha a terra'],
+];
+
+/**
  * Os cargos que existem numa cédula. Escolha de lista, e não campo de texto.
  *
  * "Dep. Federal", "Deputado federal" e "DEPUTADO FEDERAL" digitados por três
@@ -730,6 +759,17 @@ function normalizar_pessoa($p): ?array
             fn ($f) => limpar_texto($f, 40),
             is_array($p['funcoes'] ?? null) ? $p['funcoes'] : []
         ))),
+
+        /* ---- de que rede profissional ela faz parte ----
+           Mesmo padrão de `capacidades`: chave que não existe no catálogo some,
+           porque o arquivo é gravado por mais de uma tela. */
+        'redes' => array_values(array_filter(
+            array_unique(array_map(
+                fn ($r) => (string) $r,
+                is_array($p['redes'] ?? null) ? $p['redes'] : []
+            )),
+            fn ($r) => isset(REDES[$r])
+        )),
 
         /* ---- quem acompanha esta pessoa ----
            Um id de pessoa, e nada mais. É a camada que faltava entre o

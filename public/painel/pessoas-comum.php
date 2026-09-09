@@ -105,6 +105,9 @@ function juntar_pessoas(string $idManter, string $idSumir): bool
         }
     }
     $manter['funcoes'] = array_values(array_unique(array_merge($manter['funcoes'], $sumir['funcoes'])));
+    /* As redes SOMAM, como as funções: um advogado que também é professor não
+       deixa de ser nenhum dos dois porque a ficha duplicada foi juntada. */
+    $manter['redes'] = array_values(array_unique(array_merge($manter['redes'], $sumir['redes'])));
 
     /* A conta e as capacidades vêm junto quando quem some é que as tinha. */
     if (!tem_conta($manter) && tem_conta($sumir)) {

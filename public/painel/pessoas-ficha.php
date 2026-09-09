@@ -54,6 +54,25 @@ function formulario_pessoa(?array $aberta, array $catalogo): void
         </div>
       </div>
 
+      <?php /* A REDE PROFISSIONAL — o quarto eixo. Não é o que a pessoa faz no
+               movimento (isso é `funcoes`): é o que ela é fora dele, e é por
+               onde se monta a lista curada de um encontro relacional. */ ?>
+      <div class="campo">
+        <label>De que rede ela faz parte</label>
+        <?php foreach (REDES as $chave => $rede): ?>
+          <label class="check">
+            <input type="checkbox" name="redes[]" value="<?= h($chave) ?>"
+              <?= in_array($chave, $aberta['redes'] ?? [], true) ? 'checked' : '' ?>>
+            <strong><?= h($rede['nome']) ?></strong>
+            <span class="dica"><?= h($rede['resumo']) ?></span>
+          </label>
+        <?php endforeach; ?>
+        <p class="dica">
+          Serve para montar convite pessoal, e nunca grupo: o encontro relacional
+          pede lista curta e curada.
+        </p>
+      </div>
+
       <?php /* QUEM ACOMPANHA — a camada que faltava entre a coordenação e
                oitenta e sete pessoas. Só quem tem a capacidade de liderar entra
                na lista: apontar para alguém que não pode ver a própria gente
@@ -256,6 +275,17 @@ function bloco_ficha(array $aberta): void
         <?php endif; ?>
         <?php if ($aberta['status'] !== ''): ?>
           <span class="selo selo-cinza"><?= h(STATUS_PESSOA[$aberta['status']]) ?></span>
+        <?php endif; ?>
+        <?php /* A rede fica na mesma linha do que a pessoa é, e não junto das
+                 funções: função é o que ela faz no movimento, rede é o que ela
+                 é fora dele. Misturadas, a lista curada de um encontro
+                 relacional sairia com militante no meio de médico. */ ?>
+        <?php foreach ($aberta['redes'] as $r): ?>
+          <span class="selo"><?= h(REDES[$r]['nome'] ?? $r) ?></span>
+        <?php endforeach; ?>
+        <?php $quemAcompanha = lider_de($aberta); ?>
+        <?php if ($quemAcompanha !== null): ?>
+          <span class="selo selo-cinza">acompanhada por <?= h($quemAcompanha['nome']) ?></span>
         <?php endif; ?>
       </p>
 
