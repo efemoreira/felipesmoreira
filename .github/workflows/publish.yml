@@ -11,7 +11,11 @@ jobs:
     name: Build and Push
     steps:
       - name: git-checkout
-        uses: actions/checkout@v3
+        # v5 e não v3: a v3 roda em Node 20, que o GitHub depreciou em setembro
+        # de 2025 e passou a forçar para Node 24. Enquanto é só aviso o deploy
+        # continua saindo; quando virar erro, ele para — e o dia em que o
+        # publish para é o dia em que ninguém consegue corrigir o site.
+        uses: actions/checkout@v5
 
       - name: Install all dependencies
         run: npm install
