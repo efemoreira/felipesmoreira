@@ -654,6 +654,33 @@ input[type=file]::file-selector-button {
 .gente-lista li + li { border-top:1px solid var(--linha-2); }
 .gente-quem { display:flex; flex-wrap:wrap; gap:8px; align-items:center; min-width:0; }
 
+/* ---- /painel/gente: um cartão por pessoa ----
+   Pilha vertical com respiro, como `.area-cartao`: nome e selo na cabeça, o
+   estado numa linha, o que dizer embaixo e o botão do WhatsApp. É lista de
+   trabalho lida no celular, uma pessoa por vez. */
+.gente-cartoes { list-style:none; margin:0; padding:0; }
+.gente-cartao {
+  padding:14px 16px; margin:0 0 12px;
+  border:3px solid var(--linha); background:var(--realce-1);
+}
+.gente-cartao:last-child { margin-bottom:0; }
+.gente-cabeca { display:flex; flex-wrap:wrap; gap:6px 10px; align-items:center; margin:0 0 6px; }
+.gente-cabeca strong { font:400 17px/1.25 var(--display); letter-spacing:.3px; }
+.gente-cabeca .selo { margin:0; }
+.gente-estado { margin:0 0 6px; font-size:14px; line-height:1.5; color:var(--texto-fraco); }
+.gente-dizer { margin:0 0 10px; }
+.gente-cartao .acoes { margin:0; }
+
+/* ---- os backups da Manutenção ----
+   O mesmo desenho da lista de gente: um zip por linha, nome à esquerda e
+   data/tamanho à direita, com a linha fina separando. */
+.lista-backups { list-style:none; margin:0; padding:0; }
+.lista-backups li {
+  display:flex; flex-wrap:wrap; gap:8px; align-items:center;
+  justify-content:space-between; padding:10px 0; min-height:44px;
+}
+.lista-backups li + li { border-top:1px solid var(--linha-2); }
+
 /* ---- aprovar em lote ----
    Gruda no topo da lista: com setenta e duas fichas, um botão no fim é um botão
    que exige rolar a fila inteira depois de marcar a última — e rolar de volta
@@ -989,6 +1016,18 @@ input[type=file]::file-selector-button {
   .hub { grid-template-columns:1fr; }
   .hub-lado { order:-1; }
 }
+
+/* ---- as linhas do hub ----
+   O que cabe numa linha fica numa linha: quem te acompanha, a operação hoje
+   (só o que venceu), o grupo depois de entrar. Eram cartões e seções; no
+   celular cada um custava uma rolagem antes da fila. */
+.hub-linha {
+  display:flex; flex-wrap:wrap; gap:6px 8px; align-items:center;
+  margin:0 0 14px; font-size:15px; line-height:1.5; color:var(--texto-fraco);
+}
+.hub-linha svg { flex:0 0 auto; color:var(--acento); }
+.hub-linha strong { color:var(--texto); }
+.hub-linha .selo { margin:0; }
 
 .cartao-grupo {
   border:3px solid var(--linha-2); background:var(--superficie);

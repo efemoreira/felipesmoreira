@@ -45,6 +45,32 @@
 - Áreas são ajuste fino.
 - `pessoas` é restrita a `adm` por conter dado pessoal completo.
 - Área nova exige: `AREAS`, `DESTINO_AREA`, `GRUPOS_NAV`, `ROTULO_CURTO`, ícone e regra de URL limpa.
+- **Tela pessoal não é área.** `conta.php` e `gente.php` abrem por
+  `exigir_login()` mais uma regra própria (`pode_liderar()` no caso de Sua
+  gente), entram como item solto em `menu_do_painel()` e não tocam `AREAS`.
+  `gente.php` lê só por `minha_gente($eu)` — o recorte é sempre o de quem está
+  logado; `testes/fumaca/gente.test.ts` semeia duas líderes e procura o nome
+  da gente da outra no HTML.
+
+### Leituras
+
+- `/painel/leituras` é a mesa de olhar: Origem (o funil por `?de=`),
+  Território (aprovadas por cidade e bairro), Semana (os medidores de
+  `panorama_de()`, o mutirão, os caixas só para `adm`) e Atividade (a linha do
+  tempo inteira, com busca e recorte por área). Não tem `-acoes.php`, de
+  propósito; `testes/acoes/leituras.test.ts` fotografa `/dados` antes e depois.
+- Leitura não mora dentro de mesa. "De onde vêm" e "Onde a militância mora"
+  saíram de Inscrições; `inscricoes?aba=origens` redireciona.
+
+### O hub
+
+- Quatro seções na coluna principal (fila, próximo encontro, formação, três
+  linhas do que andou acontecendo) e até três cartões de ação na lateral (sua
+  gente, peça da semana, grupo). O que cabe numa linha é
+  `.hub-linha`: quem te acompanha, a operação hoje (só o que não está em dia),
+  o grupo depois de marcar que entrou.
+- `testes/fumaca/painel.test.ts` conta seções e cartões e trava o teto. Bloco
+  novo no hub tem tela própria por trás, ou não entra.
 
 ### Nome e telefone
 
@@ -52,7 +78,7 @@
 movimento, não detalhe de tela, e vale para qualquer lugar que desenhe uma
 pessoa — lista, seletor, linha do tempo, resultado de busca.
 
-- Telefone: `pode_ver_telefone()` (`eventos-comum.php`). Fora da coordenação sai
+- Telefone: `pode_ver_telefone()` (`privacidade.php`). Fora da coordenação sai
   encoberto por `telefone_encoberto()`. A exceção é quem cadastrou aquela
   pessoa: ela acabou de digitar o número.
 - Nome fora do contexto de uma pessoa (linha do tempo, recado): `nome_encoberto()`
@@ -84,6 +110,13 @@ quem zerou, justamente para não haver janela sem dono.
 ```
 
 Quando houver blocos grandes independentes, extraia também arquivos por bloco.
+
+O POST-redirect-GET mora em `acoes-comum.php`: `avisar()` guarda o recado,
+`ir_para()` manda o 302, `exigir_token_de_acao()` é a trava de CSRF e
+`recado_pendente()` lê o recado na rota. Cada `-acoes.php` inclui esse arquivo e
+define só o seu `voltar()` — para onde a ação volta (aba, âncora, encontro
+aberto) é decisão da tela. Exemplo completo: `municao.php` + `municao-acoes.php`
++ `municao-tela.php` + `municao-mutirao.php` + `municao-pecas.php`.
 
 ## Linha do tempo e panorama
 

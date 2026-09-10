@@ -1,6 +1,6 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { execFileSync } from "node:child_process";
@@ -167,5 +167,51 @@ describe("painel: o que não pode vazar para o site público", () => {
       achados = "";
     }
     assert.equal(achados.trim(), "", "algum arquivo de src/ referencia o conteúdo das aulas");
+  });
+});
+
+describe("painel: o grupo Administração é a permissão legível", () => {
+  /* Área que nenhuma capacidade concede é só-adm. Ela mora em "Administração",
+     e só ela: o menu passa a dizer a regra do sessao.php sem ninguém abri-lo. */
+  const corpoCaps = sessao.slice(sessao.indexOf("const CAPACIDADES = ["), sessao.indexOf("\n];", sessao.indexOf("const CAPACIDADES = [")));
+  const concedidas = new Set([...corpoCaps.matchAll(/'areas'\s*=>\s*\[([^\]]*)\]/g)].flatMap((m) => [...m[1].matchAll(/'([a-z-]+)'/g)].map((x) => x[1])));
+  const soAdm = AREAS.filter((a) => !concedidas.has(a)).sort();
+
+  const i = layout.indexOf("const GRUPOS_NAV = [");
+  const grupos = layout.slice(i, layout.indexOf("\n];", i));
+  const linhaAdm = grupos.split("\n").find((l) => l.includes("'Administração'"));
+  const noGrupo = linhaAdm ? [...linhaAdm.matchAll(/'([a-z-]+)'/g)].map((m) => m[1]).sort() : [];
+
+  test("toda área só-adm mora em Administração, e nada mais mora lá", () => {
+    assert.ok(soAdm.length >= 2, `só achei ${soAdm.length} áreas só-adm — o formato de CAPACIDADES mudou?`);
+    assert.deepEqual(noGrupo, soAdm, "Administração e as áreas só-adm divergem");
+  });
+});
+
+describe("painel: o POST-redirect-GET tem um lugar só", () => {
+  /* `avisar()`, a trava de CSRF e a leitura do recado eram copiadas em cada
+     `-acoes.php` — nove vezes a mesma dupla. Agora moram em `acoes-comum.php`,
+     e o teste existe para a décima tela grande não copiar de novo. */
+  const PAINEL = path.join(RAIZ, "public/painel");
+  const telas = readdirSync(PAINEL).filter((f) => f.endsWith(".php") && f !== "acoes-comum.php");
+
+  test("nenhum arquivo redefine avisar()", () => {
+    const copias = telas.filter((f) => /^function avisar\(/m.test(readFileSync(path.join(PAINEL, f), "utf8")));
+    assert.deepEqual(copias, [], "cópia de avisar(): inclua acoes-comum.php em vez de redefinir");
+  });
+
+  test("ninguém escreve o recado na sessão à mão", () => {
+    const diretos = telas.filter((f) => /\$_SESSION\['recado'\]\s*=/.test(readFileSync(path.join(PAINEL, f), "utf8")));
+    assert.deepEqual(diretos, [], "escrita direta em $_SESSION['recado']: é avisar()");
+  });
+
+  test("a trava de CSRF das ações é exigir_token_de_acao()", () => {
+    /* A forma antiga: `if (!token_valido()) { … derrubar_sessao(); header(…); exit; }`
+       dentro de um `-acoes.php`. O `index.php` (login) e o `conta.php` têm
+       fluxo próprio e ficam de fora de propósito. */
+    const copias = telas
+      .filter((f) => f.endsWith("-acoes.php"))
+      .filter((f) => /if \(!token_valido\(\)\)/.test(readFileSync(path.join(PAINEL, f), "utf8")));
+    assert.deepEqual(copias, ["agenda-acoes.php"], "trava de CSRF copiada: chame exigir_token_de_acao()");
   });
 });

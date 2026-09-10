@@ -24,7 +24,7 @@ require_once __DIR__ . '/icones.php';
 require_once __DIR__ . '/agora.php';
 
 /** Versão do CSS — muda junto com o painel.css para furar o cache do navegador. */
-const VERSAO_ESTILO = '29';
+const VERSAO_ESTILO = '31';
 
 /**
  * Os grupos da navegação, na ordem em que aparecem.
@@ -38,10 +38,18 @@ const VERSAO_ESTILO = '29';
  *
  * ÁREA NOVA precisa entrar em um destes grupos, senão não aparece no menu.
  */
+/* O QUARTO GRUPO É A PERMISSÃO LEGÍVEL. Pessoas e Caixa são as duas áreas que
+   nenhuma capacidade concede — só `adm` as abre, e pela mesma razão: dado
+   pessoal e dinheiro seguem a responsabilidade, não o trabalho do dia. Juntas
+   sob "Administração", o menu diz isso sem ninguém ler o sessao.php. Grupo
+   vazio não desenha, então para quem não é adm nada muda.
+   `testes/contrato/painel.test.ts` prende: área sem capacidade mora aqui, e
+   só ela. */
 const GRUPOS_NAV = [
-    'Comunicação' => ['fatos', 'producao', 'municao', 'estudio'],
-    'Encontros'   => ['eventos', 'agenda'],
-    'Coordenação' => ['inscricoes', 'candidatos', 'aulas', 'pessoas', 'caixa'],
+    'Comunicação'   => ['fatos', 'producao', 'municao', 'estudio'],
+    'Encontros'     => ['eventos', 'agenda'],
+    'Coordenação'   => ['inscricoes', 'candidatos', 'aulas', 'leituras'],
+    'Administração' => ['pessoas', 'caixa'],
 ];
 
 /** Rótulos curtos, para caber na barra do celular. */
@@ -57,6 +65,7 @@ const ROTULO_CURTO = [
     'inscricoes' => 'Inscrições',
     'candidatos' => 'Candidatos',
     'caixa'      => 'Caixa',
+    'leituras'   => 'Leituras',
 ];
 
 /** fechar_pagina() precisa saber se abriu a moldura, para não fechar div à toa. */
@@ -151,6 +160,18 @@ function menu_do_painel(array $u, array $pendencias): array
         $formacao['marca'] = $f['rapidasFeitas'] . '/' . $f['rapidas'];
     }
     $soltos[] = $formacao;
+
+    /* Sua gente, para quem acompanha alguém. Item solto, e não área: a porta é
+       `pode_liderar()`, o recorte é sempre o de quem está logado, e a
+       capacidade `lideranca` continua não abrindo tela de área nenhuma. O
+       número é quantos esfriaram — é o trabalho, não o tamanho da lista. */
+    require_once __DIR__ . '/pessoas-comum.php';
+    if (pode_liderar($u)) {
+        $soltos[] = [
+            'url' => '/painel/gente.php', 'arquivo' => 'gente.php', 'rotulo' => 'Sua gente',
+            'curto' => 'Gente', 'icone' => 'users', 'conta' => $pendencias['gente'] ?? 0, 'marca' => '',
+        ];
+    }
 
     $grupos = [];
     foreach (GRUPOS_NAV as $rotulo => $doGrupo) {

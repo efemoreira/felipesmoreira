@@ -46,7 +46,10 @@ const TELAS: [tela: string, querystring: string, apelido: string][] = [
   ["fatos", "q=obra", "busca de fato"],
   ["producao", "", "quadro de produção"],
   ["producao", "dono=atrasados", "recorte de atrasados"],
-  ["municao", "", "munição"],
+  ["municao", "", "munição — mutirão da semana"],
+  ["municao", "aba=pecas", "munição — peças"],
+  ["municao", "aba=pecas&novo=1", "modal de peça nova"],
+  ["municao", "aba=pecas&q=esgoto", "busca de peça"],
   ["aulas", "", "formação — conteúdo"],
   ["aulas", "aba=estudo", "formação — quem estudou"],
   ["aulas", "aba=prontidao", "formação — trilhas e prontidão"],
@@ -54,12 +57,18 @@ const TELAS: [tela: string, querystring: string, apelido: string][] = [
   ["aulas", "estado=sem-video", "aulas sem vídeo"],
   ["inscricoes", "", "fila de entrada"],
   ["inscricoes", "aba=decididas", "inscrições já decididas"],
-  ["inscricoes", "aba=origens", "de onde vem a militância"],
+  ["leituras", "", "leituras — origem"],
+  ["leituras", "aba=territorio", "leituras — território"],
+  ["leituras", "aba=semana", "leituras — semana"],
+  ["leituras", "aba=atividade", "leituras — atividade"],
+  ["leituras", "aba=atividade&area=eventos&q=benfica", "atividade recortada"],
   ["inscricoes", "q=maria", "busca na fila de entrada"],
   ["agenda", "", "capa da programação"],
   ["procurar", "", "busca global vazia"],
   ["procurar", "q=benfica", "busca global com resultado"],
   ["conta", "", "minha conta"],
+  ["gente", "", "sua gente"],
+  ["gente", "tipo=esfriando", "sua gente — esfriando"],
   ["manutencao", "", "manutenção"],
 ];
 
@@ -102,5 +111,22 @@ describe("fumaça: toda tela do painel abre inteira e em silêncio", () => {
     ).map(([tela, qs]) => (qs ? `${tela}?${qs}` : tela));
 
     assert.deepEqual(ondeAparece, ["index"], "o grupo de trabalho saiu do hub");
+  });
+});
+
+/**
+ * O HUB NÃO É UM SCROLL. É a tela mais aberta do painel, no celular, em pé — e
+ * cada bloco a mais é uma rolagem antes da fila. O teto é a régua do plano de
+ * 10/09: seções na coluna principal (quatro hoje, três quando Leituras levar
+ * "o que andou acontecendo") e cartões de ação na lateral, cada um com no
+ * máximo três linhas e um link. O que precisa de mais que isso tem tela própria.
+ */
+describe("fumaça: o hub cabe em poucos blocos", () => {
+  test("no máximo quatro seções e três cartões", () => {
+    const { html } = painel.abrir("index", "");
+    const secoes = html.match(/<h2 class="secao">/g)?.length ?? 0;
+    const cartoes = html.match(/<section class="cartao-grupo"/g)?.length ?? 0;
+    assert.ok(secoes <= 4, `${secoes} seções no hub — a régua é quatro; o excedente tem tela própria`);
+    assert.ok(cartoes <= 3, `${cartoes} cartões na lateral — a régua é três (gente, peça, grupo)`);
   });
 });

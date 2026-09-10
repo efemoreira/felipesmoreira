@@ -34,6 +34,10 @@ Também expõe APIs JSON em `public/painel/api/` para o site público consumir.
 | `public/painel/*-acoes.php` | POST das telas grandes |
 | `public/painel/*-tela.php` | tela principal das áreas já cortadas |
 | `public/painel/*-comum.php` | leitura, gravação e regras do domínio |
+| `public/painel/leituras-comum.php` | placar e funil de origens, militância por região — derivados, para `/painel/leituras` |
+| `public/painel/privacidade.php` | a regra de dado pessoal: `pode_ver_telefone()`, `nome_encoberto()`, `telefone_encoberto()` |
+| `public/painel/acoes-comum.php` | `avisar()`, `ir_para()`, `exigir_token_de_acao()`, `recado_pendente()` — o POST-redirect-GET num lugar só |
+| `public/painel/backup-comum.php` + `backup.php` | o zip de `/dados` — botão da Manutenção e cron |
 
 ## Primeiro acesso
 
@@ -56,6 +60,20 @@ Regras importantes:
 - imagens da agenda continuam públicas por extensão;
 - segredos, tentativas, pessoas, fatos, produção e encontros não podem ir para
   arquivo legível pela web.
+
+### Backup
+
+- `backup-comum.php` gera um zip de `/dados` inteiro (inclusive `segredo.php`
+  e as imagens) em `dados/backups/`, que o `.htaccess` fecha para a web.
+  Ficam os 14 mais recentes.
+- Dois caminhos, uma função: o botão em `/painel/manutencao` e o cron da
+  hospedagem — `0 3 * * * php public_html/painel/backup.php`. O `backup.php`
+  responde 404 fora da linha de comando; não existe URL que dispare backup.
+- Baixar é `manutencao.php?baixar=<nome>`, só `adm`, e o nome tem de casar com
+  `FORMA_NOME_BACKUP` — nada que vem da URL vira caminho sem passar por
+  `backup_por_nome()`.
+- Zerar na Manutenção não apaga backups. `testes/acoes/backup.test.ts` prende
+  tudo isso.
 
 ## Permissões
 
@@ -156,7 +174,9 @@ teste.
 - `/painel/inscricoes`
 - `/painel/candidatos`
 - `/painel/pessoas`
+- `/painel/leituras` — origem, território, semana, atividade; só GET, capacidade `coordenacao`
 - `/painel/conta`
+- `/painel/gente` — tela pessoal de quem acompanha alguém (`pode_liderar()`), não é área
 
 Os endpoints em `public/painel/api/` continuam sendo chamados pelo caminho real,
 sem URL limpa dedicada.

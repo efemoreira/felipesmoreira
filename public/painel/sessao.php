@@ -49,6 +49,7 @@ const AREAS = [
     'candidatos' => 'Candidatos',
     'pessoas'    => 'Pessoas e dados pessoais',
     'caixa'      => 'Caixa',
+    'leituras'   => 'Leituras',
 ];
 
 /**
@@ -94,7 +95,9 @@ const CAPACIDADES = [
     'coordenacao' => [
         'nome'   => 'Coordenação',
         'resumo' => 'Quem entra no movimento, os encontros, os candidatos e a formação do time',
-        'areas'  => ['inscricoes', 'candidatos', 'aulas', 'eventos', 'agenda'],
+        /* Leituras é o relatório semanal — origem, território, a semana, o
+           que andou acontecendo. Só lê; e lê o que a coordenação já abre. */
+        'areas'  => ['inscricoes', 'candidatos', 'aulas', 'eventos', 'agenda', 'leituras'],
     ],
     /* NÃO ABRE TELA NENHUMA — `areas` vazio, e de propósito.
        Ela habilita um bloco no Início: a lista de quem esta pessoa acompanha.
@@ -313,6 +316,7 @@ const DESTINO_AREA = [
     'candidatos' => ['url' => '/painel/candidatos.php', 'resumo' => 'Nome de urna, número e @ de cada candidato — a colinha que o eleitor leva'],
     'pessoas'    => ['url' => '/painel/pessoas.php', 'resumo' => 'Todo mundo do movimento: quem é, o que faz, em que encontros esteve'],
     'caixa'      => ['url' => '/painel/caixa.php', 'resumo' => 'Todo real que entra e sai, com origem — e os dois caixas nunca somados juntos'],
+    'leituras'   => ['url' => '/painel/leituras.php', 'resumo' => 'A leitura da semana: de onde vem a militância, onde ela mora, o que venceu e o que andou acontecendo'],
 ];
 
 /**
