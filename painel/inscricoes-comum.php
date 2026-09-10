@@ -529,3 +529,213 @@ function registrar_envio(string $escopo = 'inscricao'): void
         @opcache_invalidate(ARQ_LIMITE, true);
     }
 }
+
+/* ===================== convidar a fila para um encontro ===================== */
+
+/**
+ * A FUNÇÃO QUE ESTA PESSOA PEDIU, para dizer o nome dela na mensagem.
+ *
+ * Devolve '' quando não dá para dizer nada de específico. `onde-precisar` conta
+ * como nada de propósito: ele aparece em quase metade das inscrições, quase
+ * sempre JUNTO de outra escolha — é "e também onde precisar", não uma função.
+ * Escrever "você pediu para ajudar em Onde precisar" seria devolver à pessoa a
+ * própria indecisão como se fosse um convite.
+ */
+function funcao_pedida(array $pessoa): string
+{
+    foreach ($pessoa['funcoes'] as $id) {
+        if ($id !== 'onde-precisar' && $id !== '') {
+            return nome_funcao($id);
+        }
+    }
+    return '';
+}
+
+/**
+ * O CONVITE DE UMA PESSOA DA FILA PARA UM ENCONTRO, pronto para o WhatsApp.
+ *
+ * Existe porque a fila já tinha o telefone e já desenhava o botão do WhatsApp —
+ * sem texto nenhum, abrindo conversa vazia. Com setenta e duas pessoas
+ * esperando, "escrever a mensagem" era o trabalho que não acontecia, e a fila
+ * envelhecia.
+ *
+ * **O LINK É O DO ENCONTRO, e não o do /queroajudar.** Quem abre `/presenca?c=…`
+ * confirma presença NAQUELE encontro, e a própria tela oferece a inscrição
+ * depois, já com a origem preenchida (`PresencaClient.tsx`, a ponte por
+ * `sessionStorage`). Uma leitura, três resultados — presença, inscrição e
+ * atribuição. Foi essa diferença que custou o vínculo de 59 pessoas que vieram
+ * do evento de 05/09 por um QR que apontava para o formulário puro.
+ *
+ * A FUNÇÃO PEDIDA ENTRA NO TEXTO porque existe para 81% da fila, e é o que faz o
+ * convite ser daquela pessoa e não de uma lista. Quem não pediu nada recebe a
+ * versão curta, sem a frase — nunca um rótulo genérico no lugar dela.
+ *
+ * @param array $pessoa a ficha de quem está na fila
+ * @param array $evento o encontro já normalizado
+ */
+function mensagem_de_convite(array $pessoa, array $evento): string
+{
+    require_once __DIR__ . '/eventos-comum.php';  // url_confirmacao(), data_cheia()
+
+    $primeiro = primeiro_nome($pessoa['nome']);
+    $quando   = data_cheia($evento);
+    $onde     = $evento['local'] !== '' ? ' · ' . $evento['local'] : '';
+    $funcao   = funcao_pedida($pessoa);
+
+    $texto = "Oi, {$primeiro}! Aqui é da Missão Ceará.\n\n"
+           . "Sua inscrição chegou — e o primeiro passo é a gente se conhecer pessoalmente.\n\n"
+           . "*{$evento['titulo']}*\n"
+           . "{$quando}{$onde}\n\n";
+
+    if ($funcao !== '') {
+        $texto .= "Você pediu para ajudar em {$funcao}; lá a gente combina como.\n\n";
+    }
+
+    $link = url_confirmacao($evento);
+    $texto .= $link !== ''
+        ? "Confirma aqui que você vem:\n" . $link
+        : 'Me responde aqui se você vem?';
+
+    return $texto;
+}
+
+/* ===================== aprovar ===================== */
+
+/**
+ * UM LOGIN QUE AINDA NÃO EXISTE — nem no arquivo, nem no lote em curso.
+ *
+ * `login_sugerido()` já resolve colisão, mas contra `pessoa_por_usuario()`, que
+ * lê o arquivo **gravado**. Num lote com dois "João Silva" os dois recebem
+ * `joao.silva`, e o segundo sobrescreve o login do primeiro — sem erro, sem
+ * aviso, e só se descobre quando alguém não consegue entrar.
+ *
+ * @param array $jaUsados os logins entregues antes nesta mesma gravação
+ */
+function login_livre(string $nome, array $jaUsados): string
+{
+    $base = login_sugerido($nome);
+    if (!in_array($base, $jaUsados, true)) {
+        return $base;
+    }
+    /* O sufixo continua o do `login_sugerido()`, mas contando também o lote:
+       `joao.silva`, `joao.silva2`, `joao.silva3`. */
+    $n = 2;
+    do {
+        $tentativa = substr($base, 0, 20) . $n;
+        $n++;
+    } while (in_array($tentativa, $jaUsados, true) || pessoa_por_usuario($tentativa) !== null);
+    return $tentativa;
+}
+
+/**
+ * DÁ CONTA À FICHA QUE JÁ EXISTE — o corpo da aprovação, de uma ou de trinta.
+ *
+ * Aprovar NÃO cria uma segunda ficha. Antes a inscrição virava um usuário novo e
+ * a inscrição ficava para trás, então a mesma pessoa passava a existir duas
+ * vezes — e o histórico de encontros dela ficava preso na ficha antiga.
+ *
+ * Saiu da ação para cá quando o lote nasceu: aprovar uma e aprovar trinta
+ * precisam ser o MESMO caminho de código, ou a regra acima passa a valer só
+ * para quem for aprovado pelo botão de baixo.
+ *
+ * Mexe no array recebido por referência e **não grava**: quem chama decide
+ * quando escrever, e o lote escreve uma vez só no fim.
+ *
+ * @return ?array o acesso criado (nome, usuario, senha, telefone), ou null
+ */
+function aprovar_pessoa(array &$pessoas, string $id, string $login, array $caps, array $areas, array $eu, string $lider = ''): ?array
+{
+    $provisoria = senha_provisoria();
+    $achou = null;
+
+    foreach ($pessoas as &$p) {
+        if ($p['id'] !== $id) {
+            continue;
+        }
+        $p['usuario'] = $login;
+        $p['hash']    = password_hash($provisoria, PASSWORD_DEFAULT);
+        $p['ativo']   = true;
+        $p['trocarSenha'] = true;
+        $p['capacidades'] = $caps;
+        $p['areas']   = $areas;
+        $p['status']  = 'aprovada';
+        $p['tipo']    = (in_array('coordenacao', $caps, true)
+            || in_array('adm', $caps, true)) ? 'coordenador' : 'militante';
+        $p['decididoEm']  = date('c');
+        $p['decididoPor'] = $eu['nome'];
+        /* Só preenche quando ainda não há ninguém: um lote não desfaz o que
+           alguém combinou na ficha antes. */
+        if ($lider !== '' && $p['lider'] === '') {
+            $p['lider'] = $lider;
+        }
+        /* Inscrição sem função é válida (o formulário deixou de exigir).
+           "onde-precisar" existe no catálogo exatamente para isso — deixar o
+           array vazio faria o hub não ter atalho nenhum para a pessoa. */
+        if ($p['funcoes'] === []) {
+            $p['funcoes'] = ['onde-precisar'];
+        }
+        $achou = [
+            'nome'     => $p['nome'],
+            'usuario'  => $login,
+            'senha'    => $provisoria,
+            'telefone' => $p['telefone'],
+            'funcoes'  => $p['funcoes'],
+            /* Resolvido AQUI, com a ficha já atualizada: o líder acabou de ser
+               marcado nesta mesma função, e `grupo_de()` lida a partir do
+               arquivo devolveria o grupo antigo — o arquivo só é gravado depois. */
+            'grupo'    => $lider === '' ? grupo_de($p) : grupo_de(['lider' => $lider]),
+        ];
+    }
+    unset($p);
+
+    return $achou;
+}
+
+/**
+ * A MENSAGEM QUE ENTREGA O ACESSO — e a primeira tarefa junto.
+ *
+ * Antes ela dizia usuário e senha, e parava aí. Conta sem tarefa é conta que
+ * nunca é usada: é o motivo `nao-entrou` do `reativacao.php` nascendo pronto, e
+ * com setenta e duas aprovações de uma vez seriam setenta e duas contas mortas.
+ *
+ * **A FUNÇÃO PEDIDA ENTRA NO TEXTO.** Ela existe para 81% de quem se inscreve, e
+ * é o que faz a mensagem ser daquela pessoa: "você pediu para ajudar na
+ * Recepção" é diferente de "bem-vindo ao movimento". Quem não pediu nada recebe
+ * a versão curta, sem a frase — nunca um rótulo genérico no lugar dela.
+ *
+ * @param array  $acesso  o que `aprovar_pessoa()` devolveu
+ * @param ?array $proximo o próximo encontro, ou null quando não há nenhum
+ */
+function mensagem_de_acesso(array $acesso, ?array $proximo = null): string
+{
+    $texto = 'Olá, ' . primeiro_nome($acesso['nome']) . "! Aqui é da Missão Ceará.\n\n"
+        . "Sua inscrição foi aprovada! Seu acesso:\n\n"
+        . "Site: https://felipesmoreira.com/painel/\n"
+        . 'Usuário: ' . $acesso['usuario'] . "\n"
+        . 'Senha provisória: ' . $acesso['senha'] . "\n\n"
+        . "No primeiro acesso o site vai pedir para você criar sua própria senha.\n\n";
+
+    /* O GRUPO DELA, e não o geral: com a divisão por líder, quem chega cai num
+       lugar com um punhado de gente e alguém que responde por ela. Mandar o
+       grupo de todo mundo na primeira mensagem é entregar a pessoa a uma sala
+       onde ninguém a chama pelo nome — que é como se perde quem acabou de
+       dizer sim. */
+    if (($acesso['grupo'] ?? '') !== '') {
+        $texto .= "O seu grupo é este:\n" . $acesso['grupo'] . "\n\n";
+    }
+
+    $funcao = funcao_pedida(['funcoes' => $acesso['funcoes'] ?? []]);
+    if ($funcao !== '') {
+        $texto .= 'Você pediu para ajudar em *' . $funcao . "* — é por aí que a gente começa.\n\n";
+    }
+
+    if ($proximo !== null) {
+        require_once __DIR__ . '/eventos-comum.php';  // data_cheia()
+        $texto .= "E o próximo encontro é este:\n"
+            . '*' . $proximo['titulo'] . "*\n"
+            . data_cheia($proximo)
+            . ($proximo['local'] !== '' ? ' · ' . $proximo['local'] : '') . "\n\n";
+    }
+
+    return $texto . 'Qualquer dúvida, é só chamar aqui. Bem-vindo(a)!';
+}

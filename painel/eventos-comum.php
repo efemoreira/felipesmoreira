@@ -47,6 +47,13 @@ const FAMILIAS = [
         ],
         'material' => ['Som móvel ou carro de som', 'Coletes de identificação', 'Bandeiras', 'Água e kit de primeiros socorros', 'Ponto de apoio'],
         'metrica'  => 'Pessoas na rua · alcance do vídeo-resumo · contatos novos',
+        /* A rua é a família com mais peças porque é onde mais gente trabalha ao
+           mesmo tempo. Adesivagem e Fila & trânsito ficam FORA das essenciais:
+           um bandeiraço não adesiva carro, e cobrar as duas em toda caminhada
+           faria a lista de pendências apitar à toa — e lista que apita à toa é
+           lista que se ignora. Elas continuam oferecidas, para o adesivaço. */
+        'pecas'      => ['local-hora', 'logistica', 'divulgacao', 'material-rua', 'adesivagem', 'fila-transito', 'gravacao', 'captacao'],
+        'essenciais' => ['local-hora', 'logistica', 'divulgacao', 'gravacao', 'captacao'],
     ],
     'militancia' => [
         'nome'    => 'Militância',
@@ -59,6 +66,10 @@ const FAMILIAS = [
         ],
         'material' => ['Projetor ou TV para a formação', 'Lista de presença', 'Comida e bebida, no social'],
         'metrica'  => 'Militantes ativos · novos que assumiram função · presença recorrente',
+        /* As cinco de sempre: aqui há porta, mesa e lista — é o formato para o
+           qual as peças originais foram escritas. */
+        'pecas'      => ['local-hora', 'logistica', 'divulgacao', 'gravacao', 'recepcao'],
+        'essenciais' => ['local-hora', 'logistica', 'divulgacao', 'gravacao', 'recepcao'],
     ],
     'relacional' => [
         'nome'    => 'Relacional',
@@ -74,6 +85,11 @@ const FAMILIAS = [
         ],
         'material' => ['Local reservado e discreto', 'Café ou coffee break', 'Material institucional de apresentação', 'Lista curada e curta'],
         'metrica'  => 'Lideranças engajadas · apoios concretos · agendas geradas',
+        /* SEM GRAVAÇÃO, e não por esquecimento: a trava desta família diz "sem
+           câmera aberta gravando conversa privada". Oferecer a peça seria a tela
+           convidando para o que o playbook proíbe duas linhas acima. */
+        'pecas'      => ['local-hora', 'logistica', 'divulgacao', 'recepcao'],
+        'essenciais' => ['local-hora', 'divulgacao', 'recepcao'],
     ],
     'digital' => [
         'nome'    => 'Digital',
@@ -86,6 +102,11 @@ const FAMILIAS = [
         ],
         'material' => ['Roteiro da live', 'A peça do Design', 'Horário combinado do mutirão'],
         'metrica'  => 'Alcance · compartilhamentos · seguidores novos · comentários engajados',
+        /* Não há lugar, não há material e não há porta: uma live tem hora,
+           divulgação e registro. Recepção aqui era o exemplo mais visível da
+           peça que existia sem trabalho por trás. */
+        'pecas'      => ['divulgacao', 'gravacao'],
+        'essenciais' => ['divulgacao', 'gravacao'],
     ],
     'pautado' => [
         'nome'    => 'Pautado',
@@ -100,17 +121,70 @@ const FAMILIAS = [
         ],
         'material' => ['Celular ou câmera com boa captação de áudio', 'O print do dado-âncora', 'Roteiro impresso'],
         'metrica'  => 'Vídeos gerados · alcance · resposta do órgão cobrado',
+        /* Ir ao local e gravar. Não se convida ninguém para uma pauta, e por
+           isso não há Divulgação: o que sai depois é peça de Produção. */
+        'pecas'      => ['local-hora', 'logistica', 'gravacao'],
+        'essenciais' => ['local-hora', 'gravacao'],
     ],
 ];
 
-/** As cinco peças, e o checklist de cada uma (ids de checklists.php). */
+/**
+ * O CATÁLOGO DE TODAS AS PEÇAS. Qual delas um encontro tem sai da FAMÍLIA, e não
+ * daqui — ver `pecas_do_evento()`.
+ *
+ * Eram cinco, iguais para todo mundo: um jantar com empresários e um adesivaço
+ * de setecentas pessoas recebiam Local & Hora, Logística, Divulgação, Gravação e
+ * Recepção. Num adesivaço o trabalho real é distribuir bandeira e panfleto,
+ * aplicar adesivo com balde de água e detergente, e organizar carro e fila —
+ * nada disso existia aqui. **É a melhor explicação para nenhuma escala ter sido
+ * preenchida em seis encontros:** ninguém escala uma lista de papéis que não
+ * descreve o que está fazendo.
+ *
+ * As quatro novas saíram de um evento real, e não de dedução.
+ */
 const PECAS = [
-    'local-hora' => ['nome' => 'Local & Hora', 'checklist' => 'local-hora'],
-    'logistica'  => ['nome' => 'Logística',    'checklist' => 'logistica'],
-    'divulgacao' => ['nome' => 'Divulgação',   'checklist' => 'divulgacao'],
-    'gravacao'   => ['nome' => 'Gravação',     'checklist' => 'gravacao'],
-    'recepcao'   => ['nome' => 'Recepção',     'checklist' => 'recepcao'],
+    'local-hora'    => ['nome' => 'Local & Hora',    'checklist' => 'local-hora'],
+    'logistica'     => ['nome' => 'Logística',       'checklist' => 'logistica'],
+    'divulgacao'    => ['nome' => 'Divulgação',      'checklist' => 'divulgacao'],
+    'material-rua'  => ['nome' => 'Material de rua', 'checklist' => 'material-rua'],
+    'adesivagem'    => ['nome' => 'Adesivagem',      'checklist' => 'adesivagem'],
+    'fila-transito' => ['nome' => 'Fila e trânsito', 'checklist' => 'fila-transito'],
+    'gravacao'      => ['nome' => 'Gravação',        'checklist' => 'gravacao'],
+    'recepcao'      => ['nome' => 'Recepção',        'checklist' => 'recepcao'],
+    'captacao'      => ['nome' => 'Captação',        'checklist' => 'captacao'],
 ];
+
+/**
+ * A RESPOSTA DE QUEM FOI ESCALADO — o que faltava para a escala existir.
+ *
+ * `responsaveis[peça]` diz quem a coordenação escolheu; isto diz o que essa
+ * pessoa respondeu. São coisas diferentes, e enquanto só a primeira existia a
+ * escala era um bilhete que ninguém lia: o nome aparecia cinza ao lado da peça,
+ * a pessoa nunca era avisada, e no sábado todo mundo fazia tudo com o que tinha.
+ *
+ * `''` é "escolhida e ainda não convidada" — o estado de quem a coordenação
+ * marcou no `<select>` sem ter mandado nada. Não é a mesma coisa que
+ * 'convidado', e a diferença é o que separa "esqueci de avisar" de "avisei e
+ * ela não respondeu".
+ */
+const ESTADOS_ESCALA = ['convidado', 'topou', 'nao-posso'];
+
+/** O que cada estado diz na tela, e o que ele cobra de quem coordena. */
+const ROTULO_ESCALA = [
+    ''           => 'sem convite',
+    'convidado'  => 'convidada, sem resposta',
+    'topou'      => 'topou',
+    'nao-posso'  => 'não pode dessa vez',
+];
+
+/**
+ * A partir de quando o silêncio conta como recusa.
+ *
+ * Convite sem resposta na véspera não é convite pendente: é peça sem dono que
+ * ainda não se sabe. Escala que dá falsa segurança quebra pior que improviso —
+ * quem coordena precisa recolocar a peça enquanto ainda dá tempo.
+ */
+const HORAS_SILENCIO_ESCALA = 48;
 
 const STATUS_EVENTO = [
     'planejado'  => 'Planejado',
@@ -136,14 +210,85 @@ function normalizar_evento($e): ?array
         $status = 'planejado';
     }
 
+    /* QUEM JÁ FOI CHAMADO PARA ESTE ENCONTRO — ids de pessoa, lista chapada.
+       Não é por peça como os três abaixo: convidar para o encontro e escalar
+       para uma peça são coisas diferentes. A fila de inscrições convida gente
+       que ainda não tem conta e não tem peça nenhuma; a escala chama quem já
+       está dentro para um trabalho.
+
+       Existe para a segunda rodada não repetir gente e não pular gente — com
+       setenta e dois na fila, "quem eu já chamei?" não se responde de memória. */
+    $convidados = [];
+    foreach ((array) ($e['convidados'] ?? []) as $id) {
+        $id = limpar_texto($id, 40);
+        if ($id !== '' && !in_array($id, $convidados, true)) {
+            $convidados[] = $id;
+        }
+    }
+
+    /* CADA PEÇA TEM UMA LISTA DE GENTE, e não uma pessoa.
+       Num ato de rua a Captação e o Material não são um nome: são três, quatro,
+       nas pontas do movimento de gente. Enquanto a peça guardava um id só, a
+       escala de um evento grande era impossível de escrever — e o que não cabe
+       na ferramenta acontece fora dela, no grito.
+
+       O ACEITE É POR PESSOA, pelo mesmo motivo: com quatro escalados na mesma
+       peça, "convidado" não diz quem respondeu. `aceites[peça][id]` e
+       `convidadoEm[peça][id]`.
+
+       FORMATO ANTIGO ENTRA SOZINHO. `responsaveis[peça] = 'id'` vira `['id']`, e
+       o aceite solto que existia ao lado dele pertence a esse mesmo id — não há
+       ambiguidade, porque antes só cabia uma pessoa. */
     $responsaveis = [];
     $feitos = [];
+    $aceites = [];
+    $convidadoEm = [];
     foreach (array_keys(PECAS) as $peca) {
-        $responsaveis[$peca] = limpar_texto(($e['responsaveis'][$peca] ?? ''), 40);
+        $crus = $e['responsaveis'][$peca] ?? [];
+        $crus = is_array($crus) ? $crus : [$crus];
+        $gente = [];
+        foreach ($crus as $id) {
+            $id = limpar_texto($id, 40);
+            if ($id !== '' && !in_array($id, $gente, true)) {
+                $gente[] = $id;
+            }
+        }
+        $responsaveis[$peca] = $gente;
+
         // índices marcados no checklist daquela peça
         $marcados = (array) ($e['feitos'][$peca] ?? []);
         $feitos[$peca] = array_values(array_unique(array_map('intval', array_filter($marcados, 'is_numeric'))));
         sort($feitos[$peca]);
+
+        /* A resposta de quem foi escalado. Fora da lista conhecida some — mesma
+           régua de `status` e `familia` logo acima, e pelo mesmo motivo: o
+           arquivo é gravado por várias telas e um valor estranho não pode virar
+           um estado novo que nenhuma delas sabe desenhar.
+
+           Resposta de quem não está mais na peça também some: o aceite é da
+           dupla pessoa-peça, e quem saiu da escala não tem o que responder. */
+        $aceiteCru = $e['aceites'][$peca] ?? [];
+        if (!is_array($aceiteCru)) {
+            $aceiteCru = $gente === [] ? [] : [$gente[0] => $aceiteCru];
+        }
+        $emCru = $e['convidadoEm'][$peca] ?? [];
+        if (!is_array($emCru)) {
+            $emCru = $gente === [] ? [] : [$gente[0] => $emCru];
+        }
+
+        $aceites[$peca] = [];
+        $convidadoEm[$peca] = [];
+        foreach ($gente as $id) {
+            $estado = (string) ($aceiteCru[$id] ?? '');
+            if (!in_array($estado, ESTADOS_ESCALA, true)) {
+                continue;
+            }
+            $aceites[$peca][$id] = $estado;
+            /* Quando o convite saiu — é daqui que sai a conta do silêncio. Sem o
+               carimbo, "convidada e não respondeu" não teria idade, e a régua
+               das 48h não teria de onde contar. */
+            $convidadoEm[$peca][$id] = limpar_texto($emCru[$id] ?? '', 40);
+        }
     }
 
     /* O INSTANTE MORA EM `inicio`, E O RESTO É DERIVADO DELE.
@@ -206,6 +351,9 @@ function normalizar_evento($e): ?array
         'observacoes' => limpar_texto($e['observacoes'] ?? '', 600),
         'responsaveis' => $responsaveis,
         'feitos'       => $feitos,
+        'aceites'      => $aceites,
+        'convidadoEm'  => $convidadoEm,
+        'convidados'   => $convidados,
         /* DOIS TOKENS, E NÃO UM.
            `token` é o da CHEGADA: vive só no QR impresso na mesa da recepção e
            grava "compareceu". `tokenConfirmacao` é o do "vou": circula no grupo
@@ -334,6 +482,115 @@ function url_presenca(array $evento): string
         return '';
     }
     return raiz_do_site() . '/presenca?e=' . $evento['token'];
+}
+
+/**
+ * O TOKEN DO CONVITE DE ESCALA — derivado, e não guardado.
+ *
+ * Mesmo padrão do QR de presença e do convite do Dia 0: sai do segredo do site
+ * e dos três dados que identificam o convite, então o servidor recalcula em vez
+ * de armazenar. Não há tabela de convites para envelhecer, e trocar a pessoa de
+ * peça invalida o link antigo sozinho.
+ *
+ * O id da pessoa vai na URL junto do token porque o token não é reversível —
+ * ele é assinatura, não chave. Id de pessoa não é segredo; o que o token
+ * impede é alguém responder no lugar de outra.
+ */
+function token_de_escala(string $pessoaId, string $eventoId, string $peca): string
+{
+    return substr(hash_hmac('sha256', "escala:{$pessoaId}|{$eventoId}|{$peca}", segredo()), 0, 24);
+}
+
+/** O link que a pessoa abre para dizer se topa. Vazio quando falta dado. */
+function url_do_convite(array $pessoa, array $evento, string $peca): string
+{
+    if ($pessoa['id'] === '' || $evento['id'] === '' || !isset(PECAS[$peca])) {
+        return '';
+    }
+    return raiz_do_site() . '/convite?p=' . rawurlencode($pessoa['id'])
+        . '&e=' . rawurlencode($evento['id'])
+        . '&f=' . rawurlencode($peca)
+        . '&t=' . token_de_escala($pessoa['id'], $evento['id'], $peca);
+}
+
+/**
+ * O CONVITE DE UMA PEÇA, pronto para o WhatsApp.
+ *
+ * **Os itens do checklist vão NO CORPO da mensagem**, e não atrás de um link.
+ * Quem recebe precisa saber o tamanho do que está aceitando antes de responder,
+ * e "abra o painel para ver o que é" é exatamente o pedido que ninguém atende.
+ * São quatro ou cinco linhas — cabe.
+ *
+ * A escala existia no banco e nunca chegava em ninguém: o nome aparecia cinza
+ * ao lado da peça, na tela do encontro, e a pessoa não era avisada. No sábado,
+ * todo mundo fazia tudo com o que tinha.
+ */
+function mensagem_de_escala(array $pessoa, array $evento, string $peca): string
+{
+    $lista = checklist(PECAS[$peca]['checklist'] ?? '');
+    $quando = data_cheia($evento);
+    $onde = $evento['local'] !== '' ? ' · ' . $evento['local'] : '';
+
+    $texto = primeiro_nome($pessoa['nome']) . ', posso te escalar como *'
+           . PECAS[$peca]['nome'] . "*?\n\n"
+           . '*' . $evento['titulo'] . "*\n"
+           . $quando . $onde . "\n\n";
+
+    if ($lista !== null) {
+        $texto .= 'É isto, ' . count($lista['itens']) . " coisas:\n";
+        foreach ($lista['itens'] as $item) {
+            $texto .= '· ' . $item . "\n";
+        }
+        $texto .= "\n";
+    }
+
+    $link = url_do_convite($pessoa, $evento, $peca);
+    if ($link === '') {
+        return $texto . 'Topa? Me responde aqui — se não puder dessa vez, tudo bem, só me avisa para eu chamar outra pessoa.';
+    }
+    /* O LINK EVITA A COBRANÇA DE VOLTA. Sem ele, quem coordena manda o convite,
+       espera a resposta no WhatsApp e ainda tem de vir marcar no painel — três
+       passos para uma pessoa, vezes nove peças. Com ele a resposta chega
+       sozinha, e quem coordena só olha o que ficou sem. */
+    return $texto . "Topa? Responde aqui em um toque:\n" . $link
+        . "\n\nSe não puder dessa vez, tudo bem — é só dizer que não, ali mesmo.";
+}
+
+/**
+ * A ESCALA INTEIRA EM TEXTO, para colar no grupo.
+ *
+ * É a saída que mais importa, porque a organização acontece no WhatsApp e vai
+ * continuar acontecendo: o painel não é onde o trabalho é feito, é de onde sai a
+ * mensagem. Uma tela que exige entrar nela para saber quem faz o quê no sábado
+ * perde para uma mensagem no grupo, sempre.
+ *
+ * PEÇA SEM NINGUÉM SAI COMO "falta alguém", e isso é metade do valor: é o pedido
+ * de voluntário se escrevendo sozinho, no lugar em que as pessoas já estão.
+ */
+function escala_em_texto(array $evento): string
+{
+    $linhas = ['*' . $evento['titulo'] . '*', data_cheia($evento)
+        . ($evento['local'] !== '' ? ' · ' . $evento['local'] : ''), ''];
+
+    foreach (pecas_do_evento($evento) as $chave) {
+        $nomes = [];
+        foreach ($evento['responsaveis'][$chave] as $id) {
+            $p = achar_pessoa($id);
+            if ($p === null) {
+                continue;
+            }
+            $estado = $evento['aceites'][$chave][$id] ?? '';
+            /* Quem recusou sai da linha: o grupo precisa ler quem VAI estar lá.
+               Manter o nome riscado transformaria o recado numa ata. */
+            if ($estado !== 'nao-posso') {
+                $nomes[] = primeiro_nome($p['nome']);
+            }
+        }
+        $linhas[] = PECAS[$chave]['nome'] . ' — '
+            . ($nomes === [] ? '_falta alguém_' : implode(', ', $nomes));
+    }
+
+    return implode("\n", $linhas);
 }
 
 /**
@@ -479,23 +736,276 @@ function eventos_passados(): array
     return $lista;
 }
 
+/**
+ * AS PEÇAS DESTE ENCONTRO — as da família, mais o que já tem gente ou marca.
+ *
+ * A família decide, e não o catálogo: uma live não tem porta e um jantar com
+ * empresários não tem câmera. Enquanto as cinco valiam para todos, metade das
+ * peças de qualquer encontro era trabalho que ninguém ia fazer — e uma lista em
+ * que metade não se aplica não se lê, se ignora.
+ *
+ * **O QUE JÁ TEM DONO OU MARCA NUNCA SOME**, mesmo fora da família. Encontro
+ * antigo foi criado quando as cinco valiam para todos; fazer o nome de quem foi
+ * escalado desaparecer da tela porque a régua mudou seria apagar trabalho de
+ * alguém sem avisar. A ordem é a de `PECAS`, sempre.
+ */
+function pecas_do_evento(array $evento): array
+{
+    $daFamilia = FAMILIAS[$evento['familia']]['pecas'] ?? array_keys(PECAS);
+    return array_values(array_filter(
+        array_keys(PECAS),
+        fn ($c) => in_array($c, $daFamilia, true)
+            || ($evento['responsaveis'][$c] ?? []) !== []
+            || ($evento['feitos'][$c] ?? []) !== []
+    ));
+}
+
+/**
+ * As peças que a família COBRA — as que, sem dono, são pendência de verdade.
+ *
+ * Sai da regra de ouro do manual: todo evento precisa gerar conteúdo e captar
+ * contato. O resto varia. Adesivagem num bandeiraço é peça oferecida e não
+ * cobrada — quem faz adesivaço escala, quem faz caminhada ignora, e nenhum dos
+ * dois recebe um alarme falso toda semana.
+ */
+function pecas_essenciais_do_evento(array $evento): array
+{
+    $familia = FAMILIAS[$evento['familia']] ?? [];
+    $cobradas = $familia['essenciais'] ?? $familia['pecas'] ?? array_keys(PECAS);
+    return array_values(array_intersect(pecas_do_evento($evento), $cobradas));
+}
+
+/**
+ * Quanto do checklist de UMA peça já foi marcado.
+ *
+ * É esta a conta que interessa a quem executa: quem é a Recepção não tem o que
+ * fazer com "3 de 15", que soma o trabalho de outras quatro pessoas. O agregado
+ * continua existindo logo abaixo, para quem coordena — mas ele passou a ser a
+ * soma desta, e não uma segunda régua escrita à parte.
+ */
+function preparo_da_peca(array $evento, string $chave): array
+{
+    $c = checklist(PECAS[$chave]['checklist'] ?? '');
+    if ($c === null) {
+        return ['feito' => 0, 'total' => 0];
+    }
+    $feito = count(array_filter(
+        $evento['feitos'][$chave] ?? [],
+        fn ($i) => $i >= 0 && $i < count($c['itens'])
+    ));
+    return ['feito' => $feito, 'total' => count($c['itens'])];
+}
+
 /** Quanto do checklist de todas as peças já foi marcado. */
 function preparo_do_evento(array $evento): array
 {
     $total = 0;
     $feito = 0;
-    foreach (PECAS as $chave => $peca) {
-        $c = checklist($peca['checklist']);
-        if ($c === null) {
-            continue;
-        }
-        $total += count($c['itens']);
-        $feito += count(array_filter(
-            $evento['feitos'][$chave] ?? [],
-            fn ($i) => $i >= 0 && $i < count($c['itens'])
-        ));
+    foreach (pecas_do_evento($evento) as $chave) {
+        $p = preparo_da_peca($evento, $chave);
+        $total += $p['total'];
+        $feito += $p['feito'];
     }
     return ['feito' => $feito, 'total' => $total];
+}
+
+/**
+ * As peças que não têm ninguém — as chaves, na ordem de PECAS.
+ *
+ * Até aqui "sem dono" era um texto cinza ao lado da peça, que não cobrava nada
+ * de ninguém: dava para chegar no sábado com cinco peças vazias sem que uma só
+ * tela tivesse reclamado.
+ */
+function pecas_sem_dono(array $evento): array
+{
+    return array_values(array_filter(
+        pecas_do_evento($evento),
+        fn ($chave) => ($evento['responsaveis'][$chave] ?? []) === []
+    ));
+}
+
+/**
+ * As peças cujo convite foi mandado e ainda não voltou.
+ *
+ * Devolve `[chave, horasEsperando]` por peça, das mais antigas para as mais
+ * novas — a ordem de quem precisa ser recolocado primeiro.
+ *
+ * SÓ CONTA QUEM FOI CONVIDADO DE VERDADE. Peça com nome escolhido no `<select>`
+ * e convite nunca mandado não é silêncio da pessoa, é esquecimento de quem
+ * coordena — e as duas coisas pedem ações diferentes: uma manda o convite, a
+ * outra procura substituto. Misturá-las devolveria uma lista em que a coluna
+ * "esperando há 6 dias" às vezes quer dizer "ninguém falou com ela".
+ */
+function convites_sem_resposta(array $evento): array
+{
+    $fila = [];
+    foreach (pecas_do_evento($evento) as $chave) {
+        foreach (($evento['aceites'][$chave] ?? []) as $id => $estado) {
+            if ($estado !== 'convidado') {
+                continue;
+            }
+            $quando = strtotime((string) ($evento['convidadoEm'][$chave][$id] ?? ''));
+            $fila[] = [$chave, (string) $id, $quando ? (int) floor((time() - $quando) / 3600) : 0];
+        }
+    }
+    usort($fila, fn ($a, $b) => $b[2] <=> $a[2]);
+    return $fila;
+}
+
+/**
+ * As peças que a coordenação ainda precisa resolver: sem dono, sem resposta há
+ * tempo demais, ou recusadas.
+ *
+ * As três viram a MESMA pendência de propósito — em todas elas a peça está sem
+ * ninguém garantido, e o trabalho é o mesmo: achar alguém. Separá-las em três
+ * listas faria quem coordena ler três telas para responder uma pergunta só.
+ */
+function pecas_a_resolver(array $evento): array
+{
+    /* SEM NINGUÉM só conta pelas essenciais: Adesivagem vazia num bandeiraço
+       não é pendência, é peça que aquele formato não usa. */
+    $abertas = array_values(array_intersect(pecas_sem_dono($evento), pecas_essenciais_do_evento($evento)));
+
+    foreach (pecas_do_evento($evento) as $chave) {
+        $gente = $evento['responsaveis'][$chave] ?? [];
+        if ($gente === []) {
+            continue;
+        }
+        /* TODO MUNDO RECUSOU: a peça tem nomes e não tem ninguém. É diferente
+           de uma recusa entre quatro escalados, que não deixa a peça órfã — e
+           tratar as duas igual encheria a lista de pendência que já se resolveu
+           sozinha. */
+        $recusas = 0;
+        foreach ($gente as $id) {
+            $recusas += ($evento['aceites'][$chave][$id] ?? '') === 'nao-posso' ? 1 : 0;
+        }
+        if ($recusas === count($gente)) {
+            $abertas[] = $chave;
+        }
+    }
+
+    /* SILÊNCIO LONGO DEMAIS. Convite sem resposta na véspera não é convite
+       pendente: é peça sem dono que ainda não se sabe, e quem coordena precisa
+       recolocar enquanto dá tempo. */
+    foreach (convites_sem_resposta($evento) as [$chave, , $horas]) {
+        if ($horas >= HORAS_SILENCIO_ESCALA) {
+            $abertas[] = $chave;
+        }
+    }
+
+    /* Na ordem de PECAS, e sem repetir: a lista é para ler, não para contar. */
+    return array_values(array_filter(pecas_do_evento($evento), fn ($c) => in_array($c, $abertas, true)));
+}
+
+/**
+ * DE ONDE VEM GENTE PARA UMA PEÇA QUE NASCEU DEPOIS DAS INSCRIÇÕES.
+ *
+ * A Captação é a Recepção da rua — mesmo trabalho, cenário diferente. Ela não
+ * existia no catálogo quando vinte e nove pessoas escolheram Recepção, e elas
+ * escolheram a coisa mais próxima que havia. Sugerir escala olhando só para
+ * quem pediu `captacao` devolveria lista vazia justamente na peça com mais
+ * voluntários.
+ *
+ * Uma entrada só, e de propósito: viveiro é para função que MUDOU DE NOME ou
+ * que se dividiu, não para parecença. "Quem faz Logística também carrega
+ * bandeira" é palpite, e palpite aqui vira gente convidada para um trabalho que
+ * ela não pediu.
+ */
+const VIVEIRO_DA_PECA = [
+    'captacao' => ['recepcao'],
+];
+
+/**
+ * QUEM PEDIU ESTA PEÇA — o inverso de `peca_da_pessoa()` (agora.php).
+ *
+ * Os ids das funções de Eventos no `funcoes.json` são exatamente as chaves de
+ * `PECAS`, e é esse casamento que faz o sistema já saber quem quer receber gente
+ * na porta sem perguntar nada a ninguém. Faltava a pergunta na direção contrária.
+ *
+ * Mora aqui, e não em `pessoas-comum.php`, porque a pergunta é sobre PEÇA: quem
+ * conhece `PECAS` e o viveiro é este arquivo, e `pessoas-comum` é incluído por
+ * ele — não o contrário.
+ *
+ * Só gente ativa: sugerir quem saiu do movimento devolve uma peça que parece
+ * resolvida e não está.
+ */
+function quem_pediu_a_peca(string $chave): array
+{
+    $aceitas = array_merge([$chave], VIVEIRO_DA_PECA[$chave] ?? []);
+    return array_values(array_filter(
+        ler_pessoas(),
+        fn ($p) => $p['ativo'] && array_intersect($aceitas, $p['funcoes']) !== []
+    ));
+}
+
+/**
+ * Quantas vezes cada pessoa já foi escalada, em todos os encontros.
+ *
+ * É o desempate da sugestão. Sem ele a lista sai sempre na mesma ordem e a
+ * mesma pessoa leva todos os sábados enquanto vinte e oito esperam ser
+ * chamadas — que é a forma mais rápida de queimar quem topou primeiro.
+ */
+function vezes_escaladas(): array
+{
+    $conta = [];
+    foreach (ler_eventos() as $e) {
+        foreach (($e['responsaveis'] ?? []) as $gente) {
+            foreach ((array) $gente as $id) {
+                $conta[$id] = ($conta[$id] ?? 0) + 1;
+            }
+        }
+    }
+    return $conta;
+}
+
+/**
+ * A ESCALA PROPOSTA — quem pediu cada peça, um nome por peça.
+ *
+ * A primeira versão disto copiava o time do encontro anterior, e não tinha de
+ * onde copiar: em seis encontros, nenhuma peça foi escalada uma única vez.
+ * Partida a frio. A semente certa estava do outro lado do sistema o tempo todo
+ * — **oitenta e um por cento das pessoas escolheram função ao se inscrever**, e
+ * ninguém nunca as chamou.
+ *
+ * UM NOME POR PEÇA, e não quantos couberem: o sistema não sabe quantas pessoas
+ * um ato precisa em cada peça, e chutar encheria a escala de gente convidada por
+ * engano. A peça aceita vários; a sugestão abre com um, e quem coordena
+ * acrescenta olhando o tamanho do evento.
+ *
+ * NÃO PROPÕE QUEM JÁ ESTÁ NESTE ENCONTRO, nem em outra peça: uma pessoa não
+ * cobre dois postos ao mesmo tempo, e ver o próprio nome em duas linhas da
+ * escala é a leitura que faz alguém deixar de confiar nela.
+ */
+function escala_sugerida(array $evento): array
+{
+    $vezes = vezes_escaladas();
+    $tomados = [];
+    foreach (($evento['responsaveis'] ?? []) as $gente) {
+        foreach ((array) $gente as $id) {
+            $tomados[] = $id;
+        }
+    }
+
+    $sugestao = [];
+    foreach (pecas_do_evento($evento) as $chave) {
+        if (($evento['responsaveis'][$chave] ?? []) !== []) {
+            continue;  // já tem gente: a sugestão não mexe em escala feita
+        }
+        $candidatos = array_values(array_filter(
+            quem_pediu_a_peca($chave),
+            fn ($p) => !in_array($p['id'], $tomados, true)
+        ));
+        if ($candidatos === []) {
+            continue;
+        }
+        /* Menos escalada primeiro; empate pelo nome, para a ordem ser estável
+           entre duas aberturas da mesma tela. */
+        usort($candidatos, fn ($a, $b) => [$vezes[$a['id']] ?? 0, $a['nome']] <=> [$vezes[$b['id']] ?? 0, $b['nome']]);
+        $escolhida = $candidatos[0];
+        $sugestao[$chave] = [$escolhida['id']];
+        $tomados[] = $escolhida['id'];
+    }
+    return $sugestao;
 }
 
 /* ===================== o que vai para o site ===================== */
@@ -918,10 +1428,89 @@ function follow_ups_vencidos(?array $evento = null): array
 }
 
 const ROTULO_FUNIL = [
-    'd0' => 'Agradecer e chamar para o canal',
+    /* "Puxar conversa", e não "chamar para o canal", que era o que o manual
+       prescrevia. A mudança é de propósito e a mensagem pronta a segue: quem
+       apareceu uma vez e recebe, de cara, o convite de um grupo com oitenta
+       pessoas entra num lugar onde ninguém a chama pelo nome — que é exatamente
+       o que faz alguém não se sentir parte. O grupo continua existindo; ele
+       deixa de ser a PRIMEIRA coisa. */
+    'd0' => 'Agradecer pelo nome e puxar conversa',
     'd3' => 'Mandar um conteúdo do interesse dela',
     'd7' => 'Convidar para o próximo encontro',
 ];
+
+/**
+ * AS TRÊS MENSAGENS DO FUNIL, prontas para o WhatsApp.
+ *
+ * O funil existe desde o começo e morre no primeiro degrau: de vinte e cinco
+ * pessoas que compareceram, dez receberam o agradecimento, uma recebeu conteúdo
+ * e nenhuma foi convidada de volta. Não é falta de disciplina — o botão abria
+ * **conversa vazia**, e escrever a mensagem do zero, uma por uma, vinte e cinco
+ * vezes, é o trabalho que não acontece.
+ *
+ * **O D+0 NÃO MANDA NINGUÉM PARA O GRUPO.** O manual diz "chamar para o canal", e
+ * a leitura fácil disso é colar o convite do grupo — mas jogar quem acabou de
+ * aparecer num grupo de oitenta pessoas é a receita do "entrei e não me senti
+ * parte". A primeira mensagem é de gente para gente, e o que ela pede é
+ * resposta: quem responde vira conversa, e conversa vira militante.
+ *
+ * O D+3 leva uma peça publicada da Munição, com a fonte junto — a mesma regra do
+ * mutirão: número sem página de origem é boato. O D+7 leva o próximo encontro
+ * com nome, data e o link de confirmar, porque convite sem data não é convite.
+ */
+function mensagem_de_funil(array $pessoa, array $evento, string $etapa): string
+{
+    $primeiro = primeiro_nome($pessoa['nome']);
+
+    if ($etapa === 'd0') {
+        return "Oi, {$primeiro}! Aqui é da Missão Ceará.\n\n"
+            . "Passei para agradecer por você ter aparecido no *{$evento['titulo']}*. "
+            . "Fez diferença ter mais gente lá.\n\n"
+            . 'O que você achou? Quero saber de verdade — e se tiver alguma coisa '
+            . 'no seu bairro que a gente devia estar olhando, me conta.';
+    }
+
+    if ($etapa === 'd3') {
+        require_once __DIR__ . '/kit-comum.php';
+        $pecas = pecas_publicadas();
+        $texto = "Oi, {$primeiro}! Separei uma coisa que tem a ver com o que a gente conversou:\n\n";
+
+        if ($pecas === []) {
+            /* Sem peça publicada, o plano inteiro é o conteúdo. Melhor mandar o
+               documento do que mandar uma mensagem sem nada dentro. */
+            return $texto . 'O plano de governo, com meta, prazo e de onde vem o dinheiro de cada proposta:'
+                . "\n" . raiz_do_site() . '/propostas';
+        }
+
+        $p = $pecas[0];
+        return $texto . '*' . $p['numero'] . "* — {$p['frase']}\n"
+            . "_{$p['fonte']}_\n\n"
+            . 'Está tudo escrito aqui: ' . raiz_do_site() . $p['destino'];
+    }
+
+    /* d7 — convidar para o próximo, dizendo QUAL e QUANDO. */
+    $proximo = null;
+    foreach (eventos_a_vir() as $e) {
+        if ($e['status'] !== 'cancelado') {
+            $proximo = $e;
+            break;
+        }
+    }
+    if ($proximo === null) {
+        /* Sem próximo encontro marcado não há convite honesto a fazer. Dizer
+           "aparece no próximo" sem data é o convite que ninguém atende — e é
+           melhor a coordenação ver isto e ir marcar um encontro. */
+        return "Oi, {$primeiro}! Ainda não tenho a data do próximo encontro. "
+            . 'Assim que fechar eu te aviso — e se quiser ajudar a organizar, me fala.';
+    }
+
+    $onde = $proximo['local'] !== '' ? ' · ' . $proximo['local'] : '';
+    $link = url_confirmacao($proximo);
+    return "Oi, {$primeiro}! O próximo é este:\n\n"
+        . '*' . $proximo['titulo'] . "*\n"
+        . data_cheia($proximo) . $onde . "\n\n"
+        . ($link !== '' ? "Confirma aqui que você vem:\n" . $link : 'Você vem?');
+}
 
 /* ===================== privacidade ===================== */
 

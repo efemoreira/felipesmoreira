@@ -26,21 +26,75 @@ require_once __DIR__ . '/inscricoes-comum.php';
  * @param array  $novas   a fila já recortada pela busca
  * @param string $buscaIn o que foi procurado, para o vazio saber explicar
  * @param callable $formatar como esta tela escreve uma data
+ * @param ?array $encontro o encontro escolhido no filtro, ou null
  */
-function aba_da_fila(array $novas, string $buscaIn, callable $formatar): void
+function aba_da_fila(array $novas, string $buscaIn, callable $formatar, ?array $encontro = null): void
 {
+    $convidados = $encontro === null ? [] : $encontro['convidados'];
     ?>
   <fieldset>
-    <legend>Esperando decisão (<?= count($novas) ?>)</legend>
+    <legend>
+      Esperando decisão (<?= count($novas) ?>)
+      <?php if ($encontro !== null): ?>
+        <?php /* O número que importa quando se está convidando não é o tamanho
+                 da fila — é quanto dela já foi chamada. Sem ele, a segunda
+                 sessão de convites recomeça do zero e repete gente. */ ?>
+        · <?= count(array_filter($novas, fn ($i) => in_array($i['id'], $convidados, true))) ?>
+        de <?= count($novas) ?> já convidadas
+      <?php endif; ?>
+    </legend>
 
     <?php if ($novas === []): ?>
       <?php nada_encontrado($buscaIn, '/painel/inscricoes.php?aba=fila', 'Nenhuma inscrição nova por enquanto.'); ?>
     <?php endif; ?>
 
+    <?php /* O FORMULÁRIO DO LOTE MORA AQUI, FORA DOS CARTÕES, e as caixas se
+             ligam a ele pelo atributo `form`. Cada ficha já tem os seus dois
+             formulários (aprovar e recusar), e form dentro de form é inválido —
+             o navegador descarta o de dentro sem avisar, e o botão simplesmente
+             não faz nada.
+
+             Sem capacidade nenhuma, que é o que a própria tela recomenda para o
+             caso comum. Quem precisa de permissão continua sendo decidido um a
+             um, no `<details>` de cada ficha. */ ?>
+    <?php if (count($novas) > 1): ?>
+      <form method="post" id="lote" class="lote">
+        <input type="hidden" name="acao" value="aprovar-lote">
+        <input type="hidden" name="csrf" value="<?= h(token()) ?>">
+        <?php /* QUEM VAI ACOMPANHAR O LOTE. Aprovar setenta e duas pessoas para
+                 o mesmo lugar indiferenciado é fabricar o grupo gigante de novo,
+                 maior — e com um coordenador só ninguém acompanha oitenta e sete
+                 pessoas. Sai marcado no lote inteiro; a ficha ajusta caso a caso. */ ?>
+        <?php $lideres = possiveis_lideres(); ?>
+        <?php if ($lideres !== []): ?>
+          <label class="campo campo-lote">
+            <span>Quem acompanha</span>
+            <select name="lider">
+              <option value="">— decidir depois —</option>
+              <?php foreach ($lideres as $l): ?>
+                <option value="<?= h($l['id']) ?>"><?= h($l['nome']) ?></option>
+              <?php endforeach; ?>
+            </select>
+          </label>
+        <?php endif; ?>
+        <button class="btn btn-ouro" type="submit">Aprovar as marcadas</button>
+        <span class="dica">
+          Cria a conta de cada uma, sem permissão de painel, e mostra as senhas
+          <strong>uma vez</strong> para você mandar.
+        </span>
+      </form>
+    <?php endif; ?>
+
     <?php foreach ($novas as $i): ?>
       <?php $sugeridas = areas_sugeridas($i['funcoes']); ?>
-      <article class="ficha">
+      <article class="ficha" id="p-<?= h($i['id']) ?>">
         <header class="ficha-topo">
+          <?php if (count($novas) > 1): ?>
+            <label class="check check-lote">
+              <input type="checkbox" form="lote" name="ids[]" value="<?= h($i['id']) ?>">
+              <span class="nav-sr">Aprovar <?= h($i['nome']) ?> no lote</span>
+            </label>
+          <?php endif; ?>
           <span class="ficha-inicial" aria-hidden="true"><?= h(iniciais($i['nome'])) ?></span>
           <span class="ficha-quem">
             <strong><?= h($i['nome']) ?></strong>
@@ -97,6 +151,39 @@ function aba_da_fila(array $novas, string $buscaIn, callable $formatar): void
             </dd>
           </div>
         </dl>
+
+        <?php if ($encontro !== null && $i['telefone'] !== ''): ?>
+          <?php
+            $jaFoi = in_array($i['id'], $convidados, true);
+            $texto = mensagem_de_convite($i, $encontro);
+          ?>
+          <div class="convite">
+            <?php /* O par de links, e não um `wa.me` montado aqui: quem tem a
+                     conta na outra grafia do nono dígito só abre pelo segundo.
+                     Abre em aba nova, então o painel continua atrás — é o que
+                     torna o "Já convidei" um clique barato, na página que a
+                     pessoa não chegou a deixar. */ ?>
+            <?php links_whatsapp($i['telefone'], 'Abrir o convite no WhatsApp', $texto, 'btn btn-ouro'); ?>
+
+            <button class="btn btn-mini" type="button" data-copiar="<?= h($texto) ?>">
+              Copiar o texto
+            </button>
+
+            <form method="post" class="convite-envio">
+              <input type="hidden" name="acao" value="convidar">
+              <input type="hidden" name="id" value="<?= h($i['id']) ?>">
+              <input type="hidden" name="evento" value="<?= h($encontro['id']) ?>">
+              <input type="hidden" name="csrf" value="<?= h(token()) ?>">
+              <button class="btn btn-mini" type="submit">
+                <?= $jaFoi ? 'Desmarcar' : 'Já convidei' ?>
+              </button>
+            </form>
+
+            <?php if ($jaFoi): ?>
+              <span class="selo selo-ok">já convidada</span>
+            <?php endif; ?>
+          </div>
+        <?php endif; ?>
 
         <!-- a decisão fica recolhida: com fila grande, a lista continua legível -->
         <details class="decidir">
@@ -166,5 +253,6 @@ function aba_da_fila(array $novas, string $buscaIn, callable $formatar): void
       </article>
     <?php endforeach; ?>
   </fieldset>
+
 <?php
 }

@@ -51,6 +51,16 @@ function tela_de_pessoas(?string $erro, ?string $ok, ?array $senhaNova): void
         $filtro = '';
     }
     $cidadeF = cidade_valida($_GET['cidade'] ?? '');
+    /* POR QUEM ACOMPANHA. É a leitura que a camada de liderança pede da
+       coordenação: não "quem é essa pessoa", e sim "como o movimento está
+       dividido, e quem ficou sem ninguém". */
+    $liderF = limpar_texto($_GET['lider'] ?? '', 40);
+    /* Por rede profissional: é a pergunta "quem eu chamo para o café com a
+       saúde?", e a resposta precisa caber numa lista curta. */
+    $redeF = limpar_texto($_GET['rede'] ?? '', 20);
+    if (!isset(REDES[$redeF])) {
+        $redeF = '';
+    }
     /* A-Z é o padrão: numa lista de gente a pergunta quase sempre é "cadê o
        Fulano", e para isso a ordem alfabética é a única que não obriga a ler tudo.
        "Mais recentes" existe para a outra pergunta — quem chegou esta semana. */
@@ -79,6 +89,16 @@ function tela_de_pessoas(?string $erro, ?string $ok, ?array $senhaNova): void
     if ($cidadeF !== '') {
         $todas = array_values(array_filter($todas, fn ($p) => $p['cidade'] === $cidadeF));
     }
+    if ($redeF !== '') {
+        $todas = array_values(array_filter($todas, fn ($p) => in_array($redeF, $p['redes'], true)));
+    }
+    if ($liderF !== '') {
+        /* `sem-lider` é o recorte que mais importa: numa base de oitenta e sete
+           pessoas, quem não está sob ninguém é quem some sem ninguém notar. */
+        $todas = $liderF === 'sem-lider'
+            ? array_values(array_filter($todas, fn ($p) => $p['lider'] === ''))
+            : array_values(array_filter($todas, fn ($p) => $p['lider'] === $liderF));
+    }
     usort($todas, fn ($a, $b) => match ($ordem) {
         /* `criadoEm` é ISO, então comparar como texto já ordena por tempo — e quem
            não tem data (ficha vinda de importação) cai para o fim, que é onde ela
@@ -88,6 +108,34 @@ function tela_de_pessoas(?string $erro, ?string $ok, ?array $senhaNova): void
                      <=> [sem_acento($b['cidade']), sem_acento($b['bairro']), sem_acento($b['nome'])],
         default   => strcmp(sem_acento($a['nome']), sem_acento($b['nome'])),
     });
+
+    /* Só líderes que de fato têm gente, mais o recorte de quem não tem ninguém.
+       Oferecer todos os possíveis encheria o filtro de becos com zero linhas. */
+    /* Só redes que têm gente: oferecer as sete sempre encheria o filtro de
+       becos com zero linhas. */
+    $opcoesRede = [];
+    foreach (ler_pessoas() as $p) {
+        foreach ($p['redes'] as $r) {
+            $opcoesRede[$r] = REDES[$r]['nome'] ?? $r;
+        }
+    }
+    asort($opcoesRede);
+
+    $opcoesLider = [];
+    $semLider = 0;
+    foreach (ler_pessoas() as $p) {
+        if ($p['lider'] === '') {
+            $semLider++;
+            continue;
+        }
+        if (!isset($opcoesLider[$p['lider']]) && ($l = achar_pessoa($p['lider'])) !== null) {
+            $opcoesLider[$p['lider']] = $l['nome'];
+        }
+    }
+    asort($opcoesLider);
+    if ($semLider > 0) {
+        $opcoesLider = ['sem-lider' => 'ninguém ainda (' . $semLider . ')'] + $opcoesLider;
+    }
 
     $duplicatas = duplicatas_de_pessoas();
     $porTipo = [];
@@ -191,6 +239,10 @@ abrir_pagina('Pessoas');
                 ['tipo' => 'busca', 'valor' => $busca, 'dica' => 'nome, telefone, login ou e-mail'],
                 ['tipo' => 'escolha', 'nome' => 'cidade', 'rotulo' => 'Cidade',
                  'valor' => $cidadeF, 'vazio' => 'todas', 'opcoes' => $opcoesCidade],
+                ['tipo' => 'escolha', 'nome' => 'rede', 'rotulo' => 'Rede',
+                 'valor' => $redeF, 'vazio' => 'qualquer', 'opcoes' => $opcoesRede],
+                ['tipo' => 'escolha', 'nome' => 'lider', 'rotulo' => 'Acompanhada por',
+                 'valor' => $liderF, 'vazio' => 'qualquer', 'opcoes' => $opcoesLider],
                 ['tipo' => 'escolha', 'nome' => 'ordem', 'rotulo' => 'Ordenar por',
                  'valor' => $ordem, 'opcoes' => [
                      'nome'    => 'nome (A–Z)',
@@ -198,7 +250,7 @@ abrir_pagina('Pessoas');
                      'cidade'  => 'cidade e bairro',
                  ]],
             ],
-            $busca !== '' || $cidadeF !== '' || $ordem !== 'nome',
+            $busca !== '' || $cidadeF !== '' || $liderF !== '' || $redeF !== '' || $ordem !== 'nome',
             '/painel/pessoas.php' . ($filtro !== '' ? '?tipo=' . urlencode($filtro) : ''),
             $filtro !== '' ? ['tipo' => $filtro] : []
         );

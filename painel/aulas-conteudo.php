@@ -592,8 +592,8 @@ const CURRICULO = [
 [
     'id'     => 'dia-3',
     'numero' => 3,
-    'titulo' => 'Eventos: as cinco peças',
-    'resumo' => 'Como um encontro sai do papel. Reserva, material, convite, registro e recepção — e o que cada peça entrega para a seguinte.',
+    'titulo' => 'Eventos: as peças',
+    'resumo' => 'Como um encontro sai do papel. Reserva, material, convite, registro e porta — e as quatro peças que só a rua tem. Cada família usa as suas.',
     'aulas'  => [
 
     [
@@ -811,6 +811,136 @@ const CURRICULO = [
             ]],
             ['tipo' => 'checklist', 'id' => 'recepcao'],
             ['tipo' => 'texto', 'texto' => 'Quando der errado: fila na entrada pede uma segunda pessoa ajudando no cadastro. QR fora do ar, cadastro no papel e digitação depois.'],
+        ],
+    ],
+
+    /* ---------- As quatro peças da rua ----------
+       Não existiam, e a falta apareceu de uma vez num ato com setecentas
+       pessoas: a mesa de Recepção não funciona na calçada, e ninguém tinha nome
+       para "distribuir bandeira", "adesivar carro" e "organizar a fila". */
+
+    [
+        'id'      => 'material-rua',
+        'pista'   => 'lenta',
+        'titulo'  => 'Material de rua',
+        'resumo'  => 'Bandeira, adesivo e panfleto chegando na rua e voltando. Material parado no carro de alguém é dinheiro gasto à toa.',
+        'minutos' => 5,
+        'funcoes' => ['material-rua'],
+        'ferramenta' => '/painel/eventos',
+        'blocos'  => [
+            ['tipo' => 'texto', 'texto' => 'Seu objetivo é que ninguém no ato fique de mãos vazias e que a sobra volte inteira. Você entrega o material separado por lote, com um dono cada, e o recolhimento no fim.'],
+            ['tipo' => 'passos', 'itens' => [
+                'Pergunte à coordenação o público esperado e estime a quantidade a partir dele.',
+                'Separe na véspera, nunca no dia: contar caixa com o ato começando é como sobra material fechado no porta-malas.',
+                'Divida em lotes com um dono: quem leva, quem entrega e quem devolve.',
+                'Monte um ponto de apoio com a reserva do que costuma acabar primeiro.',
+                'No fim, recolha o que sobrou e o que caiu no chão.',
+            ]],
+            ['tipo' => 'aviso', 'texto' => 'Fora da janela legal, só material institucional: sem número de urna, sem pedido de voto. A data está na faixa do site e na aula do Dia 4.'],
+            ['tipo' => 'nunca', 'itens' => [
+                'Deixar panfleto no chão — é multa, e é a imagem que sobra do ato no dia seguinte.',
+                'Entregar material a quem não pediu, empurrando na mão de quem passa.',
+            ]],
+            ['tipo' => 'lista', 'titulo' => 'Prazo e meta', 'itens' => [
+                'Material separado e conferido na véspera; sobra recolhida antes de todo mundo ir embora.',
+                'Ninguém no ato sem material, e nada de material sobrando fechado.',
+            ]],
+            ['tipo' => 'checklist', 'id' => 'material-rua'],
+            ['tipo' => 'texto', 'texto' => 'Quando der errado: acabou antes da hora, concentre o que resta na frente do ato, onde a foto acontece. Sobrou muito, distribua na saída em vez de levar de volta.'],
+        ],
+    ],
+
+    [
+        'id'      => 'adesivagem',
+        'pista'   => 'lenta',
+        'titulo'  => 'Adesivagem',
+        'resumo'  => 'Balde, água e detergente. É o jeito que não borbulha, não descola e não estraga o carro de ninguém.',
+        'minutos' => 5,
+        'funcoes' => ['adesivagem'],
+        'ferramenta' => '/painel/eventos',
+        'blocos'  => [
+            ['tipo' => 'texto', 'texto' => 'Seu objetivo é adesivar o carro de quem quiser, sem dano e sem parar a rua. A água com detergente deixa o adesivo deslizar até a posição certa antes de colar — é isso que evita a bolha e o adesivo torto.'],
+            ['tipo' => 'passos', 'itens' => [
+                'Monte o kit: balde, água, detergente neutro, espátula ou rodinho e pano seco.',
+                'Confirme com o dono do carro, presente, onde ele quer o adesivo.',
+                'Limpe o local, molhe a superfície e a cola, posicione e só então puxe a água com o rodinho, do centro para fora.',
+                'Seque a borda e confira se não ficou bolha nem ponta solta.',
+                'Devolva a sobra ao ponto de apoio e deixe o chão limpo.',
+            ]],
+            ['tipo' => 'aviso', 'texto' => 'Placa, farol, retrovisor e campo de visão do vidro não se cobrem. Isso é infração de trânsito do dono do carro — e o problema fica com ele, não com você.'],
+            ['tipo' => 'nunca', 'itens' => [
+                'Adesivar carro parado sem ninguém por perto, mesmo que pareça de alguém do movimento.',
+                'Insistir com quem disse não. Adesivo em carro alheio sem permissão é dano.',
+            ]],
+            ['tipo' => 'lista', 'titulo' => 'Prazo e meta', 'itens' => [
+                'Kit montado antes de o primeiro carro chegar.',
+                'Nenhum carro parado na via esperando — a fila é combinada com Fila e trânsito.',
+            ]],
+            ['tipo' => 'checklist', 'id' => 'adesivagem'],
+            ['tipo' => 'texto', 'texto' => 'Quando der errado: bolha grande, levante a ponta com a espátula, molhe de novo e reposicione. Adesivo rasgado não se remenda — pegue outro.'],
+        ],
+    ],
+
+    [
+        'id'      => 'fila-transito',
+        'pista'   => 'lenta',
+        'titulo'  => 'Fila e trânsito',
+        'resumo'  => 'Carro e gente se movendo sem travar a via e sem ninguém se machucar. É a peça que decide se o ato flui ou engarrafa.',
+        'minutos' => 5,
+        'funcoes' => ['fila-transito'],
+        'ferramenta' => '/painel/eventos',
+        'blocos'  => [
+            ['tipo' => 'texto', 'texto' => 'Seu objetivo é que o ato flua: entrada e saída definidas, fila que anda, e via nunca bloqueada. Você entrega o desenho combinado antes de começar e fica em pé durante o ato.'],
+            ['tipo' => 'passos', 'itens' => [
+                'Antes do dia, ande pelo local e defina por onde entra e por onde sai.',
+                'Ponha colete em quem organiza: reconhecível de longe é metade do trabalho.',
+                'Dê à fila um começo e um fim visíveis, e diga às pessoas quanto falta.',
+                'Mantenha uma faixa livre para pedestre, morador e ambulância o tempo todo.',
+                'Se travar de verdade, chame o agente público — não assuma o trânsito.',
+            ]],
+            ['tipo' => 'aviso', 'texto' => 'A trava da família Público diz: nada de bloqueio agressivo de via. Um ato que prende morador em casa perde a rua e ganha a manchete errada.'],
+            ['tipo' => 'nunca', 'itens' => [
+                'Dirigir o trânsito no lugar do agente público — não é competência sua e a responsabilidade é real.',
+                'Deixar a fila crescer para dentro da pista de rolamento.',
+            ]],
+            ['tipo' => 'lista', 'titulo' => 'Prazo e meta', 'itens' => [
+                'Desenho de entrada e saída combinado na véspera.',
+                'Nenhuma reclamação de morador, e nenhuma ambulância parada.',
+            ]],
+            ['tipo' => 'checklist', 'id' => 'fila-transito'],
+            ['tipo' => 'texto', 'texto' => 'Quando der errado: fila grande demais, abra um segundo ponto de atendimento em vez de acelerar o primeiro. Via travando, corte a entrada por alguns minutos e escoe.'],
+        ],
+    ],
+
+    [
+        'id'      => 'captacao',
+        'pista'   => 'lenta',
+        'titulo'  => 'Captação na rua',
+        'resumo'  => 'A Recepção da rua. Sem mesa e sem lista de papel: o QR no colete e no cartaz, e quem passou vira contato.',
+        'minutos' => 6,
+        'funcoes' => ['captacao'],
+        'ferramenta' => '/painel/eventos',
+        'blocos'  => [
+            ['tipo' => 'texto', 'texto' => 'Seu objetivo é transformar quem apareceu em contato do movimento. Na rua não existe mesa na entrada: a captação anda, e ela é a diferença entre levar os contatos para casa e só contar quantos vieram.'],
+            ['tipo' => 'texto', 'texto' => 'Num ato com setecentas pessoas, um QR mostrado uma vez do palco alcança quem está olhando o palco. Gente com celular na fila e na saída alcança o resto — e é essa diferença que aparece na lista no dia seguinte.'],
+            ['tipo' => 'passos', 'itens' => [
+                'Imprima o QR do encontro no cartaz e nos coletes, pelo painel, e teste antes de sair de casa.',
+                'Distribua o time nas pontas: entrada, fila e saída, que é onde a pessoa tem as mãos livres.',
+                'Ofereça o QR e deixe a pessoa escanear no próprio celular, sabendo o que está fazendo.',
+                'Acompanhe o número durante o ato — a meta é combinada antes de começar.',
+                'Confira a lista no fim e entregue à coordenação no mesmo dia.',
+            ]],
+            ['tipo' => 'aviso', 'texto' => 'O QR certo é o do ENCONTRO, e não o do formulário de inscrição solto. Ele registra a presença naquele ato, oferece a inscrição na sequência e ainda marca de onde a pessoa veio — três coisas numa leitura só.'],
+            ['tipo' => 'nunca', 'itens' => [
+                'Escanear ou digitar no lugar de alguém: contato de terceiro é dado pessoal, e a pessoa precisa saber que se cadastrou.',
+                'Usar a lista para assunto fora do movimento, ou repassá-la para fora.',
+            ]],
+            ['tipo' => 'lista', 'titulo' => 'Prazo e meta', 'itens' => [
+                'QR testado antes de sair; lista entregue no mesmo dia.',
+                'A meta de contatos combinada antes do ato — sem número não dá para saber se rendeu.',
+            ]],
+            ['tipo' => 'checklist', 'id' => 'captacao'],
+            ['tipo' => 'texto', 'texto' => 'Quando der errado: sem sinal no local, o cadastro em papel e a digitação depois — mas no mesmo dia, porque papel de ato esquece no bolso.'],
         ],
     ],
 

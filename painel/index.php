@@ -39,6 +39,25 @@ $primeiroAcesso = contas() === [] && !is_file(ARQ_PESSOAS);
 /* A pessoa diz que já entrou no grupo de trabalho. Não dá para conferir do
    nosso lado — o WhatsApp não conta isso —, e não é para conferir: a marca
    serve para o painel parar de cobrar, e quem mentir só engana a si mesmo. */
+/* A pessoa diz que postou a peça da semana. Também não dá para conferir — o
+   Instagram não conta isso para a gente —, e vale a mesma razão do grupo: a
+   marca serve para o painel parar de cobrar, e o número que sobra ("14 de 30
+   postaram") é o retrato mais honesto que existe de quem está ativo. */
+if ($acao === 'postei-a-peca' && token_valido()) {
+    require_once __DIR__ . '/kit-comum.php';
+    $eu = usuario_atual();
+    if ($eu !== null) {
+        $mutirao = ler_mutirao();
+        $semana = chave_da_semana();
+        if (isset($mutirao[$semana]['escalados'][$eu['id']])) {
+            $mutirao[$semana]['escalados'][$eu['id']] = 'postou';
+            gravar_mutirao($mutirao);
+        }
+    }
+    header('Location: /painel/', true, 302);
+    exit;
+}
+
 if ($acao === 'entrei-no-grupo' && token_valido()) {
     $eu = usuario_atual();
     if ($eu !== null) {
@@ -553,15 +572,126 @@ abrir_pagina('Início');
            vira o último bloco de uma página rolada no celular não é prioridade
            nenhuma — e o celular é de onde vem a maioria. */ ?>
   <aside class="hub-lado">
+    <?php
+      require_once __DIR__ . '/pessoas-comum.php';  // minha_gente(), lider_de()
+      require_once __DIR__ . '/reativacao.php';     // motivo_de_reativacao()
+      $quemMeAcompanha = lider_de($u);
+      $minhaGente = pode_liderar($u) ? minha_gente($u) : [];
+    ?>
+
+    <?php /* QUEM TE ACOMPANHA — uma linha, e é a que responde ao "entrei num
+             grupo de oitenta pessoas e não me senti parte". Numa lista grande
+             ninguém é chamado pelo nome; aqui há UM nome, com o WhatsApp ao
+             lado, e ele é de alguém que responde por você. */ ?>
+    <?php if ($quemMeAcompanha !== null): ?>
+      <section class="cartao-grupo">
+        <span class="cartao-grupo-icone"><?= icone('heartHandshake', 28) ?></span>
+        <h2>Quem te acompanha</h2>
+        <p><strong><?= h($quemMeAcompanha['nome']) ?></strong> — é com ela que você fala primeiro.</p>
+        <?php if ($quemMeAcompanha['telefone'] !== ''): ?>
+          <div class="acoes">
+            <?php links_whatsapp($quemMeAcompanha['telefone'], 'Chamar no WhatsApp', '', 'btn btn-ouro'); ?>
+          </div>
+        <?php endif; ?>
+      </section>
+    <?php endif; ?>
+
+    <?php /* SUA GENTE — o outro lado da mesma coisa.
+             Nome e WhatsApp, e mais nada: e-mail, endereço e ficha continuam só
+             em `pessoas`, que é `adm`. Quem lidera acompanha gente; não recebe a
+             agenda do movimento junto.
+
+             A ordem é de quem está mais parada primeiro: a lista é de trabalho,
+             e o trabalho é justamente quem não deu sinal. */ ?>
+    <?php if ($minhaGente !== []): ?>
+      <section class="cartao-grupo" id="minha-gente">
+        <span class="cartao-grupo-icone"><?= icone('users', 28) ?></span>
+        <h2>Sua gente (<?= count($minhaGente) ?>)</h2>
+        <ul class="gente-lista">
+          <?php foreach ($minhaGente as $g): ?>
+            <?php
+              /* O MOTIVO SAI DA MESMA RÉGUA DA REATIVAÇÃO, e não de uma nova:
+                 duas contas de "quem esfriou" divergiriam na primeira mudança
+                 de prazo, e quem lidera veria um recado diferente do da
+                 coordenação sobre a mesma pessoa. */
+              $motivo = motivo_de_reativacao($g);
+            ?>
+            <li>
+              <span class="gente-quem">
+                <strong><?= h($g['nome']) ?></strong>
+                <?php if ($motivo !== null): ?>
+                  <span class="selo selo-atencao"><?= h($motivo['nome']) ?></span>
+                <?php endif; ?>
+              </span>
+              <?php if ($g['telefone'] !== ''): ?>
+                <?php links_whatsapp($g['telefone'], 'Chamar', '', 'btn btn-mini'); ?>
+              <?php endif; ?>
+            </li>
+          <?php endforeach; ?>
+        </ul>
+        <p class="dica">
+          Quem está com selo parou em algum ponto. Uma mensagem custa menos que um
+          encontro inteiro para trazer gente nova.
+        </p>
+      </section>
+    <?php endif; ?>
+
+    <?php /* A PEÇA DA SEMANA — o cartão que existe para quem não tem área
+             nenhuma. A corrente da comunicação exige seis pessoas em seis
+             funções no mesmo dia; isto exige uma pessoa e cinco minutos.
+
+             O link é individual, com o `?de=` dela: é o que transforma
+             "compartilhe" em trabalho que se mede — sem ele não há como saber
+             qual militante traz gente. */ ?>
+    <?php
+      require_once __DIR__ . '/kit-comum.php';
+      $mutiraoHub = mutirao_da_semana();
+      $meuEstado = $mutiraoHub['escalados'][$u['id']] ?? '';
+    ?>
+    <?php if ($mutiraoHub['peca'] !== null && $meuEstado !== ''): ?>
+      <section class="cartao-grupo" id="mutirao">
+        <span class="cartao-grupo-icone"><?= icone('broadcast', 28) ?></span>
+        <h2>A peça desta semana</h2>
+        <p>
+          <strong><?= h($mutiraoHub['peca']['numero']) ?></strong> —
+          <?= h($mutiraoHub['peca']['frase']) ?>
+        </p>
+        <p class="dica"><?= h($mutiraoHub['peca']['fonte']) ?></p>
+        <div class="acoes">
+          <button class="btn btn-ouro" type="button"
+                  data-copiar="<?= h(mensagem_do_mutirao($mutiraoHub['peca'], $u)) ?>">
+            Copiar o texto e o link
+          </button>
+        </div>
+        <?php if ($meuEstado === 'postou'): ?>
+          <p class="dica" style="margin-top:10px"><strong>Você já postou esta semana.</strong> Obrigado.</p>
+        <?php else: ?>
+          <form method="post" class="cartao-grupo-feito">
+            <input type="hidden" name="csrf" value="<?= h(token()) ?>">
+            <input type="hidden" name="acao" value="postei-a-peca">
+            <button class="btn btn-mini" type="submit">Já postei</button>
+          </form>
+          <p class="dica">
+            O link já vai com o seu nome: é assim que a coordenação sabe quem trouxe gente.
+          </p>
+        <?php endif; ?>
+      </section>
+    <?php endif; ?>
+
     <section class="cartao-grupo" id="grupo">
       <span class="cartao-grupo-icone"><?= icone('whatsapp', 28) ?></span>
-      <h2>Grupo de trabalho</h2>
+      <h2><?= $quemMeAcompanha !== null ? 'Seu grupo' : 'Grupo de trabalho' ?></h2>
       <p>
-        Entre no grupo para acompanhar avisos e novidade dos trabalhos da
-        militância da Missão no Ceará.
+        <?php if ($quemMeAcompanha !== null): ?>
+          O grupo de quem <?= h(primeiro_nome($quemMeAcompanha['nome'])) ?> acompanha.
+          É um punhado de gente, e é onde você vai ser chamada pelo nome.
+        <?php else: ?>
+          Entre no grupo para acompanhar avisos e novidade dos trabalhos da
+          militância da Missão no Ceará.
+        <?php endif; ?>
       </p>
       <div class="acoes">
-        <a class="btn btn-ouro" href="<?= h(GRUPO_TRABALHO) ?>" target="_blank" rel="noopener">
+        <a class="btn btn-ouro" href="<?= h(grupo_de($u)) ?>" target="_blank" rel="noopener">
           Entrar no grupo
         </a>
       </div>

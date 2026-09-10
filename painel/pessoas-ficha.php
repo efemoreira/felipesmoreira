@@ -54,6 +54,68 @@ function formulario_pessoa(?array $aberta, array $catalogo): void
         </div>
       </div>
 
+      <?php /* A REDE PROFISSIONAL — o quarto eixo. Não é o que a pessoa faz no
+               movimento (isso é `funcoes`): é o que ela é fora dele, e é por
+               onde se monta a lista curada de um encontro relacional. */ ?>
+      <div class="campo">
+        <label>De que rede ela faz parte</label>
+        <?php foreach (REDES as $chave => $rede): ?>
+          <label class="check">
+            <input type="checkbox" name="redes[]" value="<?= h($chave) ?>"
+              <?= in_array($chave, $aberta['redes'] ?? [], true) ? 'checked' : '' ?>>
+            <strong><?= h($rede['nome']) ?></strong>
+            <span class="dica"><?= h($rede['resumo']) ?></span>
+          </label>
+        <?php endforeach; ?>
+        <p class="dica">
+          Serve para montar convite pessoal, e nunca grupo: o encontro relacional
+          pede lista curta e curada.
+        </p>
+      </div>
+
+      <?php /* O SUB-GRUPO DE QUEM LIDERA. Um grupo só, com todo mundo dentro,
+               é onde ninguém é chamado pelo nome — e é a razão mais direta de
+               alguém entrar no movimento e não se sentir parte. Só aparece para
+               quem acompanha gente: campo de grupo numa ficha que não lidera é
+               campo que ninguém preenche e que confunde quem lê. */ ?>
+      <?php if ($aberta !== null && pode_liderar($aberta)): ?>
+        <div class="campo">
+          <label for="f-grupo<?= $s ?>">O grupo de quem ela acompanha</label>
+          <input id="f-grupo<?= $s ?>" name="grupo" type="url" maxlength="200"
+                 placeholder="https://chat.whatsapp.com/…"
+                 value="<?= h($aberta['grupo'] ?? '') ?>">
+          <p class="dica">
+            Quem tem esta pessoa como líder passa a receber este convite no lugar do
+            grupo geral — no Início e na mensagem de acesso.
+          </p>
+        </div>
+      <?php endif; ?>
+
+      <?php /* QUEM ACOMPANHA — a camada que faltava entre a coordenação e
+               oitenta e sete pessoas. Só quem tem a capacidade de liderar entra
+               na lista: apontar para alguém que não pode ver a própria gente
+               seria marcar um campo que não faz nada, e campo que não faz nada
+               é a pior espécie de defeito, porque parece resolvido. */ ?>
+      <?php $lideres = possiveis_lideres(); ?>
+      <?php if ($lideres !== []): ?>
+        <div class="campo">
+          <label for="f-lider<?= $s ?>">Quem acompanha esta pessoa</label>
+          <select id="f-lider<?= $s ?>" name="lider">
+            <option value="">— ninguém ainda —</option>
+            <?php foreach ($lideres as $l): ?>
+              <?php if (($aberta['id'] ?? '') === $l['id']) { continue; } ?>
+              <option value="<?= h($l['id']) ?>" <?= ($aberta['lider'] ?? '') === $l['id'] ? 'selected' : '' ?>>
+                <?= h($l['nome']) ?>
+              </option>
+            <?php endforeach; ?>
+          </select>
+          <p class="dica">
+            Ela passa a ver o nome desta pessoa no Início de quem acompanha — e esta
+            pessoa passa a ver quem chamar primeiro.
+          </p>
+        </div>
+      <?php endif; ?>
+
       <div class="linha g3">
         <div class="campo">
           <label for="f-tel<?= $s ?>">WhatsApp</label>
@@ -231,6 +293,17 @@ function bloco_ficha(array $aberta): void
         <?php endif; ?>
         <?php if ($aberta['status'] !== ''): ?>
           <span class="selo selo-cinza"><?= h(STATUS_PESSOA[$aberta['status']]) ?></span>
+        <?php endif; ?>
+        <?php /* A rede fica na mesma linha do que a pessoa é, e não junto das
+                 funções: função é o que ela faz no movimento, rede é o que ela
+                 é fora dele. Misturadas, a lista curada de um encontro
+                 relacional sairia com militante no meio de médico. */ ?>
+        <?php foreach ($aberta['redes'] as $r): ?>
+          <span class="selo"><?= h(REDES[$r]['nome'] ?? $r) ?></span>
+        <?php endforeach; ?>
+        <?php $quemAcompanha = lider_de($aberta); ?>
+        <?php if ($quemAcompanha !== null): ?>
+          <span class="selo selo-cinza">acompanhada por <?= h($quemAcompanha['nome']) ?></span>
         <?php endif; ?>
       </p>
 

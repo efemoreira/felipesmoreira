@@ -99,12 +99,15 @@ function juntar_pessoas(string $idManter, string $idSumir): bool
 
     foreach (['telefone', 'email', 'cidade', 'bairro', 'observacao',
               'urna', 'cargo', 'numero', 'partido', 'instagram', 'imagem',
-              'origem', 'consentimentoEm', 'consentimentoVersao'] as $campo) {
+              'origem', 'consentimentoEm', 'consentimentoVersao', 'lider'] as $campo) {
         if ($manter[$campo] === '' && $sumir[$campo] !== '') {
             $manter[$campo] = $sumir[$campo];
         }
     }
     $manter['funcoes'] = array_values(array_unique(array_merge($manter['funcoes'], $sumir['funcoes'])));
+    /* As redes SOMAM, como as funções: um advogado que também é professor não
+       deixa de ser nenhum dos dois porque a ficha duplicada foi juntada. */
+    $manter['redes'] = array_values(array_unique(array_merge($manter['redes'], $sumir['redes'])));
 
     /* A conta e as capacidades vêm junto quando quem some é que as tinha. */
     if (!tem_conta($manter) && tem_conta($sumir)) {
@@ -169,4 +172,79 @@ function fila_de_entrada(): array
        tempo é quem está mais perto de desistir. */
     usort($fila, fn ($a, $b) => strcmp($a['criadoEm'], $b['criadoEm']));
     return $fila;
+}
+
+/* ===================== quem acompanha quem ===================== */
+
+/**
+ * Esta pessoa pode ver a lista de quem acompanha?
+ *
+ * DUAS CHAVES, DE PROPÓSITO. Uma é o campo `lider` nas fichas — quem organiza
+ * os times; a outra é esta capacidade — quem decide que aquela pessoa pode ver
+ * dado pessoal. Enquanto `pessoas` estiver só em `adm` porque "acesso a dado
+ * pessoal acompanha a responsabilidade", abrir uma segunda porta como efeito
+ * lateral de preencher um campo numa ficha seria furar a mesma regra por baixo.
+ */
+function pode_liderar(array $p): bool
+{
+    return array_intersect(['lideranca', 'coordenacao', 'adm'], $p['capacidades']) !== [];
+}
+
+/**
+ * A GENTE DESTA PESSOA — e a única porta para ela.
+ *
+ * `pessoas` está só em `adm` **de propósito** (ver `sessao.php`): acesso a dado
+ * pessoal não acompanha o trabalho do dia, acompanha a responsabilidade sobre
+ * ele. Um líder que enxergasse a lista inteira para acompanhar oito pessoas
+ * furaria essa regra sem ninguém decidir isso.
+ *
+ * Por isso a função **não aceita parâmetro que amplie o recorte**. Quem chama
+ * não escolhe de quem é a lista: ela é sempre de quem está chamando. Uma
+ * assinatura com `$de` acabaria, na terceira tela, recebendo `$_GET['de']`.
+ *
+ * Ordena por quem está mais parada primeiro — a lista é de trabalho, e o
+ * trabalho é justamente quem não deu sinal.
+ */
+function minha_gente(array $eu): array
+{
+    if ($eu['id'] === '') {
+        return [];
+    }
+    $gente = array_values(array_filter(
+        ler_pessoas(),
+        fn ($p) => $p['lider'] === $eu['id'] && $p['id'] !== $eu['id']
+    ));
+    usort($gente, fn ($a, $b) => [$a['ultimoAcesso'], $a['nome']] <=> [$b['ultimoAcesso'], $b['nome']]);
+    return $gente;
+}
+
+/**
+ * Quem acompanha esta pessoa, ou `null`.
+ *
+ * Devolve a ficha inteira porque quem chama precisa do telefone para abrir o
+ * WhatsApp — é essa linha, no Início de quem chegou, que responde ao "entrei
+ * num grupo gigante e não me senti parte" melhor do que qualquer tela nova.
+ */
+function lider_de(array $pessoa): ?array
+{
+    return $pessoa['lider'] === '' ? null : achar_pessoa($pessoa['lider']);
+}
+
+/** Quem pode ser líder: só quem tem conta ativa e a capacidade de liderar. */
+function possiveis_lideres(): array
+{
+    /* O filtro é escrito aqui, e não com `pessoas_ativas()`: aquela mora em
+       `eventos-comum.php`, que INCLUI este arquivo. Chamá-la daqui amarraria a
+       ficha de pessoa à máquina de encontros e quebraria em qualquer tela que
+       carregue só uma das duas. */
+    $lista = array_values(array_filter(
+        ler_pessoas(),
+        fn ($p) => $p['ativo'] && tem_conta($p) && (
+            in_array('lideranca', $p['capacidades'], true)
+            || in_array('coordenacao', $p['capacidades'], true)
+            || in_array('adm', $p['capacidades'], true)
+        )
+    ));
+    usort($lista, fn ($a, $b) => strcmp($a['nome'], $b['nome']));
+    return $lista;
 }

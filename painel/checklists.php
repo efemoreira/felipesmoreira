@@ -144,6 +144,57 @@ const CHECKLISTS = [
         ],
     ],
 
+    /* ---------- As quatro peças da rua ----------
+       Saíram de um ato com setecentas pessoas em que o trabalho real não tinha
+       nome no sistema: distribuir bandeira e panfleto, adesivar carro com balde
+       e detergente, organizar fila e trânsito, e captar contato longe de
+       qualquer mesa. As travas de cada uma são as da família Público, e as
+       eleitorais são as que mais custam caro. */
+
+    'material-rua' => [
+        'titulo' => 'Pronto quando',
+        'itens'  => [
+            'Quantidade estimada pelo público esperado, separada e conferida na véspera.',
+            'Cada lote com um dono: quem leva, quem entrega e quem traz de volta.',
+            'Ponto de apoio definido, com a reserva do que acabar primeiro.',
+            'Nada com número de urna fora da janela legal — material institucional não pede voto.',
+            'Sobra recolhida no fim: panfleto no chão é multa, e é a imagem que sobra do ato.',
+        ],
+    ],
+
+    'adesivagem' => [
+        'titulo' => 'Pronto quando',
+        'itens'  => [
+            'Kit montado: balde, água, detergente neutro, espátula ou rodinho e pano seco.',
+            'Adesivo só com o dono do carro presente e de acordo — nunca em carro parado sem ninguém.',
+            'Nada de cobrir placa, farol, retrovisor ou o campo de visão do vidro.',
+            'Fila combinada com quem cuida de Fila e trânsito, para o carro não parar na via.',
+            'Sobra devolvida ao ponto de apoio, e o chão limpo ao sair.',
+        ],
+    ],
+
+    'fila-transito' => [
+        'titulo' => 'Pronto quando',
+        'itens'  => [
+            'Entrada e saída definidas antes de começar, sem parar a via.',
+            'Quem organiza está de colete e é reconhecível de longe.',
+            'A fila tem começo e fim visíveis, e alguém dizendo quanto falta.',
+            'Passagem livre para pedestre, morador e ambulância, o tempo todo.',
+            'Ninguém do time dirige o trânsito no lugar do agente público — se travar, chame quem tem competência.',
+        ],
+    ],
+
+    'captacao' => [
+        'titulo' => 'Pronto quando',
+        'itens'  => [
+            'QR do encontro impresso no cartaz e nos coletes, e testado antes de sair de casa.',
+            'Pelo menos duas pessoas com celular nas pontas: entrada, fila e saída.',
+            'Cada pessoa se cadastra sabendo — ninguém escaneia no lugar de alguém.',
+            'Meta de contatos combinada antes: sem número, ninguém sabe se o ato rendeu.',
+            'Lista conferida e entregue à coordenação no mesmo dia, para o follow-up começar em 24h.',
+        ],
+    ],
+
     /* ---------- Listas de conferência usadas no dia ---------- */
 
     'material-evento' => [

@@ -24,7 +24,7 @@ require_once __DIR__ . '/icones.php';
 require_once __DIR__ . '/agora.php';
 
 /** Versão do CSS — muda junto com o painel.css para furar o cache do navegador. */
-const VERSAO_ESTILO = '23';
+const VERSAO_ESTILO = '29';
 
 /**
  * Os grupos da navegação, na ordem em que aparecem.
@@ -41,7 +41,7 @@ const VERSAO_ESTILO = '23';
 const GRUPOS_NAV = [
     'Comunicação' => ['fatos', 'producao', 'municao', 'estudio'],
     'Encontros'   => ['eventos', 'agenda'],
-    'Coordenação' => ['inscricoes', 'candidatos', 'aulas', 'pessoas'],
+    'Coordenação' => ['inscricoes', 'candidatos', 'aulas', 'pessoas', 'caixa'],
 ];
 
 /** Rótulos curtos, para caber na barra do celular. */
@@ -56,6 +56,7 @@ const ROTULO_CURTO = [
     'pessoas'    => 'Pessoas',
     'inscricoes' => 'Inscrições',
     'candidatos' => 'Candidatos',
+    'caixa'      => 'Caixa',
 ];
 
 /** fechar_pagina() precisa saber se abriu a moldura, para não fechar div à toa. */
@@ -403,6 +404,33 @@ function fechar_pagina(): void
         }
         ?>
         <script>
+        /* COPIAR TEXTO — um ouvinte só, para o painel inteiro.
+           `data-copiar` aparece na fila de inscrições e na escala do encontro, e
+           vai aparecer em toda tela que passe a produzir mensagem pronta: o
+           painel não é onde o trabalho acontece, é de onde sai o texto. Um
+           bloco de script por tela seria a mesma função escrita cinco vezes.
+
+           `navigator.clipboard` não existe fora de HTTPS nem em navegador
+           antigo, e falhar em silêncio é o pior caso: a pessoa cola uma
+           mensagem velha achando que copiou a nova. */
+        document.addEventListener('click', function (ev) {
+          var botao = ev.target.closest('[data-copiar]');
+          if (!botao) { return; }
+          var antes = botao.textContent;
+          var avisar = function (recado) {
+            botao.textContent = recado;
+            setTimeout(function () { botao.textContent = antes; }, 1600);
+          };
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(botao.dataset.copiar).then(
+              function () { avisar('Copiado'); },
+              function () { avisar('Não deu — copie à mão'); }
+            );
+          } else {
+            avisar('Não deu — copie à mão');
+          }
+        });
+
         /* O tema já veio certo do servidor. Este script só existe para a troca
            ser instantânea em vez de recarregar a página — sem ele o formulário
            posta em tema.php e funciona igual, só que com um pisca de recarga. */

@@ -27,9 +27,13 @@ function avisar(string $tipo, string $texto): void
     $_SESSION['recado'] = ['tipo' => $tipo, 'texto' => $texto];
 }
 
-function voltar(): void
+function voltar(string $sufixo = ''): void
 {
-    header('Location: /painel/inscricoes.php', true, 302);
+    /* O SUFIXO EXISTE PARA A ESCOLHA DO ENCONTRO SOBREVIVER AO POST. Convidar é
+       trabalho de lote: marcar uma pessoa e voltar para a fila sem o `?e=`
+       obrigaria a reescolher o encontro a cada nome, setenta e duas vezes. A
+       âncora leva de volta ao cartão em que se estava. */
+    header('Location: /painel/inscricoes.php' . $sufixo, true, 302);
     exit;
 }
 
@@ -50,6 +54,66 @@ function tratar_acoes_de_inscricao(array $eu): void
         }
 
         $acao = (string) ($_POST['acao'] ?? '');
+
+        /* ---------- aprovar em lote ----------
+           VEM ANTES DA BUSCA DO ALVO porque não tem alvo: são muitos. Setenta e
+           duas pessoas esperando, a mais antiga há dezesseis dias, e cada
+           aprovação custava abrir um `<details>`, conferir login, submeter e
+           recarregar a página. Setenta e duas recargas é o trabalho que não
+           acontece — e quem espera demais não volta.
+
+           SEM CAPACIDADE NENHUMA, de propósito: é o que a própria tela já
+           recomenda para o caso comum. Quem precisa de permissão continua sendo
+           decidido um a um, no formulário que já existe. */
+        if ($acao === 'aprovar-lote') {
+            $ids = is_array($_POST['ids'] ?? null) ? $_POST['ids'] : [];
+            /* Só quem de fato pode liderar: um id colado à mão apontaria a
+               ficha para alguém que nunca vai vê-la, e o campo pareceria
+               resolvido sem ninguém do outro lado. */
+            $lider = limpar_texto($_POST['lider'] ?? '', 40);
+            if ($lider !== '' && !in_array($lider, array_column(possiveis_lideres(), 'id'), true)) {
+                $lider = '';
+            }
+            $pessoas = ler_pessoas();
+            $acessos = [];
+            $logins = [];
+            $pulados = 0;
+
+            foreach ($ids as $bruto) {
+                $id = limpar_texto($bruto, 40);
+                $p = achar_pessoa($id);
+                /* Uma ficha já decidida no meio do lote não derruba as outras:
+                   duas pessoas mexendo na fila ao mesmo tempo é o normal, e
+                   abortar tudo faria a segunda perder o trabalho da primeira. */
+                if ($p === null || $p['status'] !== 'pendente') {
+                    $pulados++;
+                    continue;
+                }
+                $login = login_livre($p['nome'], $logins);
+                $logins[] = $login;
+                if ($acesso = aprovar_pessoa($pessoas, $id, $login, [], areas_sugeridas($p['funcoes']), $eu, $lider)) {
+                    $acessos[] = $acesso;
+                }
+            }
+
+            if ($acessos === []) {
+                avisar('erro', 'Não marquei ninguém para aprovar.');
+                voltar('?aba=fila');
+            }
+            /* UMA GRAVAÇÃO SÓ no fim: escrever o arquivo é o custo, e trinta
+               escritas seriam trinta chances de duas ficarem pela metade. */
+            if (!gravar_pessoas($pessoas)) {
+                avisar('erro', 'Não consegui gravar em /dados. Confira as permissões no hPanel.');
+                voltar('?aba=fila');
+            }
+
+            $_SESSION['acessos_novos'] = $acessos;
+            avisar('ok', count($acessos) . (count($acessos) === 1 ? ' acesso criado.' : ' acessos criados.')
+                . ($pulados > 0 ? ' ' . $pulados . ' já tinham sido decididas.' : '')
+                . ' Mande agora — as senhas não aparecem de novo.');
+            voltar('?aba=fila');
+        }
+
         $alvo = achar_pessoa(limpar_texto($_POST['id'] ?? '', 40));
 
         if ($alvo === null) {
@@ -83,34 +147,7 @@ function tratar_acoes_de_inscricao(array $eu): void
                 voltar();
             }
 
-            /* Aprovar NÃO cria uma segunda ficha: dá conta à que já existe. Antes a
-               inscrição virava um usuário novo e a inscrição ficava para trás, então
-               a mesma pessoa passava a existir duas vezes — e o histórico de
-               encontros dela ficava preso na ficha antiga. */
-            $provisoria = senha_provisoria();
-            foreach ($pessoas as &$p) {
-                if ($p['id'] !== $alvo['id']) {
-                    continue;
-                }
-                $p['usuario'] = $login;
-                $p['hash']    = password_hash($provisoria, PASSWORD_DEFAULT);
-                $p['ativo']   = true;
-                $p['trocarSenha'] = true;
-                $p['capacidades'] = $capacidades;
-                $p['areas']   = $areas;
-                $p['status']  = 'aprovada';
-                $p['tipo']    = (in_array('coordenacao', $capacidades, true)
-                    || in_array('adm', $capacidades, true)) ? 'coordenador' : 'militante';
-                $p['decididoEm']  = date('c');
-                $p['decididoPor'] = $eu['nome'];
-                /* Inscrição sem função é válida (o formulário deixou de exigir).
-                   "onde-precisar" existe no catálogo exatamente para isso — deixar
-                   o array vazio faria o hub não ter atalho nenhum para a pessoa. */
-                if ($p['funcoes'] === []) {
-                    $p['funcoes'] = ['onde-precisar'];
-                }
-            }
-            unset($p);
+            $acesso = aprovar_pessoa($pessoas, $alvo['id'], $login, $capacidades, $areas, $eu);
 
             if (!gravar_pessoas($pessoas)) {
                 avisar('erro', 'Não consegui gravar em /dados. Confira as permissões no hPanel.');
@@ -118,12 +155,7 @@ function tratar_acoes_de_inscricao(array $eu): void
             }
 
             // some da sessão assim que for mostrada uma vez
-            $_SESSION['acesso_novo'] = [
-                'nome'     => $alvo['nome'],
-                'usuario'  => $login,
-                'senha'    => $provisoria,
-                'telefone' => $alvo['telefone'],
-            ];
+            $_SESSION['acessos_novos'] = [$acesso];
             avisar('ok', 'Acesso criado para ' . $alvo['nome'] . '.');
             voltar();
         }
@@ -145,6 +177,55 @@ function tratar_acoes_de_inscricao(array $eu): void
                 avisar('erro', 'Não consegui gravar a decisão.');
             }
             voltar();
+        }
+
+        /* ---------- marcar que já convidei para um encontro ---------- */
+        if ($acao === 'convidar') {
+            require_once __DIR__ . '/eventos-comum.php';
+
+            $evento = achar_evento(limpar_texto($_POST['evento'] ?? '', 40));
+            if ($evento === null) {
+                avisar('erro', 'Encontro não encontrado — talvez alguém o tenha apagado.');
+                voltar();
+            }
+
+            /* ESTA AÇÃO NÃO ABRE O WHATSAPP, e isso é de propósito.
+               Abrir exigiria redirecionar para um `wa.me` montado aqui — um
+               link só —, e o link só é justamente o que não abre para quem tem
+               a conta na outra grafia do nono dígito. Quem desenha o par é
+               `links_whatsapp()`, na tela, e `testes/contrato/whatsapp.test.ts`
+               prende essa regra.
+
+               Então a divisão é: a tela manda a mensagem (em aba nova, com as
+               duas grafias) e esta ação guarda que a pessoa já foi chamada. São
+               dois cliques na mesma página, e o segundo é o que faz a segunda
+               rodada de convites não repetir nem pular ninguém. */
+            $eventos = ler_eventos();
+            $ja = false;
+            foreach ($eventos as &$e) {
+                if ($e['id'] !== $evento['id']) {
+                    continue;
+                }
+                $ja = in_array($alvo['id'], $e['convidados'], true);
+                if ($ja) {
+                    /* Clicar de novo desmarca: convidei por engano, ou a pessoa
+                       pediu para não ser chamada. Sem o caminho de volta, o
+                       número da legenda vira mentira e ninguém confia nele. */
+                    $e['convidados'] = array_values(array_diff($e['convidados'], [$alvo['id']]));
+                } else {
+                    $e['convidados'][] = $alvo['id'];
+                }
+            }
+            unset($e);
+
+            if (!gravar_eventos($eventos)) {
+                avisar('erro', 'Não consegui gravar em /dados.');
+                voltar();
+            }
+            avisar('ok', $ja
+                ? $alvo['nome'] . ' saiu da lista de convidadas.'
+                : $alvo['nome'] . ' marcada como convidada.');
+            voltar('?aba=fila&e=' . rawurlencode($evento['id']) . '#p-' . $alvo['id']);
         }
 
         avisar('erro', 'Ação desconhecida.');

@@ -20,6 +20,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/layout.php';
 require_once __DIR__ . '/inscricoes-comum.php';
 require_once __DIR__ . '/pessoas-comum.php';       // fila_de_entrada()
+require_once __DIR__ . '/eventos-comum.php';       // eventos_a_vir(), data_cheia()
 require_once __DIR__ . '/inscricoes-fila.php';
 require_once __DIR__ . '/inscricoes-decididas.php';
 require_once __DIR__ . '/inscricoes-origens.php';
@@ -29,9 +30,9 @@ require_once __DIR__ . '/inscricoes-origens.php';
  *
  * @param ?string $erro   o recado de erro guardado pela ação anterior
  * @param ?string $ok     o recado de sucesso
- * @param ?array  $acesso o acesso recém-criado — aparece UMA vez e some
+ * @param array   $acessos os acessos recém-criados — aparecem UMA vez e somem
  */
-function tela_de_inscricoes(?string $erro, ?string $ok, ?array $acesso): void
+function tela_de_inscricoes(?string $erro, ?string $ok, array $acessos): void
 {
     /* O RECADO E A SENHA CHEGAM PRONTOS, e não são relidos da sessão aqui: a
        rota já os tirou de lá. Reler seria pegá-los depois do `unset()` — os
@@ -69,6 +70,23 @@ function tela_de_inscricoes(?string $erro, ?string $ok, ?array $acesso): void
         return $t ? date('d/m/Y \à\s H:i', $t) : '';
     };
 
+    /* OS PRÓXIMOS ENCONTROS, calculados uma vez: eles alimentam o convite da
+       fila E a mensagem de acesso, que aparecem em pontos diferentes da tela.
+       Calcular duas vezes é como as duas passam a discordar sobre qual é o
+       próximo encontro. */
+    $proximos = [];
+    foreach (eventos_a_vir() as $e) {
+        if ($e['status'] !== 'cancelado') {
+            $proximos[$e['id']] = $e['titulo'] . ' · ' . data_cheia($e);
+        }
+    }
+    $encontroId = limpar_texto($_GET['e'] ?? '', 40);
+    $encontro = isset($proximos[$encontroId]) ? achar_evento($encontroId) : null;
+    /* O convite da mensagem de acesso é o PRIMEIRO que vem, e não o escolhido no
+       filtro: quem acabou de ser aprovado precisa saber o próximo encontro que
+       existe, e não aquele que a coordenação estava olhando. */
+    $primeiroEncontro = $proximos === [] ? null : achar_evento((string) array_key_first($proximos));
+
     abrir_pagina('Inscrições');
     ?>
 <div class="capa">
@@ -89,30 +107,31 @@ function tela_de_inscricoes(?string $erro, ?string $ok, ?array $acesso): void
 
   <?php recado($erro, $ok); ?>
 
-  <?php if ($acesso !== null): ?>
-    <?php
-      $msg = "Olá, {$acesso['nome']}! Aqui é da Missão Ceará.\n\n"
-           . "Sua inscrição foi aprovada! Seu acesso:\n\n"
-           . "Site: https://felipesmoreira.com/painel/\n"
-           . "Usuário: {$acesso['usuario']}\n"
-           . "Senha provisória: {$acesso['senha']}\n\n"
-           . "No primeiro acesso o site vai pedir para você criar sua própria senha.\n\n"
-           . "Qualquer dúvida, é só chamar aqui. Bem-vindo(a)!";
-    ?>
+  <?php if ($acessos !== []): ?>
     <div class="msg msg-ok">
-      <p style="margin:0 0 10px"><strong>Acesso criado.</strong> Mande agora — a senha não aparece de novo.</p>
+      <p style="margin:0 0 10px">
+        <strong><?= count($acessos) === 1 ? 'Acesso criado.' : count($acessos) . ' acessos criados.' ?></strong>
+        Mande agora — as senhas não aparecem de novo.
+      </p>
       <p class="dica" style="margin:0 0 10px">
-        Se ela já mandou o oi, o botão abre a conversa que existe e a mensagem entra como
+        Se a pessoa já mandou o oi, o botão abre a conversa que existe e a mensagem entra como
         <strong>resposta</strong>. É essa diferença que mantém o número da coordenação de pé:
         o WhatsApp bloqueia quem inicia muitas conversas com quem nunca falou com ele.
+        <strong>Com o lote grande, divida o envio</strong> — o “Copiar o texto” existe para isso.
       </p>
-      <div class="provisoria">
-        usuário: <?= h($acesso['usuario']) ?><br>
-        senha: <?= h($acesso['senha']) ?>
-      </div>
-      <div class="acoes" style="margin-top:14px">
-        <?php links_whatsapp($acesso['telefone'], 'Abrir WhatsApp com a mensagem pronta', $msg, 'btn btn-ouro'); ?>
-      </div>
+
+      <?php foreach ($acessos as $a): ?>
+        <?php $msg = mensagem_de_acesso($a, $primeiroEncontro); ?>
+        <div class="convite">
+          <div class="provisoria">
+            <?= h($a['nome']) ?><br>
+            usuário: <?= h($a['usuario']) ?><br>
+            senha: <?= h($a['senha']) ?>
+          </div>
+          <?php links_whatsapp($a['telefone'], 'Mandar o acesso', $msg, 'btn btn-ouro'); ?>
+          <button class="btn btn-mini" type="button" data-copiar="<?= h($msg) ?>">Copiar o texto</button>
+        </div>
+      <?php endforeach; ?>
     </div>
   <?php endif; ?>
 
@@ -177,9 +196,33 @@ function tela_de_inscricoes(?string $erro, ?string $ok, ?array $acesso): void
   ], $abaIn, 'aba', 'Inscrições');
   ?>
 
+  <?php
+  /* O ENCONTRO PARA O QUAL SE CONVIDA — escolhido uma vez, vale para a fila
+     inteira. Convidar é trabalho de lote: quem abre esta tela com setenta e
+     duas pessoas esperando vai chamar dezenas para o MESMO encontro, e repetir
+     a escolha em cada cartão seria setenta e duas decisões para uma decisão só.
+
+     Vai na querystring, e não em sessão, porque assim o estado da tela cabe no
+     link: dá para mandar "abra esta URL e convide dez" para outra pessoa. */
+  ?>
+
   <?php /* A busca some no relatório: ele é sobre a base inteira, e uma tabela de
            conversão que muda conforme o que alguém digitou não é um relatório. */ ?>
-  <?php if ($abaIn !== 'origens' && ($quantasTem > 6 || $buscaIn !== '')): ?>
+  <?php if ($abaIn === 'fila' && ($quantasTem > 6 || $buscaIn !== '' || $proximos !== [])): ?>
+    <?php
+    /* `barra_filtros()` e não `barra_busca()`: esta é a tela que precisa de um
+       `<select>` a mais, que é o caso para o qual o helper existe. */
+    $campos = [['tipo' => 'busca', 'valor' => $buscaIn, 'dica' => 'nome, telefone, cidade ou quem trouxe']];
+    if ($proximos !== []) {
+        $campos[] = [
+            'tipo' => 'escolha', 'nome' => 'e', 'rotulo' => 'Convidar para',
+            'valor' => $encontro !== null ? $encontro['id'] : '',
+            'vazio' => '— escolha o encontro —', 'opcoes' => $proximos,
+        ];
+    }
+    barra_filtros($campos, $buscaIn !== '' || $encontro !== null, '/painel/inscricoes.php?aba=fila', ['aba' => 'fila']);
+    ?>
+  <?php elseif ($abaIn === 'decididas' && ($quantasTem > 6 || $buscaIn !== '')): ?>
     <?php barra_busca($buscaIn, 'nome, telefone, cidade ou quem trouxe', ['aba' => $abaIn]); ?>
   <?php endif; ?>
 
@@ -188,7 +231,7 @@ function tela_de_inscricoes(?string $erro, ?string $ok, ?array $acesso): void
      HTML, e é o que punha o `<fieldset>` na coluna certa quando as duas abas
      moravam neste arquivo. Mexer nele muda o markup sem mudar nada visível. */
   if ($abaIn === 'fila') {
-      aba_da_fila($novas, $buscaIn, $formatar);
+      aba_da_fila($novas, $buscaIn, $formatar, $encontro);
   } elseif ($abaIn === 'decididas') {
       aba_das_decididas($decididas, $buscaIn, $formatar);
   } else {

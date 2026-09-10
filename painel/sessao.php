@@ -48,6 +48,7 @@ const AREAS = [
     'inscricoes' => 'Inscrições da militância',
     'candidatos' => 'Candidatos',
     'pessoas'    => 'Pessoas e dados pessoais',
+    'caixa'      => 'Caixa',
 ];
 
 /**
@@ -58,6 +59,10 @@ const AREAS = [
  * capacidades são o jeito normal de conceder; as áreas continuam por baixo para
  * a exceção — tirar o Estúdio de alguém de Comunicação sem inventar uma
  * capacidade nova.
+ *
+ * **`pessoas` e `caixa` só entram em `adm`, de propósito.** Dinheiro segue a
+ * mesma régua do dado pessoal: acesso a ele não acompanha o trabalho do dia,
+ * acompanha a responsabilidade sobre ele.
  *
  * **`pessoas` só entra em `adm`, de propósito.** É a tela com telefone, e-mail e
  * endereço de todo mundo: acesso a dado pessoal não acompanha o trabalho do dia,
@@ -90,6 +95,19 @@ const CAPACIDADES = [
         'nome'   => 'Coordenação',
         'resumo' => 'Quem entra no movimento, os encontros, os candidatos e a formação do time',
         'areas'  => ['inscricoes', 'candidatos', 'aulas', 'eventos', 'agenda'],
+    ],
+    /* NÃO ABRE TELA NENHUMA — `areas` vazio, e de propósito.
+       Ela habilita um bloco no Início: a lista de quem esta pessoa acompanha.
+       `pessoas` continua só em `adm`, e a diferença é o recorte: quem lidera vê
+       NOME e WHATSAPP da própria gente, e não a agenda do movimento.
+
+       Existe como capacidade, e não como efeito de alguém ter preenchido o
+       campo `lider` numa ficha, porque dar acesso a dado pessoal precisa ser uma
+       decisão registrada — e não uma consequência lateral de organizar times. */
+    'lideranca' => [
+        'nome'   => 'Liderança',
+        'resumo' => 'Acompanha um punhado de gente: vê nome e WhatsApp de quem está sob ela',
+        'areas'  => [],
     ],
     'adm' => [
         'nome'   => 'Administração',
@@ -132,6 +150,35 @@ const TIPOS_PESSOA = [
     'militante'   => 'Militante',
     'coordenador' => 'Coordenador',
     'candidato'   => 'Candidato',
+];
+
+/**
+ * AS REDES PROFISSIONAIS — o quarto eixo da ficha.
+ *
+ * `tipo` diz o que a pessoa É, `funcoes` diz o que ela FAZ, `capacidades` diz o
+ * que ela ABRE. Faltava de que rede ela FAZ PARTE — e é um eixo diferente dos
+ * três: um médico pode ser eleitor, militante ou coordenador, e a rede não muda.
+ *
+ * A máquina do encontro já existe: `FAMILIAS['relacional']` traz o playbook, o
+ * material e as seis travas jurídicas, e o §5.4 do manual descreve o formato.
+ * O que faltava era saber quem chamar — e o Manual pede lista **curta e curada**
+ * com convite pessoal, nunca grupo de WhatsApp. É exatamente o que um filtro por
+ * rede produz.
+ *
+ * Lista fechada, pelo mesmo motivo que `CARGOS` é lista: "Médicos", "medicos" e
+ * "Médicas e médicos" digitados por três pessoas viram três redes no filtro, e
+ * a lista curada deixa de ser curada.
+ *
+ * NADA DISSO É PÚBLICO. Rede profissional não vira página no site.
+ */
+const REDES = [
+    'medicos'     => ['nome' => 'Saúde',     'resumo' => 'Médicos, enfermagem e quem trabalha na ponta do SUS'],
+    'advogados'   => ['nome' => 'Direito',   'resumo' => 'Advocacia, defensoria e quem entende de conformidade'],
+    'empresarios' => ['nome' => 'Negócios',  'resumo' => 'Quem emprega, quem toca comércio e quem abre porta'],
+    'educacao'    => ['nome' => 'Educação',  'resumo' => 'Professores, direção de escola e quem forma gente'],
+    'seguranca'   => ['nome' => 'Segurança', 'resumo' => 'Polícia, bombeiros e quem conhece a violência por dentro'],
+    'igrejas'     => ['nome' => 'Igrejas',   'resumo' => 'Liderança religiosa e quem tem comunidade própria'],
+    'campo'       => ['nome' => 'Campo',     'resumo' => 'Produtores, cooperativas e o interior que trabalha a terra'],
 ];
 
 /**
@@ -265,6 +312,7 @@ const DESTINO_AREA = [
     'inscricoes' => ['url' => '/painel/inscricoes.php', 'resumo' => 'Aprovar quem se inscreveu em /queroajudar e mandar o acesso'],
     'candidatos' => ['url' => '/painel/candidatos.php', 'resumo' => 'Nome de urna, número e @ de cada candidato — a colinha que o eleitor leva'],
     'pessoas'    => ['url' => '/painel/pessoas.php', 'resumo' => 'Todo mundo do movimento: quem é, o que faz, em que encontros esteve'],
+    'caixa'      => ['url' => '/painel/caixa.php', 'resumo' => 'Todo real que entra e sai, com origem — e os dois caixas nunca somados juntos'],
 ];
 
 /**
@@ -281,6 +329,30 @@ const DESTINO_AREA = [
  * achar — o grep que o CLAUDE.md mandava fazer à mão.
  */
 const GRUPO_TRABALHO = 'https://chat.whatsapp.com/C8rQeoCzJpz6vObwyRFAbt';
+
+/**
+ * O GRUPO DESTA PESSOA — o do líder dela, ou o geral.
+ *
+ * Um grupo só, com todo mundo dentro, é onde ninguém é chamado pelo nome — e é
+ * a razão mais direta de alguém entrar no movimento e não se sentir parte. Com
+ * a divisão por líder, cada pessoa cai num lugar onde há um punhado de gente e
+ * alguém que responde por ela.
+ *
+ * O geral não deixa de existir: ele é o piso de quem ainda não tem líder, e o
+ * canal do que é de todo mundo.
+ */
+function grupo_de(array $pessoa): string
+{
+    if (($pessoa['lider'] ?? '') === '') {
+        return GRUPO_TRABALHO;
+    }
+    foreach (ler_pessoas() as $p) {
+        if ($p['id'] === $pessoa['lider'] && $p['grupo'] !== '') {
+            return $p['grupo'];
+        }
+    }
+    return GRUPO_TRABALHO;
+}
 
 /** O contato oficial. Não existe e-mail: este é o único canal. */
 const WHATSAPP_COORDENACAO = 'https://wa.me/5585981872972';
@@ -500,6 +572,20 @@ function telefone_bonito(string $telefone): string
  * inteiro embaixo dele: `5599999999` é o celular de um DDD 55, não um número
  * já internacionalizado.
  */
+/**
+ * "Maria da Silva Sauro" -> "Maria" — o nome quando só o primeiro cabe.
+ *
+ * Não confundir com `nome_encoberto()`, que existe para ESCONDER quem é numa
+ * tela em que o nome inteiro seria vazamento. Aqui não há nada a esconder: é a
+ * escala do encontro, lida por quem coordena, e o primeiro nome basta porque a
+ * peça mostra quatro pessoas numa linha só.
+ */
+function primeiro_nome(string $nome): string
+{
+    $partes = array_values(array_filter(explode(' ', trim($nome))));
+    return $partes === [] ? 'Alguém' : $partes[0];
+}
+
 function numero_whatsapp(string $telefone): string
 {
     $d = so_digitos($telefone);
@@ -703,6 +789,37 @@ function normalizar_pessoa($p): ?array
             fn ($f) => limpar_texto($f, 40),
             is_array($p['funcoes'] ?? null) ? $p['funcoes'] : []
         ))),
+
+        /* ---- de que rede profissional ela faz parte ----
+           Mesmo padrão de `capacidades`: chave que não existe no catálogo some,
+           porque o arquivo é gravado por mais de uma tela. */
+        'redes' => array_values(array_filter(
+            array_unique(array_map(
+                fn ($r) => (string) $r,
+                is_array($p['redes'] ?? null) ? $p['redes'] : []
+            )),
+            fn ($r) => isset(REDES[$r])
+        )),
+
+        /* ---- o grupo de quem lidera ----
+           Só faz sentido para quem acompanha gente: é o link do sub-grupo dela.
+           Fica na FICHA, e não numa constante, porque assim um líder novo entra
+           sem deploy — e porque um mapa `chave => link` no código teria de ser
+           mantido em sincronia com o campo `lider` das fichas, que é onde a
+           divisão de fato mora. */
+        /* `limpar_link()` mora em `agenda-comum.php`, que depende DESTE arquivo:
+           chamá-la aqui inverteria a dependência. A régua é curta e basta —
+           convite de grupo é sempre https, e o que não for vira vazio em vez de
+           virar um `javascript:` colado numa tela do painel. */
+        'grupo' => str_starts_with(mb_strtolower(trim((string) ($p['grupo'] ?? ''))), 'https://')
+            ? limpar_texto($p['grupo'], 200) : '',
+
+        /* ---- quem acompanha esta pessoa ----
+           Um id de pessoa, e nada mais. É a camada que faltava entre o
+           coordenador e oitenta e sete pessoas: sem ela tudo funila em quem tem
+           `coordenacao`, que é uma pessoa só, e "não consigo acompanhar todos"
+           deixa de ser falta de disciplina e passa a ser aritmética. */
+        'lider' => limpar_texto($p['lider'] ?? '', 40),
 
         /* ---- conta no painel: tudo vazio quando não tem ---- */
         'usuario'      => $conta,

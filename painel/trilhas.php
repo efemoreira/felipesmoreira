@@ -65,6 +65,13 @@ const MESA_DA_FUNCAO = [
     'divulgacao' => ['area' => 'eventos',  'acao' => 'Ver os encontros',      'destino' => ''],
     'gravacao'   => ['area' => 'eventos',  'acao' => 'Ver os encontros',      'destino' => ''],
     'recepcao'   => ['area' => 'eventos',  'acao' => 'Ver os encontros',      'destino' => ''],
+    /* As quatro da rua têm a mesma mesa das outras de Eventos: o encontro é
+       onde a escala aparece e onde o checklist se marca. O que muda entre elas
+       é o trabalho, não a ferramenta. */
+    'material-rua'  => ['area' => 'eventos', 'acao' => 'Ver os encontros', 'destino' => ''],
+    'adesivagem'    => ['area' => 'eventos', 'acao' => 'Ver os encontros', 'destino' => ''],
+    'fila-transito' => ['area' => 'eventos', 'acao' => 'Ver os encontros', 'destino' => ''],
+    'captacao'      => ['area' => 'eventos', 'acao' => 'Ver os encontros', 'destino' => ''],
     /* O Follow-up é o único dos Encontros cuja mesa NÃO é um encontro: a fila
        dele atravessa todos, e escolher um encontro antes de começar é a
        pergunta errada — a mensagem de hoje é para quem venceu hoje, e não para

@@ -46,7 +46,7 @@ $ok   = ($recado['tipo'] ?? '') === 'ok'   ? $recado['texto'] : null;
 
 /* Some da sessão assim que for mostrado uma vez: senha provisória que fica na
    tela é senha que alguém lê por cima do ombro na segunda vez que ela abre. */
-$acesso = $_SESSION['acesso_novo'] ?? null;
-unset($_SESSION['acesso_novo']);
+$acessos = $_SESSION['acessos_novos'] ?? [];
+unset($_SESSION['acessos_novos']);
 
-tela_de_inscricoes($erro, $ok, $acesso);
+tela_de_inscricoes($erro, $ok, $acessos);
