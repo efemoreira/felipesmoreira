@@ -259,6 +259,22 @@ describe("ação: aprovar em lote", () => {
     ]);
   }
 
+  test("o selo do menu conta as pessoas, não as linhas da fila", async () => {
+    fila(["Ana Souza", "Bruno Lima"]);
+
+    const { html } = await painel.buscar("index");
+    /* Três esperando (a semeada e as duas de agora) viram UMA linha na fila do
+       Início — "3 pessoas esperando decisão". O selo ao lado de "Inscrições"
+       tem de dizer 3, e não 1: contar linhas fazia o menu mostrar "1" com a
+       porta cheia, um número real respondendo à pergunta errada. O `</a>`
+       proibido no meio prende o selo ao link certo. */
+    assert.match(
+      html,
+      /inscricoes\.php"(?:(?!<\/a>)[\s\S])*?nav-selo" aria-label="3 esperando">3</,
+      "o selo de Inscrições não mostra as 3 pessoas da fila",
+    );
+  });
+
   test("um POST cria as contas de todas as marcadas", async () => {
     fila(["Ana Souza", "Bruno Lima"]);
 
