@@ -1,5 +1,5 @@
 import { execFileSync, spawnSync, spawn, type ChildProcess } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync, mkdirSync, cpSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync, writeFileSync, mkdirSync, cpSync } from "node:fs";
 import net from "node:net";
 import os from "node:os";
 import path from "node:path";
@@ -487,6 +487,24 @@ session_write_close();
       return seguir(alvo, r.headers.get("location") ?? "", marca, r.status);
     },
     async buscar(tela, querystring = "") {
+      /* A TELA TEM DE EXISTIR, e a conferência é do ARQUIVO — não do status.
+         O servidor embutido do PHP cai no `index.php` do diretório quando o
+         arquivo pedido não existe, e o quanto ele faz isso MUDA COM A VERSÃO:
+         no 8.5 qualquer nome errado devolve o Início com status 200, no 8.3 o
+         mesmo nome devolve 404.
+
+         Foi assim que `buscar("")` — que monta `/painel/.php` — passou verde
+         aqui e quebrou cinco testes no runner. E o pior nem foi quebrar: os que
+         só afirmavam `doesNotMatch` passavam VERDES na página de erro, porque
+         "não contém X" é verdade em qualquer página. Teste que passa pelo
+         motivo errado é pior que teste que falha.
+
+         Conferir o arquivo pega os dois casos, em qualquer versão. */
+      if (!existsSync(path.join(dir, "painel", `${tela}.php`))) {
+        throw new Error(
+          `não existe public/painel/${tela}.php — o Início é "index", não "".`,
+        );
+      }
       await subir();
       const marca = stderr.length;
       const alvo = `/painel/${tela}.php` + (querystring !== "" ? `?${querystring}` : "");

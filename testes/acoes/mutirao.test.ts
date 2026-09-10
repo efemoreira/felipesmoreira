@@ -74,7 +74,7 @@ describe("mutirão: a peça chega em quem posta", () => {
   test("o Início mostra a peça com o link atribuído", async () => {
     comPeca();
     await painel.postar("municao", { acao: "mutirao-peca", peca: "esgoto-a1b2" });
-    const { html } = await painel.buscar("");
+    const { html } = await painel.buscar("index");
 
     assert.match(html, /A peça desta semana/);
     /* O `?de=` é o par PHP de `slugDe()`, e sem ele "compartilhe" não vira
@@ -89,19 +89,24 @@ describe("mutirão: a peça chega em quem posta", () => {
     comPeca();
     await painel.postar("municao", { acao: "mutirao-peca", peca: "esgoto-a1b2" });
 
-    const antes = await painel.buscar("");
+    const antes = await painel.buscar("index");
     assert.match(antes.html, /Postar a peça da semana/);
 
     await painel.postar("", { acao: "postei-a-peca" });
 
-    const depois = await painel.buscar("");
+    const depois = await painel.buscar("index");
     assert.doesNotMatch(depois.html, /Postar a peça da semana/);
     assert.match(depois.html, /Você já postou esta semana/);
   });
 
   test("sem peça escalada, ninguém é cobrado", async () => {
     comPeca();
-    const { html } = await painel.buscar("");
+    const { html } = await painel.buscar("index");
+    /* A ÂNCORA POSITIVA PRIMEIRO. "Não contém X" é verdade em qualquer página —
+       inclusive numa de erro —, e foi assim que estes testes passaram verdes
+       apontando para `/painel/.php`. Provar que estamos no Início é o que dá
+       sentido à ausência. */
+    assert.match(html, /class="hub-lado"/, "não é o Início");
     assert.doesNotMatch(html, /A peça desta semana/);
   });
 });

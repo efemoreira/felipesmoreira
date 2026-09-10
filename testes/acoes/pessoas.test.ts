@@ -248,7 +248,7 @@ describe("pessoas: a camada de liderança", () => {
 
   test("quem lidera vê a própria gente no Início — e só ela", async () => {
     comGente();
-    const { html } = await painel.buscar("");
+    const { html } = await painel.buscar("index");
 
     /* Só o bloco: o nome de quem foi cadastrado recentemente aparece também na
        linha do tempo do hub, e asserção sobre a página inteira mediria a tela
@@ -270,8 +270,9 @@ describe("pessoas: a camada de liderança", () => {
        furada por efeito lateral de organizar um time. */
     comGente();
     painel.trocarCapacidades("eventos");
-    const { html } = await painel.buscar("");
+    const { html } = await painel.buscar("index");
 
+    assert.match(html, /class="hub-lado"/, "não é o Início");
     assert.doesNotMatch(html, /Sua gente/);
   });
 

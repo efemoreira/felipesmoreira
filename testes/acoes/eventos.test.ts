@@ -782,7 +782,7 @@ describe("as pendências da escala", () => {
     const encontro = await painel.buscar("eventos", `e=${EVENTO}`);
     assert.match(encontro.html, /Achar gente para \d+ peças|Achar quem faz/);
 
-    const inicio = await painel.buscar("");
+    const inicio = await painel.buscar("index");
     assert.match(inicio.html, /peças sem ninguém em|sem ninguém em “/);
   });
 
@@ -820,7 +820,7 @@ describe("as pendências da escala", () => {
     const e = painel.ler("eventos")[0];
     painel.gravar("eventos", [{ ...e, responsaveis: { ...e.responsaveis, captacao: [ADMIN] } }]);
 
-    const { html } = await painel.buscar("");
+    const { html } = await painel.buscar("index");
     /* Aqui morava o "todos fazem tudo": a tarefa antiga disparava para qualquer
        conta com `eventos`, com o agregado das cinco peças. */
     assert.match(html, /Você é Captação em/);
@@ -835,7 +835,8 @@ describe("as pendências da escala", () => {
       aceites: { captacao: { [ADMIN]: "nao-posso" } },
     }]);
 
-    const { html } = await painel.buscar("");
+    const { html } = await painel.buscar("index");
+    assert.match(html, /class="hub-lado"/, "não é o Início");
     assert.doesNotMatch(html, /Você é Captação em/, "cobrou quem já avisou que não pode");
   });
 });
