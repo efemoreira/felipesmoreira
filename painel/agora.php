@@ -40,6 +40,8 @@ const TETO_FILA = 6;
  *   area     — a chave em AREAS, usada para agrupar e para o contador do menu
  *   icone    — nome em ICONE_TRACOS
  *   urgente  — true quando um prazo do manual já venceu (pinta de vermelho)
+ *   quantos  — quantos itens a linha junta ("Checar 5 fatos" → 5); sem o campo
+ *              vale 1. É o que o selo do menu soma — ver contagens_por_area()
  *   texto    — a ação, em uma frase e começando por verbo
  *   porque   — a regra do manual que a torna urgente; some quando não há uma
  *   url      — link direto, já com a âncora do item
@@ -96,6 +98,7 @@ function tarefas_de(array $u): array
                 'area'    => 'fatos',
                 'icone'   => 'search',
                 'urgente' => $horas >= 2,
+                'quantos' => $quantos,
                 'texto'   => $quantos === 1 ? 'Checar 1 fato' : "Checar {$quantos} fatos",
                 'porque'  => $horas >= 2
                     ? "o mais antigo está parado há {$horas}h — o prazo da checagem é 2h"
@@ -121,6 +124,7 @@ function tarefas_de(array $u): array
                 'area'    => 'fatos',
                 'icone'   => 'search',
                 'urgente' => false,
+                'quantos' => $quantos,
                 'texto'   => $quantos === 1
                     ? 'Decidir o que fazer com 1 fato aprovado'
                     : "Decidir o que fazer com {$quantos} fatos aprovados",
@@ -143,6 +147,7 @@ function tarefas_de(array $u): array
                 'area'    => 'pessoas',
                 'icone'   => 'users',
                 'urgente' => false,
+                'quantos' => $esfriaram,
                 'texto'   => $esfriaram === 1
                     ? 'Chamar de volta 1 pessoa que esfriou'
                     : "Chamar de volta {$esfriaram} pessoas que esfriaram",
@@ -171,6 +176,7 @@ function tarefas_de(array $u): array
                     'area'    => 'producao',
                     'icone'   => 'bolt',
                     'urgente' => true,
+                    'quantos' => $quantos,
                     'texto'   => $quantos === 1
                         ? 'Terminar “' . apelido_curto($c['titulo']) . '”'
                         : "Destravar {$quantos} cards seus com prazo vencido",
@@ -185,6 +191,7 @@ function tarefas_de(array $u): array
                     'area'    => 'producao',
                     'icone'   => 'bolt',
                     'urgente' => false,
+                    'quantos' => $emDia,
                     'texto'   => $emDia === 1
                         ? '1 card está com você no quadro'
                         : "{$emDia} cards estão com você no quadro",
@@ -218,6 +225,7 @@ function tarefas_de(array $u): array
                 'area'    => 'eventos',
                 'icone'   => 'whatsapp',
                 'urgente' => true,
+                'quantos' => $quantos,
                 'texto'   => $quantos === 1
                     ? 'Falar com ' . explode(' ', $primeiroLead['pessoa']['nome'])[0]
                     : "Fazer o follow-up de {$quantos} pessoas",
@@ -315,6 +323,7 @@ function tarefas_de(array $u): array
                 'area'    => 'eventos',
                 'icone'   => 'users',
                 'urgente' => $faltam !== null && $faltam <= 3,
+                'quantos' => $quantas,
                 'texto'   => $quantas === 1
                     ? PECAS[$abertas[0]]['nome'] . ' sem ninguém em “' . apelido_curto($e['titulo'], 22) . '”'
                     : $quantas . ' peças sem ninguém em “' . apelido_curto($e['titulo'], 22) . '”',
@@ -349,6 +358,7 @@ function tarefas_de(array $u): array
                 'area'    => 'inscricoes',
                 'icone'   => 'flag',
                 'urgente' => $parada,
+                'quantos' => $novas,
                 'texto'   => $novas === 1
                     ? '1 pessoa esperando decisão'
                     : "{$novas} pessoas esperando decisão",
@@ -582,7 +592,12 @@ function panorama_de(array $u): array
 }
 
 /**
- * Quantas tarefas cada área tem — o número ao lado do nome no menu.
+ * Quantos ITENS cada área tem esperando — o número ao lado do nome no menu.
+ *
+ * Itens, e não tarefas: a fila junta cinco fatos numa linha só ("Checar 5
+ * fatos"), e contar linhas fazia o selo dizer "1" com cinco coisas paradas — um
+ * número real respondendo à pergunta errada. Cada tarefa diz quantos itens
+ * carrega em `quantos`, e a que não diz vale um.
  *
  * Devolve só as áreas com alguma coisa: quem não aparece aqui não ganha selo.
  */
@@ -595,7 +610,7 @@ function contagens_por_area(?array $u = null): array
 
     $conta = [];
     foreach (tarefas_de($u) as $t) {
-        $conta[$t['area']] = ($conta[$t['area']] ?? 0) + 1;
+        $conta[$t['area']] = ($conta[$t['area']] ?? 0) + ($t['quantos'] ?? 1);
     }
     return $conta;
 }
