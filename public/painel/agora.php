@@ -157,6 +157,31 @@ function tarefas_de(array $u): array
         }
     }
 
+    /* ---------- Sua gente: quem está sob esta pessoa e esfriou ----------
+       A mesma régua da reativação, no recorte de quem lidera. É a tarefa que
+       faz "acompanhar alguém" ser trabalho com número, e não intenção: sem
+       ela, a líder só descobre que alguém sumiu quando a coordenação
+       pergunta. `area` é 'gente' — não é área de AREAS, é o nome do item
+       solto do menu, e é o que dá o selo a ele. */
+    require_once __DIR__ . '/pessoas-comum.php';
+    if (pode_liderar($u)) {
+        require_once __DIR__ . '/reativacao.php';
+        $minhaEsfriando = count(array_filter(minha_gente($u), fn ($p) => motivo_de_reativacao($p) !== null));
+        if ($minhaEsfriando > 0) {
+            $tarefas[] = [
+                'area'    => 'gente',
+                'icone'   => 'users',
+                'urgente' => false,
+                'quantos' => $minhaEsfriando,
+                'texto'   => $minhaEsfriando === 1
+                    ? '1 pessoa da sua gente esfriou'
+                    : "{$minhaEsfriando} pessoas da sua gente esfriaram",
+                'porque'  => 'você é o primeiro nome que elas veem — uma mensagem sua vale mais que um aviso no grupo',
+                'url'     => '/painel/gente.php?tipo=esfriando',
+            ];
+        }
+    }
+
     /* ---------- Produção: o que está com esta pessoa ---------- */
     if (pode('producao')) {
         require_once __DIR__ . '/producao-comum.php';

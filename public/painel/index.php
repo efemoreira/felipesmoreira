@@ -47,12 +47,9 @@ if ($acao === 'postei-a-peca' && token_valido()) {
     require_once __DIR__ . '/kit-comum.php';
     $eu = usuario_atual();
     if ($eu !== null) {
-        $mutirao = ler_mutirao();
-        $semana = chave_da_semana();
-        if (isset($mutirao[$semana]['escalados'][$eu['id']])) {
-            $mutirao[$semana]['escalados'][$eu['id']] = 'postou';
-            gravar_mutirao($mutirao);
-        }
+        /* Só afirma — desmarcar é da coordenação, na Munição. A gravação é a
+           mesma dos três pontinhos de lá: `registrar_postagem()`. */
+        registrar_postagem($eu['id'], true);
     }
     header('Location: /painel/', true, 302);
     exit;
@@ -275,15 +272,21 @@ $areas = areas_do_usuario();
 $mesas = mesas_de($u);
 $tarefas = tarefas_de($u);
 $panorama = panorama_de($u);
-$atividade = linha_do_tempo();
+/* TRÊS LINHAS, e "ver tudo" para Leituras › Atividade. Aqui é contexto de
+   quem vai trabalhar, não leitura: doze linhas entre a formação e o rodapé
+   eram uma rolagem que ninguém fazia. Quem não abre Leituras vê as três — a
+   lista inteira é leitura de coordenação. */
+$atividade = linha_do_tempo(null, 3);
 $formacao = formacao_de($u);
 $trilhas  = trilhas_de($u);
 
 $negado = (string) ($_GET['negado'] ?? '');
 if ($negado !== '') {
-    $aviso = $negado === 'usuarios'
-        ? 'Só um administrador abre a lista de usuários.'
-        : 'Você não tem acesso a “' . (AREAS[$negado] ?? $negado) . '”. Peça a um administrador.';
+    $aviso = match (true) {
+        $negado === 'usuarios' => 'Só um administrador abre a lista de usuários.',
+        $negado === 'gente'    => '“Sua gente” é de quem acompanha alguém. Peça à coordenação para ser apontada como líder.',
+        default                => 'Você não tem acesso a “' . (AREAS[$negado] ?? $negado) . '”. Peça a um administrador.',
+    };
 }
 
 /* Os encontros que vêm aí, e a peça das cinco que cabe a esta pessoa. */
@@ -291,7 +294,10 @@ $proximos = [];
 $minhaPeca = null;
 if (in_array('eventos', $areas, true)) {
     require_once __DIR__ . '/eventos-comum.php';
-    $proximos = array_slice(eventos_proximos(), 0, 2);
+    $todosProximos = eventos_proximos();
+    /* UM encontro, e "ver todos". O hub responde "para onde eu vou", e a
+       resposta é o próximo; a lista é de /painel/eventos. */
+    $proximos = array_slice($todosProximos, 0, 1);
     $minhaPeca = peca_da_pessoa($u);
 }
 
@@ -320,7 +326,7 @@ abrir_pagina('Início');
         [
             'Esta tela é só o que está esperando por você hoje — para onde ir fica no menu, ao lado.',
             'A mesa do topo é a da sua função no movimento; “Ver tudo” abre a ferramenta inteira.',
-            'Os medidores de “A operação hoje” são do time inteiro, não seus: verde é em dia, âmbar é perto do prazo, vermelho já venceu.',
+            '“A operação hoje” é do time inteiro, não sua: só aparece o que está perto do prazo ou já venceu; em dia não faz barulho.',
             'Área é permissão de tela; função é o seu papel na militância. Uma não limita a outra.',
             'Fila vazia é o objetivo, não erro: a meta é que nada durma sem status.',
             '“O que andou acontecendo” é derivado do que já está gravado — não há registro de auditoria por trás.',
@@ -329,6 +335,28 @@ abrir_pagina('Início');
   ?>
 
   <?php recado($aviso, $sucesso); ?>
+
+  <?php
+    require_once __DIR__ . '/pessoas-comum.php';  // minha_gente(), lider_de()
+    require_once __DIR__ . '/reativacao.php';     // motivo_de_reativacao()
+    $quemMeAcompanha = lider_de($u);
+    $minhaGente = pode_liderar($u) ? minha_gente($u) : [];
+    $minhaEsfriando = count(array_filter($minhaGente, fn ($g) => motivo_de_reativacao($g) !== null));
+  ?>
+
+  <?php /* QUEM TE ACOMPANHA — uma linha, no alto, antes de qualquer bloco. É a
+           que responde ao "entrei num grupo de oitenta pessoas e não me senti
+           parte": UM nome, com o WhatsApp ao lado, de alguém que responde por
+           você. Era um cartão; virou linha porque o que ela diz cabe numa. */ ?>
+  <?php if ($quemMeAcompanha !== null): ?>
+    <p class="hub-linha">
+      <?= icone('users', 18) ?>
+      Quem te acompanha: <strong><?= h($quemMeAcompanha['nome']) ?></strong>
+      <?php if ($quemMeAcompanha['telefone'] !== ''): ?>
+        · <?php links_whatsapp($quemMeAcompanha['telefone'], 'WhatsApp'); ?>
+      <?php endif; ?>
+    </p>
+  <?php endif; ?>
 
   <div class="hub">
   <div class="hub-principal">
@@ -404,19 +432,27 @@ abrir_pagina('Início');
 
              Cada cartão é um link: medidor que mostra o problema e não leva até
              ele obriga a procurar no menu qual tela responde por aquilo. */ ?>
+    <?php /* UMA LINHA, e só o que não está em dia. Os medidores inteiros eram
+             uma grade de seis cartões entre a fila e os encontros — no celular,
+             uma tela de rolagem antes de chegar ao próximo encontro. O que a
+             coordenação precisa ver aqui é o que venceu; o retrato completo é
+             leitura, e vai para Leituras › Semana. */ ?>
+    <?php $fora = array_filter($panorama, fn ($m) => $m['estado'] !== 'ok'); ?>
     <?php if ($panorama !== []): ?>
-      <h2 class="secao">A operação hoje</h2>
-      <div class="painel-op">
-        <?php foreach ($panorama as $m): ?>
-          <a class="medidor medidor-<?= h($m['estado']) ?>" href="<?= h($m['url']) ?>">
-            <strong class="medidor-num"><?= h($m['num']) ?></strong>
-            <span class="medidor-rotulo"><?= h($m['rotulo']) ?></span>
-            <?php if ($m['nota'] !== ''): ?>
-              <span class="medidor-nota"><?= h($m['nota']) ?></span>
-            <?php endif; ?>
-          </a>
-        <?php endforeach; ?>
-      </div>
+      <p class="hub-linha">
+        <?= icone('bolt', 18) ?>
+        A operação hoje:
+        <?php if ($fora === []): ?>
+          <strong>em dia.</strong>
+        <?php else: ?>
+          <?php foreach ($fora as $m): ?>
+            <a class="selo <?= $m['estado'] === 'urgente' ? 'selo-off' : 'selo-atencao' ?>" href="<?= h($m['url']) ?>"><?= h($m['num']) ?> <?= h($m['rotulo']) ?></a>
+          <?php endforeach; ?>
+        <?php endif; ?>
+        <?php if (pode('leituras')): ?>
+          <a href="/painel/leituras.php?aba=semana">ver a semana</a>
+        <?php endif; ?>
+      </p>
     <?php endif; ?>
 
     <?php /* ============ 4. os encontros marcados ============ */ ?>
@@ -474,6 +510,9 @@ abrir_pagina('Início');
             </a>
           <?php endforeach; ?>
         </div>
+        <?php if (count($todosProximos) > 1): ?>
+          <p class="dica"><a href="/painel/eventos.php">Ver todos os <?= count($todosProximos) ?> encontros marcados</a></p>
+        <?php endif; ?>
       <?php endif; ?>
     <?php endif; ?>
 
@@ -494,14 +533,8 @@ abrir_pagina('Início');
           Pistas Rápidas <?= $formacao['rapidasFeitas'] ?> de <?= $formacao['rapidas'] ?>
         </p>
 
-        <?php if ($formacao['aprendidas'] !== []): ?>
-          <?php /* Os títulos, e não só o percentual: "26%" não diz nada, "você
-                   já sabe fazer a Ficha de Fato" diz. */ ?>
-          <p class="formacao-feitas">
-            Você já aprendeu: <strong><?= h(implode(' · ', $formacao['aprendidas'])) ?></strong>
-          </p>
-        <?php endif; ?>
-
+        <?php /* Só o próximo passo. "O que você já aprendeu" é retrospecto, e
+                 mora em /aulas — o hub responde "o que eu faço agora". */ ?>
         <?php if ($formacao['proxima'] !== null): ?>
           <a class="btn btn-mini" href="/aulas#<?= h($formacao['proxima']['aula']['id']) ?>">
             Próxima 🚗 Dia <?= (int) $formacao['proxima']['dia']['numero'] ?> — <?= h($formacao['proxima']['aula']['titulo']) ?>
@@ -560,6 +593,9 @@ abrir_pagina('Início');
           </li>
         <?php endforeach; ?>
       </ul>
+      <?php if (pode('leituras')): ?>
+        <p class="dica"><a href="/painel/leituras.php?aba=atividade">Ver tudo o que andou acontecendo</a></p>
+      <?php endif; ?>
     <?php endif; ?>
 
   <?php endif; ?>
@@ -572,67 +608,28 @@ abrir_pagina('Início');
            vira o último bloco de uma página rolada no celular não é prioridade
            nenhuma — e o celular é de onde vem a maioria. */ ?>
   <aside class="hub-lado">
-    <?php
-      require_once __DIR__ . '/pessoas-comum.php';  // minha_gente(), lider_de()
-      require_once __DIR__ . '/reativacao.php';     // motivo_de_reativacao()
-      $quemMeAcompanha = lider_de($u);
-      $minhaGente = pode_liderar($u) ? minha_gente($u) : [];
-    ?>
-
-    <?php /* QUEM TE ACOMPANHA — uma linha, e é a que responde ao "entrei num
-             grupo de oitenta pessoas e não me senti parte". Numa lista grande
-             ninguém é chamado pelo nome; aqui há UM nome, com o WhatsApp ao
-             lado, e ele é de alguém que responde por você. */ ?>
-    <?php if ($quemMeAcompanha !== null): ?>
-      <section class="cartao-grupo">
-        <span class="cartao-grupo-icone"><?= icone('heartHandshake', 28) ?></span>
-        <h2>Quem te acompanha</h2>
-        <p><strong><?= h($quemMeAcompanha['nome']) ?></strong> — é com ela que você fala primeiro.</p>
-        <?php if ($quemMeAcompanha['telefone'] !== ''): ?>
-          <div class="acoes">
-            <?php links_whatsapp($quemMeAcompanha['telefone'], 'Chamar no WhatsApp', '', 'btn btn-ouro'); ?>
-          </div>
-        <?php endif; ?>
-      </section>
-    <?php endif; ?>
-
-    <?php /* SUA GENTE — o outro lado da mesma coisa.
-             Nome e WhatsApp, e mais nada: e-mail, endereço e ficha continuam só
-             em `pessoas`, que é `adm`. Quem lidera acompanha gente; não recebe a
-             agenda do movimento junto.
-
-             A ordem é de quem está mais parada primeiro: a lista é de trabalho,
-             e o trabalho é justamente quem não deu sinal. */ ?>
+    <?php /* SUA GENTE — o contador, e a porta. A lista com nome, selo e
+             WhatsApp de cada pessoa é a tela /painel/gente: aqui cabe o número
+             e o que ele pede. Quem lidera acompanha gente; não recebe a agenda
+             do movimento junto — e-mail, endereço e ficha continuam em
+             `pessoas`, que é `adm`. */ ?>
     <?php if ($minhaGente !== []): ?>
       <section class="cartao-grupo" id="minha-gente">
         <span class="cartao-grupo-icone"><?= icone('users', 28) ?></span>
         <h2>Sua gente (<?= count($minhaGente) ?>)</h2>
-        <ul class="gente-lista">
-          <?php foreach ($minhaGente as $g): ?>
-            <?php
-              /* O MOTIVO SAI DA MESMA RÉGUA DA REATIVAÇÃO, e não de uma nova:
-                 duas contas de "quem esfriou" divergiriam na primeira mudança
-                 de prazo, e quem lidera veria um recado diferente do da
-                 coordenação sobre a mesma pessoa. */
-              $motivo = motivo_de_reativacao($g);
-            ?>
-            <li>
-              <span class="gente-quem">
-                <strong><?= h($g['nome']) ?></strong>
-                <?php if ($motivo !== null): ?>
-                  <span class="selo selo-atencao"><?= h($motivo['nome']) ?></span>
-                <?php endif; ?>
-              </span>
-              <?php if ($g['telefone'] !== ''): ?>
-                <?php links_whatsapp($g['telefone'], 'Chamar', '', 'btn btn-mini'); ?>
-              <?php endif; ?>
-            </li>
-          <?php endforeach; ?>
-        </ul>
-        <p class="dica">
-          Quem está com selo parou em algum ponto. Uma mensagem custa menos que um
-          encontro inteiro para trazer gente nova.
+        <p>
+          <?php if ($minhaEsfriando === 0): ?>
+            <strong>Todas em dia.</strong> Ninguém faltou, travou ou sumiu.
+          <?php else: ?>
+            <strong><?= $minhaEsfriando ?> <?= $minhaEsfriando === 1 ? 'pessoa esfriou' : 'pessoas esfriaram' ?>.</strong>
+            Uma mensagem sua custa menos que um encontro inteiro para trazer gente nova.
+          <?php endif; ?>
         </p>
+        <div class="acoes">
+          <a class="btn btn-ouro" href="/painel/gente.php<?= $minhaEsfriando > 0 ? '?tipo=esfriando' : '' ?>">
+            <?= $minhaEsfriando > 0 ? 'Ver quem esfriou' : 'Ver sua gente' ?>
+          </a>
+        </div>
       </section>
     <?php endif; ?>
 
@@ -678,6 +675,15 @@ abrir_pagina('Início');
       </section>
     <?php endif; ?>
 
+    <?php /* O GRUPO — cartão só até a pessoa marcar que entrou. Depois, o
+             convite vira uma linha: o link continua aqui para quem perdeu, mas
+             não ocupa mais o lugar de uma obrigação já cumprida. */ ?>
+    <?php if (!empty($u['entrouNoGrupo'])): ?>
+      <p class="hub-linha" id="grupo">
+        <?= icone('whatsapp', 18) ?>
+        <a href="<?= h(grupo_de($u)) ?>" target="_blank" rel="noopener"><?= $quemMeAcompanha !== null ? 'Seu grupo' : 'Grupo de trabalho' ?></a>
+      </p>
+    <?php else: ?>
     <section class="cartao-grupo" id="grupo">
       <span class="cartao-grupo-icone"><?= icone('whatsapp', 28) ?></span>
       <h2><?= $quemMeAcompanha !== null ? 'Seu grupo' : 'Grupo de trabalho' ?></h2>
@@ -707,6 +713,7 @@ abrir_pagina('Início');
         </p>
       <?php endif; ?>
     </section>
+    <?php endif; ?>
   </aside>
 
   </div><?php /* fim de .hub */ ?>

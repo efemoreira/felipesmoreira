@@ -246,22 +246,22 @@ describe("pessoas: a camada de liderança", () => {
     assert.equal(painel.ler("pessoas").find((p) => p.id === "seg-1")!.lider, "");
   });
 
-  test("quem lidera vê a própria gente no Início — e só ela", async () => {
+  test("quem lidera vê a própria gente — o Início conta, a tela lista, e só ela", async () => {
     comGente();
     const { html } = await painel.buscar("index");
 
-    /* Só o bloco: o nome de quem foi cadastrado recentemente aparece também na
-       linha do tempo do hub, e asserção sobre a página inteira mediria a tela
-       errada. */
+    /* No Início fica o contador e a porta; a lista é /painel/gente. */
     const de = html.indexOf('id="minha-gente"');
-    assert.ok(de > 0, "o bloco de quem você acompanha não foi desenhado");
+    assert.ok(de > 0, "o cartão de quem você acompanha não foi desenhado");
     const bloco = html.slice(de, html.indexOf("</section>", de));
-
     assert.match(bloco, /Sua gente \(1\)/);
-    assert.match(bloco, /Seguida Um/);
+    assert.match(bloco, /href="\/painel\/gente\.php/, "o cartão não leva à tela");
+
+    const tela = (await painel.buscar("gente")).html;
+    assert.match(tela, /Seguida Um/);
     /* `pessoas` está só em `adm` de propósito: quem lidera acompanha gente, não
        recebe a agenda do movimento junto. */
-    assert.doesNotMatch(bloco, /De Outro Time/);
+    assert.doesNotMatch(tela, /De Outro Time/);
   });
 
   test("sem a capacidade, ter gente apontada não abre lista nenhuma", async () => {

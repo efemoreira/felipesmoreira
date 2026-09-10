@@ -195,6 +195,8 @@ describe("cancelado não é sinônimo de já aconteceu", () => {
       html.indexOf("Sua formação"),
     );
     assert.doesNotMatch(bloco, /Encontro cancelado do Pirambu/);
-    assert.match(bloco, /Encontro futuro 1/, "o hub perdeu o próximo encontro de verdade");
+    /* O hub anuncia UM encontro — o próximo de verdade — e "ver todos". */
+    assert.match(bloco, /Mutirão de hoje no Montese/, "o hub perdeu o próximo encontro de verdade");
+    assert.match(bloco, /Ver todos os \d+ encontros/, "o hub não leva à lista inteira");
   });
 });
