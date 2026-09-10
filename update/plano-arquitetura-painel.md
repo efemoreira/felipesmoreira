@@ -354,7 +354,11 @@ da agenda (`MAX_BACKUPS = 12`). Pessoas, presenças, fatos, caixa — nenhum.
    Inscrições (o link antigo redireciona); o hub caiu para três linhas de
    atividade e ganhou "ver a semana"; `testes/acoes/leituras.test.ts` prova
    que nada grava, e os testes da linha do tempo migraram para a aba.
-8. **Ficha de pessoa sozinha na tela** (1.4).
+8. ~~**Ficha de pessoa sozinha na tela** (1.4)~~ — **feito em 10/09**:
+   `pessoas?p=` desenha `tela_da_ficha()` com abas Ficha · Encontros · Acesso
+   · Histórico e "Todas as pessoas" para voltar; a lista não vem junto;
+   `?p=X&editar=X` abre o modal por cima; as ações de acesso voltam para a aba
+   Acesso; Duplicatas virou aba da lista, que só existe quando há par.
 9. **`dominio.php` e `util.php`** saindo de `sessao.php`; atualizar as pontes
    dos testes de contrato.
 10. **`agora.php` por registro** (3.2), já com Caixa e Mutirão declarando as

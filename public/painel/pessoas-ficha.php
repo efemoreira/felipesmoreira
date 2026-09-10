@@ -271,19 +271,66 @@ function bloco_duplicatas(array $duplicatas): void
 }
 
 /**
- * A ficha aberta (`?p=<id>`): o que a pessoa é, o que faz, o que abre no painel
- * e em que encontros esteve.
+ * A FICHA — tela própria, com abas.
  *
- * Ler a ficha e editá-la são coisas diferentes — `?p=` abre a ficha, `?editar=`
- * abre o modal. Um parâmetro só faria toda visita abrir o formulário por cima.
+ * Abria dentro da lista: `?p=` desenhava a ficha inteira (encontros, acesso,
+ * candidatura, histórico) EM CIMA de oitenta linhas de gente, e a lista, que
+ * é o que alguém veio fazer aqui, sumia para baixo. Bloco de conteúdo não
+ * fica embaixo de outro: vira aba. A URL é a mesma de sempre — `pessoas?p=` é
+ * o que a busca, a linha do tempo e os links do painel já usam.
+ *
+ *   ficha       o que ela é, faz, abre; onde mora; quem a acompanha; candidatura
+ *   encontros   em que encontros esteve, e o que aconteceu em cada um
+ *   acesso      login, senha provisória, ativar e desativar
+ *   historico   a visão 360, derivada do que já está gravado
  */
-function bloco_ficha(array $aberta): void
+function tela_da_ficha(array $aberta, ?array $editando, ?string $erro, ?string $ok, ?array $senhaNova, array $catalogo): void
 {
     $encontros = encontros_da_pessoa($aberta['id']);
-    ?>
-    <fieldset id="ficha">
-      <legend><?= h($aberta['nome']) ?></legend>
+    $historico = linha_do_tempo($aberta['id'], 50);
+    $abas = [
+        'ficha'     => ['nome' => 'Ficha'],
+        'encontros' => ['nome' => 'Encontros', 'conta' => count($encontros)],
+        'acesso'    => ['nome' => 'Acesso'],
+        'historico' => ['nome' => 'Histórico', 'conta' => count($historico)],
+    ];
+    $aba = (string) ($_GET['aba'] ?? '');
+    if (!isset($abas[$aba])) {
+        $aba = 'ficha';
+    }
+    $qsFicha = 'p=' . rawurlencode($aberta['id']);
 
+    abrir_pagina($aberta['nome']);
+    ?>
+<div class="capa">
+  <?php cabecalho_pagina(
+      $aberta['nome'],
+      TIPOS_PESSOA[$aberta['tipo']]
+      . ($aberta['status'] !== '' ? ' · ' . STATUS_PESSOA[$aberta['status']] : '')
+      . (tem_conta($aberta) ? ' · ' . rotulo_do_acesso($aberta) : ' · sem conta no painel'),
+      ['url' => '/painel/pessoas.php', 'texto' => 'Todas as pessoas']
+  ); ?>
+
+  <?php recado($erro, $ok); ?>
+
+  <?php if ($senhaNova !== null && $senhaNova['id'] === $aberta['id']): ?>
+    <div class="msg msg-ok">
+      <p style="margin:0 0 8px">
+        <strong>Login:</strong> <span class="provisoria"><?= h($senhaNova['usuario']) ?></span>
+        &nbsp; <strong>Senha provisória:</strong> <span class="provisoria"><?= h($senhaNova['senha']) ?></span>
+      </p>
+      <p class="dica" style="margin:0">
+        Aparece <strong>uma vez só</strong> — só o hash fica guardado, e hash não volta
+        a ser senha. Mande agora; no primeiro acesso a pessoa é obrigada a trocar.
+      </p>
+    </div>
+  <?php endif; ?>
+
+  <?php barra_abas($abas, $aba, 'aba', 'Seções da ficha'); ?>
+
+  <?php if ($aba === 'ficha'): ?>
+    <fieldset id="ficha">
+      <legend>Quem é</legend>
       <p style="margin:0 0 14px">
         <span class="selo"><?= h(TIPOS_PESSOA[$aberta['tipo']]) ?></span>
         <?php if (tem_conta($aberta)): ?>
@@ -307,8 +354,78 @@ function bloco_ficha(array $aberta): void
         <?php endif; ?>
       </p>
 
-      <?php /* ---- em que encontros esteve ---- */ ?>
-      <h3 style="margin:18px 0 10px">Encontros (<?= count($encontros) ?>)</h3>
+
+      <dl class="resumo-numeros">
+        <div><dt>WhatsApp</dt><dd>
+          <?php if ($aberta['telefone'] !== ''): ?>
+            <?php links_whatsapp($aberta['telefone'], telefone_bonito($aberta['telefone'])); ?>
+          <?php else: ?>—<?php endif; ?>
+        </dd></div>
+        <div><dt>Onde mora</dt><dd><?= h(trim($aberta['bairro'] . ($aberta['cidade'] !== '' ? ', ' . $aberta['cidade'] : ''), ', ')) ?: '—' ?></dd></div>
+        <div><dt>E-mail</dt><dd><?= $aberta['email'] !== '' ? h($aberta['email']) : '—' ?></dd></div>
+      </dl>
+
+      <p style="margin:0 0 6px"><strong>Faz:</strong>
+        <?php if ($aberta['funcoes'] === []): ?><span class="dica">nenhuma função ainda</span><?php endif; ?>
+        <?php foreach ($aberta['funcoes'] as $f): ?>
+          <span class="selo selo-cinza"><?= h(nome_funcao($f)) ?></span>
+        <?php endforeach; ?>
+      </p>
+      <?php if (tem_conta($aberta)): ?>
+        <p style="margin:0 0 14px"><strong>Abre:</strong>
+          <?php foreach ($aberta['areas'] as $a): ?>
+            <span class="selo selo-cinza"><?= h(AREAS[$a] ?? $a) ?></span>
+          <?php endforeach; ?>
+        </p>
+      <?php endif; ?>
+
+      <div class="acoes">
+        <?php botao_modal('editar-pessoa', 'Editar a ficha', $qsFicha . '&editar=' . rawurlencode($aberta['id']), 'btn btn-ouro'); ?>
+      </div>
+    </fieldset>
+
+    <?php /* ---- candidatura ----
+             Candidato é uma PESSOA com `tipo = candidato`, e não um cadastro à
+             parte — por isso a ponte é daqui. O número (com o cargo que confere
+             os dígitos) só é perguntado em um lugar, que é o formulário de
+             /painel/candidatos. */ ?>
+    <?php if ($aberta['tipo'] === 'candidato' || pode('candidatos')): ?>
+    <fieldset id="candidatura">
+      <legend>Candidatura</legend>
+        <?php if ($aberta['tipo'] === 'candidato'): ?>
+          <p style="margin:0 0 10px">
+            <?php if ($aberta['numero'] !== ''): ?>
+              <span class="selo"><?= h($aberta['numero']) ?></span>
+            <?php else: ?>
+              <span class="selo selo-off">sem número</span>
+            <?php endif; ?>
+            <span class="selo selo-cinza"><?= h(rotulo_cargo($aberta['cargo'])) ?></span>
+            <span class="selo <?= $aberta['publicado'] ? 'selo-ok' : 'selo-cinza' ?>">
+              <?= $aberta['publicado'] ? 'no ar' : 'rascunho' ?>
+            </span>
+          </p>
+          <?php if (pode('candidatos')): ?>
+            <div class="acoes">
+              <a class="btn" href="/painel/candidatos.php?aba=candidatos&amp;c=<?= h($aberta['id']) ?>">Editar a candidatura</a>
+            </div>
+          <?php endif; ?>
+        <?php else: ?>
+          <p class="dica">
+            Não é candidata. Tornar candidato é preencher o número de urna — sem ele a
+            colinha não existe, e colinha com número errado é pior que colinha nenhuma.
+          </p>
+          <div class="acoes">
+            <a class="btn" href="/painel/candidatos.php?aba=candidatos&amp;pessoa=<?= h($aberta['id']) ?>">
+              Tornar candidato
+            </a>
+          </div>
+        <?php endif; ?>
+    </fieldset>
+    <?php endif; ?>
+
+  <?php elseif ($aba === 'encontros'): ?>
+    <fieldset id="encontros">
+      <legend>Encontros (<?= count($encontros) ?>)</legend>
       <?php if ($encontros === []): ?>
         <p class="dica" style="margin:0">Nunca apareceu em encontro nenhum.</p>
       <?php else: ?>
@@ -340,8 +457,11 @@ function bloco_ficha(array $aberta): void
         </div>
       <?php endif; ?>
 
-      <?php /* ---- acesso ao painel ---- */ ?>
-      <h3 style="margin:22px 0 10px">Acesso ao painel</h3>
+    </fieldset>
+
+  <?php elseif ($aba === 'acesso'): ?>
+    <fieldset id="acesso">
+      <legend>Acesso ao painel</legend>
       <?php if (!tem_conta($aberta)): ?>
         <p class="dica">
           Sem conta. A maioria das pessoas não precisa de uma — quem confirmou presença
@@ -388,55 +508,12 @@ function bloco_ficha(array $aberta): void
         </p>
       <?php endif; ?>
 
-      <?php /* ---- candidatura ----
-               Candidato é uma PESSOA com `tipo = candidato`, e não um cadastro à
-               parte — por isso a ponte é daqui, e não uma segunda ficha lá. O que
-               não se faz aqui é virar o tipo no clique: candidato sem número é
-               candidato que não pode ir ao ar, e o número (com o cargo que confere
-               os dígitos) só é perguntado em um lugar, que é o formulário de
-               /painel/candidatos. O link leva a ele já preenchido com esta ficha. */ ?>
-      <?php if ($aberta['tipo'] === 'candidato' || pode('candidatos')): ?>
-        <h3 style="margin:22px 0 10px">Candidatura</h3>
-        <?php if ($aberta['tipo'] === 'candidato'): ?>
-          <p style="margin:0 0 10px">
-            <?php if ($aberta['numero'] !== ''): ?>
-              <span class="selo"><?= h($aberta['numero']) ?></span>
-            <?php else: ?>
-              <span class="selo selo-off">sem número</span>
-            <?php endif; ?>
-            <span class="selo selo-cinza"><?= h(rotulo_cargo($aberta['cargo'])) ?></span>
-            <span class="selo <?= $aberta['publicado'] ? 'selo-ok' : 'selo-cinza' ?>">
-              <?= $aberta['publicado'] ? 'no ar' : 'rascunho' ?>
-            </span>
-          </p>
-          <?php if (pode('candidatos')): ?>
-            <div class="acoes">
-              <a class="btn" href="/painel/candidatos.php?aba=candidatos&amp;c=<?= h($aberta['id']) ?>">Editar a candidatura</a>
-            </div>
-          <?php endif; ?>
-        <?php else: ?>
-          <p class="dica">
-            Não é candidata. Tornar candidato é preencher o número de urna — sem ele a
-            colinha não existe, e colinha com número errado é pior que colinha nenhuma.
-          </p>
-          <div class="acoes">
-            <a class="btn" href="/painel/candidatos.php?aba=candidatos&amp;pessoa=<?= h($aberta['id']) ?>">
-              Tornar candidato
-            </a>
-          </div>
-        <?php endif; ?>
-      <?php endif; ?>
     </fieldset>
 
-    <?php /* ---------- a visão 360 ----------
-             As perguntas que hoje exigem abrir quatro telas — em que encontros
-             esteve, que fatos trouxe, que cards são dela, quando entrou —
-             respondidas numa lista só, em ordem de tempo.
-
-             Só o que a pessoa que ESTÁ OLHANDO pode abrir: `linha_do_tempo()`
-             filtra por `pode()` do mesmo jeito que o hub. */ ?>
-    <?php $historico = linha_do_tempo($aberta['id'], 20); ?>
-    <?php if ($historico !== []): ?>
+  <?php else: ?>
+    <?php if ($historico === []): ?>
+      <p class="dica">Nada gravado sobre ela ainda.</p>
+    <?php else: ?>
       <fieldset id="historico">
         <legend>Histórico de <?= h(explode(' ', $aberta['nome'])[0]) ?></legend>
         <p class="dica" style="margin:0 0 12px">
@@ -456,5 +533,16 @@ function bloco_ficha(array $aberta): void
         </ul>
       </fieldset>
     <?php endif; ?>
-  <?php
+  <?php endif; ?>
+
+  <?php /* O modal de edição, no fim do documento: `?p=X&editar=X` abre a ficha
+           com o formulário por cima. */ ?>
+  <?php if ($editando !== null): ?>
+    <?php abrir_modal('editar-pessoa', 'Editar ' . $editando['nome'], true); ?>
+      <?php formulario_pessoa($editando, $catalogo); ?>
+    <?php fechar_modal(); ?>
+  <?php endif; ?>
+</div>
+<?php
+    fechar_pagina();
 }

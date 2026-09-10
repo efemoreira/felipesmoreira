@@ -42,12 +42,23 @@ function tela_de_pessoas(?string $erro, ?string $ok, ?array $senhaNova): void
        Um parâmetro só faria toda visita à ficha abrir o modal por cima dela. */
     $aberta  = achar_pessoa(limpar_texto($_GET['p'] ?? '', 40));
     $editando = achar_pessoa(limpar_texto($_GET['editar'] ?? '', 40));
+    $catalogo = catalogo_funcoes()['funcoes'];   // 'lista' não existe: a chave é 'funcoes'
+
+    /* A FICHA É OUTRA TELA. `?p=` desenha a pessoa sozinha, com abas; a lista
+       não vem junto. Ver `tela_da_ficha()` em pessoas-ficha.php. */
+    if ($aberta !== null) {
+        tela_da_ficha($aberta, $editando, $erro, $ok, $senhaNova, $catalogo);
+        return;
+    }
     $busca   = limpar_texto($_GET['q'] ?? '', 60);
     $filtro  = limpar_texto($_GET['tipo'] ?? '', 20);
     /* `reativar` não é um tipo de pessoa — é um recorte por ESTADO, e entra na
        mesma barra porque a pergunta ("quem eu abro agora?") é a mesma. Quem
        decide quem entra nele é `reativacao.php`. */
-    if (!isset(TIPOS_PESSOA[$filtro]) && $filtro !== 'reativar') {
+    /* `duplicatas` também é recorte por estado: pares que parecem a mesma
+       pessoa. Era um bloco em cima da lista, sempre — virou aba, que só
+       existe quando há par. */
+    if (!isset(TIPOS_PESSOA[$filtro]) && $filtro !== 'reativar' && $filtro !== 'duplicatas') {
         $filtro = '';
     }
     $cidadeF = cidade_valida($_GET['cidade'] ?? '');
@@ -83,7 +94,7 @@ function tela_de_pessoas(?string $erro, ?string $ok, ?array $senhaNova): void
             return $digitos !== '' && $p['telefone'] !== '' && str_contains($p['telefone'], $digitos);
         }));
     }
-    if ($filtro !== '' && $filtro !== 'reativar') {
+    if ($filtro !== '' && $filtro !== 'reativar' && $filtro !== 'duplicatas') {
         $todas = array_values(array_filter($todas, fn ($p) => $p['tipo'] === $filtro));
     }
     if ($cidadeF !== '') {
@@ -150,8 +161,6 @@ function tela_de_pessoas(?string $erro, ?string $ok, ?array $senhaNova): void
        municípios num filtro é oferecer 180 recortes que devolvem lista vazia. */
     uksort($cidadesUsadas, fn ($a, $b) => strcmp(sem_acento($a), sem_acento($b)));
 
-    $catalogo = catalogo_funcoes()['funcoes'];   // 'lista' não existe: a chave é 'funcoes'
-
 abrir_pagina('Pessoas');
 ?>
 <div class="capa">
@@ -195,18 +204,21 @@ abrir_pagina('Pessoas');
   /* Por último, e separada das outras pelo sentido: as de cima são "o que a
      pessoa é", esta é "o que aconteceu com ela". */
   $abasTipo['reativar'] = ['nome' => 'A reativar', 'conta' => quantas_para_reativar()];
+  if ($duplicatas !== []) {
+      $abasTipo['duplicatas'] = ['nome' => 'Duplicatas', 'conta' => count($duplicatas)];
+  } elseif ($filtro === 'duplicatas') {
+      $filtro = '';
+  }
   barra_abas($abasTipo, $filtro, 'tipo', 'Recorte da base');
   ?>
 
-  <?php bloco_duplicatas($duplicatas); ?>
-
-  <?php if ($aberta !== null) { bloco_ficha($aberta); } ?>
-
   <?php /* A reativação é outra lista, e não esta com um filtro: agrupa por
            motivo, ordena por quem esfriou faz menos tempo e diz o que falar.
-           Ver `pessoas-reativar.php`. */ ?>
+           Ver `pessoas-reativar.php`. As duplicatas idem: pares, não gente. */ ?>
   <?php if ($filtro === 'reativar'): ?>
     <?php bloco_reativacao(pessoas_para_reativar(), $busca); ?>
+  <?php elseif ($filtro === 'duplicatas'): ?>
+    <?php bloco_duplicatas($duplicatas); ?>
   <?php else: ?>
   <?php /* ============ a lista ============ */ ?>
   <fieldset id="lista">
@@ -218,7 +230,7 @@ abrir_pagina('Pessoas');
     <div class="acoes" style="margin:0 0 18px">
       <?php /* `reativar` fica de fora: ele não é tipo, e prefixá-lo no
                cadastro criaria pessoa com um tipo que não existe. */ ?>
-      <?php botao_modal('nova-pessoa', 'Cadastrar pessoa', 'novo=1' . ($filtro !== '' && $filtro !== 'reativar' ? '&tipo=' . urlencode($filtro) : '')); ?>
+      <?php botao_modal('nova-pessoa', 'Cadastrar pessoa', 'novo=1' . (isset(TIPOS_PESSOA[$filtro]) ? '&tipo=' . urlencode($filtro) : '')); ?>
     </div>
 
     <?php /* O recorte por TIPO é aba, lá em cima — é a pergunta que se faz toda

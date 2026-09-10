@@ -120,16 +120,16 @@ function tratar_acoes_de_pessoa(): void
         if ($acao === 'dar-conta') {
             if (tem_conta($alvo)) {
                 avisar('erro', 'Essa pessoa já tem conta.');
-                voltar('?p=' . $alvo['id']);
+                voltar('?p=' . $alvo['id'] . '&aba=acesso');
             }
             $login = mb_strtolower(trim((string) ($_POST['usuario'] ?? '')));
             if ($erro = validar_nome_usuario($login)) {
                 avisar('erro', $erro);
-                voltar('?p=' . $alvo['id']);
+                voltar('?p=' . $alvo['id'] . '&aba=acesso');
             }
             if (pessoa_por_usuario($login) !== null) {
                 avisar('erro', 'Esse login já está em uso.');
-                voltar('?p=' . $alvo['id']);
+                voltar('?p=' . $alvo['id'] . '&aba=acesso');
             }
 
             $provisoria = senha_provisoria();
@@ -151,11 +151,11 @@ function tratar_acoes_de_pessoa(): void
 
             if (!gravar_pessoas($pessoas)) {
                 avisar('erro', 'Não consegui gravar em /dados.');
-                voltar('?p=' . $alvo['id']);
+                voltar('?p=' . $alvo['id'] . '&aba=acesso');
             }
             $_SESSION['senha_nova'] = ['id' => $alvo['id'], 'usuario' => $login, 'senha' => $provisoria];
             avisar('ok', 'Conta criada.');
-            voltar('?p=' . $alvo['id']);
+            voltar('?p=' . $alvo['id'] . '&aba=acesso');
         }
 
         /* ---------- resetar senha ---------- */
@@ -171,18 +171,18 @@ function tratar_acoes_de_pessoa(): void
             unset($p);
             if (!gravar_pessoas($pessoas)) {
                 avisar('erro', 'Não consegui gravar em /dados.');
-                voltar('?p=' . $alvo['id']);
+                voltar('?p=' . $alvo['id'] . '&aba=acesso');
             }
             $_SESSION['senha_nova'] = ['id' => $alvo['id'], 'usuario' => $alvo['usuario'], 'senha' => $provisoria];
             avisar('ok', 'Senha trocada.');
-            voltar('?p=' . $alvo['id']);
+            voltar('?p=' . $alvo['id'] . '&aba=acesso');
         }
 
         /* ---------- ativar / desativar a conta ---------- */
         if ($acao === 'ativar') {
             if ($alvo['ativo'] && !tem_admin_ativo($alvo['id']) && in_array('adm', $alvo['capacidades'], true)) {
                 avisar('erro', 'Este é o único administrador ativo — desativá-lo tranca todo mundo para fora.');
-                voltar('?p=' . $alvo['id']);
+                voltar('?p=' . $alvo['id'] . '&aba=acesso');
             }
             $pessoas = ler_pessoas();
             foreach ($pessoas as &$p) {
@@ -193,7 +193,7 @@ function tratar_acoes_de_pessoa(): void
             unset($p);
             gravar_pessoas($pessoas);
             avisar('ok', $alvo['ativo'] ? 'Conta desativada. A pessoa continua na lista.' : 'Conta reativada.');
-            voltar('?p=' . $alvo['id']);
+            voltar('?p=' . $alvo['id'] . '&aba=acesso');
         }
 
         /* ---------- juntar duplicata ---------- */

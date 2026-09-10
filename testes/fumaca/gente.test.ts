@@ -90,3 +90,25 @@ describe("sua gente: a porta", () => {
     assert.doesNotMatch(html, /wa\.me\/5585988880000/, "a lista inteira continua no hub");
   });
 });
+
+describe("pessoas: a ficha é uma tela, não um bloco em cima da lista", () => {
+  test("abrir a ficha não desenha a lista, e a lista não desenha ficha nenhuma", () => {
+    painel.trocarCapacidades("adm");
+    const ficha = painel.abrir("pessoas", "p=pes00000000ana").html;
+    assert.match(ficha, /Ana Acompanhada/);
+    assert.match(ficha, /Seções da ficha/, "a ficha não tem abas");
+    assert.doesNotMatch(ficha, /id="lista"/, "a lista veio junto com a ficha");
+    assert.doesNotMatch(ficha, /Bia Da Outra/, "outra pessoa apareceu na ficha de Ana");
+
+    const lista = painel.abrir("pessoas", "").html;
+    assert.match(lista, /id="lista"/);
+    assert.doesNotMatch(lista, /id="ficha"|Seções da ficha/, "a lista desenhou uma ficha");
+  });
+
+  test("as ações de acesso voltam para a aba Acesso, e a senha provisória aparece lá", async () => {
+    painel.trocarCapacidades("adm");
+    const r = await painel.postar("pessoas", { acao: "dar-conta", id: "pes00000000ana", usuario: "ana.acompanhada" });
+    assert.match(r.location, /p=pes00000000ana&aba=acesso/);
+    assert.match(r.html, /Senha provisória/);
+  });
+});

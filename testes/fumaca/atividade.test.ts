@@ -96,7 +96,7 @@ describe("linha do tempo: a permissão recorta", () => {
 
 describe("linha do tempo: a visão 360 da ficha", () => {
   test("recorta para a pessoa da ficha, e só", () => {
-    const texto = linhas(painel.abrir("pessoas", "p=pes00000000teste").html);
+    const texto = linhas(painel.abrir("pessoas", "p=pes00000000teste&aba=historico").html);
     assert.ok(texto.length > 0, "a ficha não mostrou histórico nenhum");
     assert.ok(
       texto.every((l) => !/Coordenação de Teste/.test(l)),
@@ -112,7 +112,7 @@ describe("linha do tempo: a visão 360 da ficha", () => {
     /* `criadoPor` do encontro e `checadoPor` do fato guardam NOME, não id.
        Casar por nome poria a linha na ficha do homônimo — por isso essas duas
        ficam de fora do recorte por pessoa, de propósito. */
-    const texto = linhas(painel.abrir("pessoas", "p=pes00000000teste").html).join("\n");
+    const texto = linhas(painel.abrir("pessoas", "p=pes00000000teste&aba=historico").html).join("\n");
     assert.doesNotMatch(texto, /Marcou o encontro/, "atribuiu a criação do encontro por nome");
   });
 });

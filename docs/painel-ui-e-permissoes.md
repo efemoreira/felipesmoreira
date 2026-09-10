@@ -52,6 +52,13 @@
   logado; `testes/fumaca/gente.test.ts` semeia duas líderes e procura o nome
   da gente da outra no HTML.
 
+### A ficha de pessoa
+
+- `pessoas?p=<id>` é uma tela, não um bloco em cima da lista: abas Ficha ·
+  Encontros · Acesso · Histórico (`tela_da_ficha()` em `pessoas-ficha.php`).
+  A lista (`pessoas-lista.php`) só lista; Duplicatas é aba dela, e só aparece
+  quando há par. `?p=X&editar=X` abre o modal de edição por cima da ficha.
+
 ### Leituras
 
 - `/painel/leituras` é a mesa de olhar: Origem (o funil por `?de=`),
