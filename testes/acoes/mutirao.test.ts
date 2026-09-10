@@ -110,3 +110,51 @@ describe("mutirão: a peça chega em quem posta", () => {
     assert.doesNotMatch(html, /A peça desta semana/);
   });
 });
+
+describe("mutirão: uma gravação, duas portas", () => {
+  test("a coordenação alterna nos dois sentidos; a pessoa só afirma", async () => {
+    comPeca();
+    await painel.postar("municao", { acao: "mutirao-peca", peca: "esgoto-a1b2" });
+    const semana = () =>
+      Object.values(painel.ler("mutirao") as unknown as Record<string, { escalados: Record<string, string> }>)[0];
+
+    /* Três pontinhos da Munição: postou → escalado → postou. */
+    await painel.postar("municao", { acao: "mutirao-postou", quem: ADMIN });
+    assert.equal(semana().escalados[ADMIN], "postou");
+    const r = await painel.postar("municao", { acao: "mutirao-postou", quem: ADMIN });
+    assert.equal(semana().escalados[ADMIN], "escalado", "a coordenação não conseguiu desmarcar");
+    assert.match(r.location, /aba=mutirao/, "a ação não voltou para a aba do mutirão");
+
+    /* Botão do Início: afirma, e afirmar duas vezes continua "postou" — nunca
+       desmarca por engano. */
+    await painel.postar("index", { acao: "postei-a-peca" });
+    await painel.postar("index", { acao: "postei-a-peca" });
+    assert.equal(semana().escalados[ADMIN], "postou", "o botão do Início alternou em vez de afirmar");
+  });
+
+  test("quem não está no mutirão não é marcado por ninguém", async () => {
+    comPeca();
+    await painel.postar("municao", { acao: "mutirao-peca", peca: "esgoto-a1b2" });
+    const r = await painel.postar("municao", { acao: "mutirao-postou", quem: "pes00000000teste" });
+    assert.match(r.html, /não está no mutirão desta semana/);
+  });
+
+  test("as semanas anteriores aparecem na aba, com quantos postaram", async () => {
+    comPeca();
+    painel.gravar("mutirao", {
+      "2026-08-02": { peca: "esgoto-a1b2", escalados: { [ADMIN]: "postou", "pes00000000teste": "escalado" } },
+    });
+    const { html } = await painel.buscar("municao", "aba=mutirao");
+    assert.match(html, /Semanas anteriores \(1\)/);
+    assert.match(html, /02\/08/);
+    assert.match(html, /1 de 2/);
+  });
+
+  test("as ações de peça voltam para a aba Peças", async () => {
+    const r = await painel.postar("municao", {
+      acao: "kit-nova", numero: "12 mil", frase: "casas sem água", fonte: "Plano, p. 9", tema: "Água",
+    });
+    assert.match(r.location, /aba=pecas/);
+    assert.match(r.html, /Peça criada/);
+  });
+});

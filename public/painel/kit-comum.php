@@ -219,6 +219,34 @@ function gravar_mutirao(array $mutirao): bool
     return true;
 }
 
+/**
+ * Marca — ou desmarca — que alguém postou a peça desta semana.
+ *
+ * UMA GRAVAÇÃO PARA AS DUAS PORTAS. A coordenação marca pelos três pontinhos
+ * da Munição; a própria pessoa marca pelo botão "Já postei" do Início. Eram
+ * dois leitura-altera-grava iguais em dois arquivos, com dois nomes de ação
+ * (`postei-a-peca` e `mutirao-postou`) para a mesma coisa. Quem decide o que
+ * cada porta pode fazer é quem chama; o que se grava é isto.
+ *
+ * `$postou` null alterna (a coordenação corrige nos dois sentidos); true fixa
+ * (a pessoa só afirma que postou — desmarcar é da coordenação).
+ *
+ * Devolve o erro legível, ou null quando gravou.
+ */
+function registrar_postagem(string $quem, ?bool $postou = null): ?string
+{
+    $mutirao = ler_mutirao();
+    $semana  = chave_da_semana();
+    $linha   = $mutirao[$semana] ?? ['peca' => '', 'escalados' => []];
+    if (!isset($linha['escalados'][$quem])) {
+        return 'Essa pessoa não está no mutirão desta semana.';
+    }
+    $estava = $linha['escalados'][$quem] === 'postou';
+    $linha['escalados'][$quem] = ($postou ?? !$estava) ? 'postou' : 'escalado';
+    $mutirao[$semana] = $linha;
+    return gravar_mutirao($mutirao) ? null : 'Não consegui gravar o mutirão.';
+}
+
 /** O que está combinado para esta semana — peça, escalados, e a ficha da peça. */
 function mutirao_da_semana(?int $agora = null): array
 {
