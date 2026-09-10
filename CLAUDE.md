@@ -91,7 +91,7 @@ Regras:
 ### Candidatos, colinha e número
 
 - Candidato e lista são perguntas diferentes.
-- `CARGOS` em `sessao.php` é a fonte dos cargos e dos dígitos do número.
+- `CARGOS` em `dominio.php` é a fonte dos cargos e dos dígitos do número.
 - Sem número válido não publica.
 - A ordem da lista é a ordem da colinha.
 - Vice e suplente usam os dígitos do titular.

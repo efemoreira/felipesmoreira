@@ -27,7 +27,10 @@ Também expõe APIs JSON em `public/painel/api/` para o site público consumir.
 
 | Arquivo | Papel |
 | --- | --- |
-| `public/painel/sessao.php` | sessão, permissões, modelo da pessoa, utilitários centrais |
+| `public/painel/sessao.php` | sessão, login, token, tema, `exigir_*` — inclui os três abaixo |
+| `public/painel/dominio.php` | `AREAS`, `CAPACIDADES`, `TIPOS_PESSOA`, `REDES`, `CARGOS`, `DESTINO_AREA`, `GRUPO_TRABALHO` |
+| `public/painel/util.php` | `h()`, `limpar_texto()`, `sem_acento()`, telefone/WhatsApp, municípios — sem efeito colateral |
+| `public/painel/pessoas-modelo.php` | `normalizar_pessoa()`, `ler/gravar_pessoas()`, `achar_*` — a única porta para `dados/pessoas.php` |
 | `public/painel/layout.php` | moldura, navegação, busca global, modais e rascunho local |
 | `public/painel/index.php` | login, criação do primeiro admin e hub operacional |
 | `public/painel/agora.php` | fonte única das pendências e do panorama |

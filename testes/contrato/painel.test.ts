@@ -28,7 +28,7 @@ function chavesDe(fonte: string, constante: string): string[] {
   return [...corpo.matchAll(/^\s{4}'([a-z-]+)'\s*=>/gm)].map((m) => m[1]);
 }
 
-const sessao = ler("public/painel/sessao.php");
+const sessao = ler("public/painel/dominio.php");  // AREAS, CAPACIDADES, DESTINO_AREA, GRUPO_TRABALHO moram aqui
 const icones = ler("public/painel/icones.php");
 const layout = ler("public/painel/layout.php");
 const fluxo = ler(".github/workflows/publish.yml");
@@ -131,7 +131,7 @@ describe("painel: o que não pode vazar para o site público", () => {
        sozinho, e sobre o convite de verdade em vez de sobre um prefixo
        decorado. */
     const linha = sessao.split("\n").find((l) => l.startsWith("const GRUPO_TRABALHO"));
-    assert.ok(linha, "não achei GRUPO_TRABALHO em public/painel/sessao.php");
+    assert.ok(linha, "não achei GRUPO_TRABALHO em public/painel/dominio.php");
 
     const convite = linha!.match(/chat\.whatsapp\.com\/([A-Za-z0-9]+)/)?.[1];
     assert.ok(convite, "o GRUPO_TRABALHO deixou de ser um link do WhatsApp");

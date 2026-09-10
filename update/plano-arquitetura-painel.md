@@ -359,8 +359,10 @@ da agenda (`MAX_BACKUPS = 12`). Pessoas, presenças, fatos, caixa — nenhum.
    · Histórico e "Todas as pessoas" para voltar; a lista não vem junto;
    `?p=X&editar=X` abre o modal por cima; as ações de acesso voltam para a aba
    Acesso; Duplicatas virou aba da lista, que só existe quando há par.
-9. **`dominio.php` e `util.php`** saindo de `sessao.php`; atualizar as pontes
-   dos testes de contrato.
+9. ~~**`dominio.php` e `util.php`** saindo de `sessao.php`~~ — **feito em
+   10/09**, e `pessoas-modelo.php` junto: `sessao.php` caiu de 1378 para 543
+   linhas e ficou só com sessão, login, token, tema e `exigir_*`; os testes de
+   contrato passaram a ler `dominio.php`.
 10. **`agora.php` por registro** (3.2), já com Caixa e Mutirão declarando as
     suas.
 

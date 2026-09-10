@@ -109,7 +109,7 @@ describe("fontes únicas: os arquivos que o Next e o PHP dividem", () => {
     /* O `areas` de cada função vira sugestão de marcação na hora de aprovar a
        inscrição. Área que não existe em AREAS é uma caixa que nunca libera nada. */
     const catalogo = JSON.parse(ler("src/data/funcoes.json"));
-    const sessao = ler("public/painel/sessao.php");
+    const sessao = ler("public/painel/dominio.php");
     const bloco = sessao.slice(sessao.indexOf("const AREAS = ["));
     const declaradas = new Set(
       [...bloco.slice(0, bloco.indexOf("];")).matchAll(/'([a-z-]+)'\s*=>/g)].map((m) => m[1]),
