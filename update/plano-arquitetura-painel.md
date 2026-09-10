@@ -371,7 +371,11 @@ da agenda (`MAX_BACKUPS = 12`). Pessoas, presenças, fatos, caixa — nenhum.
 
 ### 60 a 90 dias — fechar a arquitetura
 
-11. **Leituras › Encontros e › Formação** — as duas derivações novas.
+11. ~~**Leituras › Encontros e › Formação**~~ — **feito em 10/09**:
+    `funil_de_encontros()` (confirmaram → vieram → se inscreveram → aprovadas
+    → voltaram, por encontro realizado) e `prontidao_por_funcao()` em
+    `leituras-comum.php`; a segunda é a MESMA conta que `/painel/aulas?aba=prontidao`
+    passou a usar — o teste compara os dois lados.
 12. ~~**`escala-comum.php` e `presencas-comum.php`**; `componentes.php`;
     `index-*.php`; `limite-comum.php`~~ — **feito em 10/09**, em três commits:
     `eventos-comum.php` 1746 → 831 linhas (escala 486, presenças 424);

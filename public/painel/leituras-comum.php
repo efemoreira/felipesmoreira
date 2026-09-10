@@ -214,3 +214,142 @@ function militancia_por_regiao(?array $pessoas = null): array
         <=> [$a['total'], sem_acento($b['cidade'])]);
     return $linhas;
 }
+
+/* ===================== as duas derivações que nasceram em Leituras ===================== */
+
+/**
+ * O FUNIL DE CADA ENCONTRO — o encontro como degrau de crescimento, e não só
+ * como evento.
+ *
+ * Por encontro que já aconteceu: quantas confirmaram, quantas vieram, quantas
+ * das que vieram se inscreveram, quantas foram aprovadas e quantas VOLTARAM —
+ * apareceram num encontro posterior. É o último degrau que separa "encheu a
+ * praça" de "fez base": a live que traz cinquenta pessoas e nenhuma volta é o
+ * pior encontro do movimento, e sem esta conta parece o melhor.
+ *
+ * Tudo derivado: presenças × pessoas × eventos, do mais recente para o mais
+ * antigo. Encontro sem presença nenhuma não entra — não há funil para medir.
+ */
+function funil_de_encontros(): array
+{
+    require_once __DIR__ . '/eventos-comum.php';
+
+    $pessoas = [];
+    foreach (ler_pessoas() as $p) {
+        $pessoas[$p['id']] = $p;
+    }
+    $eventos = [];
+    foreach (ler_eventos() as $e) {
+        $eventos[$e['id']] = $e;
+    }
+
+    /* Os encontros em que cada pessoa esteve, com o instante — para saber se
+       "depois deste" existe. */
+    $porEvento = [];
+    $vindas = [];
+    foreach (ler_presencas() as $l) {
+        if (!isset($eventos[$l['eventoId']])) {
+            continue;
+        }
+        $porEvento[$l['eventoId']][] = $l;
+        if ($l['compareceu']) {
+            $vindas[$l['pessoaId']][] = quando_do_evento($eventos[$l['eventoId']]);
+        }
+    }
+
+    $linhas = [];
+    foreach ($eventos as $id => $e) {
+        if (!isset($porEvento[$id]) || !evento_ja_aconteceu($e)) {
+            continue;
+        }
+        $quando = quando_do_evento($e);
+        $confirmaram = $vieram = $inscreveram = $aprovadas = $voltaram = 0;
+        foreach ($porEvento[$id] as $l) {
+            $p = $pessoas[$l['pessoaId']] ?? null;
+            if ($l['confirmou']) {
+                $confirmaram++;
+            }
+            if (!$l['compareceu']) {
+                continue;
+            }
+            $vieram++;
+            if ($p !== null && $p['status'] !== '') {
+                $inscreveram++;
+            }
+            if ($p !== null && $p['status'] === 'aprovada') {
+                $aprovadas++;
+            }
+            foreach ($vindas[$l['pessoaId']] ?? [] as $outro) {
+                if ($outro > $quando) {
+                    $voltaram++;
+                    break;
+                }
+            }
+        }
+        $linhas[] = [
+            'evento'      => $e,
+            'quando'      => $quando,
+            'confirmaram' => $confirmaram,
+            'vieram'      => $vieram,
+            'inscreveram' => $inscreveram,
+            'aprovadas'   => $aprovadas,
+            'voltaram'    => $voltaram,
+        ];
+    }
+    usort($linhas, fn ($a, $b) => $b['quando'] <=> $a['quando']);
+    return $linhas;
+}
+
+/**
+ * A PRONTIDÃO POR FUNÇÃO — quantas pessoas têm cada função, quantas cumpriram
+ * a trilha mínima, quantas travaram no estudo e quantas nem começaram.
+ *
+ * UMA conta para as duas telas: `/painel/aulas?aba=prontidao` lista as
+ * pessoas de cada função e Leituras › Formação mostra os números. Duas contas
+ * divergiriam na primeira mudança de régua. "Cumpriu a trilha" é ter feito a
+ * aula da função — o verificável; os degraus de supervisão são julgamento de
+ * quem acompanhou, e o painel não tem esse carimbo.
+ *
+ * @return array{porFuncao: array<string, array{pessoas: list<array>, prontas: list<array>, travadas: int, semComecar: int}>, semFuncao: list<array>}
+ */
+function prontidao_por_funcao(): array
+{
+    require_once __DIR__ . '/aulas-comum.php';
+    require_once __DIR__ . '/trilhas.php';
+
+    $progresso = ler_progresso();
+    $porFuncao = [];
+    $semFuncao = [];
+    foreach (quem_estuda() as $p) {
+        if (($p['funcoes'] ?? []) === []) {
+            $semFuncao[] = $p;
+            continue;
+        }
+        foreach ($p['funcoes'] as $f) {
+            $porFuncao[$f]['pessoas'][] = $p;
+        }
+    }
+    ksort($porFuncao);
+
+    foreach ($porFuncao as $f => &$grupo) {
+        $aulaId = trilha_da_funcao((string) $f)['aula']['id'] ?? '';
+        $grupo['aulaId']     = $aulaId;
+        $grupo['prontas']    = array_values(array_filter(
+            $grupo['pessoas'],
+            fn ($p) => $aulaId !== '' && isset($progresso[$p['id']][$aulaId])
+        ));
+        $grupo['travadas']   = 0;
+        $grupo['semComecar'] = 0;
+        foreach ($grupo['pessoas'] as $p) {
+            $estado = retrato_de_estudo($p['id'])['estado'];
+            if ($estado === 'travada') {
+                $grupo['travadas']++;
+            } elseif ($estado === 'sem-comecar') {
+                $grupo['semComecar']++;
+            }
+        }
+    }
+    unset($grupo);
+
+    return ['porFuncao' => $porFuncao, 'semFuncao' => $semFuncao];
+}

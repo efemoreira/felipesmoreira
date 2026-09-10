@@ -27,26 +27,15 @@ require_once __DIR__ . '/inscricoes-comum.php';   // nome_funcao()
 require_once __DIR__ . '/layout.php';
 require_once __DIR__ . '/sessao.php';
 require_once __DIR__ . '/trilhas.php';
+require_once __DIR__ . '/leituras-comum.php';   // prontidao_por_funcao() — a conta é UMA, e Leituras › Formação lê a mesma
 
 function bloco_prontidao(): void
 {
-    $gente = quem_estuda();
-    $progresso = ler_progresso();
-
     /* Agrupa por função: a pergunta da coordenação é "quem já pode assumir a
-       Recepção", e não "o que a Maria sabe". */
-    $porFuncao = [];
-    $semFuncao = [];
-    foreach ($gente as $p) {
-        if (($p['funcoes'] ?? []) === []) {
-            $semFuncao[] = $p;
-            continue;
-        }
-        foreach ($p['funcoes'] as $f) {
-            $porFuncao[$f][] = $p;
-        }
-    }
-    ksort($porFuncao);
+       Recepção", e não "o que a Maria sabe". A conta mora em leituras-comum,
+       para os números de Leituras e os nomes daqui nunca discordarem. */
+    ['porFuncao' => $porFuncao, 'semFuncao' => $semFuncao] = prontidao_por_funcao();
+    $progresso = ler_progresso();
     ?>
   <fieldset id="trilhas">
     <legend>A trilha mínima de cada função</legend>
@@ -107,14 +96,11 @@ function bloco_prontidao(): void
         pessoa, em <a href="/painel/pessoas.php">Pessoas</a>.
       </p>
     <?php else: ?>
-      <?php foreach ($porFuncao as $f => $pessoas): ?>
+      <?php foreach ($porFuncao as $f => $grupo): ?>
         <?php
-          $t = trilha_da_funcao($f);
-          $aulaId = $t['aula']['id'] ?? '';
-          $prontas = array_values(array_filter(
-              $pessoas,
-              fn ($p) => $aulaId !== '' && isset($progresso[$p['id']][$aulaId])
-          ));
+          $pessoas = $grupo['pessoas'];
+          $prontas = $grupo['prontas'];
+          $aulaId  = $grupo['aulaId'];
         ?>
         <div class="rolagem cartoes">
           <table class="tabela">

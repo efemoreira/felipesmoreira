@@ -64,6 +64,8 @@ const TELAS: [tela: string, querystring: string, apelido: string][] = [
   ["inscricoes", "aba=decididas", "inscrições já decididas"],
   ["leituras", "", "leituras — origem"],
   ["leituras", "aba=territorio", "leituras — território"],
+  ["leituras", "aba=encontros", "leituras — encontros"],
+  ["leituras", "aba=formacao", "leituras — formação"],
   ["leituras", "aba=semana", "leituras — semana"],
   ["leituras", "aba=atividade", "leituras — atividade"],
   ["leituras", "aba=atividade&area=eventos&q=benfica", "atividade recortada"],

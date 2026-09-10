@@ -66,9 +66,11 @@
 ### Leituras
 
 - `/painel/leituras` é a mesa de olhar: Origem (o funil por `?de=`),
-  Território (aprovadas por cidade e bairro), Semana (os medidores de
-  `panorama_de()`, o mutirão, os caixas só para `adm`) e Atividade (a linha do
-  tempo inteira, com busca e recorte por área). Não tem `-acoes.php`, de
+  Território (aprovadas por cidade e bairro), Encontros (`funil_de_encontros()`
+  — quem veio e quem voltou), Formação (`prontidao_por_funcao()`, a mesma
+  conta de `aulas?aba=prontidao`), Semana (os medidores de `panorama_de()`, o
+  mutirão, os caixas só para `adm`) e Atividade (a linha do tempo inteira, com
+  busca e recorte por área). Não tem `-acoes.php`, de
   propósito; `testes/acoes/leituras.test.ts` fotografa `/dados` antes e depois.
 - Leitura não mora dentro de mesa. "De onde vêm" e "Onde a militância mora"
   saíram de Inscrições; `inscricoes?aba=origens` redireciona.
