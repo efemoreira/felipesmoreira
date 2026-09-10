@@ -23,9 +23,13 @@ const linhas = (html: string): string[] =>
     .flatMap((m) => [...m[1].matchAll(/<span class="tempo-texto">([\s\S]*?)<\/span>/g)])
     .map((m) => m[1].replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim());
 
-describe("linha do tempo: o hub", () => {
+/* A lista inteira mora em Leituras › Atividade; o Início mostra as três
+   últimas. As derivações se conferem na lista inteira. */
+const TUDO = ["leituras", "aba=atividade"] as const;
+
+describe("linha do tempo: Leituras › Atividade", () => {
   test("mostra o que aconteceu, sem log por trás", () => {
-    const texto = linhas(painel.abrir("index").html).join("\n");
+    const texto = linhas(painel.abrir(...TUDO).html).join("\n");
     assert.match(texto, /entrou no cadastro/, "não derivou o cadastro da pessoa");
     assert.match(texto, /Marcou o encontro/, "não derivou a criação do encontro");
     assert.match(texto, /entrou na lista de/, "não derivou a presença");
@@ -36,23 +40,39 @@ describe("linha do tempo: o hub", () => {
   test("o mais recente vem primeiro", () => {
     /* A semente põe o fato uma hora atrás e o resto em fevereiro. Se a ordem
        invertesse, o hub abriria mostrando o que aconteceu há seis meses. */
-    const [primeira] = linhas(painel.abrir("index").html);
+    const [primeira] = linhas(painel.abrir(...TUDO).html);
     assert.match(primeira, /Trouxe o fato/, `a primeira linha foi "${primeira}"`);
   });
 
   test("quem leu o QR aparece diferente de quem foi digitado", () => {
     /* A diferença conta na hora de saber se a mesa da Recepção está
        funcionando ou se alguém está digitando tudo à mão depois. */
-    const texto = linhas(painel.abrir("index").html).join("\n");
+    const texto = linhas(painel.abrir(...TUDO).html).join("\n");
     assert.match(texto, /entrou na lista de .* pelo QR/);
+  });
+
+  test("o Início mostra só as três últimas, e leva para a lista inteira", () => {
+    const { html } = painel.abrir("index");
+    assert.ok(linhas(html).length <= 3, `${linhas(html).length} linhas no hub — são três; o resto é Leituras`);
+    assert.match(html, /leituras\.php\?aba=atividade/, "o hub não leva à lista inteira");
+  });
+
+  test("a busca e o recorte por área alcançam o resto", () => {
+    const so = linhas(painel.abrir("leituras", "aba=atividade&area=fatos").html).join("\n");
+    assert.match(so, /Trouxe o fato/);
+    assert.doesNotMatch(so, /Marcou o encontro/, "o recorte por área não recortou");
+    const busca = linhas(painel.abrir("leituras", "aba=atividade&q=benfica").html).join("\n");
+    assert.match(busca, /Benfica/);
+    assert.doesNotMatch(busca, /Trouxe o fato/, "a busca não recortou");
   });
 });
 
 describe("linha do tempo: a permissão recorta", () => {
   test("quem não abre Pessoas não vê quem entrou no cadastro", () => {
-    painel.trocarCapacidades("eventos");
+    /* Coordenação abre Leituras e NÃO abre Pessoas — é o recorte que importa. */
+    painel.trocarCapacidades("coordenacao");
     try {
-      const texto = linhas(painel.abrir("index").html).join("\n");
+      const texto = linhas(painel.abrir(...TUDO).html).join("\n");
       assert.doesNotMatch(texto, /entrou no cadastro/, "a timeline vazou o cadastro");
       /* E continua mostrando o que essa pessoa PODE ver: recorta, não desliga. */
       assert.match(texto, /Marcou o encontro/, "quem tem eventos deixou de ver encontro");

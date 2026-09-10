@@ -2,7 +2,11 @@
 declare(strict_types=1);
 
 /**
- * De onde vem a militância — a aba de conversão de `/painel/inscricoes`.
+ * De onde vem a militância — a aba Origem de `/painel/leituras`.
+ *
+ * Morava em `/painel/inscricoes`, como terceira aba, e era a leitura semanal
+ * da coordenação dentro da tela de aprovar gente. Saiu de lá pela régua de
+ * leitura ≠ mesa; o que ela responde não mudou.
  *
  * Responde a pergunta que o `?de=` sempre pôde responder e ninguém perguntava:
  * **das pessoas que este link trouxe, quantas viraram militante?**
@@ -22,7 +26,7 @@ declare(strict_types=1);
  */
 
 require_once __DIR__ . '/layout.php';
-require_once __DIR__ . '/inscricoes-comum.php';
+require_once __DIR__ . '/leituras-comum.php';
 
 /** Quantos por cento de `$parte` em `$todo`, sem dividir por zero. */
 function percentual_de_conversao(int $parte, int $todo): string
@@ -40,7 +44,7 @@ function percentual_de_conversao(int $parte, int $todo): string
  * @param array    $origens  o que `funil_de_origens()` devolveu
  * @param callable $formatar como esta tela escreve uma data
  */
-function aba_das_origens(array $origens, callable $formatar): void
+function aba_de_origem(array $origens, callable $formatar): void
 {
     ['linhas' => $linhas, 'semOrigem' => $semOrigem, 'semOrigemMilitaram' => $sozinhosMilitaram]
         = $origens;

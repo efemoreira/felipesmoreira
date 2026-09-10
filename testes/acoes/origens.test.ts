@@ -88,7 +88,7 @@ describe("origens: o funil de conversão", () => {
       { nome: "Três da Live", origem: "live-domingo", veio: true },
     ]);
 
-    const linhas = tabelaDeOrigens((await painel.buscar("inscricoes", "aba=origens")).html);
+    const linhas = tabelaDeOrigens((await painel.buscar("leituras", "aba=origem")).html);
     const live = linhas.find((l) => l.origem.startsWith("live-domingo"));
 
     assert.ok(live, "a origem não apareceu no relatório");
@@ -107,7 +107,7 @@ describe("origens: o funil de conversão", () => {
       { nome: "Trazido B", origem: "joao-silva", veio: true },
     ]);
 
-    const linhas = tabelaDeOrigens((await painel.buscar("inscricoes", "aba=origens")).html);
+    const linhas = tabelaDeOrigens((await painel.buscar("leituras", "aba=origem")).html);
 
     assert.equal(
       linhas[0].origem.startsWith("joao-silva"),
@@ -129,7 +129,7 @@ describe("origens: o funil de conversão", () => {
       { nome: "Trazido por ele", origem: "joao-silva", veio: true },
     ]);
 
-    const linhas = tabelaDeOrigens((await painel.buscar("inscricoes", "aba=origens")).html);
+    const linhas = tabelaDeOrigens((await painel.buscar("leituras", "aba=origem")).html);
     const dele = linhas.find((l) => l.origem.startsWith("joao-silva"));
 
     assert.ok(dele, "a origem não apareceu");
@@ -145,7 +145,7 @@ describe("origens: o funil de conversão", () => {
       { nome: "Da Live", origem: "live-domingo" },
     ]);
 
-    const r = await painel.buscar("inscricoes", "aba=origens");
+    const r = await painel.buscar("leituras", "aba=origem");
     const linhas = tabelaDeOrigens(r.html);
 
     assert.equal(linhas.length, 1, "quem chegou sem origem virou linha de origem");
@@ -168,24 +168,31 @@ describe("origens: o funil de conversão", () => {
        apareceu num encontro, não veio de link nenhum. É o `status` vazio. */
     semear([{ nome: "Cadastrado à Mão", origem: "live-domingo", status: "" }]);
 
-    const linhas = tabelaDeOrigens((await painel.buscar("inscricoes", "aba=origens")).html);
+    const linhas = tabelaDeOrigens((await painel.buscar("leituras", "aba=origem")).html);
     assert.equal(linhas.length, 0, "ficha sem status entrou na conta de conversão");
   });
 
-  test("a aba existe, conta as origens e não some com as outras duas", async () => {
+  test("a aba existe em Leituras, conta as origens, e Inscrições ficou só com a fila", async () => {
     semear([{ nome: "Da Live", origem: "live-domingo" }]);
-    const { html } = await painel.buscar("inscricoes", "aba=origens");
+    const { html } = await painel.buscar("leituras", "aba=origem");
 
-    assert.match(html, /De onde vêm/);
-    assert.match(html, /Esperando decisão/);
-    assert.match(html, /Já decididas/);
+    assert.match(html, /De onde vem a militância/);
+    assert.match(html, /Território/);
     /* O contador da aba é o número de ORIGENS, e não de pessoas. */
-    assert.match(html, /De onde vêm<\/span>\s*<span[^>]*>1<\/span>|De onde vêm[\s\S]{0,80}>1</);
+    assert.match(html, /Origem<\/span>\s*<span[^>]*>1<\/span>|Origem[\s\S]{0,80}>1</);
+
+    /* Inscrições é mesa de decidir: duas abas, e o link antigo leva para cá. */
+    const fila = await painel.buscar("inscricoes", "");
+    assert.match(fila.html, /Esperando decisão/);
+    assert.doesNotMatch(fila.html, /De onde vêm|Onde a militância mora/, "a leitura continua pendurada na fila");
+    const antigo = await painel.buscar("inscricoes", "aba=origens");
+    assert.equal(antigo.status, 302);
+    assert.match(antigo.location, /leituras\.php\?aba=origem/);
   });
 
   test("base vazia não quebra a tela nem divide por zero", async () => {
     painel.gravar("pessoas", painel.ler("pessoas").filter((p) => p.status !== "pendente"));
-    const r = await painel.buscar("inscricoes", "aba=origens");
+    const r = await painel.buscar("leituras", "aba=origem");
 
     assert.equal(r.status, 200);
     assert.match(r.html, /Ninguém se inscreveu ainda|De onde vem a militância/);
