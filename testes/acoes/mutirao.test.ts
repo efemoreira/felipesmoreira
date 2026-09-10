@@ -92,7 +92,7 @@ describe("mutirão: a peça chega em quem posta", () => {
     const antes = await painel.buscar("index");
     assert.match(antes.html, /Postar a peça da semana/);
 
-    await painel.postar("", { acao: "postei-a-peca" });
+    await painel.postar("index", { acao: "postei-a-peca" });
 
     const depois = await painel.buscar("index");
     assert.doesNotMatch(depois.html, /Postar a peça da semana/);
