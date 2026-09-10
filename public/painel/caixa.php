@@ -23,10 +23,6 @@ exigir_area('caixa');
 
 tratar_acoes_de_caixa(usuario_atual() ?? []);
 
-$recado = $_SESSION['recado'] ?? null;
-unset($_SESSION['recado']);
+['erro' => $erro, 'ok' => $ok] = recado_pendente();
 
-tela_de_caixa(
-    ($recado['tipo'] ?? '') === 'erro' ? $recado['texto'] : null,
-    ($recado['tipo'] ?? '') === 'ok'   ? $recado['texto'] : null
-);
+tela_de_caixa($erro, $ok);

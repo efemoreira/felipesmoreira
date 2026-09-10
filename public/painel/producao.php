@@ -28,9 +28,6 @@ tratar_acoes_de_card($eu);
 
 /* ===================== a tela ===================== */
 
-$recado = $_SESSION['recado'] ?? null;
-unset($_SESSION['recado']);
-$erro = ($recado['tipo'] ?? '') === 'erro' ? $recado['texto'] : null;
-$ok   = ($recado['tipo'] ?? '') === 'ok'   ? $recado['texto'] : null;
+['erro' => $erro, 'ok' => $ok] = recado_pendente();
 
 tela_de_producao($eu, $erro, $ok);

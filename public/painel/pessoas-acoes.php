@@ -17,18 +17,12 @@ declare(strict_types=1);
  */
 
 require_once __DIR__ . '/eventos-comum.php';  // o modelo do encontro e da presença
-require_once __DIR__ . '/sessao.php';  // h(), limpar_texto(), pode(), combina_com() — o núcleo
+require_once __DIR__ . '/acoes-comum.php';  // avisar(), ir_para(), exigir_token_de_acao() — e o sessao.php junto
 require_once __DIR__ . '/pessoas-comum.php';
-
-function avisar(string $tipo, string $texto): void
-{
-    $_SESSION['recado'] = ['tipo' => $tipo, 'texto' => $texto];
-}
 
 function voltar(string $qs = ''): void
 {
-    header('Location: /painel/pessoas.php' . $qs, true, 302);
-    exit;
+    ir_para('/painel/pessoas.php' . $qs);
 }
 
 /** As áreas marcadas à mão — o ajuste fino por cima das capacidades. */
@@ -48,12 +42,7 @@ function capacidades_do_post(): array
 function tratar_acoes_de_pessoa(): void
 {
     if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
-        if (!token_valido()) {
-            avisar('erro', 'Sessão expirada. Entre de novo.');
-            derrubar_sessao();
-            header('Location: /painel/', true, 302);
-            exit;
-        }
+        exigir_token_de_acao();
 
         $acao = (string) ($_POST['acao'] ?? '');
         $alvo = achar_pessoa(limpar_texto($_POST['id'] ?? '', 40));

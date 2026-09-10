@@ -39,10 +39,7 @@ tratar_acoes_de_pessoa();
 
 /* ===================== a tela ===================== */
 
-$recado = $_SESSION['recado'] ?? null;
-unset($_SESSION['recado']);
-$erro = ($recado['tipo'] ?? '') === 'erro' ? $recado['texto'] : null;
-$ok   = ($recado['tipo'] ?? '') === 'ok'   ? $recado['texto'] : null;
+['erro' => $erro, 'ok' => $ok] = recado_pendente();
 
 $senhaNova = $_SESSION['senha_nova'] ?? null;
 unset($_SESSION['senha_nova']);

@@ -20,17 +20,11 @@ declare(strict_types=1);
  */
 
 require_once __DIR__ . '/producao-comum.php';
-require_once __DIR__ . '/sessao.php';
-
-function avisar(string $tipo, string $texto): void
-{
-    $_SESSION['recado'] = ['tipo' => $tipo, 'texto' => $texto];
-}
+require_once __DIR__ . '/acoes-comum.php';  // avisar(), ir_para(), exigir_token_de_acao() — e o sessao.php junto
 
 function voltar(string $ancora = ''): void
 {
-    header('Location: /painel/producao.php' . ($ancora !== '' ? '#' . $ancora : ''), true, 302);
-    exit;
+    ir_para('/painel/producao.php' . ($ancora !== '' ? '#' . $ancora : ''));
 }
 
 /** Anota no histórico do card — é o que conta a história depois. */
@@ -44,12 +38,7 @@ function anotar(array &$card, string $quem, string $texto): void
 function tratar_acoes_de_card(array $eu): void
 {
     if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
-        if (!token_valido()) {
-            avisar('erro', 'Sessão expirada. Entre de novo.');
-            derrubar_sessao();
-            header('Location: /painel/', true, 302);
-            exit;
-        }
+        exigir_token_de_acao();
 
         $acao = (string) ($_POST['acao'] ?? '');
 

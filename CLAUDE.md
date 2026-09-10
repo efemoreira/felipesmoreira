@@ -123,6 +123,7 @@ Regras:
 ```
 
 - Cada módulo inclui o que usa com `require_once`; não dependa da ordem de include da rota.
+- `<area>-acoes.php` inclui `acoes-comum.php` — `avisar()`, `ir_para()`, `exigir_token_de_acao()` e `recado_pendente()` — e só define o próprio `voltar()`. Não redefina `avisar()` nem escreva `$_SESSION['recado']` à mão; `testes/contrato/painel.test.ts` prende.
 - Use os helpers compartilhados quando houver:
   - `barra_abas()`
   - `barra_busca()`

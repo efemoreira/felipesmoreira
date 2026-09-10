@@ -31,10 +31,7 @@ tratar_acoes_de_fato($eu);
 
 /* ===================== a tela ===================== */
 
-$recado = $_SESSION['recado'] ?? null;
-unset($_SESSION['recado']);
-$erro = ($recado['tipo'] ?? '') === 'erro' ? $recado['texto'] : null;
-$ok   = ($recado['tipo'] ?? '') === 'ok'   ? $recado['texto'] : null;
+['erro' => $erro, 'ok' => $ok] = recado_pendente();
 
 /* O que foi digitado antes do erro: `formulario_fato()` o recebe e devolve o
    formulário preenchido, em vez de mandar a pessoa redigitar tudo. */

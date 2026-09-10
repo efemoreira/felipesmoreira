@@ -20,13 +20,8 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/agenda-comum.php';  // o relógio e o pipeline de imagem
 require_once __DIR__ . '/checklists.php';  // checklist()
-require_once __DIR__ . '/sessao.php';  // h(), limpar_texto(), pode(), combina_com() — o núcleo
+require_once __DIR__ . '/acoes-comum.php';  // avisar(), ir_para(), exigir_token_de_acao() — e o sessao.php junto
 require_once __DIR__ . '/eventos-comum.php';
-
-function avisar(string $tipo, string $texto): void
-{
-    $_SESSION['recado'] = ['tipo' => $tipo, 'texto' => $texto];
-}
 
 /**
  * Volta para o encontro, na aba em que a ação aconteceu.
@@ -56,15 +51,13 @@ function voltar(string $eventoId = '', string $ancora = ''): void
        lista de trabalho por um contexto que a pessoa não pediu, a cada clique.
        O `volta=fila` vem escondido no formulário daquela tela, e só de lá. */
     if (($_POST['volta'] ?? '') === 'fila') {
-        header('Location: /painel/eventos.php?aba=follow-up#funil', true, 302);
-        exit;
+        ir_para('/painel/eventos.php?aba=follow-up#funil');
     }
     $url = '/painel/eventos.php' . ($eventoId !== '' ? '?e=' . urlencode($eventoId) : '');
     if ($eventoId !== '' && $ancora !== '') {
         $url .= '&aba=' . urlencode(aba_da_ancora($ancora));
     }
-    header('Location: ' . $url . ($ancora !== '' ? '#' . $ancora : ''), true, 302);
-    exit;
+    ir_para($url . ($ancora !== '' ? '#' . $ancora : ''));
 }
 
 /** Barra quem não coordena antes de qualquer ação de decisão. */
@@ -85,12 +78,7 @@ function exigir_coordenacao(bool $coordena, string $eventoId = ''): void
 function tratar_acoes_de_evento(array $eu, bool $coordena): void
 {
     if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
-        if (!token_valido()) {
-            avisar('erro', 'Sessão expirada. Entre de novo.');
-            derrubar_sessao();
-            header('Location: /painel/', true, 302);
-            exit;
-        }
+        exigir_token_de_acao();
 
         $acao = (string) ($_POST['acao'] ?? '');
 

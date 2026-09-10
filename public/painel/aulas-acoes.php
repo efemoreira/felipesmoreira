@@ -13,12 +13,7 @@ declare(strict_types=1);
  */
 
 require_once __DIR__ . '/aulas-comum.php';
-require_once __DIR__ . '/sessao.php';
-
-function avisar(string $tipo, string $texto): void
-{
-    $_SESSION['recado'] = ['tipo' => $tipo, 'texto' => $texto];
-}
+require_once __DIR__ . '/acoes-comum.php';  // avisar(), ir_para(), exigir_token_de_acao()
 
 /**
  * Para onde a ação volta — a ABA junto da âncora.
@@ -29,9 +24,7 @@ function avisar(string $tipo, string $texto): void
  */
 function voltar(string $ancora = ''): void
 {
-    $url = '/painel/aulas.php?aba=conteudo';
-    header('Location: ' . $url . ($ancora !== '' ? '#' . $ancora : ''), true, 302);
-    exit;
+    ir_para('/painel/aulas.php?aba=conteudo' . ($ancora !== '' ? '#' . $ancora : ''));
 }
 
 /** Trata o POST desta tela, se houver um. Não volta quando de fato agiu. */
@@ -41,12 +34,7 @@ function tratar_acoes_de_aula(): void
         return;
     }
 
-    if (!token_valido()) {
-        avisar('erro', 'Sessão expirada. Entre de novo.');
-        derrubar_sessao();
-        header('Location: /painel/', true, 302);
-        exit;
-    }
+    exigir_token_de_acao();
 
     $acao   = (string) ($_POST['acao'] ?? '');
     $aulaId = limpar_texto($_POST['aula'] ?? '', 60);

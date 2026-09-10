@@ -18,14 +18,9 @@ declare(strict_types=1);
  * Toda ação termina em redirecionamento (POST-redirect-GET).
  */
 
-require_once __DIR__ . '/sessao.php';
+require_once __DIR__ . '/acoes-comum.php';  // avisar(), ir_para(), exigir_token_de_acao() — e o sessao.php junto
 require_once __DIR__ . '/inscricoes-comum.php';
 require_once __DIR__ . '/pessoas-comum.php';  // a fila é gente com status pendente
-
-function avisar(string $tipo, string $texto): void
-{
-    $_SESSION['recado'] = ['tipo' => $tipo, 'texto' => $texto];
-}
 
 function voltar(string $sufixo = ''): void
 {
@@ -33,8 +28,7 @@ function voltar(string $sufixo = ''): void
        trabalho de lote: marcar uma pessoa e voltar para a fila sem o `?e=`
        obrigaria a reescolher o encontro a cada nome, setenta e duas vezes. A
        âncora leva de volta ao cartão em que se estava. */
-    header('Location: /painel/inscricoes.php' . $sufixo, true, 302);
-    exit;
+    ir_para('/painel/inscricoes.php' . $sufixo);
 }
 
 /**
@@ -46,12 +40,7 @@ function voltar(string $sufixo = ''): void
 function tratar_acoes_de_inscricao(array $eu): void
 {
     if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
-        if (!token_valido()) {
-            avisar('erro', 'Sessão expirada. Entre de novo.');
-            derrubar_sessao();
-            header('Location: /painel/', true, 302);
-            exit;
-        }
+        exigir_token_de_acao();
 
         $acao = (string) ($_POST['acao'] ?? '');
 
