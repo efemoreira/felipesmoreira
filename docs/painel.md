@@ -37,6 +37,8 @@ Também expõe APIs JSON em `public/painel/api/` para o site público consumir.
 | `public/painel/*-acoes.php` | POST das telas grandes |
 | `public/painel/*-tela.php` | tela principal das áreas já cortadas |
 | `public/painel/*-comum.php` | leitura, gravação e regras do domínio |
+| `public/painel/escala-comum.php` | as peças do encontro, o preparo, os convites e a escala sugerida (incluído por `eventos-comum.php`) |
+| `public/painel/presencas-comum.php` | presenças e o funil D+0 · D+3 · D+7 — a única porta para `dados/presencas.php` (incluído por `eventos-comum.php`) |
 | `public/painel/leituras-comum.php` | placar e funil de origens, militância por região — derivados, para `/painel/leituras` |
 | `public/painel/privacidade.php` | a regra de dado pessoal: `pode_ver_telefone()`, `nome_encoberto()`, `telefone_encoberto()` |
 | `public/painel/acoes-comum.php` | `avisar()`, `ir_para()`, `exigir_token_de_acao()`, `recado_pendente()` — o POST-redirect-GET num lugar só |
