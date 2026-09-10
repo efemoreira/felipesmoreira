@@ -73,11 +73,11 @@ describe("whatsapp: o número que o wa.me recebe", () => {
 
 describe("whatsapp: nenhuma tela monta o link na mão", () => {
   test("só o helper e a constante da coordenação escrevem wa.me", () => {
-    /* `links_whatsapp()` (layout.php) desenha o par; `numero_whatsapp()`
+    /* `links_whatsapp()` (componentes.php) desenha o par; `numero_whatsapp()`
        (util.php) faz a conta; a constante da coordenação está em dominio.php. Tela que escreve o href sozinha volta a ter um
        link só — e o link só é justamente o que não abre para metade das
        pessoas. */
-    const permitidos = new Set(["layout.php", "util.php", "dominio.php"]);
+    const permitidos = new Set(["componentes.php", "util.php", "dominio.php"]);
     const naMao = readdirSync(PAINEL)
       .filter((f) => f.endsWith(".php") && !permitidos.has(f))
       .filter((f) => /wa\.me\//.test(readFileSync(path.join(PAINEL, f), "utf8")));

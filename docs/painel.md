@@ -31,7 +31,9 @@ Também expõe APIs JSON em `public/painel/api/` para o site público consumir.
 | `public/painel/dominio.php` | `AREAS`, `CAPACIDADES`, `TIPOS_PESSOA`, `REDES`, `CARGOS`, `DESTINO_AREA`, `GRUPO_TRABALHO` |
 | `public/painel/util.php` | `h()`, `limpar_texto()`, `sem_acento()`, telefone/WhatsApp, municípios — sem efeito colateral |
 | `public/painel/pessoas-modelo.php` | `normalizar_pessoa()`, `ler/gravar_pessoas()`, `achar_*` — a única porta para `dados/pessoas.php` |
-| `public/painel/layout.php` | moldura, navegação, busca global, modais e rascunho local |
+| `public/painel/layout.php` | moldura, navegação, busca global e rascunho local — inclui `componentes.php` |
+| `public/painel/componentes.php` | `barra_abas()`, `barra_busca()`, `barra_filtros()`, modal, `menu_acoes()`, `links_whatsapp()`, `campo_cidade()`, `recado()` |
+| `public/painel/limite-comum.php` | o teto de envios dos endpoints públicos (`passou_do_limite()`, `registrar_envio()`) |
 | `public/painel/index.php` | login, criação do primeiro admin e hub operacional |
 | `public/painel/agora.php` | a fila do dia e o panorama — percorre `ORDEM_AGORA` e chama `pendencias_*`/`medidores_*`/`estado_*` de cada `-comum.php` |
 | `public/painel/*-acoes.php` | POST das telas grandes |

@@ -248,3 +248,14 @@ describe("painel: o que cada área diz ao Início é registro, não cadeia de if
     assert.deepEqual(soltas, [], "função declarada que o agora.php nunca chama — falta em ORDEM_AGORA");
   });
 });
+
+describe("painel: os endpoints públicos incluem só o que usam", () => {
+  test("api/presenca.php não arrasta a inscrição inteira para pegar o teto", () => {
+    /* O teto de envios mora em limite-comum.php. Incluir inscricoes-comum.php
+       para chamar passou_do_limite() é como estava — e é assim que um arquivo
+       de 700 linhas vira dependência de um endpoint que usa três funções. */
+    const presenca = ler("public/painel/api/presenca.php");
+    assert.doesNotMatch(presenca, /inscricoes-comum\.php/, "api/presenca.php inclui inscricoes-comum.php");
+    assert.match(presenca, /limite-comum\.php/, "api/presenca.php não inclui limite-comum.php");
+  });
+});

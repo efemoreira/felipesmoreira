@@ -24,7 +24,7 @@ declare(strict_types=1);
  */
 
 require_once __DIR__ . '/../eventos-comum.php';
-require_once __DIR__ . '/../inscricoes-comum.php';  // chave_visitante() e o teto de envios
+require_once __DIR__ . '/../limite-comum.php';  // chave_visitante() e o teto de envios
 
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store, private');

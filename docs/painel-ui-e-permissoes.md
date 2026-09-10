@@ -2,7 +2,7 @@
 
 ## Navegação
 
-- A navegação mora em `layout.php`, e só lá.
+- A navegação mora em `layout.php`, e só lá. Os componentes (`barra_abas()`, modal, `menu_acoes()`…) moram em `componentes.php`, que o `layout.php` inclui.
 - Desktop: lateral fixa por grupos.
 - Celular: barra fixa no rodapé + “Mais”.
 - Contadores vêm de `agora.php`.

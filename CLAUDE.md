@@ -112,7 +112,7 @@ Regras:
 
 ## Convenções do painel
 
-- Navegação mora em `layout.php`, e só lá.
+- Navegação mora em `layout.php`, e só lá; os componentes de tela estão em `componentes.php`, que ele inclui.
 - Telas grandes seguem, por padrão:
 
 ```text
