@@ -34,7 +34,7 @@ Também expõe APIs JSON em `public/painel/api/` para o site público consumir.
 | `public/painel/layout.php` | moldura, navegação, busca global e rascunho local — inclui `componentes.php` |
 | `public/painel/componentes.php` | `barra_abas()`, `barra_busca()`, `barra_filtros()`, modal, `menu_acoes()`, `links_whatsapp()`, `campo_cidade()`, `recado()` |
 | `public/painel/limite-comum.php` | o teto de envios dos endpoints públicos (`passou_do_limite()`, `registrar_envio()`) |
-| `public/painel/index.php` | login, criação do primeiro admin e hub operacional |
+| `public/painel/index.php` | a rota; `index-acoes.php` (entrar, sair, primeiro admin), `index-login.php` (a porta), `index-hub.php` (o Início) |
 | `public/painel/agora.php` | a fila do dia e o panorama — percorre `ORDEM_AGORA` e chama `pendencias_*`/`medidores_*`/`estado_*` de cada `-comum.php` |
 | `public/painel/*-acoes.php` | POST das telas grandes |
 | `public/painel/*-tela.php` | tela principal das áreas já cortadas |

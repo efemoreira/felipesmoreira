@@ -372,8 +372,13 @@ da agenda (`MAX_BACKUPS = 12`). Pessoas, presenças, fatos, caixa — nenhum.
 ### 60 a 90 dias — fechar a arquitetura
 
 11. **Leituras › Encontros e › Formação** — as duas derivações novas.
-12. **`escala-comum.php` e `presencas-comum.php`**; `componentes.php`;
-    `index-*.php`; `limite-comum.php`.
+12. ~~**`escala-comum.php` e `presencas-comum.php`**; `componentes.php`;
+    `index-*.php`; `limite-comum.php`~~ — **feito em 10/09**, em três commits:
+    `eventos-comum.php` 1746 → 831 linhas (escala 486, presenças 424);
+    `layout.php` 1205 → 758 (`componentes.php` 447); `inscricoes-comum.php`
+    perdeu o teto para `limite-comum.php` e `api/presenca.php` passou a
+    incluir só ele; `index.php` 723 → 52 (`-acoes` 159, `-login` 87, `-hub`
+    494). Nenhuma tela mudou o que inclui; nenhum `normalizar_*()` mudou.
 13. Decidir com uso real: Mutirão sobe para a lateral? Leituras precisa de
     gráfico? Ajustes por tela vale a porta?
 
