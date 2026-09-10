@@ -544,3 +544,89 @@ function mensagem_de_acesso(array $acesso, ?array $proximo = null): string
 
     return $texto . 'Qualquer dúvida, é só chamar aqui. Bem-vindo(a)!';
 }
+
+/* ===================== o que esta área diz ao Início ===================== */
+
+/**
+ * O que está esperando por esta pessoa em `inscricoes` — a fila do Início e o selo do menu.
+ *
+ * Chamada por `tarefas_de()` (agora.php) para quem abre a área; o formato de
+ * cada item está documentado lá. Registrar aqui, e não numa cadeia de `if` no
+ * agora.php, é o que faz uma área nova entrar na fila sem tocar o hub.
+ */
+function pendencias_inscricoes(array $u): array
+{
+    require_once __DIR__ . '/agora.php';  // HORAS_SEM_SAIDA, degrau_de_prazo(), data_curta(), apelido_curto()
+    $tarefas = [];
+
+        /* ---------- Inscrições: quem está na porta ---------- */
+        require_once __DIR__ . '/inscricoes-comum.php';
+        require_once __DIR__ . '/pessoas-comum.php';
+
+        $fila = fila_de_entrada();
+        $novas = count($fila);
+        $horas = 0;
+        foreach ($fila as $i) {
+            // a mais antiga manda no recado: é ela que está perdendo a pessoa
+            $horas = max($horas, horas_na_fila($i));
+        }
+        if ($novas > 0) {
+            /* Passou de 48h, o recado sobe para urgente. Não é burocracia de
+               prazo: quem se inscreveu está no pico de entusiasmo no dia em que
+               se inscreveu, e uma fila parada três dias devolve gente fria. */
+            $parada = $horas >= HORAS_LIMITE_INSCRICAO;
+            $dias = (int) floor($horas / 24);
+
+            $tarefas[] = [
+                'area'    => 'inscricoes',
+                'icone'   => 'flag',
+                'urgente' => $parada,
+                'quantos' => $novas,
+                'texto'   => $novas === 1
+                    ? '1 pessoa esperando decisão'
+                    : "{$novas} pessoas esperando decisão",
+                'porque'  => $parada
+                    ? "a mais antiga está parada há {$dias} " . ($dias === 1 ? 'dia' : 'dias')
+                        . ' — quem espera demais não volta'
+                    : 'quem se inscreveu ainda não tem acesso nem resposta',
+                'url'     => '/painel/inscricoes.php',
+            ];
+        }
+
+    return $tarefas;
+}
+
+/**
+ * Os medidores de `inscricoes` — o retrato do time inteiro, para Leituras › Semana
+ * e para a linha "A operação hoje" do Início. Formato em `panorama_de()`.
+ */
+function medidores_inscricoes(array $u): array
+{
+    require_once __DIR__ . '/agora.php';  // HORAS_SEM_SAIDA, degrau_de_prazo(), data_curta(), apelido_curto()
+    $medidores = [];
+
+        /* ---------- Inscrições: o vão entre se inscrever e ser aprovado ---------- */
+        require_once __DIR__ . '/inscricoes-comum.php';
+        require_once __DIR__ . '/pessoas-comum.php';
+
+        $fila = fila_de_entrada();
+        $horas = 0;
+        foreach ($fila as $i) {
+            $horas = max($horas, horas_na_fila($i));
+        }
+        $dias = (int) floor($horas / 24);
+        $medidores[] = [
+            'num'    => (string) count($fila),
+            'rotulo' => 'Esperando entrar',
+            'nota'   => $fila === []
+                ? 'Ninguém parado na porta.'
+                : ($horas >= HORAS_LIMITE_INSCRICAO
+                    ? 'A mais antiga está parada há ' . $dias . ' ' . ($dias === 1 ? 'dia' : 'dias')
+                        . ' — quem espera demais não volta.'
+                    : 'Quem se inscreveu ainda não tem acesso nem resposta.'),
+            'estado' => $fila === [] ? 'ok' : degrau_de_prazo($horas, HORAS_LIMITE_INSCRICAO),
+            'url'    => '/painel/inscricoes.php',
+        ];
+
+    return $medidores;
+}

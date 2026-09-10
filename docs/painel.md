@@ -33,7 +33,7 @@ Também expõe APIs JSON em `public/painel/api/` para o site público consumir.
 | `public/painel/pessoas-modelo.php` | `normalizar_pessoa()`, `ler/gravar_pessoas()`, `achar_*` — a única porta para `dados/pessoas.php` |
 | `public/painel/layout.php` | moldura, navegação, busca global, modais e rascunho local |
 | `public/painel/index.php` | login, criação do primeiro admin e hub operacional |
-| `public/painel/agora.php` | fonte única das pendências e do panorama |
+| `public/painel/agora.php` | a fila do dia e o panorama — percorre `ORDEM_AGORA` e chama `pendencias_*`/`medidores_*`/`estado_*` de cada `-comum.php` |
 | `public/painel/*-acoes.php` | POST das telas grandes |
 | `public/painel/*-tela.php` | tela principal das áreas já cortadas |
 | `public/painel/*-comum.php` | leitura, gravação e regras do domínio |

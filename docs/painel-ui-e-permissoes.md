@@ -45,6 +45,10 @@
 - Áreas são ajuste fino.
 - `pessoas` é restrita a `adm` por conter dado pessoal completo.
 - Área nova exige: `AREAS`, `DESTINO_AREA`, `GRUPOS_NAV`, `ROTULO_CURTO`, ícone e regra de URL limpa.
+- Área que tem fila ou medidor declara no seu `-comum.php`:
+  `pendencias_<area>()`, `medidores_<area>()`, `estado_<area>()` — e entra em
+  `ORDEM_AGORA`/`ARQUIVO_DO_AGORA` no `agora.php`, que só percorre e chama.
+  `testes/contrato/painel.test.ts` cobra que função declarada esteja ligada.
 - **Tela pessoal não é área.** `conta.php` e `gente.php` abrem por
   `exigir_login()` mais uma regra própria (`pode_liderar()` no caso de Sua
   gente), entram como item solto em `menu_do_painel()` e não tocam `AREAS`.

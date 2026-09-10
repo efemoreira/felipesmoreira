@@ -363,8 +363,11 @@ da agenda (`MAX_BACKUPS = 12`). Pessoas, presenças, fatos, caixa — nenhum.
    10/09**, e `pessoas-modelo.php` junto: `sessao.php` caiu de 1378 para 543
    linhas e ficou só com sessão, login, token, tema e `exigir_*`; os testes de
    contrato passaram a ler `dominio.php`.
-10. **`agora.php` por registro** (3.2), já com Caixa e Mutirão declarando as
-    suas.
+10. ~~**`agora.php` por registro** (3.2)~~ — **feito em 10/09**: as três
+    cadeias de `if` viraram `pendencias_*`, `medidores_*` e `estado_*` no
+    `-comum.php` de cada área (fatos, produção, encontros/agenda, inscrições,
+    pessoas/gente); `agora.php` percorre `ORDEM_AGORA` e caiu de 842 para 422
+    linhas; o teste de contrato cobra que função declarada esteja ligada.
 
 ### 60 a 90 dias — fechar a arquitetura
 

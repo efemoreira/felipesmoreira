@@ -215,3 +215,36 @@ describe("painel: o POST-redirect-GET tem um lugar só", () => {
     assert.deepEqual(copias, ["agenda-acoes.php"], "trava de CSRF copiada: chame exigir_token_de_acao()");
   });
 });
+
+describe("painel: o que cada área diz ao Início é registro, não cadeia de if", () => {
+  /* `agora.php` percorre ORDEM_AGORA e chama `pendencias_<area>()`,
+     `medidores_<area>()` e `estado_<area>()` do `-comum.php` de cada uma. O
+     defeito silencioso é a função existir e não estar ligada — a área declara,
+     e o hub não chama. */
+  const PAINEL = path.join(RAIZ, "public/painel");
+  const agora = ler("public/painel/agora.php");
+  const ordem = [...(agora.match(/const ORDEM_AGORA = \[([^\]]*)\]/)?.[1] ?? "").matchAll(/'([a-z-]+)'/g)].map((m) => m[1]);
+  const arquivos = [...(agora.match(/const ARQUIVO_DO_AGORA = \[([\s\S]*?)\n\];/)?.[1] ?? "").matchAll(/'([a-z-]+)' => '([a-z-]+)'/g)];
+  const declaradas = readdirSync(PAINEL)
+    .filter((f) => f.endsWith("-comum.php"))
+    .flatMap((f) => [...readFileSync(path.join(PAINEL, f), "utf8").matchAll(/^function (?:pendencias|medidores|estado)_([a-z]+)\(array \$u\)/gm)].map((m) => [m[1], f]));
+
+  test("ORDEM_AGORA só tem área que existe (ou 'gente', o item solto)", () => {
+    assert.ok(ordem.length >= 5, `só achei ${ordem.length} em ORDEM_AGORA`);
+    const fora = ordem.filter((a) => a !== "gente" && !AREAS.includes(a));
+    assert.deepEqual(fora, [], "área em ORDEM_AGORA que não existe em AREAS");
+  });
+
+  test("toda área de ORDEM_AGORA sabe em que -comum.php procurar", () => {
+    const semArquivo = ordem.filter((a) => a !== "gente" && !arquivos.some(([, chave]) => chave === a));
+    assert.deepEqual(semArquivo, [], "área em ORDEM_AGORA sem entrada em ARQUIVO_DO_AGORA: o hub nunca inclui o -comum dela");
+    for (const [, chave, arquivo] of arquivos) {
+      assert.ok(readdirSync(PAINEL).includes(`${arquivo}-comum.php`), `${chave} aponta para ${arquivo}-comum.php, que não existe`);
+    }
+  });
+
+  test("toda pendencias_/medidores_/estado_ declarada está ligada em ORDEM_AGORA", () => {
+    const soltas = declaradas.filter(([area]) => !ordem.includes(area)).map(([area, f]) => `${area} (${f})`);
+    assert.deepEqual(soltas, [], "função declarada que o agora.php nunca chama — falta em ORDEM_AGORA");
+  });
+});

@@ -1514,3 +1514,233 @@ function mensagem_de_funil(array $pessoa, array $evento, string $etapa): string
 }
 
 /* ===================== privacidade ===================== */
+
+/* ===================== o que esta área diz ao Início ===================== */
+
+/**
+ * O que está esperando por esta pessoa em `eventos` — a fila do Início e o selo do menu.
+ *
+ * Chamada por `tarefas_de()` (agora.php) para quem abre a área; o formato de
+ * cada item está documentado lá. Registrar aqui, e não numa cadeia de `if` no
+ * agora.php, é o que faz uma área nova entrar na fila sem tocar o hub.
+ */
+function pendencias_eventos(array $u): array
+{
+    require_once __DIR__ . '/agora.php';  // HORAS_SEM_SAIDA, degrau_de_prazo(), data_curta(), apelido_curto()
+    $tarefas = [];
+
+        /* ---------- Encontros: o funil e o preparo ---------- */
+        require_once __DIR__ . '/eventos-comum.php';
+
+        /* O funil D+0 / D+3 / D+7. Lead sem segunda mensagem é lead perdido, e
+           é a única parte do manual que vence sozinha com o relógio.
+
+           A regra mora em `follow_ups_vencidos()`, no eventos-comum.php, e não
+           aqui: este `foreach` já existia igualzinho na tela do encontro e no
+           medidor do panorama, e prazo escrito em três lugares é prazo que
+           diverge na terceira alteração.
+
+           O nome vem da PESSOA, não da presença: a presença é só a relação entre
+           as duas pontas, e quem tem nome é gente — a função já devolve a ficha
+           resolvida em `['pessoa']`. */
+        $vencidos = follow_ups_vencidos();
+        if ($vencidos !== []) {
+            [$primeiroLead, $primeiraEtapa] = $vencidos[0];
+            $quantos = count($vencidos);
+            $tarefas[] = [
+                'area'    => 'eventos',
+                'icone'   => 'whatsapp',
+                'urgente' => true,
+                'quantos' => $quantos,
+                'texto'   => $quantos === 1
+                    ? 'Falar com ' . explode(' ', $primeiroLead['pessoa']['nome'])[0]
+                    : "Fazer o follow-up de {$quantos} pessoas",
+                'porque'  => mb_strtolower(ROTULO_FUNIL[$primeiraEtapa])
+                    . ' — o passo venceu e lead sem segunda mensagem é lead perdido',
+                /* A FILA, e não o encontro do primeiro da fila. Enquanto o
+                   follow-up só existia dentro de um encontro, mandar para lá
+                   era o melhor possível — e escondia as outras dezenove
+                   pessoas, que estavam em outros encontros. Agora há uma tela
+                   com todas. */
+                'url'     => '/painel/eventos.php?aba=follow-up#funil',
+            ];
+        }
+
+        /* ---------- A SUA peça, e não o preparo do encontro inteiro ----------
+           Aqui morava o defeito que fazia todo mundo fazer tudo: a tarefa
+           "Preparar <encontro>" disparava para QUALQUER conta com `eventos`, com
+           o agregado das marcações de todas as peças. Ninguém era avisado de que
+           era a Recepção; todos eram avisados de que o encontro precisava ser
+           preparado — e no sábado cada um fazia o que dava com o que tinha.
+
+           Agora quem executa recebe a peça que é dela, com o número dela. */
+        foreach (eventos_proximos() as $e) {
+            $faltam = dias_ate_o_dia($e['inicio']);
+            if ($faltam !== null && $faltam > 7) {
+                continue;  // ainda não é hora de cobrar
+            }
+            foreach (pecas_do_evento($e) as $chave) {
+                if (!in_array($u['id'], $e['responsaveis'][$chave], true)) {
+                    continue;
+                }
+                if (($e['aceites'][$chave][$u['id']] ?? '') === 'nao-posso') {
+                    continue;  // ela já disse que não pode; cobrar seria insistir
+                }
+                $p = preparo_da_peca($e, $chave);
+                if ($p['total'] > 0 && $p['feito'] >= $p['total']) {
+                    continue;
+                }
+                $tarefas[] = [
+                    'area'    => 'eventos',
+                    'icone'   => 'ticket',
+                    'urgente' => $faltam !== null && $faltam <= 2,
+                    'texto'   => 'Você é ' . PECAS[$chave]['nome'] . ' em “' . apelido_curto($e['titulo'], 24) . '”',
+                    'porque'  => $p['feito'] . ' de ' . $p['total'] . ' conferidos'
+                        . ($faltam === null ? '' : ($faltam <= 0 ? ' — é hoje' : ($faltam === 1 ? ' — é amanhã' : " — faltam {$faltam} dias"))),
+                    'url'     => '/painel/eventos.php?e=' . rawurlencode($e['id']) . '&aba=preparo#peca-' . $chave,
+                ];
+            }
+        }
+
+    return $tarefas;
+}
+
+/**
+ * O que está esperando por esta pessoa em `agenda` — a fila do Início e o selo do menu.
+ *
+ * Chamada por `tarefas_de()` (agora.php) para quem abre a área; o formato de
+ * cada item está documentado lá. Registrar aqui, e não numa cadeia de `if` no
+ * agora.php, é o que faz uma área nova entrar na fila sem tocar o hub.
+ */
+function pendencias_agenda(array $u): array
+{
+    require_once __DIR__ . '/agora.php';  // HORAS_SEM_SAIDA, degrau_de_prazo(), data_curta(), apelido_curto()
+    $tarefas = [];
+
+        /* ---------- A escala furada — só de quem coordena ----------
+           `pecas_a_resolver()` junta as três situações numa pendência só, porque em
+           todas elas a peça está sem ninguém garantido e o trabalho é o mesmo: achar
+           alguém. Sem isto a escala existia e ninguém era cobrado por ela — que foi
+           exatamente como seis encontros seguidos aconteceram com zero peças
+           escaladas, sem uma única tela reclamar. */
+        require_once __DIR__ . '/eventos-comum.php';
+
+        foreach (eventos_proximos() as $e) {
+            $abertas = pecas_a_resolver($e);
+            if ($abertas === []) {
+                continue;
+            }
+            $faltam = dias_ate_o_dia($e['inicio']);
+            if ($faltam !== null && $faltam > 14) {
+                continue;
+            }
+            $quantas = count($abertas);
+            $tarefas[] = [
+                'area'    => 'eventos',
+                'icone'   => 'users',
+                'urgente' => $faltam !== null && $faltam <= 3,
+                'quantos' => $quantas,
+                'texto'   => $quantas === 1
+                    ? PECAS[$abertas[0]]['nome'] . ' sem ninguém em “' . apelido_curto($e['titulo'], 22) . '”'
+                    : $quantas . ' peças sem ninguém em “' . apelido_curto($e['titulo'], 22) . '”',
+                'porque'  => 'sem dono, recusada ou convidada sem resposta'
+                    . ($faltam === null ? '' : ($faltam <= 0 ? ' — é hoje' : " — faltam {$faltam} dias")),
+                'url'     => '/painel/eventos.php?e=' . rawurlencode($e['id']) . '&aba=dados#dados',
+            ];
+            break;  // um encontro por vez: a fila não é a agenda
+        }
+
+    return $tarefas;
+}
+
+/**
+ * Os medidores de `eventos` — o retrato do time inteiro, para Leituras › Semana
+ * e para a linha "A operação hoje" do Início. Formato em `panorama_de()`.
+ */
+function medidores_eventos(array $u): array
+{
+    require_once __DIR__ . '/agora.php';  // HORAS_SEM_SAIDA, degrau_de_prazo(), data_curta(), apelido_curto()
+    $medidores = [];
+
+        /* ---------- Encontros: o preparo do próximo e o funil ---------- */
+        require_once __DIR__ . '/eventos-comum.php';
+
+        $proximos = eventos_proximos();
+        if ($proximos === []) {
+            $medidores[] = [
+                'num'    => '—',
+                'rotulo' => 'Próximo encontro',
+                'nota'   => 'Nenhum encontro marcado. O primeiro passo é Local & Hora.',
+                'estado' => 'atencao',
+                'url'    => '/painel/eventos.php',
+            ];
+        } else {
+            $e = $proximos[0];
+            $preparo = preparo_do_evento($e);
+            $faltam = dias_ate_o_dia($e['inicio']);
+            $completo = $preparo['total'] > 0 && $preparo['feito'] >= $preparo['total'];
+
+            /* Aqui o relógio corre para trás: quanto MENOS dias faltam, pior é
+               estar com o preparo pela metade. Por isso o degrau é escrito à
+               mão em vez de sair do degrau_de_prazo(). */
+            if ($completo) {
+                $estado = 'ok';
+            } elseif ($faltam !== null && $faltam <= 2) {
+                $estado = 'urgente';
+            } elseif ($faltam !== null && $faltam <= 7) {
+                $estado = 'atencao';
+            } else {
+                $estado = 'ok';
+            }
+
+            $medidores[] = [
+                'num'    => $preparo['feito'] . '/' . $preparo['total'],
+                'rotulo' => 'Preparo do próximo',
+                'nota'   => apelido_curto($e['titulo'], 26)
+                    . ($faltam === null
+                        ? ' · sem data'
+                        : ($faltam <= 0 ? ' · é hoje' : ($faltam === 1 ? ' · é amanhã' : " · faltam {$faltam} dias"))),
+                'estado' => $estado,
+                'url'    => '/painel/eventos.php?e=' . rawurlencode($e['id']),
+            ];
+        }
+
+        /* O funil, somado em todos os encontros: lead sem segunda mensagem é
+           lead perdido, e é a única parte do manual que vence com o relógio.
+           Mesma fonte da fila e da tela do encontro. */
+        $vencidos = count(follow_ups_vencidos());
+        $noFunil = count(array_filter(ler_presencas(), fn ($l) => $l['compareceu']));
+        $medidores[] = [
+            'num'    => (string) $vencidos,
+            'rotulo' => 'Follow-up vencido',
+            'nota'   => $noFunil === 0
+                ? 'Ninguém marcado como presente ainda.'
+                : ($vencidos === 0
+                    ? ($noFunil === 1
+                        ? 'A única pessoa do funil está em dia.'
+                        : "Todas as {$noFunil} pessoas do funil estão em dia.")
+                    : 'Pessoas que compareceram e estão sem a próxima mensagem.'),
+            'estado' => $vencidos === 0 ? 'ok' : ($vencidos >= 5 ? 'urgente' : 'atencao'),
+            'url'    => '/painel/eventos.php',
+        ];
+
+    return $medidores;
+}
+
+/** Uma linha sobre como está o trabalho em `eventos`, para a mesa do Início. */
+function estado_eventos(array $u): string
+{
+    require_once __DIR__ . '/agora.php';  // HORAS_SEM_SAIDA, degrau_de_prazo(), data_curta(), apelido_curto()
+        require_once __DIR__ . '/eventos-comum.php';
+        $proximos = eventos_proximos();
+        if ($proximos === []) {
+            return 'Nenhum encontro marcado ainda.';
+        }
+        $e = $proximos[0];
+        $preparo = preparo_do_evento($e);
+        /* `data` JÁ É o "24/08" pronto para ler — reformatá-lo com date() era
+           formatar o número 0, e a mesa dizia "01/01" para todo encontro. */
+        return 'Próximo: ' . apelido_curto($e['titulo'])
+            . ($e['data'] !== '' ? ' · ' . $e['data'] : '')
+            . ' · preparo ' . $preparo['feito'] . '/' . $preparo['total'];
+}
