@@ -96,3 +96,34 @@ describe("exportar: a porta", () => {
     assert.match(caixa.location, /negado=caixa/);
   });
 });
+
+describe("exportar: o dossiê de uma pessoa (LGPD)", () => {
+  test("traz ficha, presenças e aulas, e não traz o hash", async () => {
+    const r = await painel.buscar("exportar", "o=pessoa&id=pes00000000teste");
+    assert.equal(r.status, 200);
+    assert.match(r.cabecalhos?.["content-type"] ?? "", /application\/json/);
+    const d = JSON.parse(r.html);
+    assert.equal(d.ficha.nome, "Maria da Silva Sauro");
+    assert.equal(d.ficha.hash, undefined, "o hash da senha saiu no dossiê");
+    assert.equal(d.presencas.length, 1);
+    assert.ok(Array.isArray(d.aulasConcluidas));
+    assert.ok(Array.isArray(d.linhaDoTempo));
+  });
+
+  test("só a administração", async () => {
+    painel.trocarCapacidades("coordenacao");
+    const r = await painel.buscar("exportar", "o=pessoa&id=pes00000000teste");
+    assert.equal(r.status, 302);
+  });
+
+  test("apagar a pedido leva o motivo da LGPD e a ficha some", async () => {
+    painel.trocarCapacidades("adm");
+    const { html } = painel.abrir("pessoas", "p=pes00000000teste&aba=acesso");
+    assert.match(html, /Apagar a pedido dela/);
+    assert.match(html, /Baixar tudo sobre ela/);
+    await painel.postar("pessoas", { acao: "apagar", id: "pes00000000teste", motivo: "pediu para sair (LGPD)" });
+    const lapide = painel.ler("pessoas").find((p) => p.id === "pes00000000teste");
+    assert.equal(lapide.apagadoMotivo, "pediu para sair (LGPD)");
+    assert.equal(lapide.telefone, "");
+  });
+});

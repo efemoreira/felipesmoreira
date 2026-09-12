@@ -515,6 +515,29 @@ function tela_da_ficha(array $aberta, ?array $editando, ?string $erro, ?string $
 
     </fieldset>
 
+    <?php /* OS DIREITOS DA PESSOA (LGPD): ver o que o sistema tem sobre ela, e
+             pedir para sair. Moram na aba Acesso porque é a aba de "conta e
+             dado", e só a administração vê — é a mesma régua da tela inteira. */ ?>
+    <fieldset id="dados-dela">
+      <legend>Os dados dela</legend>
+      <p class="dica" style="margin:0 0 12px">
+        Se ela pedir para ver o que temos, ou para sair: é direito dela, e a
+        resposta é imediata. Apagar a pedido deixa só a lápide — nome, quando,
+        quem atendeu — e leva embora telefone, e-mail, endereço e conta.
+      </p>
+      <div class="acoes">
+        <a class="btn" href="/painel/exportar.php?o=pessoa&id=<?= h(rawurlencode($aberta['id'])) ?>">Baixar tudo sobre ela (JSON)</a>
+        <form method="post" class="decidir-recusa" style="margin:0"
+              onsubmit="return confirm(<?= texto_js('Apagar a pedido de ' . $aberta['nome'] . '? Telefone, e-mail, endereço e conta vão embora; fica só a lápide.') ?>)">
+          <input type="hidden" name="csrf" value="<?= h(token()) ?>">
+          <input type="hidden" name="acao" value="apagar">
+          <input type="hidden" name="id" value="<?= h($aberta['id']) ?>">
+          <input type="hidden" name="motivo" value="pediu para sair (LGPD)">
+          <button class="btn btn-risco" type="submit">Apagar a pedido dela</button>
+        </form>
+      </div>
+    </fieldset>
+
   <?php else: ?>
     <?php if ($historico === []): ?>
       <p class="dica">Nada gravado sobre ela ainda.</p>
@@ -522,8 +545,8 @@ function tela_da_ficha(array $aberta, ?array $editando, ?string $erro, ?string $
       <fieldset id="historico">
         <legend>Histórico de <?= h(explode(' ', $aberta['nome'])[0]) ?></legend>
         <p class="dica" style="margin:0 0 12px">
-          Sai do que já está gravado — não há registro de auditoria por trás, e
-          por isso correção de cadastro não aparece aqui.
+          Sai do que já está gravado. Correção de ficha aparece como “Ficha
+          alterada”, com quem mexeu e quando.
         </p>
         <ul class="tempo">
           <?php foreach ($historico as $l): ?>

@@ -75,6 +75,48 @@ function csv_de_pessoas(array $get): string
     );
 }
 
+/**
+ * Tudo o que o sistema tem sobre UMA pessoa — o direito de acesso da LGPD.
+ * A ficha, as presenças, o progresso nas aulas, os lançamentos que a citam,
+ * e a linha do tempo dela. JSON, e não CSV: é um dossiê, não uma tabela.
+ * Sem hash de senha — ele é dela, mas não é dado que se entrega.
+ */
+function dossie_de_pessoa(string $id): ?array
+{
+    require_once __DIR__ . '/eventos-comum.php';
+    require_once __DIR__ . '/aulas-comum.php';
+    require_once __DIR__ . '/atividade-comum.php';
+    $p = achar_pessoa($id);
+    if ($p === null) {
+        return null;
+    }
+    unset($p['hash']);
+    $presencas = [];
+    foreach (ler_presencas() as $l) {
+        if ($l['pessoaId'] === $id) {
+            $e = achar_evento($l['eventoId']);
+            $presencas[] = ['encontro' => $e['titulo'] ?? $l['eventoId'], 'quando' => $e['inicio'] ?? '',
+                'confirmou' => $l['confirmou'], 'compareceu' => $l['compareceu'], 'registradoEm' => $l['criadoEm']];
+        }
+    }
+    $lancamentos = [];
+    if (function_exists('ler_caixa')) {
+        foreach (ler_caixa() as $l) {
+            if ($l['criadoPor'] === $p['nome']) {
+                $lancamentos[] = $l;
+            }
+        }
+    }
+    return [
+        'geradoEm'   => date('c'),
+        'ficha'      => $p,
+        'presencas'  => $presencas,
+        'aulasConcluidas' => aulas_concluidas($id),
+        'lancamentosQueLancou' => $lancamentos,
+        'linhaDoTempo' => array_map(fn ($l) => ['quando' => $l['quando'], 'texto' => $l['texto'], 'quem' => $l['quem']], linha_do_tempo($id, 500)),
+    ];
+}
+
 /** As presenças de um encontro. */
 function csv_de_presencas(string $eventoId): string
 {

@@ -27,6 +27,25 @@ switch ($o) {
         $corpo = csv_de_pessoas($_GET);
         break;
 
+    case 'pessoa':
+        /* O dossiê de uma pessoa — só administração, como a ficha inteira. */
+        if (!e_admin()) {
+            header('Location: /painel/?negado=pessoas', true, 302);
+            exit;
+        }
+        $id = limpar_texto($_GET['id'] ?? '', 40);
+        $dossie = dossie_de_pessoa($id);
+        if ($dossie === null) {
+            http_response_code(404);
+            header('Content-Type: text/plain; charset=utf-8');
+            exit("Pessoa não encontrada.\n");
+        }
+        header('Content-Type: application/json; charset=utf-8');
+        header('Content-Disposition: attachment; filename="dados-' . sem_acento(explode(' ', $dossie['ficha']['nome'])[0]) . "-$hoje.json\"");
+        header('Cache-Control: no-store, private');
+        echo json_encode($dossie, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        exit;
+
     case 'presencas':
         if (!pode('eventos')) {
             header('Location: /painel/?negado=eventos', true, 302);
