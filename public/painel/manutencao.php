@@ -163,6 +163,16 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     $apagados = 0;
     $zerouPessoas = false;
 
+    /* O ZIP VEM ANTES DO UNLINK. Zerar existe para sair da fase de teste — e
+       a palavra certa digitada na base errada, uma vez, é o cadastro inteiro
+       indo embora sem cópia. Se o backup não gravar, nada é apagado: melhor
+       uma base de teste que sobra do que uma base de verdade que some. Só há
+       o que guardar se há arquivo; base vazia zera sem zip. */
+    if ($pedidos !== [] && arquivos_para_backup() !== [] && fazer_backup() === null) {
+        avisar('erro', 'Nada foi apagado: o backup de antes de zerar não foi gravado. Confira se /dados/backups aceita escrita.');
+        ir_para('/painel/manutencao.php');
+    }
+
     /* Lida ANTES de apagar: depois do `unlink` não há mais de onde tirá-la, e é
        ela que volta para o arquivo logo abaixo. */
     $eu = usuario_atual();

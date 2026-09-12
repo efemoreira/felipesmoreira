@@ -1,7 +1,7 @@
 import { test, describe, before, beforeEach, after } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { montarSandbox, type Sandbox } from "../sandbox.ts";
 
@@ -121,6 +121,34 @@ describe("backup: zerar não apaga a cópia", () => {
 
     const grupos = ["pessoas", "encontros", "comunicacao", "formacao", "contadores", "caixa"];
     await painel.postar("manutencao", { confirmacao: "ZERAR TUDO", "grupos[]": grupos });
-    assert.deepEqual(zips(), antes);
+    assert.ok(zips().includes(antes[0]), "zerar apagou o backup de antes");
+  });
+
+  test("zerar grava um zip ANTES de apagar, e o zip tem o cadastro", async () => {
+    assert.deepEqual(zips(), [], "a semente já tinha backup?");
+    const pessoasAntes = painel.ler("pessoas").length;
+    assert.ok(pessoasAntes > 1);
+
+    await painel.postar("manutencao", { confirmacao: "ZERAR TUDO", "grupos[]": ["pessoas"] });
+
+    const depois = zips();
+    assert.equal(depois.length, 1, "zerar não deixou o zip de antes");
+    assert.ok(conteudoDe(depois[0]).includes("pessoas.php"), "o zip de antes de zerar não tem o cadastro");
+    assert.equal(painel.ler("pessoas").length, 1, "zerou e sobrou mais do que a conta de quem zerou");
+  });
+
+  test("sem conseguir gravar o zip, nada é apagado", async () => {
+    /* A pasta de backups vira um ARQUIVO: `fazer_backup()` não consegue abrir
+       o zip lá dentro e devolve null. É o disco cheio de um jeito reproduzível. */
+    mkdirSync(path.join(painel.dir, "dados"), { recursive: true });
+    rmSync(pastaBackups(), { recursive: true, force: true });
+    writeFileSync(pastaBackups(), "não sou uma pasta");
+
+    const antes = painel.ler("pessoas").length;
+    const r = await painel.postar("manutencao", { confirmacao: "ZERAR TUDO", "grupos[]": ["pessoas"] });
+
+    assert.match(r.html, /Nada foi apagado/, "zerou sem backup");
+    assert.equal(painel.ler("pessoas").length, antes, "apagou mesmo sem conseguir o zip");
+    rmSync(pastaBackups(), { force: true });
   });
 });

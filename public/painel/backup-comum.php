@@ -77,6 +77,12 @@ function fazer_backup(?int $agora = null): ?string
     if ($arquivos === []) {
         return null;
     }
+    /* Pasta que não existe ou não aceita escrita é `null` calado, e não um
+       aviso do ZipArchive no meio da resposta: quem chama (o cron, o botão,
+       o zerar) já sabe o que fazer com null. */
+    if (!is_dir(PASTA_BACKUP) || !is_writable(PASTA_BACKUP)) {
+        return null;
+    }
 
     $destino = PASTA_BACKUP . '/dados-' . date('Y-m-d-His', $agora ?? time()) . '.zip';
     $tmp     = $destino . '.tmp';
