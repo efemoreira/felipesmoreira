@@ -25,7 +25,7 @@ require_once __DIR__ . '/agora.php';
 require_once __DIR__ . '/componentes.php';  // barra_abas(), barra_busca(), modal, menu_acoes(), links_whatsapp(), recado()…
 
 /** Versão do CSS — muda junto com o painel.css para furar o cache do navegador. */
-const VERSAO_ESTILO = '35';
+const VERSAO_ESTILO = '36';
 
 /**
  * Os grupos da navegação, na ordem em que aparecem.

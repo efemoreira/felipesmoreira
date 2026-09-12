@@ -35,7 +35,7 @@ function bloco_decididos(array $checados, array $pendentes, array $arquivados, s
       ainda não foi tomada, e depois de 48h ela aparece no hub como pendência.
     </p>
     <?php if ($checados === []): ?>
-      <p class="dica" style="margin:0">Nenhum fato aprovado ainda.</p>
+      <?php vazio('Nenhum fato aprovado ainda.', ['url' => '/painel/fatos.php?aba=trazer#trazer', 'texto' => 'Trazer um fato']); ?>
     <?php else: ?>
       <div class="rolagem cartoes">
         <table class="tabela">

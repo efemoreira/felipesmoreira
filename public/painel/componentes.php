@@ -221,10 +221,33 @@ function resumo_do_recorte(bool $recortado, int $achados, int $total, string $co
  * primeira precisa dizer o que apagar para voltar a ver alguma coisa. Sem isso
  * quem procurou errado acha que a tela está quebrada.
  */
-function nada_encontrado(string $busca, string $volta, string $vazio = 'Nada por aqui ainda.'): void
+/**
+ * O ESTADO VAZIO COM AÇÃO — o padrão do painel para "não há nada aqui".
+ *
+ * Tela vazia que só diz "nenhuma peça ainda, crie na aba Peças" é tela que
+ * manda a pessoa procurar. O vazio diz o que fazer E dá o botão: a próxima
+ * ação está a um toque, no lugar em que a falta apareceu. Sem ação (uma
+ * leitura que ainda não tem dado) é só o texto, e tudo bem.
+ *
+ * `$acao` é `['url' => …, 'texto' => …]`; a fumaça confere que todo
+ * `.vazio` com `data-acao` tem um link dentro.
+ */
+function vazio(string $texto, ?array $acao = null): void
+{
+    ?>
+    <p class="vazio"<?= $acao !== null ? ' data-acao' : '' ?>>
+      <?= h($texto) ?>
+      <?php if ($acao !== null): ?>
+        <a class="btn btn-mini" href="<?= h($acao['url']) ?>"><?= h($acao['texto']) ?></a>
+      <?php endif; ?>
+    </p>
+    <?php
+}
+
+function nada_encontrado(string $busca, string $volta, string $vazio = 'Nada por aqui ainda.', ?array $acao = null): void
 {
     if ($busca === '') {
-        echo '<p class="dica" style="margin:0">' . h($vazio) . '</p>';
+        vazio($vazio, $acao);
         return;
     }
     ?>

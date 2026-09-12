@@ -144,7 +144,7 @@ function tela_de_caixa(?string $erro, ?string $ok): void
       </p>
     <?php endif; ?>
     <?php if ($lista === []): ?>
-      <p class="dica" style="margin:0">Nada lançado neste caixa ainda.</p>
+      <?php vazio('Nada lançado neste caixa ainda.', ['url' => '#lancar', 'texto' => 'Lançar o primeiro']); ?>
     <?php else: ?>
       <div class="rolagem cartoes">
         <table class="tabela">

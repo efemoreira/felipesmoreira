@@ -1562,3 +1562,7 @@ fieldset[id], .item[id], .ficha[id] { scroll-margin-top:18px; }
 .playbook { margin:0 0 22px; max-width:none; }
 .playbook > summary .dica { font:400 13px/1.3 var(--corpo); letter-spacing:0; text-transform:none; }
 .playbook[open] > summary { margin-bottom:6px; }
+
+/* ---------- o estado vazio com ação ---------- */
+.vazio { margin:0; color:var(--texto-fraco); font-size:15px; line-height:1.6; max-width:70ch; }
+.vazio .btn { margin-left:8px; vertical-align:middle; }
