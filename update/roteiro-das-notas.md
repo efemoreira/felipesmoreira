@@ -488,7 +488,7 @@ mais, a ordem não muda — o que muda é quanto de B cabe em setembro.
 | Semana | Datas | O que | Critérios que sobem | Geral ao fim |
 | --- | --- | --- | --- | --- |
 | 0 | — | ponto de partida (11/09) | — | **6,4** |
-| 1 | 11–17/09 | **Proteger.** 4.3 permissão (item 1) · 3.3/4.4 concorrência (item 2) · 4.5 backup antes de zerar (item 8) · `Cache-Control` no painel (item 7) · **decidir o texto do dia 05/10** (aposta 5) | permissão 3→9 · integridade 3→8 · concorrência 3→8 · backup 7→8 | **6,7** |
+| 1 | 11–17/09 | **Proteger.** ~~4.3 permissão (item 1)~~ · ~~3.3/4.4 concorrência (item 2)~~ · ~~4.5 backup antes de zerar (item 8)~~ · ~~`Cache-Control` no painel (item 7)~~ — **feitos em 11/09** · **decidir o texto do dia 05/10** (aposta 5) | permissão 3→9 · integridade 3→8 · concorrência 3→8 · backup 7→8 | **6,7** |
 | 2 | 18–24/09 | **Converter.** 1.4 OG (item 3) · 1.5 semente de candidatos (item 5) · "17 funções" (item 4) · 5.5 rascunho em fatos (item 9) · 4.1 tentativas por IP (item 6) | OG 4→9 · robustez 5→9 · rascunho 6→8 · autenticação 8→9 | **7,0** |
 | 3 | 25/09–01/10 | **Entrar e medir.** 7.3 `comece-aqui` + `painel:local` (item 25) · 7.2 `/painel/ajuda` (item 24) · 3.5 divergências dos docs (item 18) · 1.6 medição se couber (item 11) · **validação em campo** (item 10) no encontro da semana | dev 6→9 · coordenação 5→8 · docs 6→8 · medição 1→6 | **7,4** |
 | — | 01–04/10 | **Congelado.** Reta final: só correção de erro visto em campo. Nada novo entra. | — | 7,4 |
