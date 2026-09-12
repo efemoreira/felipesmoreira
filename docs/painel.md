@@ -186,6 +186,7 @@ teste.
 - `/painel/leituras` — origem, território, semana, atividade; só GET, capacidade `coordenacao`
 - `/painel/conta`
 - `/painel/gente` — tela pessoal de quem acompanha alguém (`pode_liderar()`), não é área
+- `/painel/ajuda` — cada tela em três frases e o glossário; gerada de `dominio.php` + `ajuda-comum.php`
 
 Os endpoints em `public/painel/api/` continuam sendo chamados pelo caminho real,
 sem URL limpa dedicada.

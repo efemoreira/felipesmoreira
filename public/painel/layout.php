@@ -25,7 +25,7 @@ require_once __DIR__ . '/agora.php';
 require_once __DIR__ . '/componentes.php';  // barra_abas(), barra_busca(), modal, menu_acoes(), links_whatsapp(), recado()…
 
 /** Versão do CSS — muda junto com o painel.css para furar o cache do navegador. */
-const VERSAO_ESTILO = '31';
+const VERSAO_ESTILO = '32';
 
 /**
  * Os grupos da navegação, na ordem em que aparecem.
@@ -271,6 +271,7 @@ function desenhar_utilidades(array $u, string $aqui, string $onde): void
         <?php endforeach; ?>
       </form>
 
+      <a class="pe-link<?= $aqui === 'ajuda.php' ? ' atual' : '' ?>" href="/painel/ajuda.php">Ajuda</a>
       <a class="pe-link<?= $aqui === 'conta.php' ? ' atual' : '' ?>" href="/painel/conta.php">Minha senha</a>
       <a class="pe-link" href="/" target="_blank" rel="noopener">Ver o site público</a>
       <form method="post" action="/painel/">
@@ -384,6 +385,19 @@ function cabecalho_pagina(
     }
 
     echo '<h1>' . h($titulo) . '</h1>';
+
+    /* Tela sem subtítulo ganha o "para que serve" da área — o mesmo `resumo`
+       que o menu e a Ajuda usam. É a frase que a coordenação nova não tinha:
+       cada tela dizendo em uma linha o que ela é. */
+    if ($sub === '') {
+        $aqui = basename((string) ($_SERVER['SCRIPT_NAME'] ?? ''));
+        foreach (DESTINO_AREA as $destino) {
+            if (basename($destino['url']) === $aqui) {
+                $sub = h($destino['resumo']);
+                break;
+            }
+        }
+    }
 
     /* A aula só aparece para quem tem a formação liberada — para o resto seria
        um link que abre uma porta fechada. */

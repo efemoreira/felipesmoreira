@@ -259,3 +259,34 @@ describe("painel: os endpoints públicos incluem só o que usam", () => {
     assert.match(presenca, /limite-comum\.php/, "api/presenca.php não inclui limite-comum.php");
   });
 });
+
+describe("painel: toda área tem as três frases da Ajuda", () => {
+  /* `/painel/ajuda` diz de cada tela para que serve (o `resumo` de
+     DESTINO_AREA), quem abre (derivado de CAPACIDADES) e o que sai dela
+     (SAI_DE_AREA). As duas primeiras vêm de onde já existiam; a terceira é
+     texto novo, e é a que uma área nova esquece. Área sem frase é área que a
+     coordenação nova não sabe para que serve. */
+  const ajuda = readFileSync(path.join(RAIZ, "public/painel/ajuda-comum.php"), "utf8");
+  const bloco = ajuda.slice(ajuda.indexOf("const SAI_DE_AREA = ["), ajuda.indexOf("\n];", ajuda.indexOf("const SAI_DE_AREA = [")));
+  const comFrase = [...bloco.matchAll(/^\s+'([a-z-]+)'\s*=>\s*'(.*)',$/gm)];
+
+  test("toda área em AREAS tem 'o que sai daqui'", () => {
+    const chaves = comFrase.map((m) => m[1]);
+    const sem = AREAS.filter((a) => !chaves.includes(a));
+    assert.deepEqual(sem, [], "área sem frase em SAI_DE_AREA (ajuda-comum.php)");
+  });
+
+  test("nenhuma frase é vazia", () => {
+    for (const [, area, frase] of comFrase) {
+      assert.ok(frase.trim().length >= 20, `a frase de ${area} é curta demais para explicar alguma coisa`);
+    }
+  });
+
+  test("toda área tem resumo em DESTINO_AREA — é o 'para que serve'", () => {
+    const i = sessao.indexOf("const DESTINO_AREA = [");
+    const destino = sessao.slice(i, sessao.indexOf("\n];", i));
+    for (const a of AREAS) {
+      assert.match(destino, new RegExp(`'${a}'\\s*=>\\s*\\['url'[^\\n]*'resumo'\\s*=>\\s*'.{20,}'`), `${a} sem resumo em DESTINO_AREA`);
+    }
+  });
+});

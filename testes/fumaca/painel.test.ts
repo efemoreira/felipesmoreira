@@ -74,6 +74,7 @@ const TELAS: [tela: string, querystring: string, apelido: string][] = [
   ["procurar", "", "busca global vazia"],
   ["procurar", "q=benfica", "busca global com resultado"],
   ["conta", "", "minha conta"],
+  ["ajuda", "", "ajuda"],
   ["gente", "", "sua gente"],
   ["gente", "tipo=esfriando", "sua gente — esfriando"],
   ["manutencao", "", "manutenção"],
