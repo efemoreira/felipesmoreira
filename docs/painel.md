@@ -45,6 +45,7 @@ Também expõe APIs JSON em `public/painel/api/` para o site público consumir.
 | `public/painel/privacidade.php` | a regra de dado pessoal: `pode_ver_telefone()`, `nome_encoberto()`, `telefone_encoberto()` |
 | `public/painel/acoes-comum.php` | `avisar()`, `ir_para()`, `exigir_token_de_acao()`, `recado_pendente()` — o POST-redirect-GET num lugar só |
 | `public/painel/backup-comum.php` + `backup.php` | o zip de `/dados` — botão da Manutenção e cron |
+| `public/painel/erros-comum.php` | o registro de erros de produção (`dados/erros.log`) e o bloco da Manutenção — ligado só quando `display_errors` está desligado |
 
 ## Primeiro acesso
 

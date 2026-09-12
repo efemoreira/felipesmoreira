@@ -112,6 +112,8 @@ function grupos_de_dados(): array
                 PASTA_DADOS . '/tentativas.json',
                 PASTA_DADOS . '/inscricoes-limite.php',
                 PASTA_DADOS . '/sinais.php',
+                PASTA_DADOS . '/erros.log',
+                PASTA_DADOS . '/erros.1.log',
             ],
         ],
     ];
@@ -144,6 +146,12 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
 
     /* O BACKUP NÃO PEDE A PALAVRA: não apaga nada, e pedir "ZERAR TUDO" para
        guardar seria ensinar a digitá-la no reflexo. */
+    if (($_POST['acao'] ?? '') === 'limpar-erros') {
+        limpar_erros();
+        avisar('ok', 'Registro de erros zerado.');
+        ir_para('/painel/manutencao.php');
+    }
+
     if (($_POST['acao'] ?? '') === 'backup') {
         $feito = fazer_backup();
         if ($feito === null) {
@@ -255,6 +263,42 @@ abrir_pagina('Manutenção');
   ); ?>
 
   <?php recado($erro, $ok); ?>
+
+  <?php $errosRecentes = erros_recentes(); ?>
+  <fieldset id="erros">
+    <legend>Erros dos últimos 7 dias<?= $errosRecentes !== [] ? ' (' . count($errosRecentes) . ')' : '' ?></legend>
+    <?php if ($errosRecentes === []): ?>
+      <p class="dica" style="margin:0">
+        Nenhum. O que o PHP não conseguir fazer em produção fica registrado aqui —
+        tipo, mensagem, arquivo e rota — em vez de sumir com o <code>display_errors</code> desligado.
+      </p>
+    <?php else: ?>
+      <p class="dica" style="margin:0 0 10px">
+        O que quebrou, para quem, onde. Resolvido, zere — o registro é para ler, não para guardar.
+      </p>
+      <div class="rolagem cartoes">
+        <table class="tabela">
+          <thead><tr><th>Quando</th><th>Tipo</th><th>Mensagem</th><th>Onde</th><th>Rota</th></tr></thead>
+          <tbody>
+            <?php foreach ($errosRecentes as $r): ?>
+              <tr>
+                <td data-rotulo="Quando"><?= h(date('d/m H:i', (int) strtotime($r['quando']))) ?></td>
+                <td data-rotulo="Tipo"><span class="selo <?= $r['tipo'] === 'fatal' ? 'selo-off' : 'selo-cinza' ?>"><?= h($r['tipo']) ?></span></td>
+                <td data-rotulo="Mensagem"><?= h($r['msg']) ?></td>
+                <td data-rotulo="Onde"><code><?= h($r['onde']) ?></code></td>
+                <td data-rotulo="Rota" class="tarde"><?= h($r['rota']) ?><?= $r['uid'] !== '' ? ' · ' . h($r['uid']) : '' ?></td>
+              </tr>
+            <?php endforeach; ?>
+          </tbody>
+        </table>
+      </div>
+      <form method="post" class="acoes" style="margin-top:12px">
+        <input type="hidden" name="csrf" value="<?= h(token()) ?>">
+        <input type="hidden" name="acao" value="limpar-erros">
+        <button class="btn btn-mini" type="submit">Zerar o registro</button>
+      </form>
+    <?php endif; ?>
+  </fieldset>
 
   <fieldset id="backup">
     <legend>Backup<?= $backups !== [] ? ' (' . count($backups) . ')' : '' ?></legend>

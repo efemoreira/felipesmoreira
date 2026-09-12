@@ -65,6 +65,14 @@ session_set_cookie_params([
 ]);
 session_name('painel_agenda');
 session_start();
+
+/* O REGISTRO DE ERROS, só onde o erro sumiria: em produção, com
+   display_errors desligado. No CLI e nos testes o aviso vai para o stderr e
+   derruba o teste — rede melhor que log. `erros-comum.php` explica. */
+require_once __DIR__ . '/erros-comum.php';
+if (PHP_SAPI !== 'cli' && !filter_var(ini_get('display_errors'), FILTER_VALIDATE_BOOLEAN) && ini_get('display_errors') !== 'stderr') {
+    ligar_registro_de_erros();
+}
 /* DEPOIS do session_start(), de propósito: ele manda o seu Cache-Control
    (`session.cache_limiter`), e o dele depende do php.ini da hospedagem. Este
    não depende. Nenhuma tela do painel fica no cache do navegador — é a lista
