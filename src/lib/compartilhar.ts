@@ -54,3 +54,43 @@ export async function copiar(texto: string): Promise<Resultado> {
     return "falhou";
   }
 }
+
+/**
+ * ENTREGAR A ARTE — compartilhar no celular, baixar no resto.
+ *
+ * Era a mesma sequência escrita três vezes (Munição, pôster da programação,
+ * colinha): `canShare` → `share` → se não, `<a download>`. E os mesmos dois
+ * cuidados em cada cópia: `canShare` dizer que sim não garante que o `share`
+ * vai (sem gesto do usuário, navegador que anuncia e não entrega), então a
+ * arte tem de baixar assim mesmo — militante no meio do mutirão não pode
+ * ficar sem ela por detalhe de navegador; e só o cancelamento dele encerra
+ * em silêncio. Devolve o que aconteceu, para quem chama contar o sinal. É o irmão de
+ * `compartilharTexto()`: o mesmo cuidado, com arquivo em vez de texto.
+ */
+export async function entregarArte(
+  blob: Blob,
+  nome: string,
+  texto: string,
+  titulo?: string,
+): Promise<"compartilhou" | "baixou" | "cancelou"> {
+  const arquivo = new File([blob], nome, { type: "image/png" });
+  if (typeof navigator.canShare === "function" && navigator.canShare({ files: [arquivo] })) {
+    try {
+      await navigator.share({ files: [arquivo], text: texto, ...(titulo ? { title: titulo } : {}) });
+      return "compartilhou";
+    } catch (e) {
+      if ((e as Error)?.name === "AbortError") return "cancelou";
+      /* qualquer outra falha: cai no download abaixo */
+    }
+  }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = nome;
+  a.click();
+  /* Soltar a URL no tique seguinte, não na mesma linha: alguns navegadores só
+     começam a leitura depois do clique voltar, e revogar imediatamente aborta
+     o download que acabou de começar. */
+  window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  return "baixou";
+}

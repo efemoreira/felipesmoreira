@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Icon } from "@/components/icons";
 import { BORDA, C, FONT_ALFA, FONT_ELITE, FONT_BITTER, sombra } from "@/lib/theme";
 import { canvasParaBlob } from "@/lib/cordelCanvas";
+import { entregarArte } from "@/lib/compartilhar";
 import { faseEm, type Fase } from "@/lib/eleicao";
 import { obterChapa, pessoasDa, type Candidato, type Lista } from "@/lib/api/candidatos";
 import { CHAPA } from "@/features/missao/data";
@@ -92,27 +93,9 @@ export default function CandidatosClient() {
   const entregar = useCallback(async (canvas: HTMLCanvasElement, nome: string, texto: string) => {
     const blob = await canvasParaBlob(canvas);
     if (!blob) throw new Error("sem blob");
-    const arquivo = new File([blob], nome, { type: "image/png" });
-
-    /* `canShare` dizer que sim não garante que o `share` vai — sem gesto do
-       usuário, ou em navegador que anuncia a API e não a entrega, ele rejeita.
-       Aí a arte tem que baixar assim mesmo. Só o cancelamento encerra calado. */
-    if (typeof navigator.canShare === "function" && navigator.canShare({ files: [arquivo] })) {
-      try {
-        await navigator.share({ files: [arquivo], text: texto });
-        sinal("compartilhou");
-        return;
-      } catch (e) {
-        if ((e as Error)?.name === "AbortError") return;
-      }
+    if ((await entregarArte(blob, nome, texto)) !== "cancelou") {
+      sinal("compartilhou");
     }
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = nome;
-    a.click();
-    sinal("compartilhou");
-    window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
   }, []);
 
   const compartilharUm = useCallback(

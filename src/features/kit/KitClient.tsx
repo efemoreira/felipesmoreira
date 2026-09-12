@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Icon } from "@/components/icons";
 import { BORDA, C, FONT_ALFA, FONT_ELITE, FONT_BITTER, borda, TEXTO, bordaFina } from "@/lib/theme";
 import { canvasParaBlob } from "@/lib/cordelCanvas";
+import { entregarArte } from "@/lib/compartilhar";
 import { faseEm } from "@/lib/eleicao";
 import { RECADOS } from "./calendario";
 import { comoPeca, obterPecasDoPainel } from "@/lib/api/kit";
@@ -112,36 +113,11 @@ export default function KitClient() {
         const blob = await canvasParaBlob(canvas);
         if (!blob) throw new Error("sem blob");
 
-        const arquivo = new File([blob], nomeArquivo(p, formato), { type: "image/png" });
-
         /* No celular, compartilhar abre o WhatsApp direto com imagem e texto —
-           que é o caminho real do mutirão. Mas `canShare` dizer que sim não
-           garante que vai: sem gesto do usuário, em navegador que anuncia a API
-           e não a entrega, ou com o recurso desligado, o `share` rejeita. Aí a
-           peça tem que **baixar assim mesmo** — militante no meio do mutirão
-           não pode ficar sem a arte por causa de detalhe de navegador.
-           Só o cancelamento dele encerra em silêncio. */
-        if (typeof navigator.canShare === "function" && navigator.canShare({ files: [arquivo] })) {
-          try {
-            await navigator.share({ files: [arquivo], text: textoDe(p) });
-            sinal("compartilhou");
-            return;
-          } catch (e) {
-            if ((e as Error)?.name === "AbortError") return; // ele fechou o menu
-            /* qualquer outra falha: cai no download abaixo */
-          }
+           que é o caminho real do mutirão. `entregarArte()` cuida do resto. */
+        if ((await entregarArte(blob, nomeArquivo(p, formato), textoDe(p))) !== "cancelou") {
+          sinal("compartilhou");
         }
-
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = arquivo.name;
-        a.click();
-        sinal("compartilhou");
-        /* Soltar a URL no tique seguinte, não na mesma linha: alguns
-           navegadores só começam a leitura depois do clique voltar, e revogar
-           imediatamente aborta o download que acabou de começar. */
-        window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
       } catch {
         setAviso("Não consegui montar a arte agora. Tente de novo.");
       } finally {

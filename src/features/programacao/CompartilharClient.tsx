@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { entregarArte } from "@/lib/compartilhar";
 import { bordaFina } from "@/lib/theme";
 import { sinal } from "@/lib/api/sinal";
 import { Icon } from "@/components/icons";
@@ -89,24 +90,16 @@ const CompartilharClient: React.FC<{ agenda: Agenda }> = ({ agenda }) => {
   const compartilhar = async () => {
     const blob = blobRef.current;
     if (!blob) return;
-    const arquivo = new File([blob], nomeArquivo(formato), { type: "image/png" });
-    const nav = navigator as Navigator & { canShare?: (d?: ShareData) => boolean };
-    if (nav.canShare?.({ files: [arquivo] })) {
-      try {
-        await navigator.share({
-          files: [arquivo],
-          title: agenda.titulo,
-          /* O mesmo período do cartaz e da página — a legenda viaja junto com
-             a imagem, e uma semana vencida escrita ali não tem mais conserto. */
-          text: `${agenda.titulo} — ${periodoVigente(agenda)} · @moreiramissao`,
-        });
-        sinal("compartilhou");
-        return;
-      } catch {
-        return; // usuário cancelou o menu de compartilhamento
-      }
-    }
-    baixar();
+    /* O mesmo período do cartaz e da página — a legenda viaja junto com a
+       imagem, e uma semana vencida escrita ali não tem mais conserto. */
+    const feito = await entregarArte(
+      blob,
+      nomeArquivo(formato),
+      `${agenda.titulo} — ${periodoVigente(agenda)} · @moreiramissao`,
+      agenda.titulo,
+    );
+    if (feito === "baixou") setAviso("Imagem baixada.");
+    if (feito !== "cancelou") sinal("compartilhou");
   };
 
   const copiar = async () => {
