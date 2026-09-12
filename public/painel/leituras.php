@@ -18,7 +18,10 @@ declare(strict_types=1);
  */
 
 require_once __DIR__ . '/layout.php';
+require_once __DIR__ . '/leituras-acoes.php';
 require_once __DIR__ . '/leituras-tela.php';
 exigir_area('leituras');
+
+tratar_acoes_de_leituras();
 
 tela_de_leituras(usuario_atual() ?? []);

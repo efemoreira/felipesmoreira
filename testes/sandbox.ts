@@ -157,6 +157,7 @@ const DADOS = new Set([
   "kit",
   "mutirao",
   "caixa",
+  "metas",
   "inscricoes-limite",
   "tentativas",
   "segredo",

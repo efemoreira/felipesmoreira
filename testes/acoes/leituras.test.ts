@@ -36,10 +36,12 @@ describe("leituras: só olha", () => {
     assert.equal(foto(), antes, "uma leitura gravou alguma coisa");
   });
 
-  test("um POST em Leituras não faz nada", async () => {
+  test("um POST em Leituras só toca as metas — o dado do movimento fica como está", async () => {
+    /* Desde 12/09 Leituras tem UM POST: as metas (leituras-acoes.php). Ação
+       desconhecida vira recado e volta; nenhum ARQ_* do movimento muda. */
     const antes = foto();
     const r = await painel.postar("leituras", { acao: "qualquer" });
-    assert.equal(r.status, 200, "Leituras respondeu a um POST como se fosse ação");
+    assert.equal(r.status, 302);
     assert.equal(foto(), antes);
   });
 

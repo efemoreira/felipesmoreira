@@ -17,6 +17,7 @@ require_once __DIR__ . '/layout.php';
 require_once __DIR__ . '/agora.php';      // panorama_de()
 require_once __DIR__ . '/kit-comum.php';  // mutirao_da_semana()
 require_once __DIR__ . '/sinais-comum.php'; // sinais_entre()
+require_once __DIR__ . '/metas-comum.php';  // ler_metas(), leitura_da_meta()
 
 function aba_da_semana(array $eu): void
 {
@@ -24,6 +25,64 @@ function aba_da_semana(array $eu): void
     $mutirao  = mutirao_da_semana();
     $postaram = count(array_filter($mutirao['escalados'], fn ($e) => $e === 'postou'));
     ?>
+    <?php /* AS METAS PRIMEIRO: é a única pergunta desta aba que tem alvo, e
+             "estamos bem?" se responde antes de "o que venceu?". */ ?>
+    <fieldset id="metas">
+      <legend>As metas<?= ($metas = ler_metas()) !== [] ? ' (' . count($metas) . ')' : '' ?></legend>
+      <?php if ($metas === []): ?>
+        <p class="dica" style="margin:0 0 12px">
+          Nenhuma meta combinada. Sem alvo, 120 militantes não é bom nem ruim — é 120.
+        </p>
+      <?php else: ?>
+        <div class="metas">
+          <?php foreach ($metas as $m): $l = leitura_da_meta($m); ?>
+            <div class="meta meta-<?= h($l['ritmo']) ?>">
+              <p class="meta-numero"><strong><?= $l['atual'] ?></strong> de <?= $m['alvo'] ?></p>
+              <p class="meta-rotulo"><?= h(MEDIDAS_DE_META[$m['medida']]) ?> até <?= h(data_humana($m['ate'])) ?></p>
+              <p class="meta-nota">
+                <?php if ($l['ritmo'] === 'feito'): ?>Batida.
+                <?php elseif ($l['ritmo'] === 'vencida'): ?>Venceu faltando <?= $l['faltam'] ?>.
+                <?php else: ?>Faltam <?= $l['faltam'] ?> em <?= $l['dias'] ?> dia<?= $l['dias'] === 1 ? '' : 's' ?> — ritmo <?= $l['ritmo'] === 'bom' ? 'bom' : 'atrasado' ?>.
+                <?php endif; ?>
+              </p>
+              <form method="post" class="meta-apagar" data-confirmar="Apagar esta meta?">
+                <input type="hidden" name="csrf" value="<?= h(token()) ?>">
+                <input type="hidden" name="acao" value="meta-apagar">
+                <input type="hidden" name="id" value="<?= h($m['id']) ?>">
+                <button class="btn btn-mini" type="submit">Apagar</button>
+              </form>
+            </div>
+          <?php endforeach; ?>
+        </div>
+      <?php endif; ?>
+      <details class="decidir">
+        <summary class="btn btn-mini">Combinar uma meta</summary>
+        <div class="decidir-corpo">
+          <form method="post" class="linha g3">
+            <input type="hidden" name="csrf" value="<?= h(token()) ?>">
+            <input type="hidden" name="acao" value="meta-salvar">
+            <div class="campo">
+              <label for="meta-medida">O quê</label>
+              <select id="meta-medida" name="medida">
+                <?php foreach (MEDIDAS_DE_META as $chave => $nome): ?>
+                  <option value="<?= h($chave) ?>"><?= h($nome) ?> (hoje <?= valor_da_medida($chave) ?>)</option>
+                <?php endforeach; ?>
+              </select>
+            </div>
+            <div class="campo">
+              <label for="meta-alvo">Chegar a</label>
+              <input id="meta-alvo" type="number" name="alvo" min="1" inputmode="numeric" required>
+            </div>
+            <div class="campo">
+              <label for="meta-ate">Até</label>
+              <input id="meta-ate" type="date" name="ate" required>
+            </div>
+            <div class="acoes"><button class="btn btn-ouro" type="submit">Combinar</button></div>
+          </form>
+        </div>
+      </details>
+    </fieldset>
+
     <fieldset>
       <legend>A operação hoje</legend>
       <?php if ($panorama === []): ?>

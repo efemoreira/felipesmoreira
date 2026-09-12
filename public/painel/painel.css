@@ -1566,3 +1566,14 @@ fieldset[id], .item[id], .ficha[id] { scroll-margin-top:18px; }
 /* ---------- o estado vazio com ação ---------- */
 .vazio { margin:0; color:var(--texto-fraco); font-size:15px; line-height:1.6; max-width:70ch; }
 .vazio .btn { margin-left:8px; vertical-align:middle; }
+
+/* ---------- as metas ---------- */
+.metas { display:grid; gap:12px; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); margin:0 0 14px; }
+.meta { border:3px solid var(--linha); background:var(--realce-1); padding:12px 14px; position:relative; }
+.meta-numero { margin:0; font-size:15px; }
+.meta-numero strong { font-family:var(--titulo-fonte, inherit); font-size:28px; line-height:1; }
+.meta-rotulo { margin:4px 0 0; font:400 11px/1.3 var(--etiqueta); letter-spacing:1.4px; text-transform:uppercase; color:var(--texto-fraco); }
+.meta-nota { margin:8px 0 0; font-size:13.5px; color:var(--texto-fraco); }
+.meta-feito { border-color:var(--ok-borda); }
+.meta-atrasado, .meta-vencida { border-color:var(--erro-borda); }
+.meta-apagar { margin-top:10px; }

@@ -186,7 +186,7 @@ teste.
 - `/painel/inscricoes`
 - `/painel/candidatos`
 - `/painel/pessoas`
-- `/painel/leituras` — origem, território, encontros, formação, semana (com "O site": os sinais), atividade; só GET, capacidade `coordenacao`
+- `/painel/leituras` — origem, território, encontros, formação, semana (metas, "O site", medidores, mutirão, caixas), atividade; capacidade `coordenacao`. O único POST é o das metas (`leituras-acoes.php`, `dados/metas.php`) — dado do movimento não se grava aqui
 - `/painel/conta`
 - `/painel/gente` — tela pessoal de quem acompanha alguém (`pode_liderar()`), não é área
 - `/painel/ajuda` — cada tela em três frases e o glossário; gerada de `dominio.php` + `ajuda-comum.php`

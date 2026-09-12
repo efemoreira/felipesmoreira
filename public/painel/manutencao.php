@@ -113,6 +113,7 @@ function grupos_de_dados(): array
                 PASTA_DADOS . '/tentativas.json',
                 PASTA_DADOS . '/inscricoes-limite.php',
                 PASTA_DADOS . '/sinais.php',
+                PASTA_DADOS . '/metas.php',
                 PASTA_DADOS . '/erros.log',
                 PASTA_DADOS . '/erros.1.log',
             ],
