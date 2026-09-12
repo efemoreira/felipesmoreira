@@ -128,8 +128,8 @@ conhece o repositório.
 | 2 | todos | **Estado vazio com botão** em toda tela — um `vazio()` em `componentes.php` com texto + ação, e cada tela usa | 4 |
 | 3 | administração | `error_log` em `dados/erros.log` + "Erros dos últimos 7 dias" na Manutenção | 3 |
 | 4 | quem mantém | `painel.js` fora do `layout.php`, com `?v=` — depois, CSP com nonce | 4 + 3 |
-| 5 | militante/coordenação | `estado_*()` nas nove áreas mudas — o hub passa a saber de todas | 2 |
-| 6 | coordenação | Datas humanas nos fatos; um botão visível por linha no encontro (o resto no `menu_acoes()`) | 2 |
+| 5 | ~~`estado_*()` nas nove áreas~~ — **retirado**: `estado_*()` só é desenhado nas mesas, e as mesas apontam só para eventos, fatos e produção, que já o têm. Nove funções que nenhuma tela mostra seriam código morto. Achado errado da terceira leitura. | — |
+| 6 | coordenação | Datas humanas nos fatos; um botão visível por ficha do fato. (Os três botões da escala ficam: decisão documentada — "três toques em momentos diferentes".) | 2 |
 | 7 | o dado | Medidor de `pessoas.php` em Leituras › Semana | 1 |
 | 8 | eleitor | Estado vazio de `/programacao` com a faixa e os canais | 1 |
 | 9 | militante | `ja_fez_algo_em()` para agenda e estúdio | 1 |
@@ -140,7 +140,8 @@ conhece o repositório.
 | 14 | coordenação | Escala para quem não tem conta | 4 |
 | 15 | administração | Importar planilha | 10 |
 
-Os itens 1–9 cabem em **dois dias**; levam a nota a ~8,3. Os 10–15, uma
+Os itens 1–9 cabem em **dois dias**; levam a nota a ~8,3. **Feitos em
+12/09, à noite** (1, 2, 3, 4, 6, 7, 8, 9; o 5 caiu): `c5…`–`0664fb2`. Os 10–15, uma
 semana; ~8,7.
 
 ## O que continua não sendo código
