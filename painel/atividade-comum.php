@@ -76,6 +76,48 @@ function linha_do_tempo(?string $pessoaId = null, int $teto = TETO_ATIVIDADE): a
                     'url'    => '/painel/pessoas.php?p=' . rawurlencode($p['id']),
                 ];
             }
+            /* A alteração da ficha só na linha do tempo DA PESSOA: na geral
+               seria uma linha por correção de bairro, e a geral é para o que
+               aconteceu no movimento. Na ficha, "quem mexeu e quando" é
+               exatamente a pergunta. */
+            if ($pessoaId !== null && $p['alteradoEm'] !== '') {
+                $linhas[] = [
+                    'quando' => $p['alteradoEm'],
+                    'area'   => 'pessoas',
+                    'texto'  => 'Ficha alterada',
+                    'quem'   => $p['alteradoPor'],
+                    'url'    => '/painel/pessoas.php?p=' . rawurlencode($p['id']),
+                ];
+            }
+        }
+
+        /* ---------- quem foi apagada — a lápide ---------- */
+        foreach (ler_pessoas_apagadas() as $p) {
+            if (!$por($p['id'])) {
+                continue;
+            }
+            $linhas[] = [
+                'quando' => $p['apagadoEm'],
+                'area'   => 'pessoas',
+                'texto'  => $p['nome'] . ' foi apagada'
+                    . ($p['apagadoMotivo'] !== '' ? ' (' . $p['apagadoMotivo'] . ')' : ''),
+                'quem'   => $p['apagadoPor'],
+                'url'    => '/painel/pessoas.php',
+            ];
+        }
+    }
+
+    /* ---------- lançamentos apagados do caixa ---------- */
+    if (pode('caixa') && $pessoaId === null) {
+        require_once __DIR__ . '/caixa-comum.php';
+        foreach (ler_caixa_apagados() as $l) {
+            $linhas[] = [
+                'quando' => $l['apagadoEm'],
+                'area'   => 'caixa',
+                'texto'  => 'Apagou do caixa: ' . reais(abs($l['centavos'])) . ' — ' . $l['descricao'],
+                'quem'   => $l['apagadoPor'],
+                'url'    => '/painel/caixa.php?conta=' . rawurlencode($l['conta']),
+            ];
         }
     }
 
@@ -95,6 +137,17 @@ function linha_do_tempo(?string $pessoaId = null, int $teto = TETO_ATIVIDADE): a
                     'area'   => 'eventos',
                     'texto'  => 'Marcou o encontro “' . $e['titulo'] . '”',
                     'quem'   => $e['criadoPor'],
+                    'url'    => '/painel/eventos.php?e=' . rawurlencode($e['id']),
+                ];
+            }
+            /* A última alteração do encontro — pelo painel (com nome) ou pelo
+               site, quando um convidado respondeu pelo token (sem nome). */
+            if ($pessoaId === null && $e['alteradoEm'] !== '' && $e['alteradoEm'] !== $e['criadoEm']) {
+                $linhas[] = [
+                    'quando' => $e['alteradoEm'],
+                    'area'   => 'eventos',
+                    'texto'  => 'Mexeu no encontro “' . $e['titulo'] . '”',
+                    'quem'   => $e['alteradoPor'] !== '' ? $e['alteradoPor'] : 'pelo convite',
                     'url'    => '/painel/eventos.php?e=' . rawurlencode($e['id']),
                 ];
             }

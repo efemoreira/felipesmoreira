@@ -194,10 +194,10 @@ function aba_de_pecas(): void
       <?php endif; ?>
 
       <?php if ($pecasKit === []): ?>
-        <p class="dica" style="margin:0">
-          Nenhuma peça da semana ainda. As oito fixas do plano continuam na Munição —
-          o que entra aqui é o número que saiu agora.
-        </p>
+        <?php vazio(
+            'Nenhuma peça da semana ainda. As oito fixas do plano continuam na Munição — o que entra aqui é o número que saiu agora.',
+            ['url' => '/painel/municao.php?aba=pecas&novo=1', 'texto' => 'Nova peça']
+        ); ?>
       <?php elseif ($visiveis === []): ?>
         <?php nada_encontrado($busca, '/painel/municao.php?aba=pecas', 'Nenhuma peça com esse recorte.'); ?>
       <?php else: ?>

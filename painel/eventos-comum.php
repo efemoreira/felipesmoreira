@@ -305,6 +305,8 @@ function normalizar_evento($e): ?array
         'status'   => $status,
         'criadoEm'  => limpar_texto($e['criadoEm'] ?? '', 40),
         'criadoPor' => limpar_texto($e['criadoPor'] ?? '', 60),
+        'alteradoEm'  => limpar_texto($e['alteradoEm'] ?? '', 40),
+        'alteradoPor' => limpar_texto($e['alteradoPor'] ?? '', 60),
         /* O id do item de agenda que virou este encontro, na importação única.
            Serve só para a importação não rodar duas vezes — o array é literal,
            e campo fora dele some na próxima gravação. */
@@ -341,6 +343,10 @@ function gravar_eventos(array $eventos): bool
             $limpos[] = $limpo;
         }
     }
+    /* Quem mexeu no encontro, e quando — aceites e convites pelo site contam
+       como alteração "de ninguém" (quem_grava() vazio): foi a pessoa
+       convidada, pelo token, e a linha do tempo diz isso. */
+    $limpos = carimbar_alteracoes(ler_eventos(), $limpos);
     $conteudo = "<?php\n// Gerado pelo painel. Não versionar, não editar à mão.\nreturn "
         . var_export($limpos, true) . ";\n";
 

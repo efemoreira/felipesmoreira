@@ -182,6 +182,14 @@ function normalizar_pessoa($p): ?array
         'decididoPor' => limpar_texto($p['decididoPor'] ?? '', 60),
         'consentimentoEm'     => limpar_texto($p['consentimentoEm'] ?? '', 40),
         'consentimentoVersao' => limpar_texto($p['consentimentoVersao'] ?? '', 20),
+
+        /* rastro — `carimbar_alteracoes()` escreve os dois primeiros; a
+           lápide (`apagar_pessoa()`) escreve os três últimos */
+        'alteradoEm'  => limpar_texto($p['alteradoEm'] ?? '', 40),
+        'alteradoPor' => limpar_texto($p['alteradoPor'] ?? '', 60),
+        'apagadoEm'   => limpar_texto($p['apagadoEm'] ?? '', 40),
+        'apagadoPor'  => limpar_texto($p['apagadoPor'] ?? '', 60),
+        'apagadoMotivo' => limpar_texto($p['apagadoMotivo'] ?? '', 120),
     ];
 }
 
@@ -191,7 +199,25 @@ function tem_conta(array $p): bool
     return $p['usuario'] !== '' && $p['hash'] !== '';
 }
 
+/**
+ * As pessoas VIVAS. A lápide de quem foi apagada fica no arquivo (só nome, id
+ * e os carimbos — `apagar_pessoa()`), mas não sai daqui: toda lista, busca,
+ * contagem e permissão continua enxergando o que sempre enxergou. Quem quer
+ * as lápides chama `ler_pessoas_apagadas()`.
+ */
 function ler_pessoas(bool $recarregar = false): array
+{
+    return array_values(array_filter(ler_pessoas_todas($recarregar), fn ($p) => $p['apagadoEm'] === ''));
+}
+
+/** Só as lápides — para a linha do tempo dizer quem foi apagada, por quem. */
+function ler_pessoas_apagadas(): array
+{
+    return array_values(array_filter(ler_pessoas_todas(), fn ($p) => $p['apagadoEm'] !== ''));
+}
+
+/** Tudo o que está no arquivo, lápides inclusive. */
+function ler_pessoas_todas(bool $recarregar = false): array
 {
     static $cache = null;
     if ($cache !== null && !$recarregar) {
@@ -229,6 +255,18 @@ function gravar_pessoas(array $pessoas): bool
             $limpos[] = $limpo;
         }
     }
+
+    /* O rastro: o que mudou ganha `alteradoEm`/`alteradoPor` (o último acesso
+       não conta — senão todo login seria uma alteração). E as lápides que
+       estavam no arquivo continuam nele: quem chama grava a lista viva, e a
+       lista viva não as tem. */
+    $limpos = carimbar_alteracoes(ler_pessoas(), $limpos, ['ultimoAcesso']);
+    $ids = array_column($limpos, 'id');
+    foreach (ler_pessoas_apagadas() as $lapide) {
+        if (!in_array($lapide['id'], $ids, true)) {
+            $limpos[] = $lapide;
+        }
+    }
     $conteudo = "<?php\n// Gerado pelo painel. Dado pessoal — não versionar, não editar à mão.\nreturn "
         . var_export($limpos, true) . ";\n";
 
@@ -238,7 +276,61 @@ function gravar_pessoas(array $pessoas): bool
     if (function_exists('opcache_invalidate')) {
         @opcache_invalidate(ARQ_PESSOAS, true);
     }
-    ler_pessoas(true);
+    ler_pessoas_todas(true);
+    return true;
+}
+
+/**
+ * Apaga uma pessoa deixando a LÁPIDE: id, nome, quando, por quem, por quê.
+ * Todo dado pessoal vai embora — telefone, e-mail, endereço, conta, funções.
+ * O que fica é o bastante para a linha do tempo dizer "Fulana foi apagada
+ * por Beltrana em tal dia", que é o que a régua "rastro é dado" pede.
+ */
+function apagar_pessoa(string $id, string $motivo = ''): bool
+{
+    $todas = ler_pessoas_todas(true);
+    $achou = false;
+    foreach ($todas as &$p) {
+        if ($p['id'] !== $id || $p['apagadoEm'] !== '') {
+            continue;
+        }
+        $achou = true;
+        $p = [
+            'id'   => $p['id'],
+            'nome' => $p['nome'],
+            'tipo' => $p['tipo'],
+            'criadoEm'      => $p['criadoEm'],
+            'apagadoEm'     => date('c'),
+            'apagadoPor'    => quem_grava(),
+            'apagadoMotivo' => $motivo,
+        ];
+    }
+    unset($p);
+    if (!$achou) {
+        return false;
+    }
+    return gravar_pessoas_todas($todas);
+}
+
+/** Grava o arquivo inteiro, lápides inclusive — só `apagar_pessoa()` precisa disto. */
+function gravar_pessoas_todas(array $todas): bool
+{
+    preparar_pastas();
+    $limpos = [];
+    foreach ($todas as $p) {
+        if ($limpo = normalizar_pessoa($p)) {
+            $limpos[] = $limpo;
+        }
+    }
+    $conteudo = "<?php\n// Gerado pelo painel. Dado pessoal — não versionar, não editar à mão.\nreturn "
+        . var_export($limpos, true) . ";\n";
+    if (!gravar_atomico(ARQ_PESSOAS, $conteudo)) {
+        return false;
+    }
+    if (function_exists('opcache_invalidate')) {
+        @opcache_invalidate(ARQ_PESSOAS, true);
+    }
+    ler_pessoas_todas(true);
     return true;
 }
 

@@ -198,10 +198,14 @@ function formulario_pessoa(?array $aberta, array $catalogo): void
                de risco dentro do formulário que se usa todo dia é o botão que se
                aperta por engano. */ ?>
       <form method="post" class="decidir-recusa"
-            onsubmit="return confirm(<?= texto_js('Apagar ' . $aberta['nome'] . ' e as presenças dela?') ?>)">
+            data-confirmar="<?= h('Apagar ' . $aberta['nome'] . ' e as presenças dela?') ?>">
         <input type="hidden" name="csrf" value="<?= h(token()) ?>">
         <input type="hidden" name="acao" value="apagar">
         <input type="hidden" name="id" value="<?= h($aberta['id']) ?>">
+        <div class="campo">
+          <label for="apagar-motivo">Por quê <span class="dica">— fica na linha do tempo, junto com quem apagou</span></label>
+          <input id="apagar-motivo" type="text" name="motivo" maxlength="120" placeholder="cadastro duplicado · pediu para sair · teste">
+        </div>
         <div class="acoes">
           <button class="btn btn-risco" type="submit">Apagar esta pessoa</button>
         </div>
@@ -256,7 +260,7 @@ function bloco_duplicatas(array $duplicatas): void
           <div class="acoes">
             <?php foreach ([['a', 'b'], ['b', 'a']] as [$fica, $vai]): ?>
               <form method="post" style="display:inline"
-                    onsubmit="return confirm(<?= texto_js('Juntar tudo em “' . $d[$fica]['nome'] . '” e apagar a outra ficha?') ?>)">
+                    data-confirmar="<?= h('Juntar tudo em “' . $d[$fica]['nome'] . '” e apagar a outra ficha?') ?>">
                 <input type="hidden" name="csrf" value="<?= h(token()) ?>">
                 <input type="hidden" name="acao" value="juntar">
                 <input type="hidden" name="id" value="<?= h($d[$fica]['id']) ?>">
@@ -327,7 +331,7 @@ function tela_da_ficha(array $aberta, ?array $editando, ?string $erro, ?string $
     </div>
   <?php endif; ?>
 
-  <?php barra_abas($abas, $aba, 'aba', 'Seções da ficha'); ?>
+  <?php barra_abas($abas, $aba, 'aba', 'Seções da ficha', ['p']); ?>
 
   <?php if ($aba === 'ficha'): ?>
     <fieldset id="ficha">
@@ -341,6 +345,16 @@ function tela_da_ficha(array $aberta, ?array $editando, ?string $erro, ?string $
         <?php endif; ?>
         <?php if ($aberta['status'] !== ''): ?>
           <span class="selo selo-cinza"><?= h(STATUS_PESSOA[$aberta['status']]) ?></span>
+        <?php endif; ?>
+        <?php /* PENDENTE E COM A PORTA DE DECIDIR: quem está na ficha viu
+                 "esperando aprovação" e ia voltar a Inscrições e procurar de
+                 novo. O link leva à fila já filtrada nela, com a decisão
+                 aberta — o formulário continua um só, lá. */ ?>
+        <?php if ($aberta['status'] === 'pendente' && pode('inscricoes')): ?>
+          <a class="btn btn-ouro btn-mini" style="margin-left:6px"
+             href="/painel/inscricoes.php?q=<?= h(rawurlencode($aberta['telefone'] !== '' ? $aberta['telefone'] : $aberta['nome'])) ?>&abrir=<?= h(rawurlencode($aberta['id'])) ?>#dec-<?= h($aberta['id']) ?>">
+            Decidir sobre a inscrição
+          </a>
         <?php endif; ?>
         <?php /* A rede fica na mesma linha do que a pessoa é, e não junto das
                  funções: função é o que ela faz no movimento, rede é o que ela
@@ -511,6 +525,29 @@ function tela_da_ficha(array $aberta, ?array $editando, ?string $erro, ?string $
 
     </fieldset>
 
+    <?php /* OS DIREITOS DA PESSOA (LGPD): ver o que o sistema tem sobre ela, e
+             pedir para sair. Moram na aba Acesso porque é a aba de "conta e
+             dado", e só a administração vê — é a mesma régua da tela inteira. */ ?>
+    <fieldset id="dados-dela">
+      <legend>Os dados dela</legend>
+      <p class="dica" style="margin:0 0 12px">
+        Se ela pedir para ver o que temos, ou para sair: é direito dela, e a
+        resposta é imediata. Apagar a pedido deixa só a lápide — nome, quando,
+        quem atendeu — e leva embora telefone, e-mail, endereço e conta.
+      </p>
+      <div class="acoes">
+        <a class="btn" href="/painel/exportar.php?o=pessoa&id=<?= h(rawurlencode($aberta['id'])) ?>">Baixar tudo sobre ela (JSON)</a>
+        <form method="post" class="decidir-recusa" style="margin:0"
+              data-confirmar="<?= h('Apagar a pedido de ' . $aberta['nome'] . '? Telefone, e-mail, endereço e conta vão embora; fica só a lápide.') ?>">
+          <input type="hidden" name="csrf" value="<?= h(token()) ?>">
+          <input type="hidden" name="acao" value="apagar">
+          <input type="hidden" name="id" value="<?= h($aberta['id']) ?>">
+          <input type="hidden" name="motivo" value="pediu para sair (LGPD)">
+          <button class="btn btn-risco" type="submit">Apagar a pedido dela</button>
+        </form>
+      </div>
+    </fieldset>
+
   <?php else: ?>
     <?php if ($historico === []): ?>
       <p class="dica">Nada gravado sobre ela ainda.</p>
@@ -518,8 +555,8 @@ function tela_da_ficha(array $aberta, ?array $editando, ?string $erro, ?string $
       <fieldset id="historico">
         <legend>Histórico de <?= h(explode(' ', $aberta['nome'])[0]) ?></legend>
         <p class="dica" style="margin:0 0 12px">
-          Sai do que já está gravado — não há registro de auditoria por trás, e
-          por isso correção de cadastro não aparece aqui.
+          Sai do que já está gravado. Correção de ficha aparece como “Ficha
+          alterada”, com quem mexeu e quando.
         </p>
         <ul class="tempo">
           <?php foreach ($historico as $l): ?>

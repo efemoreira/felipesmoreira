@@ -58,10 +58,10 @@ function aba_de_mutirao(): void
     </legend>
 
     <?php if ($noArKit === []): ?>
-      <p class="dica" style="margin:0">
-        Nenhuma peça no ar ainda. <strong>Crie e publique a peça da semana na aba Peças</strong> —
-        é ela que o mutirão vai espalhar.
-      </p>
+      <?php vazio(
+          'Nenhuma peça no ar ainda — é ela que o mutirão vai espalhar.',
+          ['url' => '/painel/municao.php?aba=pecas&novo=1', 'texto' => 'Criar a peça da semana']
+      ); ?>
     <?php else: ?>
       <form method="post" class="linha g2">
         <input type="hidden" name="csrf" value="<?= h(token()) ?>">

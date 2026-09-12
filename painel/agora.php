@@ -92,6 +92,24 @@ function pendencias_index(array $u): array
 {
     $tarefas = [];
 
+    /* ---------- O backup parou ----------
+       Só quem administra vê, e só quando há backup e ele envelheceu: sem
+       nenhum, a Manutenção já explica o cron; com um de ontem, nada a dizer. */
+    if (in_array('adm', $u['capacidades'], true)) {
+        require_once __DIR__ . '/backup-comum.php';
+        $backups = backups_existentes();
+        if ($backups !== [] && time() - $backups[0]['quando'] > HORAS_SEM_BACKUP * 3600) {
+            $tarefas[] = [
+                'area'    => 'index',
+                'icone'   => 'bolt',
+                'urgente' => true,
+                'texto'   => 'O backup não rodou esta noite',
+                'porque'  => 'o último zip tem mais de ' . HORAS_SEM_BACKUP . ' h — confira o cron ou faça um agora',
+                'url'     => '/painel/manutencao.php',
+            ];
+        }
+    }
+
     /* ---------- A primeira obrigação: estar no grupo de trabalho ----------
        Vem antes de tudo e é urgente porque é onde a convocação sai: quem não
        está no grupo não fica sabendo do encontro, e todo o resto do painel

@@ -106,6 +106,14 @@ if ($metodo !== 'POST') {
 $corpo = json_decode((string) file_get_contents('php://input'), true);
 $corpo = is_array($corpo) ? $corpo : $_POST;
 
+/* O teto dos outros endpoints públicos. O token HMAC já impede responder por
+   outra pessoa; o teto impede um mesmo endereço de martelar o arquivo de
+   encontros — que é gravado inteiro a cada resposta. */
+require_once __DIR__ . '/../limite-comum.php';
+if (passou_do_limite('escala', 30, 200)) {
+    responder(200, ['ok' => false, 'erro' => 'Muitas tentativas agora há pouco. Tente daqui a pouco.']);
+}
+
 $c = convite_pedido($corpo);
 if ($c === null) {
     responder(200, ['ok' => false, 'existe' => false]);
@@ -136,6 +144,7 @@ $gravou = com_trava(ARQ_EVENTOS, function () use ($c, $resposta): bool {
     return gravar_eventos($eventos);
 });
 
+registrar_envio('escala');
 if (!$gravou) {
     responder(200, ['ok' => false, 'erro' => 'Não consegui gravar. Tente de novo.']);
 }

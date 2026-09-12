@@ -38,6 +38,17 @@ function tela_do_inicio(array $u, ?string $aviso, ?string $sucesso): void
      */
 
     $areas = areas_do_usuario();
+
+    /* OS PRIMEIROS PASSOS, e só eles, para quem acabou de chegar. Quem já
+       trabalha aqui (coordenação, administração) ou já deu os três passos
+       vê o hub inteiro; conta sem função também — a trilha é POR FUNÇÃO, e
+       quem não tem uma é conta de operação, não militante chegando. `?tudo=1`
+       abre o hub inteiro para quem quiser espiar — o modo não tranca nada,
+       só tira o ruído da frente. */
+    $passos = (tem_capacidade('coordenacao') || $u['funcoes'] === []) ? [] : primeiros_passos($u);
+    $soPassos = $passos !== [] && !trilha_completa($u) && empty($_GET['tudo']);
+    $dados = count(array_filter($passos, fn ($p) => $p['feito']));
+
     $mesas = mesas_de($u);
     $tarefas = tarefas_de($u);
     $panorama = panorama_de($u);
@@ -54,6 +65,7 @@ function tela_do_inicio(array $u, ?string $aviso, ?string $sucesso): void
         $aviso = match (true) {
             $negado === 'usuarios' => 'Só um administrador abre a lista de usuários.',
             $negado === 'gente'    => '“Sua gente” é de quem acompanha alguém. Peça à coordenação para ser apontada como líder.',
+            $negado === 'exportar' => 'Exportar é da coordenação: é dado pessoal saindo do sistema.',
             default                => 'Você não tem acesso a “' . (AREAS[$negado] ?? $negado) . '”. Peça a um administrador.',
         };
     }
@@ -80,6 +92,8 @@ function tela_do_inicio(array $u, ?string $aviso, ?string $sucesso): void
       <?php
         if ($areas === []) {
             $resumo = 'Seu acesso está ativo, mas nenhuma área foi liberada ainda.';
+        } elseif ($soPassos) {
+            $resumo = 'Bem-vinda. Três passos para começar — o resto vem depois deles.';
         } elseif ($naFila === 0) {
             $resumo = 'Nada esperando por você agora.';
         } elseif ($naFila === 1) {
@@ -127,8 +141,29 @@ function tela_do_inicio(array $u, ?string $aviso, ?string $sucesso): void
         </p>
       <?php endif; ?>
 
+      <?php if ($soPassos): ?>
+        <h2 class="secao">Seus primeiros passos · <?= $dados ?> de <?= count($passos) ?></h2>
+        <ol class="passos">
+          <?php foreach ($passos as $i => $p): ?>
+            <li class="passo<?= $p['feito'] ? ' passo-feito' : '' ?>">
+              <span class="passo-num" aria-hidden="true"><?= $p['feito'] ? '✓' : $i + 1 ?></span>
+              <div class="passo-corpo">
+                <a class="passo-titulo" href="<?= h($p['url']) ?>"><?= h($p['titulo']) ?></a>
+                <p class="passo-porque"><?= h($p['porque']) ?></p>
+              </div>
+            </li>
+          <?php endforeach; ?>
+        </ol>
+        <p class="dica" style="margin:0 0 26px">
+          Feitos os três, esta tela vira a sua mesa de trabalho.
+          <a href="/painel/?tudo=1">Ver o painel inteiro agora</a>.
+        </p>
+      <?php endif; ?>
+
       <div class="hub">
       <div class="hub-principal">
+
+      <?php if (!$soPassos): ?>
 
       <?php if ($areas === []): ?>
         <p class="msg msg-erro">
@@ -369,6 +404,7 @@ function tela_do_inicio(array $u, ?string $aviso, ?string $sucesso): void
 
       <?php endif; ?>
 
+      <?php endif; /* !$soPassos */ ?>
       </div><?php /* fim de .hub-principal */ ?>
 
       <?php /* ============ a coluna da direita ============

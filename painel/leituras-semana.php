@@ -120,6 +120,32 @@ function aba_da_semana(array $eu): void
       <?php endif; ?>
     </fieldset>
 
+    <?php /* O TAMANHO DO DADO, só para quem administra. A base é arquivo PHP
+             relido inteiro a cada request; o dia em que isso pesar tem de
+             aparecer aqui antes de aparecer na porta do encontro. É o número
+             que decide quando um índice entra — não um reflexo. */ ?>
+    <?php if (e_admin()): ?>
+      <?php
+        $t0 = hrtime(true);
+        $quantas = count(ler_pessoas(true));
+        $ms = (hrtime(true) - $t0) / 1e6;
+        $bytes = is_file(ARQ_PESSOAS) ? (int) filesize(ARQ_PESSOAS) : 0;
+        $lento = $ms > 50 || $bytes > 2_000_000;
+      ?>
+      <fieldset>
+        <legend>O tamanho do dado</legend>
+        <p class="<?= $lento ? 'msg msg-erro' : 'dica' ?>" style="margin:0">
+          <strong>pessoas.php</strong>: <?= $quantas ?> fichas · <?= number_format($bytes / 1024, 0, ',', '.') ?> KB ·
+          lido e normalizado em <?= number_format($ms, 1, ',', '.') ?> ms.
+          <?php if ($lento): ?>
+            Passou da régua (50 ms ou 2 MB): é hora do índice por telefone e por id.
+          <?php else: ?>
+            Cada request relê isto; a régua para pensar em índice é 50 ms ou 2 MB.
+          <?php endif; ?>
+        </p>
+      </fieldset>
+    <?php endif; ?>
+
     <?php /* O DINHEIRO SÓ PARA QUEM ADMINISTRA — a mesma régua de `caixa`: acesso
              a ele acompanha a responsabilidade, não o trabalho do dia. E os dois
              caixas lado a lado, cada um com o seu saldo, nunca uma soma. */ ?>

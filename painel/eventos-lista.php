@@ -236,11 +236,11 @@ function tela_lista_de_encontros(bool $coordena, array $eu, ?string $erro, ?stri
           </legend>
 
           <?php if ($proximos === [] && !$recortado): ?>
-            <p class="dica" style="margin:0 0 8px">
+            <p class="vazio" data-acao>
               Nenhum encontro marcado. O primeiro passo é <strong>Local &amp; Hora</strong>: três
               opções avaliadas (capacidade, custo, acesso, energia, som) antes de fechar qualquer
-              coisa — e a reserva confirmada por escrito. Toque em <strong>Novo encontro</strong>
-              lá em cima e as cinco peças aparecem prontas para dividir.
+              coisa — e a reserva confirmada por escrito. As cinco peças aparecem prontas para dividir.
+              <a class="btn btn-mini" href="/painel/eventos.php?novo=1">Marcar o primeiro encontro</a>
             </p>
           <?php elseif ($proximos === []): ?>
             <p class="dica" style="margin:0">Nenhum dos próximos casa com o recorte.</p>
@@ -262,7 +262,7 @@ function tela_lista_de_encontros(bool $coordena, array $eu, ?string $erro, ?stri
           </legend>
 
           <?php if ($passados === [] && !$recortado): ?>
-            <p class="dica" style="margin:0">Nenhum encontro aconteceu ainda.</p>
+            <?php vazio('Nenhum encontro aconteceu ainda.', ['url' => '/painel/eventos.php?novo=1', 'texto' => 'Marcar o primeiro']); ?>
           <?php elseif ($passados === []): ?>
             <p class="dica" style="margin:0">Nenhum dos já realizados casa com o recorte.</p>
           <?php endif; ?>

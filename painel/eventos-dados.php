@@ -184,7 +184,7 @@ function desenhar_dados(array $aberto, array $time, int $naLista): void
             texto — o filtro empurra a imagem para trás. A prévia acima mostra o resultado.
           </p>
         </div>
-        <script>
+        <script nonce="<?= h(nonce_csp()) ?>">
           /* Prévia ao vivo: trocar o filtro tem de mostrar o efeito ANTES de salvar,
              senão a escolha vira tentativa e erro com um Salvar entre cada tentativa.
              Os valores vêm do PHP para não haver uma segunda tabela aqui. */
@@ -354,7 +354,7 @@ function desenhar_dados(array $aberto, array $time, int $naLista): void
             Serve para o encontro cadastrado duas vezes, ou o rascunho que não virou nada.
           </p>
           <form method="post"
-                onsubmit="return confirm(<?= texto_js('Apagar “' . $aberto['titulo'] . '”? Isto não tem desfazer.') ?>)">
+                data-confirmar="<?= h('Apagar “' . $aberto['titulo'] . '”? Isto não tem desfazer.') ?>">
             <input type="hidden" name="csrf" value="<?= h(token()) ?>">
             <input type="hidden" name="id" value="<?= h($aberto['id']) ?>">
             <div class="acoes">

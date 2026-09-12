@@ -65,6 +65,14 @@ session_set_cookie_params([
 ]);
 session_name('painel_agenda');
 session_start();
+
+/* O REGISTRO DE ERROS, só onde o erro sumiria: em produção, com
+   display_errors desligado. No CLI e nos testes o aviso vai para o stderr e
+   derruba o teste — rede melhor que log. `erros-comum.php` explica. */
+require_once __DIR__ . '/erros-comum.php';
+if (PHP_SAPI !== 'cli' && !filter_var(ini_get('display_errors'), FILTER_VALIDATE_BOOLEAN) && ini_get('display_errors') !== 'stderr') {
+    ligar_registro_de_erros();
+}
 /* DEPOIS do session_start(), de propósito: ele manda o seu Cache-Control
    (`session.cache_limiter`), e o dele depende do php.ini da hospedagem. Este
    não depende. Nenhuma tela do painel fica no cache do navegador — é a lista
@@ -72,6 +80,17 @@ session_start();
    públicos que PODEM ser guardados (candidatos, kit, a prévia) mandam o deles
    por cima. `testes/acoes/cabecalhos.test.ts` confere os dois lados. */
 header('Cache-Control: no-store, private');
+
+/* A CONTENT-SECURITY-POLICY. Script só do próprio domínio ou com o nonce
+   desta requisição — o inline sem nonce, que é o vetor do XSS, não roda.
+   Estilo inline continua permitido (o painel tem `style=` em toda parte; é
+   dívida, não risco). Nada de terceiro: nem fonte, nem imagem, nem fetch.
+   O Estúdio serve o HTML do Next, cheio de script inline dele, e tira o
+   cabeçalho (`estudio.php`). `frame-ancestors 'none'`: o painel nunca abre
+   dentro de um iframe alheio. */
+header("Content-Security-Policy: default-src 'self'; script-src 'self' 'nonce-" . nonce_csp() . "'; "
+    . "style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; "
+    . "frame-ancestors 'none'; form-action 'self'; base-uri 'self'; object-src 'none'");
 
 /* ===================== infraestrutura ===================== */
 
@@ -108,6 +127,60 @@ function com_trava(string $arquivo, callable $fn): mixed
         flock($h, LOCK_UN);
         fclose($h);
     }
+}
+
+/** O nonce desta requisição — o mesmo no cabeçalho e em cada `<script>` inline. */
+function nonce_csp(): string
+{
+    static $nonce = null;
+    return $nonce ??= base64_encode(random_bytes(16));
+}
+
+/* ===================== o rastro ===================== */
+
+/** Quem está gravando, pelo nome — como `decididoPor`. Vazio fora de sessão (site, cron). */
+function quem_grava(): string
+{
+    $u = function_exists('usuario_atual') ? usuario_atual() : null;
+    return $u === null ? '' : (string) $u['nome'];
+}
+
+/**
+ * Carimba `alteradoEm`/`alteradoPor` no que mudou entre a lista lida e a que
+ * vai ser gravada.
+ *
+ * É o rastro como CAMPO NA PEÇA, e não como arquivo de log: a linha do tempo
+ * continua derivada do que está gravado, só que agora "quem mexeu na ficha" e
+ * "quando" estão gravados. Compara por id, ignorando os próprios carimbos e o
+ * que `$ignorar` mandar (`ultimoAcesso`, senão todo login vira alteração).
+ * Registro novo não ganha carimbo: `criadoEm` já diz.
+ */
+function carimbar_alteracoes(array $antes, array $depois, array $ignorar = []): array
+{
+    $porId = [];
+    foreach ($antes as $a) {
+        if (isset($a['id'])) {
+            $porId[$a['id']] = $a;
+        }
+    }
+    $tirar = array_merge(['alteradoEm', 'alteradoPor'], $ignorar);
+    $miolo = function (array $r) use ($tirar): string {
+        foreach ($tirar as $k) {
+            unset($r[$k]);
+        }
+        return serialize($r);
+    };
+    foreach ($depois as &$d) {
+        if (!isset($d['id']) || !isset($porId[$d['id']])) {
+            continue;
+        }
+        if ($miolo($porId[$d['id']]) !== $miolo($d)) {
+            $d['alteradoEm']  = date('c');
+            $d['alteradoPor'] = quem_grava();
+        }
+    }
+    unset($d);
+    return $depois;
 }
 
 function gravar_atomico(string $destino, string $conteudo): bool

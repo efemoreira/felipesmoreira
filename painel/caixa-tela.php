@@ -137,8 +137,14 @@ function tela_de_caixa(?string $erro, ?string $ok): void
 
   <fieldset id="extrato">
     <legend>Extrato (<?= count($lista) ?>)</legend>
+    <?php if ($lista !== []): ?>
+      <p class="dica exportar">
+        <a class="btn btn-mini" href="/painel/exportar.php?o=caixa&conta=<?= h($contaF) ?>">Baixar CSV</a>
+        <span>este caixa, lançamento a lançamento — para o contador</span>
+      </p>
+    <?php endif; ?>
     <?php if ($lista === []): ?>
-      <p class="dica" style="margin:0">Nada lançado neste caixa ainda.</p>
+      <?php vazio('Nada lançado neste caixa ainda.', ['url' => '#lancar', 'texto' => 'Lançar o primeiro']); ?>
     <?php else: ?>
       <div class="rolagem cartoes">
         <table class="tabela">
@@ -162,7 +168,7 @@ function tela_de_caixa(?string $erro, ?string $ok): void
                 <td class="rodape" data-rotulo="">
                   <div class="acoes-celula">
                     <form method="post"
-                          onsubmit="return confirm(<?= texto_js('Apagar “' . $l['descricao'] . '”? Corrigir é apagar e lançar de novo.') ?>)">
+                          data-confirmar="<?= h('Apagar “' . $l['descricao'] . '”? Corrigir é apagar e lançar de novo.') ?>">
                       <input type="hidden" name="csrf" value="<?= h(token()) ?>">
                       <input type="hidden" name="acao" value="apagar">
                       <input type="hidden" name="id" value="<?= h($l['id']) ?>">

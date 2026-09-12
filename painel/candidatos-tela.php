@@ -192,11 +192,10 @@ abrir_pagina('Candidatos');
       </div>
 
       <?php if ($todos === []): ?>
-        <p class="dica" style="margin:0">
-          Ninguém cadastrado ainda. Enquanto não houver lista publicada, o bloco da
-          página inicial não aparece — é melhor não dizer nada do que deixar um buraco
-          onde o eleitor espera um número.
-        </p>
+        <?php vazio(
+            'Ninguém cadastrado ainda. Enquanto não houver lista publicada, o bloco da página inicial não aparece — é melhor não dizer nada do que deixar um buraco onde o eleitor espera um número.',
+            ['url' => '/painel/candidatos.php?aba=candidatos&novo=1', 'texto' => 'Novo candidato']
+        ); ?>
       <?php else: ?>
         <?php /* O filtro só aparece quando há o que filtrar: com quatro candidatos
                  ele é três controles em cima de uma lista que cabe na tela. */ ?>
@@ -304,10 +303,10 @@ abrir_pagina('Candidatos');
       </p>
 
       <?php if ($todos === []): ?>
-        <p class="dica" style="margin:0">
-          Cadastre alguém na aba <strong>Candidatos</strong> primeiro. Lista vazia não
-          aparece no site.
-        </p>
+        <?php vazio(
+            'Lista vazia não aparece no site. Cadastre alguém primeiro.',
+            ['url' => '/painel/candidatos.php?aba=candidatos&novo=1', 'texto' => 'Novo candidato']
+        ); ?>
       <?php else: ?>
         <div class="acoes" style="margin:0 0 18px">
           <?php botao_modal('nova-lista', 'Nova lista', 'aba=listas&nova=1'); ?>
@@ -421,7 +420,7 @@ abrir_pagina('Candidatos');
                       </button>
                     </form>
                     <form method="post" style="display:inline"
-                          onsubmit="return confirm(<?= texto_js('Apagar a lista “' . $l['nome'] . '”? Os candidatos continuam cadastrados.') ?>)">
+                          data-confirmar="<?= h('Apagar a lista “' . $l['nome'] . '”? Os candidatos continuam cadastrados.') ?>">
                       <input type="hidden" name="csrf" value="<?= h(token()) ?>">
                       <input type="hidden" name="id" value="<?= h($l['id']) ?>">
                       <button class="btn btn-risco" name="acao" value="lista-apagar" type="submit">Apagar a lista</button>

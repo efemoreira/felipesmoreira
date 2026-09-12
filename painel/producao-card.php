@@ -174,9 +174,9 @@ function desenhar_card(array $c, string $coluna, array $eu, string $hoje): void
                     <?php botao_modal('editar-card', 'Corrigir o card', 'editar=' . urlencode($c['id']) . '#' . $c['id'], 'btn btn-mini'); ?>
                     <?php if ($chave !== 'publicado' || e_admin()): ?>
                       <form method="post" style="display:inline"
-                            onsubmit="return confirm(<?= texto_js($chave === 'publicado'
+                            data-confirmar="<?= h($chave === 'publicado'
                                 ? 'Apagar um card JÁ PUBLICADO? Some o rastro que liga a peça ao fato — e o Acervo aponta para o link que está nele.'
-                                : 'Apagar este card? O fato continua checado e volta a aparecer como “sem peça”.') ?>)">
+                                : 'Apagar este card? O fato continua checado e volta a aparecer como “sem peça”.') ?>">
                         <input type="hidden" name="csrf" value="<?= h(token()) ?>">
                         <input type="hidden" name="id" value="<?= h($c['id']) ?>">
                         <button type="submit" class="btn btn-mini btn-risco" name="acao" value="apagar">Apagar</button>

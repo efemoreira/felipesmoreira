@@ -58,6 +58,12 @@ function desenhar_presenca(array $aberto, array $eu): void
     <legend>
       Quem vem e quem veio (<?= count($pessoas) ?><?= $buscaP !== '' ? ' de ' . $naLista : '' ?>)
     </legend>
+    <?php if ($naLista > 0 && tem_capacidade('coordenacao')): ?>
+      <p class="dica exportar">
+        <a class="btn btn-mini" href="/painel/exportar.php?o=presencas&evento=<?= h(rawurlencode($aberto['id'])) ?>">Baixar CSV</a>
+        <span>a lista deste encontro, com quem confirmou e quem veio</span>
+      </p>
+    <?php endif; ?>
 
     <?php /* Só aparece quando há o que procurar: com oito nomes a caixa é um
              controle em cima de uma lista que cabe inteira na tela. */ ?>
@@ -267,7 +273,7 @@ function desenhar_presenca(array $aberto, array $eu): void
                     <input type="hidden" name="acao" value="classificar">
                     <?php /* Grava no cadastro DA PESSOA, e não nesta linha: ela é
                              militante em todo lugar, não só neste sábado. */ ?>
-                    <select name="tipo" onchange="this.form.submit()">
+                    <select name="tipo" data-envia-ao-mudar>
                       <?php foreach (TIPOS_PESSOA as $chave => $nome): ?>
                         <option value="<?= h($chave) ?>" <?= $q['tipo'] === $chave ? 'selected' : '' ?>><?= h($nome) ?></option>
                       <?php endforeach; ?>

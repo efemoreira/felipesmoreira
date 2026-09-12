@@ -59,4 +59,7 @@ $html = str_replace(
 
 header('Content-Type: text/html; charset=utf-8');
 header('Cache-Control: no-store, private');
+/* O HTML do Next vem com os scripts inline dele, sem nonce: a política do
+   painel o quebraria. Sai o cabeçalho; fica a do .htaccess do site. */
+header_remove('Content-Security-Policy');
 echo $html;

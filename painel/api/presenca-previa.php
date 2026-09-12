@@ -121,6 +121,6 @@ $estatico = '/presenca.html?' . $qs;
 </head>
 <body>
 <p><a href="<?= h($estatico) ?>"><?= h($titulo) ?></a></p>
-<script>location.replace(<?= json_encode($estatico, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>);</script>
+<script nonce="<?= h(nonce_csp()) ?>">location.replace(<?= json_encode($estatico, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>);</script>
 </body>
 </html>
