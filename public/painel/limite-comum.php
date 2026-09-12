@@ -23,20 +23,7 @@ const LIMITE_POR_HORA = 5;
 
 const LIMITE_POR_DIA  = 20;
 
-function chave_visitante(): string
-{
-    $ip = (string) ($_SERVER['REMOTE_ADDR'] ?? '');
-    // A Hostinger fica atrás de proxy; o primeiro da lista é o cliente.
-    $enc = (string) ($_SERVER['HTTP_X_FORWARDED_FOR'] ?? '');
-    if ($enc !== '') {
-        $partes = explode(',', $enc);
-        $primeiro = trim($partes[0]);
-        if (filter_var($primeiro, FILTER_VALIDATE_IP)) {
-            $ip = $primeiro;
-        }
-    }
-    return substr(hash_hmac('sha256', $ip, segredo()), 0, 24);
-}
+/* `chave_visitante()` mora em `sessao.php`: o login também conta por ela. */
 
 function estado_limite(): array
 {

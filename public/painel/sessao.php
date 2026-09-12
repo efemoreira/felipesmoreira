@@ -322,6 +322,38 @@ function senha_provisoria(): string
 
 /* ===================== força bruta ===================== */
 
+/**
+ * Quem é o visitante, sem guardar o IP: um HMAC dele com o segredo do site.
+ *
+ * O `X-Forwarded-For` SÓ VALE ATRÁS DE PROXY. Antes, o primeiro endereço da
+ * lista era aceito sempre — e o header é escrito por quem manda a requisição:
+ * bastava trocá-lo a cada pedido para o teto de envios nunca fechar. Agora ele
+ * só é lido quando quem conectou (`REMOTE_ADDR`) é um endereço privado ou de
+ * loopback, que é o que um proxy da própria hospedagem tem. Com `REMOTE_ADDR`
+ * público, é ele o cliente, e o header é ignorado — ninguém forja o endereço
+ * de onde a conexão veio.
+ */
+function chave_visitante(): string
+{
+    $ip = (string) ($_SERVER['REMOTE_ADDR'] ?? '');
+    $ehProxy = $ip !== '' && filter_var(
+        $ip,
+        FILTER_VALIDATE_IP,
+        FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE,
+    ) === false;
+    $enc = (string) ($_SERVER['HTTP_X_FORWARDED_FOR'] ?? '');
+    if ($ehProxy && $enc !== '') {
+        $primeiro = trim(explode(',', $enc)[0]);
+        if (filter_var($primeiro, FILTER_VALIDATE_IP)) {
+            $ip = $primeiro;
+        }
+    }
+    return substr(hash_hmac('sha256', $ip, segredo()), 0, 24);
+}
+
+/** Quantos erros, vindos de endereços diferentes ou não, trancam um ENDEREÇO. */
+const MAX_TENTATIVAS_IP = 15;
+
 function estado_tentativas(): array
 {
     $bruto = is_file(ARQ_TENTATIVAS) ? @include ARQ_TENTATIVAS : null;
@@ -339,46 +371,79 @@ function gravar_tentativas(array $tudo): void
     }
 }
 
-/** O bloqueio é por login: errar o meu não tranca o dos outros. */
+/**
+ * As duas chaves de um erro de senha: a CONTA vista deste endereço, e o
+ * ENDEREÇO sozinho.
+ *
+ * Só por conta, cinco senhas erradas em qualquer login conhecido trancavam a
+ * conta por quinze minutos — para o dono dela também. Era um jeito de deixar
+ * a coordenação fora do painel na noite da apuração sabendo só o login. Agora
+ * a conta tranca para o endereço que errou, e não para os outros; e o
+ * endereço que erra demais, em contas diferentes ou não, tranca por inteiro.
+ */
+function chaves_de_falha(string $usuario): array
+{
+    $visitante = chave_visitante();
+    return [
+        'conta' => mb_strtolower($usuario) . '@' . $visitante,
+        'ip'    => 'ip:' . $visitante,
+    ];
+}
+
+/** Até quando este visitante está barrado nesta conta — 0 quando não está. */
 function bloqueado_ate(string $usuario): int
 {
-    $chave = mb_strtolower($usuario);
-    $ate = (int) (estado_tentativas()[$chave]['ate'] ?? 0);
-    return $ate > time() ? $ate : 0;
+    $tudo = estado_tentativas();
+    $agora = time();
+    $maior = 0;
+    foreach (chaves_de_falha($usuario) as $chave) {
+        $ate = (int) ($tudo[$chave]['ate'] ?? 0);
+        if ($ate > $agora) {
+            $maior = max($maior, $ate);
+        }
+    }
+    return $maior;
 }
 
 function registrar_falha(string $usuario): void
 {
-    preparar_pastas();
-    $chave = mb_strtolower($usuario);
-    $tudo = estado_tentativas();
-    $atual = is_array($tudo[$chave] ?? null) ? $tudo[$chave] : ['contagem' => 0, 'ate' => 0];
+    com_trava(ARQ_TENTATIVAS, function () use ($usuario): void {
+        $tudo = estado_tentativas();
+        $agora = time();
+        $tetos = ['conta' => MAX_TENTATIVAS, 'ip' => MAX_TENTATIVAS_IP];
 
-    $atual['contagem'] = ((int) ($atual['contagem'] ?? 0)) + 1;
-    if ($atual['contagem'] >= MAX_TENTATIVAS) {
-        $atual['ate'] = time() + BLOQUEIO_SEG;
-        $atual['contagem'] = 0;
-    }
-    $tudo[$chave] = $atual;
-
-    // some com o que já expirou, para o arquivo não crescer sem fim
-    $agora = time();
-    foreach ($tudo as $k => $v) {
-        if ($k !== $chave && ((int) ($v['ate'] ?? 0)) < $agora && ((int) ($v['contagem'] ?? 0)) === 0) {
-            unset($tudo[$k]);
+        foreach (chaves_de_falha($usuario) as $tipo => $chave) {
+            $atual = is_array($tudo[$chave] ?? null) ? $tudo[$chave] : ['contagem' => 0, 'ate' => 0];
+            $atual['contagem'] = ((int) ($atual['contagem'] ?? 0)) + 1;
+            if ($atual['contagem'] >= $tetos[$tipo]) {
+                $atual['ate'] = $agora + BLOQUEIO_SEG;
+                $atual['contagem'] = 0;
+            }
+            $tudo[$chave] = $atual;
         }
-    }
-    gravar_tentativas($tudo);
+
+        // some com o que já expirou, para o arquivo não crescer sem fim
+        foreach ($tudo as $k => $v) {
+            if (((int) ($v['ate'] ?? 0)) < $agora && ((int) ($v['contagem'] ?? 0)) === 0) {
+                unset($tudo[$k]);
+            }
+        }
+        gravar_tentativas($tudo);
+    });
 }
 
+/** Entrou: a conta deste endereço zera. O contador do endereço fica — acertar
+    uma conta não prova nada sobre as outras que ele tentou. */
 function limpar_falhas(string $usuario): void
 {
-    $chave = mb_strtolower($usuario);
-    $tudo = estado_tentativas();
-    if (isset($tudo[$chave])) {
-        unset($tudo[$chave]);
-        gravar_tentativas($tudo);
-    }
+    com_trava(ARQ_TENTATIVAS, function () use ($usuario): void {
+        $tudo = estado_tentativas();
+        $chave = chaves_de_falha($usuario)['conta'];
+        if (isset($tudo[$chave])) {
+            unset($tudo[$chave]);
+            gravar_tentativas($tudo);
+        }
+    });
 }
 
 /* ===================== sessão ===================== */

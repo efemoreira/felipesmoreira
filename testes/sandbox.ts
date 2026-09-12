@@ -64,7 +64,7 @@ export interface Sandbox {
    * em cada chamada só encheria os testes de ruído. Passe `csrf: ''` de
    * propósito para exercitar a sessão expirada.
    */
-  postar(tela: string, campos: Campos, querystring?: string): Promise<Resposta>;
+  postar(tela: string, campos: Campos, querystring?: string, cabecalhos?: Record<string, string>): Promise<Resposta>;
   /**
    * A mesma ação, em `multipart/form-data` — o formulário que tem `<input type="file">`.
    *
@@ -418,10 +418,13 @@ session_write_close();
     location: string,
     marca: number,
     status: number,
+    corpoDoPost = "",
   ): Promise<Resposta> {
+    /* Sem redirecionamento, o HTML é o do próprio POST: é o login errado, que
+       desenha a porta de novo com o aviso em vez de mandar para outro lugar. */
     const html =
       location === ""
-        ? ""
+        ? corpoDoPost
         : await (
             await fetch(base + location, { headers: { cookie: COOKIE }, redirect: "manual" })
           ).text();
@@ -455,7 +458,7 @@ session_write_close();
 
   return {
     dir,
-    async postar(tela, campos, querystring = "") {
+    async postar(tela, campos, querystring = "", cabecalhos = {}) {
       await subir();
       const marca = stderr.length;
 
@@ -485,13 +488,14 @@ session_write_close();
       const r = await fetch(base + alvo, {
         method: "POST",
         redirect: "manual",
-        headers: { cookie: COOKIE, "content-type": "application/x-www-form-urlencoded" },
+        headers: { cookie: COOKIE, "content-type": "application/x-www-form-urlencoded", ...cabecalhos },
         body: corpo,
       });
-      /* O corpo do POST é lido e jogado fora de propósito: sem isso o socket
-         fica pendurado e o servidor de uma linha só não atende o GET seguinte. */
-      await r.text();
-      return seguir(alvo, r.headers.get("location") ?? "", marca, r.status);
+      /* O corpo do POST é sempre lido: sem isso o socket fica pendurado e o
+         servidor não atende o GET seguinte. Só vale como HTML quando não há
+         redirecionamento. */
+      const corpoDoPost = await r.text();
+      return seguir(alvo, r.headers.get("location") ?? "", marca, r.status, corpoDoPost);
     },
     async postarComArquivo(tela, campos, arquivos, querystring = "") {
       await subir();
