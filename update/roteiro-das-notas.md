@@ -493,10 +493,10 @@ mais, a ordem não muda — o que muda é quanto de B cabe em setembro.
 | 3 | 25/09–01/10 | **Entrar e medir.** ~~7.3 `comece-aqui` + `painel:local` (item 25)~~ · ~~7.2 `/painel/ajuda` (item 24)~~ · ~~3.5 divergências dos docs (item 18)~~ · ~~1.6 medição (item 11)~~ — **feitos em 12/09**, adiantados · **validação em campo** (item 10) no encontro da semana — pendente, não é código | dev 6→9 · coordenação 5→8 · docs 6→8 · medição 1→6 | **7,4** |
 | — | 01–04/10 | **Congelado.** Reta final: só correção de erro visto em campo. Nada novo entra. | — | 7,4 |
 | 4 | 05–11/10 | **Post-mortem** (item 12) com os números de Leituras e do `sinal.php` · **reavaliação completa** (ficha abaixo) · decidir apostas 4 e 6 · ligar aposta 5 | — | 7,4 |
-| 5 | 12–18/10 | 6.3 exportar CSV (item 13) · 3.4 CI (item 17) · 3.6 `apiFetch` | semana/mês 3→5 · CI 5→8 · contrato 7→8 | 7,6 |
+| 5 | 12–18/10 | 6.3 exportar CSV (item 13) · ~~3.4 CI (item 17)~~ · ~~3.6 `apiFetch`~~ — **CI e apiFetch feitos em 12/09** (`verificar.yml` novo; `publish.yml` intacto) | semana/mês 3→5 · CI 5→8 · contrato 7→8 | 7,6 |
 | 6 | 19–25/10 | 6.4 rastro (item 14) · 4.7 LGPD (item 16) | rastro 3→8 · LGPD 5→8 | 7,8 |
-| 7 | 26/10–01/11 | `painel.js` + CSP (item 15) · 7.1 primeiros passos (item 23) · 5.4 teste do Estúdio · 2.2 contraste | militante 7→8 · estúdio 7→8 · a11y 8→9 | 7,9 |
-| 8 | 02–08/11 | 2.3 tokens (item 19) · 2.4 componentes, home fina, Tailwind fora (itens 19–20) · semente da programação (21) · aposta 7 (Leituras que fala) | tokens 5→8 · componentização 4→8 | 8,1 |
+| 7 | 26/10–01/11 | `painel.js` + CSP (item 15) · 7.1 primeiros passos (item 23) · ~~5.4 teste do Estúdio~~ · ~~2.2 contraste~~ — **feitos em 12/09** (a fumaça da ficha pegou as abas voltando para a lista) | militante 7→8 · estúdio 7→8 · a11y 8→9 | 7,9 |
+| 8 | 02–08/11 | 2.3 tokens (item 19) · 2.4 componentes, home fina, Tailwind fora (itens 19–20) · ~~semente da programação (21)~~ **feito em 12/09** · aposta 7 (Leituras que fala) | tokens 5→8 · componentização 4→8 | 8,1 |
 | 9–10 | 09–22/11 | 4.6 observabilidade (item 35) · 6.2 áreas mudas (item 32) · 6.5 escala sem conta (item 29) · aposta 3 (cordel) | observabilidade 2→7 · dia 8→9 · escala 6→8 · militante 8→9 | 8,3 |
 | 11–12 | 23/11–06/12 | 5.3 aulas editáveis (item 26) · 6.3 metas (item 27) · 6.3 tarefas (item 28) · aposta 6 (presença sem sinal) | aulas 4→7 · semana/mês 5→7 | 8,4 |
 | 13 | 07–11/12 | 6.3 importar (item 30) · 1.3 gerador comum (item 34) · `CONTRIBUTING` (item 36) · **reavaliação completa** | compartilhar 8→9 | **8,5** |
@@ -521,6 +521,7 @@ Regras do calendário:
 | 1 | 11/09 | permissão 9 (`acoes/pessoas`) · integridade 8 (`acoes/concorrencia`) · concorrência 8 · backup 8 (`acoes/backup`) | 6,7 | 6,7 |
 | 2 | 11/09 | OG 9 (`contrato/og`, cartões com Alfa Slab) · robustez 9 (chapa do build) · rascunho 8 · autenticação 9 (`acoes/login`) | 7,0 | 7,0 |
 | 3 | 12/09 | dev 9 (`comece-aqui`, `painel:local`) · coordenação 8 (`/painel/ajuda`, subtítulo por tela) · docs 8 (`contrato/docs`) · medição 6 (`acoes/sinal`, Leituras › Semana) · contrato Next↔PHP 8 (`apiFetch` sem exceção) | 7,4 | 7,4 |
+| 3+ | 12/09 | adiantado de B sem tocar produto: CI 8 (`verificar.yml`, Node/PHP pinados) · a11y 9 (`contrato/contraste`, goldDim) · estúdio 8 (`fumaca/estudio`) · ficha/lista (`fumaca/pessoas`, e o bug das abas) | **7,6** | 7,4 |
 | 3 | | | | 7,4 |
 
 ---
