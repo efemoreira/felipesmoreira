@@ -3,8 +3,9 @@ import ProgramacaoClient from "@/features/programacao/ProgramacaoClient";
 import type { Agenda } from "@/features/programacao/tipos";
 import data from "@/data/programacao.json";
 
-/* Conteúdo do build — serve de semente para o SEO e de reserva caso o painel
-   ainda não tenha publicado nada. Ver src/data/programacao.json e /painel. */
+/* A semente do build: a capa e os canais, SEM itens. O que se publica vem do
+   painel (`dados/agenda.json`); itens escritos aqui ficavam meses no passado
+   e o /programacao os filtrava de qualquer jeito. Ver src/data/programacao.json. */
 const semente = data as Agenda;
 
 export const metadata: Metadata = {
