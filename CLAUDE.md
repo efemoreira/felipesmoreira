@@ -74,7 +74,7 @@ Regras:
 
 - `/queroajudar` cria ou reaproveita uma **pessoa** com `status = 'pendente'`; não cria conta.
 - Aprovar inscrição **dá conta à ficha existente**, com senha provisória e `trocarSenha = true`.
-- `/presenca` trabalha com dois tokens: um para confirmação e outro para presença na porta.
+- `/presenca` trabalha com dois tokens: um para confirmação (RSVP, `?c=`, vai no grupo) e outro para presença na porta (`?e=`, o QR). **O cartaz da recepção** é `eventos.php?e=<id>&cartaz=1` (`eventos-cartaz.php`): página sem moldura, só o QR da porta, "CHEGUEI" e a linha dizendo que o RSVP é outro link. Não imprima a aba Pessoas.
 - A passagem `/presenca` → `/queroajudar` usa `sessionStorage` (`CHAVE_RASCUNHO`), nunca querystring para telefone.
 - `slugDe()` (TS) e `normalizar_origem()` (PHP) têm de concordar.
 - O cartão do link (WhatsApp) de `/presenca` sai de `api/presenca-previa.php`: o

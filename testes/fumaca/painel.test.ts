@@ -160,3 +160,24 @@ describe("fumaça: Leituras › Semana mede o dado", () => {
     assert.match(html, /pessoas\.php<\/strong>: \d+ fichas · [\d.]+ KB ·\s+lido e normalizado em [\d,.]+ ms/);
   });
 });
+
+describe("o cartaz da recepção é só o QR da porta", () => {
+  /* Até 12/09 "imprimir o cartaz" imprimia a aba Pessoas inteira: QR, texto
+     da coordenação, a lista e o RSVP dobrado. São dois links de propósito, e
+     na porta ninguém sabia qual era qual. */
+  test("?cartaz=1 desenha a folha sem moldura, sem lista e sem o link de RSVP", () => {
+    const { html } = painel.abrir("eventos", "e=ev-teste&cartaz=1");
+    assert.match(html, /class="cartaz-qr"/);
+    assert.match(html, /Cheguei/);
+    assert.match(html, /Este QR é o da porta/);
+    assert.match(html, /\/presenca\?e=aaaaaaaaaaaaaaaa/, "o QR não é o da chegada");
+    assert.doesNotMatch(html, /presenca\?c=/, "o link de RSVP entrou no cartaz");
+    assert.doesNotMatch(html, /Maria da Silva Sauro/, "a lista de presença entrou no cartaz");
+    assert.doesNotMatch(html, /class="lateral"/, "a moldura do painel entrou no cartaz");
+  });
+
+  test("o botão do encontro leva ao cartaz", () => {
+    const { html } = painel.abrir("eventos", "e=ev-teste");
+    assert.match(html, /href="\?e=ev-teste&(amp;)?cartaz=1"/);
+  });
+});

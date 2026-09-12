@@ -249,7 +249,7 @@ function desenhar_resumo_do_encontro(array $aberto, array $vencidos, bool $coord
     if ($aberto['token'] !== '' && ($faltamDias === null || $faltamDias >= 0)) {
         $proximas[] = [
             'texto' => 'Imprimir o cartaz do QR',
-            'url'   => '?e=' . rawurlencode($aberto['id']) . '&aba=pessoas#qr',
+            'url'   => '?e=' . rawurlencode($aberto['id']) . '&cartaz=1',
             'ouro'  => $faltamDias !== null && $faltamDias <= 2,
         ];
     }

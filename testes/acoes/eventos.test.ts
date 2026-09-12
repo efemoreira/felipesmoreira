@@ -492,7 +492,8 @@ describe("a caminho do cartaz do QR", () => {
   test("encontro que ainda vem oferece imprimir o cartaz", async () => {
     const { html } = await painel.buscar("eventos", `e=${EVENTO}`);
     assert.match(html, /Imprimir o cartaz do QR/);
-    assert.match(html, /aba=pessoas#qr/);
+    /* Desde 12/09 o botão leva à folha própria (?cartaz=1), não à aba Pessoas. */
+    assert.match(html, /cartaz=1/);
   });
 
   test("o bloco do QR tem a âncora que esse caminho procura", async () => {

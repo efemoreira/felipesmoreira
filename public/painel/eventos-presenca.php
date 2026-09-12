@@ -81,9 +81,10 @@ function desenhar_presenca(array $aberto, array $eu): void
         </div>
         <div class="qr-texto">
           <p class="dica folga">
-            <strong>QR da mesa da Recepção.</strong> Imprima e cole na entrada: quem
-            chega faz o <strong>check-in</strong> no próprio celular, e a lista já sai
-            organizada — sem fila para alguém digitar depois.
+            <strong>QR da mesa da Recepção.</strong> Quem chega faz o
+            <strong>check-in</strong> no próprio celular, e a lista já sai organizada.
+            <a class="btn btn-mini btn-ouro" href="?e=<?= h(rawurlencode($aberto['id'])) ?>&cartaz=1">Imprimir o cartaz</a>
+            — a folha sai só com o QR e a palavra CHEGUEI; o link de RSVP não vai nela.
           </p>
           <p class="provisoria card-arquivo"><?= h($urlPresenca) ?></p>
           <p class="dica">
