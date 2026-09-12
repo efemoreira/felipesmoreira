@@ -269,6 +269,22 @@ abrir_pagina('Manutenção');
         <code>0 3 * * * php <?= h(realpath(__DIR__) ?: __DIR__) ?>/backup.php</code>
       </p>
     <?php else: ?>
+      <?php
+        /* A IDADE DO ÚLTIMO, em destaque. O cron pode parar em silêncio — a
+           hospedagem muda de plano, o PHP muda de caminho — e o dia em que
+           alguém descobre é o dia em que precisa do zip. Mais de 36 h é
+           vermelho: o cron é diário, então 36 h é uma noite perdida. */
+        $ultimo = $backups[0];
+        $horas = (int) floor((time() - $ultimo['quando']) / 3600);
+        $atrasado = $horas > HORAS_SEM_BACKUP;
+      ?>
+      <p class="<?= $atrasado ? 'msg msg-erro' : 'dica' ?>" style="margin:0 0 10px">
+        <strong>Último backup:</strong> <?= h(date('d/m/Y H:i', $ultimo['quando'])) ?>
+        (<?= $horas < 1 ? 'agora há pouco' : 'há ' . $horas . ' h' ?>).
+        <?php if ($atrasado): ?>
+          O cron não rodou esta noite — confira a tarefa no hPanel, ou faça o backup agora.
+        <?php endif; ?>
+      </p>
       <p class="dica" style="margin:0 0 10px">
         Os <?= MAX_BACKUPS_DADOS ?> mais recentes ficam; o resto vai embora sozinho.
         Cron: <code>0 3 * * * php <?= h(realpath(__DIR__) ?: __DIR__) ?>/backup.php</code>

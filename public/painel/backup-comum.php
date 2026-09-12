@@ -112,6 +112,9 @@ function fazer_backup(?int $agora = null): ?string
 }
 
 /** Os zips que existem, o mais novo primeiro. */
+/** A partir de quantas horas sem zip novo a Manutenção avisa em vermelho. */
+const HORAS_SEM_BACKUP = 36;
+
 function backups_existentes(): array
 {
     $lista = [];

@@ -1,7 +1,7 @@
 import { test, describe, before, beforeEach, after } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, rmSync, utimesSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { montarSandbox, type Sandbox } from "../sandbox.ts";
 
@@ -150,5 +150,32 @@ describe("backup: zerar não apaga a cópia", () => {
     assert.match(r.html, /Nada foi apagado/, "zerou sem backup");
     assert.equal(painel.ler("pessoas").length, antes, "apagou mesmo sem conseguir o zip");
     rmSync(pastaBackups(), { force: true });
+  });
+});
+
+describe("backup: a idade do último aparece, e envelhecido vira alerta", () => {
+  /* O cron pode parar em silêncio. A Manutenção mostra a data do último zip;
+     com mais de 36 h, pinta de vermelho e o hub do administrador ganha a
+     tarefa. Envelhecer o arquivo é mexer no mtime — é o que o cron parado
+     produz. */
+  test("recém-feito é 'agora há pouco', sem alerta", async () => {
+    await painel.postar("manutencao", { acao: "backup" });
+    const { html } = painel.abrir("manutencao", "");
+    assert.match(html, /Último backup:/);
+    assert.match(html, /agora há pouco/);
+    assert.doesNotMatch(html, /O cron não rodou/);
+    assert.doesNotMatch(painel.abrir("index", "").html, /O backup não rodou/);
+  });
+
+  test("com mais de 36 h, a Manutenção avisa em vermelho e o hub cobra", async () => {
+    await painel.postar("manutencao", { acao: "backup" });
+    const zip = path.join(pastaBackups(), zips()[0]);
+    const antes = new Date(Date.now() - 40 * 3600 * 1000);
+    utimesSync(zip, antes, antes);
+
+    const { html } = painel.abrir("manutencao", "");
+    assert.match(html, /msg msg-erro[^>]*>\s*<strong>Último backup:/);
+    assert.match(html, /O cron não rodou esta noite/);
+    assert.match(painel.abrir("index", "").html, /O backup não rodou esta noite/);
   });
 });

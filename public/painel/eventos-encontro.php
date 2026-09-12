@@ -288,9 +288,14 @@ function desenhar_preparo(array $aberto, array $familia, array $preparo, bool $c
        régua só para "esta peça está furada". */
     $aResolver = $coordena ? pecas_a_resolver($aberto) : [];
     ?>
-  <fieldset>
-    <legend>Playbook — <?= h($familia['nome']) ?></legend>
-    <p class="dica" style="margin:0 0 12px"><strong>Serve para:</strong> <?= h($familia['serve']) ?></p>
+  <?php /* FECHADO POR PADRÃO. O Playbook é leitura — serve, métrica, as travas,
+           o material — e vinha antes das peças: no celular, quem abriu para
+           preparar rolava uma tela de texto até chegar ao que faz. Leitura não
+           mora na frente da mesa; fica a um toque, como "O que dá para fazer
+           aqui". A frase resumo continua visível para quem nunca abriu. */ ?>
+  <details class="explicacao playbook">
+    <summary>Playbook — <?= h($familia['nome']) ?> <span class="dica">· serve para <?= h(mb_strtolower($familia['serve'])) ?></span></summary>
+    <p class="dica" style="margin:12px 0"><strong>Serve para:</strong> <?= h($familia['serve']) ?></p>
     <p class="dica" style="margin:0 0 12px"><strong>Métrica de sucesso:</strong> <?= h($familia['metrica']) ?></p>
 
     <div class="msg msg-erro">
@@ -303,7 +308,7 @@ function desenhar_preparo(array $aberto, array $familia, array $preparo, bool $c
     </div>
 
     <p class="dica"><strong>Material específico:</strong> <?= h(implode(' · ', $familia['material'])) ?></p>
-  </fieldset>
+  </details>
 
   <fieldset id="preparo">
     <?php /* "As peças", e não "as cinco": elas passaram a depender da família, e
