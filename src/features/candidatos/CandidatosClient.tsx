@@ -194,13 +194,23 @@ export default function CandidatosClient() {
         )}
 
         {!carregando && !falhou && candidatos.length === 0 && (
-          <p className="cd-vazio">
-            A lista ainda está sendo fechada. Volte já já — ou{" "}
-            <Link href="/propostas" className="cd-elo">
-              leia o plano de governo
-            </Link>{" "}
-            enquanto isso.
-          </p>
+          <>
+            <p className="cd-vazio">
+              A lista dos candidatos ainda está sendo fechada. O número da chapa é o de
+              cima — leve esse.
+            </p>
+            {/* Sem a lista, a página era a chapa e uma tela vazia. Quem abriu a
+                página do número está a um toque de virar militante: o convite
+                é o mesmo que fecha todas as outras rotas. */}
+            <div className="cd-convite">
+              <Link href="/queroajudar" className="cd-btn">
+                Quero ajudar
+              </Link>
+              <Link href="/propostas" className="cd-elo">
+                Ler o plano de governo
+              </Link>
+            </div>
+          </>
         )}
 
         {montadas.map(({ lista, pessoas }) => (
@@ -423,6 +433,8 @@ const css = `
     border: ${BORDA}px solid ${C.gold}; background: rgba(255,203,5,.08); padding: 14px 16px;
   }
   .cd-elo { color: ${C.gold2}; }
+  .cd-convite { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin: 0 0 30px; }
+  .cd-convite .cd-btn { text-decoration: none; }
 
   @media (max-width: 560px) {
     .cd-ficha { grid-template-columns: auto auto 1fr; }
