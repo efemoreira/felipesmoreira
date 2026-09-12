@@ -53,13 +53,13 @@ function aba_de_origem(array $origens, callable $formatar): void
       <legend>De onde vem a militância (<?= count($linhas) ?>)</legend>
 
       <?php if ($linhas === [] && $semOrigem === 0): ?>
-        <p class="dica" style="margin:0">
+        <p class="dica colado">
           Ninguém se inscreveu ainda. Quando as inscrições começarem a chegar, esta aba
           mostra qual link trouxe cada pessoa.
         </p>
       <?php else: ?>
 
-      <p class="dica" style="margin:0 0 14px">
+      <p class="dica folga">
         Pelo <code>?de=</code> do link que a pessoa abriu. Quem compartilha pela
         <a href="/painel/municao.php">Munição</a> aparece aqui pelo nome; um canal
         (uma live, um encontro) aparece pelo apelido do link.

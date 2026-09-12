@@ -80,7 +80,7 @@ abrir_pagina('Importar');
   <?php if ($previa === []): ?>
     <fieldset>
       <legend>O arquivo</legend>
-      <p class="dica" style="margin:0 0 12px">
+      <p class="dica folga">
         CSV do Excel ou do Google Planilhas, com cabeçalho. Colunas reconhecidas:
         <code>nome</code>, <code>telefone</code> (ou whatsapp/celular), <code>email</code>,
         <code>cidade</code>, <code>bairro</code>, <code>tipo</code>. Só nome e telefone são obrigatórios.
@@ -111,7 +111,7 @@ abrir_pagina('Importar');
       <input type="hidden" name="acao" value="confirmar">
       <fieldset>
         <legend>A prévia — <?= $novas ?> nova(s) · <?= $existem ?> já existe(m) · <?= $invalidas ?> inválida(s)</legend>
-        <p class="dica" style="margin:0 0 12px">Nada foi gravado ainda. Desmarque o que não deve entrar.</p>
+        <p class="dica folga">Nada foi gravado ainda. Desmarque o que não deve entrar.</p>
         <div class="rolagem cartoes">
           <table class="tabela">
             <thead><tr><th></th><th>Linha</th><th>Nome</th><th>WhatsApp</th><th>Cidade · bairro</th><th>Tipo</th><th>O que vai acontecer</th></tr></thead>

@@ -26,7 +26,7 @@ function aba_de_encontros(array $linhas): void
       <legend>Conversão por encontro (<?= count($linhas) ?>)</legend>
 
       <?php if ($linhas === []): ?>
-        <p class="dica" style="margin:0">
+        <p class="dica colado">
           Nenhum encontro realizado com presença registrada ainda. Quando a Recepção
           marcar quem veio, esta aba mostra o que cada encontro gerou.
         </p>
@@ -37,7 +37,7 @@ function aba_de_encontros(array $linhas): void
           <div><dt>Aprovadas</dt><dd><?= $soma['aprovadas'] ?></dd></div>
           <div><dt>Voltaram</dt><dd><?= $soma['voltaram'] ?></dd></div>
         </dl>
-        <p class="dica" style="margin:0 0 14px">
+        <p class="dica folga">
           <strong>Voltaram</strong> é quem apareceu num encontro depois deste — o único
           degrau que não depende de a pessoa dizer nada. Encontro que enche e ninguém
           volta gerou volume, não base.

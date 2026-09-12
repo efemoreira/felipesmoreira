@@ -140,7 +140,7 @@ function aba_da_fila(array $novas, string $buscaIn, callable $formatar, ?array $
             <dd>
               <?php if ($i['funcoes'] === []): ?>
                 <span class="selo selo-cinza">não escolheu</span>
-                <span class="dica" style="display:inline">
+                <span class="dica">
                   Entra como “Onde precisar” — combine na conversa.
                 </span>
               <?php else: ?>
@@ -225,7 +225,7 @@ function aba_da_fila(array $novas, string $buscaIn, callable $formatar, ?array $
               <details class="decidir">
                 <summary class="btn">Ajuste fino por ferramenta</summary>
                 <div class="decidir-corpo">
-                  <p class="dica" style="margin:0 0 10px">
+                  <p class="dica folga">
                     Já vem marcado conforme as funções que a pessoa escolheu. É para a
                     exceção — dar uma ferramenta solta sem a capacidade inteira.
                   </p>

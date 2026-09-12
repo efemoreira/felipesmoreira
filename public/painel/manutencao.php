@@ -278,12 +278,12 @@ abrir_pagina('Manutenção');
   <fieldset id="erros">
     <legend>Erros dos últimos 7 dias<?= $errosRecentes !== [] ? ' (' . count($errosRecentes) . ')' : '' ?></legend>
     <?php if ($errosRecentes === []): ?>
-      <p class="dica" style="margin:0">
+      <p class="dica colado">
         Nenhum. O que o PHP não conseguir fazer em produção fica registrado aqui —
         tipo, mensagem, arquivo e rota — em vez de sumir com o <code>display_errors</code> desligado.
       </p>
     <?php else: ?>
-      <p class="dica" style="margin:0 0 10px">
+      <p class="dica folga">
         O que quebrou, para quem, onde. Resolvido, zere — o registro é para ler, não para guardar.
       </p>
       <div class="rolagem cartoes">
@@ -314,12 +314,12 @@ abrir_pagina('Manutenção');
   <?php if ($patches !== []): ?>
     <fieldset id="aulas-texto">
       <legend>Texto das aulas sobrescrito (<?= count($patches) ?> aula<?= count($patches) > 1 ? 's' : '' ?>)</legend>
-      <p class="dica" style="margin:0 0 10px">
+      <p class="dica folga">
         A coordenação corrigiu o texto destas aulas por cima do código. Para consolidar,
         o desenvolvedor copia a constante abaixo para <code>aulas-conteudo.php</code>, faz o
         commit, e zera o patch aqui — o arquivo volta a ser a única fonte.
       </p>
-      <ul class="dica" style="margin:0 0 10px">
+      <ul class="dica folga">
         <?php foreach ($patches as $id => $p): ?>
           <li><code><?= h($id) ?></code> — <?= count($p['blocos'] ?? []) + (isset($p['resumo']) ? 1 : 0) ?> trecho(s), por <?= h($p['alteradoPor'] ?: 'alguém') ?> em <?= h(date('d/m H:i', (int) strtotime($p['alteradoEm']))) ?></li>
         <?php endforeach; ?>
@@ -343,7 +343,7 @@ abrir_pagina('Manutenção');
       <button class="btn btn-ouro" type="submit">Fazer backup agora</button>
     </form>
     <?php if ($backups === []): ?>
-      <p class="dica" style="margin:0">
+      <p class="dica colado">
         Nenhum backup ainda. Para o cron da hospedagem, todo dia às 3h:
         <code>0 3 * * * php <?= h(realpath(__DIR__) ?: __DIR__) ?>/backup.php</code>
       </p>
@@ -364,7 +364,7 @@ abrir_pagina('Manutenção');
           O cron não rodou esta noite — confira a tarefa no hPanel, ou faça o backup agora.
         <?php endif; ?>
       </p>
-      <p class="dica" style="margin:0 0 10px">
+      <p class="dica folga">
         Os <?= MAX_BACKUPS_DADOS ?> mais recentes ficam; o resto vai embora sozinho.
         Cron: <code>0 3 * * * php <?= h(realpath(__DIR__) ?: __DIR__) ?>/backup.php</code>
       </p>
@@ -407,7 +407,7 @@ abrir_pagina('Manutenção');
       <?php endforeach; ?>
 
       <div class="decidir-recusa" style="margin-top:22px">
-        <p class="dica" style="margin:0 0 12px">
+        <p class="dica folga">
           <strong>Isto não tem desfazer.</strong> Se quiser guardar o que existe,
           faça o backup acima e baixe o zip antes de apertar.
         </p>
@@ -430,7 +430,7 @@ abrir_pagina('Manutenção');
 
   <fieldset>
     <legend>O que NÃO é apagado</legend>
-    <p class="dica" style="margin:0">
+    <p class="dica colado">
       O <strong>segredo do site</strong> (<code>dados/segredo.php</code>) fica. É dele que
       saem os links de convite do Dia 0, as referências da página de presença e o
       embaralhamento do teto de envio — apagá-lo invalidaria todos os convites que já

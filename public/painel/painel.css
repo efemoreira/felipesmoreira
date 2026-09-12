@@ -522,6 +522,14 @@ input:focus, select:focus, textarea:focus {
 .btn-risco { border-color:var(--erro-borda); color:var(--erro); }
 .btn-risco:hover { background:var(--erro-fundo-2); }
 .acoes { display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
+/* O <form> de um botão dentro da linha de ações é item do flex, sem margem:
+   era `style="display:inline"` em onze lugares — a classe cobre. */
+.acoes > form { display:inline-flex; margin:0; }
+/* As margens da .dica que eram style= em cem lugares: colada (0), com folga
+   embaixo (12px) e com folga curta (8px). */
+.colado { margin:0 !important; }
+.folga { margin:0 0 12px !important; }
+.folga-curta { margin:0 0 8px !important; }
 .barra { position:sticky; bottom:0; background:linear-gradient(180deg,var(--fundo-fade),var(--fundo) 40%); padding:20px 0 6px; }
 
 /* ---- recados ----

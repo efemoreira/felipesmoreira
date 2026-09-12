@@ -167,12 +167,12 @@ abrir_pagina('Sua gente');
   <fieldset id="convite" style="margin-top:28px">
     <legend>O convite do seu grupo</legend>
     <?php if ($meuGrupo === ''): ?>
-      <p class="dica" style="margin:0">
+      <p class="dica colado">
         A sua ficha ainda não tem o link do grupo. Peça à administração para gravar em
         Pessoas — enquanto não houver, quem você acompanha recebe o convite do grupo geral.
       </p>
     <?php else: ?>
-      <p class="dica" style="margin:0 0 10px">
+      <p class="dica folga">
         É o que quem chega recebe no Início e na mensagem de acesso. Mande você mesma, pelo
         nome: é isso que faz alguém entrar num grupo e se sentir parte.
       </p>

@@ -241,7 +241,7 @@ function desenhar_dados(array $aberto, array $time, int $naLista): void
                  no `<summary>` diz quem já está lá, que é a pergunta de quem
                  abre esta aba. */ ?>
         <p class="dica" style="margin:0 0 4px">Quem responde por cada peça — pode ser mais de uma pessoa:</p>
-        <p class="dica" style="margin:0 0 14px">
+        <p class="dica folga">
           Quem <strong>pediu a função</strong> aparece primeiro, marcado. É de lá que sai a sugestão do botão acima.
         </p>
 
@@ -342,14 +342,14 @@ function desenhar_dados(array $aberto, array $time, int $naLista): void
                clicar à toa — o mesmo desenho da decisão do próprio fato. */ ?>
       <div class="decidir-recusa">
         <?php if ($naLista > 0): ?>
-          <p class="dica" style="margin:0">
+          <p class="dica colado">
             Este encontro não pode ser apagado: <?= $naLista ?>
             <?= $naLista === 1 ? 'pessoa está' : 'pessoas estão' ?> na lista dele, e apagá-lo
             apagaria esse encontro do histórico de cada uma. Se ele não vai acontecer,
             marque <strong>Cancelado</strong> — sai da programação do site e a lista fica.
           </p>
         <?php else: ?>
-          <p class="dica" style="margin:0 0 10px">
+          <p class="dica folga">
             Ninguém na lista ainda, então apagar não apaga o histórico de ninguém.
             Serve para o encontro cadastrado duas vezes, ou o rascunho que não virou nada.
           </p>

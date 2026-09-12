@@ -60,7 +60,7 @@ function bloco_reativacao(array $grupos, string $busca): void
         <?= h($m['nome']) ?>
         <span class="selo"><?= count($lista) ?></span>
       </p>
-      <p class="dica" style="margin:0 0 12px"><?= h($m['oQue']) ?></p>
+      <p class="dica folga"><?= h($m['oQue']) ?></p>
 
       <div class="rolagem cartoes">
         <table class="tabela">

@@ -53,7 +53,7 @@ function bloco_acompanhamento(string $buscaAu): void
     ?>
   <fieldset id="placar">
     <legend>Como está a formação do time</legend>
-    <p class="dica" style="margin:0 0 14px">
+    <p class="dica folga">
       Conta quem tem conta ativa e aprovada — estudar não pede permissão de área.
       <strong>Travou</strong> é quem começou, ainda não fechou as Pistas Rápidas e
       não conclui nada há mais de <?= DIAS_PARA_TRAVAR ?> dias.

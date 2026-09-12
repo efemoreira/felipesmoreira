@@ -112,7 +112,7 @@ function bloco_follow_up(array $eu, array $vencidos, string $busca): void
                   'btn btn-ouro'
               ); ?>
             <?php endif; ?>
-            <form method="post" style="display:inline">
+            <form method="post">
               <input type="hidden" name="csrf" value="<?= h(token()) ?>">
               <input type="hidden" name="id" value="<?= h($l['eventoId']) ?>">
               <input type="hidden" name="lead" value="<?= h($l['id']) ?>">

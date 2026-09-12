@@ -250,7 +250,7 @@ function tela_lista_de_encontros(bool $coordena, array $eu, ?string $erro, ?stri
               <a class="btn btn-mini" href="/painel/eventos.php?novo=1">Marcar o primeiro encontro</a>
             </p>
           <?php elseif ($proximos === []): ?>
-            <p class="dica" style="margin:0">Nenhum dos próximos casa com o recorte.</p>
+            <p class="dica colado">Nenhum dos próximos casa com o recorte.</p>
           <?php endif; ?>
 
           <?php foreach ($proximos as $e): ?>
@@ -271,7 +271,7 @@ function tela_lista_de_encontros(bool $coordena, array $eu, ?string $erro, ?stri
           <?php if ($passados === [] && !$recortado): ?>
             <?php vazio('Nenhum encontro aconteceu ainda.', ['url' => '/painel/eventos.php?novo=1', 'texto' => 'Marcar o primeiro']); ?>
           <?php elseif ($passados === []): ?>
-            <p class="dica" style="margin:0">Nenhum dos já realizados casa com o recorte.</p>
+            <p class="dica colado">Nenhum dos já realizados casa com o recorte.</p>
           <?php endif; ?>
 
           <?php foreach ($mostrados as $e): ?>

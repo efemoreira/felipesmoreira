@@ -48,7 +48,7 @@ function bloco_videos(array $videos, callable $recorteAu): void
       Dia <?= (int) $dia['numero'] ?> — <?= h($dia['titulo']) ?>
       · <?= $comVideoNoDia ?>/<?= count($dia['aulas']) ?> com vídeo
     </legend>
-    <p class="dica" style="margin:0 0 14px"><?= h($dia['resumo']) ?></p>
+    <p class="dica folga"><?= h($dia['resumo']) ?></p>
 
     <?php foreach ($aulasDoDia as $aula): ?>
       <?php
@@ -72,7 +72,7 @@ function bloco_videos(array $videos, callable $recorteAu): void
         </summary>
 
         <div class="item-corpo">
-          <p class="dica" style="margin:0 0 14px"><?= h($aula['resumo']) ?></p>
+          <p class="dica folga"><?= h($aula['resumo']) ?></p>
 
           <form method="post">
             <input type="hidden" name="csrf" value="<?= h(token()) ?>">
@@ -115,7 +115,7 @@ function bloco_videos(array $videos, callable $recorteAu): void
               <?php endif; ?>
             </summary>
             <div class="decidir-corpo">
-              <p class="dica" style="margin:0 0 12px">
+              <p class="dica folga">
                 O que você mudar aqui vale na hora em /aulas, por cima do texto do código.
                 “Voltar ao original” desfaz. Título, minutos, tabelas e checklists
                 mudam só no código — são estrutura, não frase.

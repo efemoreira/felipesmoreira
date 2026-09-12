@@ -96,3 +96,23 @@ describe("estilo: nenhuma classe do painel fica sem CSS", () => {
     assert.deepEqual([...new Set(semVariante)], []);
   });
 });
+
+describe("estilo: o inline no painel tem teto", () => {
+  /* 158 `style="…"` nos PHP em 12/09 de manhã, 82 à noite — a regra da casa ("classe nova exige
+     regra no painel.css") contornada por atalho. Não se apaga de uma vez; o
+     que se faz é não deixar crescer: o teto é o número de hoje, e cada
+     limpeza o abaixa. `<form style="display:inline">` já foi: `.acoes > form`. */
+  const TETO = 90;
+  test(`no máximo ${TETO} style= inline nos PHP do painel`, () => {
+    let total = 0;
+    for (const f of readdirSync(PAINEL).filter((f) => f.endsWith(".php"))) {
+      total += (readFileSync(path.join(PAINEL, f), "utf8").match(/ style="/g) ?? []).length;
+    }
+    assert.ok(total <= TETO, `${total} style= inline — passou do teto de ${TETO}; ponha a regra no painel.css`);
+  });
+  test("nenhum <form style=\"display:inline\">", () => {
+    for (const f of readdirSync(PAINEL).filter((f) => f.endsWith(".php"))) {
+      assert.doesNotMatch(readFileSync(path.join(PAINEL, f), "utf8"), /<form[^>]*style="display:inline"/, `${f}: use .acoes / .acoes-celula`);
+    }
+  });
+});

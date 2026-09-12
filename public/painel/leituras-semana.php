@@ -30,7 +30,7 @@ function aba_da_semana(array $eu): void
     <fieldset id="metas">
       <legend>As metas<?= ($metas = ler_metas()) !== [] ? ' (' . count($metas) . ')' : '' ?></legend>
       <?php if ($metas === []): ?>
-        <p class="dica" style="margin:0 0 12px">
+        <p class="dica folga">
           Nenhuma meta combinada. Sem alvo, 120 militantes não é bom nem ruim — é 120.
         </p>
       <?php else: ?>
@@ -86,9 +86,9 @@ function aba_da_semana(array $eu): void
     <fieldset>
       <legend>A operação hoje</legend>
       <?php if ($panorama === []): ?>
-        <p class="dica" style="margin:0">Nenhum medidor para as áreas que você abre.</p>
+        <p class="dica colado">Nenhum medidor para as áreas que você abre.</p>
       <?php else: ?>
-        <p class="dica" style="margin:0 0 14px">
+        <p class="dica folga">
           Do time inteiro, não seu. Verde é em dia, âmbar é perto do prazo, vermelho já
           venceu. Cada cartão leva à tela que responde por aquilo.
         </p>
@@ -109,7 +109,7 @@ function aba_da_semana(array $eu): void
     <fieldset>
       <legend>O mutirão desta semana</legend>
       <?php if ($mutirao['peca'] === null): ?>
-        <p class="dica" style="margin:0">
+        <p class="dica colado">
           Semana sem peça escalada.
           <?php if (pode('municao')): ?>
             <a href="/painel/municao.php?aba=mutirao">Escalar na Munição</a>.
@@ -121,7 +121,7 @@ function aba_da_semana(array $eu): void
           <div><dt>Postaram</dt><dd><?= $postaram ?></dd></div>
           <div><dt>Faltam</dt><dd><?= count($mutirao['escalados']) - $postaram ?></dd></div>
         </dl>
-        <p class="dica" style="margin:0">
+        <p class="dica colado">
           <strong><?= h($mutirao['peca']['numero']) ?></strong> — <?= h($mutirao['peca']['frase']) ?>
           <?php if (pode('municao')): ?>
             · <a href="/painel/municao.php?aba=mutirao">cobrar quem falta</a>
@@ -146,9 +146,9 @@ function aba_da_semana(array $eu): void
     <fieldset>
       <legend>O site</legend>
       <?php if ($desta === [] && $anterior === []): ?>
-        <p class="dica" style="margin:0">Ainda sem sinal do site. Ele conta a partir da próxima publicação.</p>
+        <p class="dica colado">Ainda sem sinal do site. Ele conta a partir da próxima publicação.</p>
       <?php else: ?>
-        <p class="dica" style="margin:0 0 14px">
+        <p class="dica folga">
           Por página: quem abriu, quem compartilhou, quem se inscreveu — esta semana,
           e entre parênteses a anterior. Só contagem; ninguém é identificado.
         </p>

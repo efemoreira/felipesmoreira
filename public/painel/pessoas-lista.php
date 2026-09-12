@@ -122,7 +122,7 @@ abrir_pagina('Pessoas');
         <strong>Login:</strong> <span class="provisoria"><?= h($senhaNova['usuario']) ?></span>
         &nbsp; <strong>Senha provisória:</strong> <span class="provisoria"><?= h($senhaNova['senha']) ?></span>
       </p>
-      <p class="dica" style="margin:0">
+      <p class="dica colado">
         Aparece <strong>uma vez só</strong> — só o hash fica guardado, e hash não volta
         a ser senha. Mande agora; no primeiro acesso a pessoa é obrigada a trocar.
       </p>

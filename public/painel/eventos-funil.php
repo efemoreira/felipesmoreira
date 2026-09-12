@@ -62,7 +62,7 @@ function desenhar_funil(array $aberto, array $eu, array $vencidos): void
         sai daqui — o funil acabou de fazer o que existia para fazer.
       </p>
       <?php if ($vencidos === []): ?>
-        <p class="dica" style="margin:0">
+        <p class="dica colado">
           Nada vencido. Ou ninguém fez check-in ainda, ou quem fez já é da militância.
         </p>
       <?php else: ?>
@@ -97,7 +97,7 @@ function desenhar_funil(array $aberto, array $eu, array $vencidos): void
                       'btn btn-ouro'
                   ); ?>
                 <?php endif; ?>
-                <form method="post" style="display:inline">
+                <form method="post">
                   <input type="hidden" name="csrf" value="<?= h(token()) ?>">
                   <input type="hidden" name="id" value="<?= h($aberto['id']) ?>">
                   <input type="hidden" name="lead" value="<?= h($l['id']) ?>">

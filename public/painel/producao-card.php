@@ -116,7 +116,7 @@ function desenhar_card(array $c, string $coluna, array $eu, string $hoje): void
                     <input type="hidden" name="id" value="<?= h($c['id']) ?>">
                     <input type="hidden" name="acao" value="publicar">
                     <?php if (pode('aulas')): ?>
-                      <p class="dica" style="margin:0 0 10px">
+                      <p class="dica folga">
                         Antes de publicar, passe o checklist de conformidade:
                         <a href="/aulas#roteirista" target="_blank">a aula do Roteirista</a>.
                       </p>
@@ -173,7 +173,7 @@ function desenhar_card(array $c, string $coluna, array $eu, string $hoje): void
                   <div class="acoes">
                     <?php botao_modal('editar-card', 'Corrigir o card', 'editar=' . urlencode($c['id']) . '#' . $c['id'], 'btn btn-mini'); ?>
                     <?php if ($chave !== 'publicado' || e_admin()): ?>
-                      <form method="post" style="display:inline"
+                      <form method="post"
                             data-confirmar="<?= h($chave === 'publicado'
                                 ? 'Apagar um card JÁ PUBLICADO? Some o rastro que liga a peça ao fato — e o Acervo aponta para o link que está nele.'
                                 : 'Apagar este card? O fato continua checado e volta a aparecer como “sem peça”.') ?>">

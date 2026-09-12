@@ -251,7 +251,7 @@ function nada_encontrado(string $busca, string $volta, string $vazio = 'Nada por
         return;
     }
     ?>
-    <p class="dica" style="margin:0 0 12px">
+    <p class="dica folga">
       Nada com <strong>“<?= h($busca) ?>”</strong>. Confira a grafia — a busca ignora
       acento e maiúscula, mas não adivinha.
     </p>

@@ -24,7 +24,7 @@ function aba_de_territorio(array $regioes): void
       <legend>Onde a militância mora (<?= count($regioes) ?> <?= count($regioes) === 1 ? 'cidade' : 'cidades' ?>)</legend>
 
       <?php if ($regioes === []): ?>
-        <p class="dica" style="margin:0">
+        <p class="dica colado">
           Ninguém aprovado com cidade ainda. Quando a fila começar a ser decidida, esta aba
           mostra onde a militância está.
         </p>
@@ -34,7 +34,7 @@ function aba_de_territorio(array $regioes): void
           <div><dt>Cidades</dt><dd><?= count($regioes) ?></dd></div>
           <div><dt>Com uma pessoa só</dt><dd><?= $sozinhas ?></dd></div>
         </dl>
-        <p class="dica" style="margin:0 0 12px">
+        <p class="dica folga">
           Só quem já foi aprovado. Cidade com mais gente primeiro: é por aqui que dá para
           ver onde já tem time para um núcleo próprio — e quem está sozinha na cidade dela,
           que é quem um encontro presencial mais ajuda.

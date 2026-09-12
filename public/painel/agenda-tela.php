@@ -142,7 +142,7 @@ function tela_de_agenda(?string $aviso, ?string $sucesso, ?array $rascunho): voi
 
     <fieldset>
 <legend>O que está no ar (<?= count($itens) ?>)</legend>
-      <p class="dica" style="margin:0 0 14px">
+      <p class="dica folga">
         Esta lista não se edita aqui, e mostra só o que ainda vai acontecer — é o
         mesmo corte da página. <strong>Cada linha é um encontro</strong> —
         marcado em <a href="/painel/eventos.php">Encontros</a>, com a chave “aparecer
@@ -165,7 +165,7 @@ function tela_de_agenda(?string $aviso, ?string $sucesso, ?array $rascunho): voi
       <?php endif; ?>
 
       <?php if ($itens === []): ?>
-        <p class="dica" style="margin:0">
+        <p class="dica colado">
           Nada por vir na programação. <a href="/painel/eventos.php">Marque um encontro</a> —
           ele entra aqui sozinho, porque o padrão é aparecer.
         </p>

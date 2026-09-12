@@ -98,7 +98,7 @@ function aba_de_mutirao(): void
           <details class="decidir" style="margin-top:16px">
             <summary class="btn">Quem ainda não postou (<?= count($faltam) ?>)</summary>
             <div class="decidir-corpo">
-              <p class="dica" style="margin:0 0 12px">
+              <p class="dica folga">
                 O link de cada uma leva o <code>?de=</code> dela — é o que diz qual militante
                 traz gente. Sem isso, "compartilhe" não vira conta nenhuma.
               </p>
@@ -130,7 +130,7 @@ function aba_de_mutirao(): void
   <?php if ($anteriores !== []): ?>
     <fieldset id="semanas">
       <legend>Semanas anteriores (<?= count($anteriores) ?>)</legend>
-      <p class="dica" style="margin:0 0 12px">
+      <p class="dica folga">
         Quantos postaram, semana a semana. É a conta mais honesta de quem está ativo
         na comunicação — e de quando a peça não pegou.
       </p>

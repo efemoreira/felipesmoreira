@@ -162,7 +162,7 @@ function formulario_pessoa(?array $aberta, array $catalogo): void
       <details class="decidir" style="margin-top:14px">
         <summary class="btn">Ajuste fino por ferramenta</summary>
         <div class="decidir-corpo">
-          <p class="dica" style="margin:0 0 10px">
+          <p class="dica folga">
             Para a exceção: dar uma ferramenta solta a quem não tem a capacidade inteira.
             O que a capacidade já libera aparece marcado depois de salvar, e desmarcar
             aqui não tira o que ela concede.
@@ -229,7 +229,7 @@ function bloco_duplicatas(array $duplicatas): void
     ?>
     <fieldset id="duplicatas">
       <legend>Possíveis duplicatas (<?= count($duplicatas) ?>)</legend>
-      <p class="dica" style="margin:0 0 14px">
+      <p class="dica folga">
         Mesmo telefone ou mesmo nome. <strong>É sugestão, não certeza</strong> — casa que
         divide celular tem duas pessoas de verdade no mesmo número. Confira antes: juntar
         a ficha errada apaga o histórico de alguém, e isso não tem desfazer.
@@ -259,7 +259,7 @@ function bloco_duplicatas(array $duplicatas): void
           </dl>
           <div class="acoes">
             <?php foreach ([['a', 'b'], ['b', 'a']] as [$fica, $vai]): ?>
-              <form method="post" style="display:inline"
+              <form method="post"
                     data-confirmar="<?= h('Juntar tudo em “' . $d[$fica]['nome'] . '” e apagar a outra ficha?') ?>">
                 <input type="hidden" name="csrf" value="<?= h(token()) ?>">
                 <input type="hidden" name="acao" value="juntar">
@@ -324,7 +324,7 @@ function tela_da_ficha(array $aberta, ?array $editando, ?string $erro, ?string $
         <strong>Login:</strong> <span class="provisoria"><?= h($senhaNova['usuario']) ?></span>
         &nbsp; <strong>Senha provisória:</strong> <span class="provisoria"><?= h($senhaNova['senha']) ?></span>
       </p>
-      <p class="dica" style="margin:0">
+      <p class="dica colado">
         Aparece <strong>uma vez só</strong> — só o hash fica guardado, e hash não volta
         a ser senha. Mande agora; no primeiro acesso a pessoa é obrigada a trocar.
       </p>
@@ -442,7 +442,7 @@ function tela_da_ficha(array $aberta, ?array $editando, ?string $erro, ?string $
     <fieldset id="encontros">
       <legend>Encontros (<?= count($encontros) ?>)</legend>
       <?php if ($encontros === []): ?>
-        <p class="dica" style="margin:0">Nunca apareceu em encontro nenhum.</p>
+        <p class="dica colado">Nunca apareceu em encontro nenhum.</p>
       <?php else: ?>
         <div class="rolagem cartoes">
           <table class="tabela">
@@ -504,13 +504,13 @@ function tela_da_ficha(array $aberta, ?array $editando, ?string $erro, ?string $
           <strong>Login:</strong> <span class="login"><?= h($aberta['usuario']) ?></span>
         </p>
         <div class="acoes">
-          <form method="post" style="display:inline">
+          <form method="post">
             <input type="hidden" name="csrf" value="<?= h(token()) ?>">
             <input type="hidden" name="acao" value="resetar">
             <input type="hidden" name="id" value="<?= h($aberta['id']) ?>">
             <button class="btn" type="submit">Resetar senha</button>
           </form>
-          <form method="post" style="display:inline">
+          <form method="post">
             <input type="hidden" name="csrf" value="<?= h(token()) ?>">
             <input type="hidden" name="acao" value="ativar">
             <input type="hidden" name="id" value="<?= h($aberta['id']) ?>">
@@ -530,7 +530,7 @@ function tela_da_ficha(array $aberta, ?array $editando, ?string $erro, ?string $
              dado", e só a administração vê — é a mesma régua da tela inteira. */ ?>
     <fieldset id="dados-dela">
       <legend>Os dados dela</legend>
-      <p class="dica" style="margin:0 0 12px">
+      <p class="dica folga">
         Se ela pedir para ver o que temos, ou para sair: é direito dela, e a
         resposta é imediata. Apagar a pedido deixa só a lápide — nome, quando,
         quem atendeu — e leva embora telefone, e-mail, endereço e conta.
@@ -554,7 +554,7 @@ function tela_da_ficha(array $aberta, ?array $editando, ?string $erro, ?string $
     <?php else: ?>
       <fieldset id="historico">
         <legend>Histórico de <?= h(explode(' ', $aberta['nome'])[0]) ?></legend>
-        <p class="dica" style="margin:0 0 12px">
+        <p class="dica folga">
           Sai do que já está gravado. Correção de ficha aparece como “Ficha
           alterada”, com quem mexeu e quando.
         </p>

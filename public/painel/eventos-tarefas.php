@@ -113,7 +113,7 @@ function bloco_tarefas(array $eu, bool $coordena): void
     <?php if ($feitas !== []): ?>
       <fieldset>
         <legend>Feitas (<?= count($feitas) ?>)</legend>
-        <ul class="dica" style="margin:0">
+        <ul class="dica colado">
           <?php foreach (array_slice($feitas, 0, 20) as $t): ?>
             <li><?= h($t['titulo']) ?> — <?= h($nomes[$t['donoId']] ?? '') ?> · feita <?= h(date('d/m', (int) strtotime($t['feitaEm']))) ?><?= $t['feitaPor'] !== '' ? ' por ' . h($t['feitaPor']) : '' ?></li>
           <?php endforeach; ?>

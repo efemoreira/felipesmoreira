@@ -296,7 +296,7 @@ function desenhar_preparo(array $aberto, array $familia, array $preparo, bool $c
   <details class="explicacao playbook">
     <summary>Playbook — <?= h($familia['nome']) ?> <span class="dica">· serve para <?= h(mb_strtolower($familia['serve'])) ?></span></summary>
     <p class="dica" style="margin:12px 0"><strong>Serve para:</strong> <?= h($familia['serve']) ?></p>
-    <p class="dica" style="margin:0 0 12px"><strong>Métrica de sucesso:</strong> <?= h($familia['metrica']) ?></p>
+    <p class="dica folga"><strong>Métrica de sucesso:</strong> <?= h($familia['metrica']) ?></p>
 
     <div class="msg msg-erro">
       <strong>Travas desta família</strong>
@@ -320,7 +320,7 @@ function desenhar_preparo(array $aberto, array $familia, array $preparo, bool $c
       <?php if ($tarefasDoEncontro === []): ?>
         <?php vazio('Nada combinado com nome e prazo ainda.', ['url' => '/painel/eventos.php?aba=tarefas&nova=1&evento=' . rawurlencode($aberto['id']), 'texto' => 'Combinar uma tarefa']); ?>
       <?php else: ?>
-        <ul class="dica" style="margin:0 0 8px">
+        <ul class="dica folga-curta">
           <?php foreach ($tarefasDoEncontro as $t): ?>
             <li<?= tarefa_vencida($t) ? ' style="color:var(--erro)"' : '' ?>>
               <a href="/painel/eventos.php?aba=tarefas#t-<?= h($t['id']) ?>"><?= h($t['titulo']) ?></a>
@@ -328,7 +328,7 @@ function desenhar_preparo(array $aberto, array $familia, array $preparo, bool $c
             </li>
           <?php endforeach; ?>
         </ul>
-        <?php if ($coordena): ?><p class="dica" style="margin:0"><a href="/painel/eventos.php?aba=tarefas&nova=1&evento=<?= h(rawurlencode($aberto['id'])) ?>">Combinar outra</a></p><?php endif; ?>
+        <?php if ($coordena): ?><p class="dica colado"><a href="/painel/eventos.php?aba=tarefas&nova=1&evento=<?= h(rawurlencode($aberto['id'])) ?>">Combinar outra</a></p><?php endif; ?>
       <?php endif; ?>
     </fieldset>
   <?php endif; ?>
