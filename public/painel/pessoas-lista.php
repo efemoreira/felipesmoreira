@@ -50,75 +50,11 @@ function tela_de_pessoas(?string $erro, ?string $ok, ?array $senhaNova): void
         tela_da_ficha($aberta, $editando, $erro, $ok, $senhaNova, $catalogo);
         return;
     }
-    $busca   = limpar_texto($_GET['q'] ?? '', 60);
-    $filtro  = limpar_texto($_GET['tipo'] ?? '', 20);
-    /* `reativar` não é um tipo de pessoa — é um recorte por ESTADO, e entra na
-       mesma barra porque a pergunta ("quem eu abro agora?") é a mesma. Quem
-       decide quem entra nele é `reativacao.php`. */
-    /* `duplicatas` também é recorte por estado: pares que parecem a mesma
-       pessoa. Era um bloco em cima da lista, sempre — virou aba, que só
-       existe quando há par. */
-    if (!isset(TIPOS_PESSOA[$filtro]) && $filtro !== 'reativar' && $filtro !== 'duplicatas') {
-        $filtro = '';
-    }
-    $cidadeF = cidade_valida($_GET['cidade'] ?? '');
-    /* POR QUEM ACOMPANHA. É a leitura que a camada de liderança pede da
-       coordenação: não "quem é essa pessoa", e sim "como o movimento está
-       dividido, e quem ficou sem ninguém". */
-    $liderF = limpar_texto($_GET['lider'] ?? '', 40);
-    /* Por rede profissional: é a pergunta "quem eu chamo para o café com a
-       saúde?", e a resposta precisa caber numa lista curta. */
-    $redeF = limpar_texto($_GET['rede'] ?? '', 20);
-    if (!isset(REDES[$redeF])) {
-        $redeF = '';
-    }
-    /* A-Z é o padrão: numa lista de gente a pergunta quase sempre é "cadê o
-       Fulano", e para isso a ordem alfabética é a única que não obriga a ler tudo.
-       "Mais recentes" existe para a outra pergunta — quem chegou esta semana. */
-    $ordem = in_array($_GET['ordem'] ?? '', ['recente', 'cidade'], true) ? (string) $_GET['ordem'] : 'nome';
-
-    $todas = ler_pessoas();
-    if ($busca !== '') {
-        /* Casa por nome, login, e-mail, cidade e bairro — e por telefone, que é o
-           único que não é texto: dígito casa com dígito, senão "(85) 9" não acharia
-           "85 9". Quem procura tem na mão um desses e nunca sabe qual foi gravado.
-
-           O e-mail entrou junto com o login por e-mail: se é por ele que a pessoa
-           entra, é por ele que a coordenação vai procurá-la quando ela disser "não
-           consigo entrar com o meu e-mail". */
-        $digitos = so_digitos($busca);
-        $todas = array_values(array_filter($todas, function ($p) use ($busca, $digitos) {
-            if (combina_com([$p['nome'], $p['usuario'], $p['email'], $p['cidade'], $p['bairro']], $busca)) {
-                return true;
-            }
-            return $digitos !== '' && $p['telefone'] !== '' && str_contains($p['telefone'], $digitos);
-        }));
-    }
-    if ($filtro !== '' && $filtro !== 'reativar' && $filtro !== 'duplicatas') {
-        $todas = array_values(array_filter($todas, fn ($p) => $p['tipo'] === $filtro));
-    }
-    if ($cidadeF !== '') {
-        $todas = array_values(array_filter($todas, fn ($p) => $p['cidade'] === $cidadeF));
-    }
-    if ($redeF !== '') {
-        $todas = array_values(array_filter($todas, fn ($p) => in_array($redeF, $p['redes'], true)));
-    }
-    if ($liderF !== '') {
-        /* `sem-lider` é o recorte que mais importa: numa base de oitenta e sete
-           pessoas, quem não está sob ninguém é quem some sem ninguém notar. */
-        $todas = $liderF === 'sem-lider'
-            ? array_values(array_filter($todas, fn ($p) => $p['lider'] === ''))
-            : array_values(array_filter($todas, fn ($p) => $p['lider'] === $liderF));
-    }
-    usort($todas, fn ($a, $b) => match ($ordem) {
-        /* `criadoEm` é ISO, então comparar como texto já ordena por tempo — e quem
-           não tem data (ficha vinda de importação) cai para o fim, que é onde ela
-           de fato pertence numa lista de "quem chegou agora". */
-        'recente' => strcmp((string) $b['criadoEm'], (string) $a['criadoEm']),
-        'cidade'  => [sem_acento($a['cidade']), sem_acento($a['bairro']), sem_acento($a['nome'])]
-                     <=> [sem_acento($b['cidade']), sem_acento($b['bairro']), sem_acento($b['nome'])],
-        default   => strcmp(sem_acento($a['nome']), sem_acento($b['nome'])),
-    });
+    /* O recorte — busca, tipo, cidade, rede, líder, ordem — é UMA função,
+       `recorte_de_pessoas()`, e o CSV de Exportar usa a mesma: o que a
+       coordenação vê filtrado é o que ela leva na planilha. */
+    ['pessoas' => $todas, 'busca' => $busca, 'filtro' => $filtro, 'cidade' => $cidadeF,
+     'rede' => $redeF, 'lider' => $liderF, 'ordem' => $ordem] = recorte_de_pessoas($_GET);
 
     /* Só líderes que de fato têm gente, mais o recorte de quem não tem ninguém.
        Oferecer todos os possíveis encheria o filtro de becos com zero linhas. */
@@ -267,6 +203,17 @@ abrir_pagina('Pessoas');
             $filtro !== '' ? ['tipo' => $filtro] : []
         );
       ?>
+      <?php /* O CSV leva EXATAMENTE este recorte — a mesma querystring, a
+               mesma `recorte_de_pessoas()`. É dado pessoal saindo: só
+               coordenação e administração. */ ?>
+      <?php if (tem_capacidade('coordenacao')): ?>
+        <p class="dica exportar">
+          <a class="btn btn-mini" href="/painel/exportar.php?<?= h(http_build_query(['o' => 'pessoas'] + $_GET)) ?>">
+            Baixar CSV (<?= count($todas) ?>)
+          </a>
+          <span>o recorte de cima, em planilha — abre no Excel e no Google Planilhas</span>
+        </p>
+      <?php endif; ?>
     <?php endif; ?>
 
     <?php if ($todas === []): ?>

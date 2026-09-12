@@ -324,3 +324,96 @@ function pendencias_gente(array $u): array
 
     return $tarefas;
 }
+
+/* ===================== o recorte da lista ===================== */
+
+/**
+ * A lista de pessoas recortada como a tela recorta — e como o CSV exporta.
+ *
+ * Busca, tipo, cidade, rede profissional, quem acompanha e ordem, lidos da
+ * querystring. É função, e não código dentro da tela, para que "o que eu vejo
+ * filtrado" e "o que eu levo na planilha" sejam a mesma coisa por construção.
+ * Devolve também os filtros já limpos, para a tela desenhar a barra.
+ */
+function recorte_de_pessoas(array $get): array
+{
+    $busca   = limpar_texto($get['q'] ?? '', 60);
+    $filtro  = limpar_texto($get['tipo'] ?? '', 20);
+    /* `reativar` não é um tipo de pessoa — é um recorte por ESTADO, e entra na
+       mesma barra porque a pergunta ("quem eu abro agora?") é a mesma. Quem
+       decide quem entra nele é `reativacao.php`. */
+    /* `duplicatas` também é recorte por estado: pares que parecem a mesma
+       pessoa. Era um bloco em cima da lista, sempre — virou aba, que só
+       existe quando há par. */
+    if (!isset(TIPOS_PESSOA[$filtro]) && $filtro !== 'reativar' && $filtro !== 'duplicatas') {
+        $filtro = '';
+    }
+    $cidadeF = cidade_valida($get['cidade'] ?? '');
+    /* POR QUEM ACOMPANHA. É a leitura que a camada de liderança pede da
+       coordenação: não "quem é essa pessoa", e sim "como o movimento está
+       dividido, e quem ficou sem ninguém". */
+    $liderF = limpar_texto($get['lider'] ?? '', 40);
+    /* Por rede profissional: é a pergunta "quem eu chamo para o café com a
+       saúde?", e a resposta precisa caber numa lista curta. */
+    $redeF = limpar_texto($get['rede'] ?? '', 20);
+    if (!isset(REDES[$redeF])) {
+        $redeF = '';
+    }
+    /* A-Z é o padrão: numa lista de gente a pergunta quase sempre é "cadê o
+       Fulano", e para isso a ordem alfabética é a única que não obriga a ler tudo.
+       "Mais recentes" existe para a outra pergunta — quem chegou esta semana. */
+    $ordem = in_array($get['ordem'] ?? '', ['recente', 'cidade'], true) ? (string) $get['ordem'] : 'nome';
+
+    $todas = ler_pessoas();
+    if ($busca !== '') {
+        /* Casa por nome, login, e-mail, cidade e bairro — e por telefone, que é o
+           único que não é texto: dígito casa com dígito, senão "(85) 9" não acharia
+           "85 9". Quem procura tem na mão um desses e nunca sabe qual foi gravado.
+
+           O e-mail entrou junto com o login por e-mail: se é por ele que a pessoa
+           entra, é por ele que a coordenação vai procurá-la quando ela disser "não
+           consigo entrar com o meu e-mail". */
+        $digitos = so_digitos($busca);
+        $todas = array_values(array_filter($todas, function ($p) use ($busca, $digitos) {
+            if (combina_com([$p['nome'], $p['usuario'], $p['email'], $p['cidade'], $p['bairro']], $busca)) {
+                return true;
+            }
+            return $digitos !== '' && $p['telefone'] !== '' && str_contains($p['telefone'], $digitos);
+        }));
+    }
+    if ($filtro !== '' && $filtro !== 'reativar' && $filtro !== 'duplicatas') {
+        $todas = array_values(array_filter($todas, fn ($p) => $p['tipo'] === $filtro));
+    }
+    if ($cidadeF !== '') {
+        $todas = array_values(array_filter($todas, fn ($p) => $p['cidade'] === $cidadeF));
+    }
+    if ($redeF !== '') {
+        $todas = array_values(array_filter($todas, fn ($p) => in_array($redeF, $p['redes'], true)));
+    }
+    if ($liderF !== '') {
+        /* `sem-lider` é o recorte que mais importa: numa base de oitenta e sete
+           pessoas, quem não está sob ninguém é quem some sem ninguém notar. */
+        $todas = $liderF === 'sem-lider'
+            ? array_values(array_filter($todas, fn ($p) => $p['lider'] === ''))
+            : array_values(array_filter($todas, fn ($p) => $p['lider'] === $liderF));
+    }
+    usort($todas, fn ($a, $b) => match ($ordem) {
+        /* `criadoEm` é ISO, então comparar como texto já ordena por tempo — e quem
+           não tem data (ficha vinda de importação) cai para o fim, que é onde ela
+           de fato pertence numa lista de "quem chegou agora". */
+        'recente' => strcmp((string) $b['criadoEm'], (string) $a['criadoEm']),
+        'cidade'  => [sem_acento($a['cidade']), sem_acento($a['bairro']), sem_acento($a['nome'])]
+                     <=> [sem_acento($b['cidade']), sem_acento($b['bairro']), sem_acento($b['nome'])],
+        default   => strcmp(sem_acento($a['nome']), sem_acento($b['nome'])),
+    });
+
+    return [
+        'pessoas' => $todas,
+        'busca'   => $busca,
+        'filtro'  => $filtro,
+        'cidade'  => $cidadeF,
+        'rede'    => $redeF,
+        'lider'   => $liderF,
+        'ordem'   => $ordem,
+    ];
+}

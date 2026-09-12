@@ -137,6 +137,12 @@ function tela_de_caixa(?string $erro, ?string $ok): void
 
   <fieldset id="extrato">
     <legend>Extrato (<?= count($lista) ?>)</legend>
+    <?php if ($lista !== []): ?>
+      <p class="dica exportar">
+        <a class="btn btn-mini" href="/painel/exportar.php?o=caixa&conta=<?= h($contaF) ?>">Baixar CSV</a>
+        <span>este caixa, lançamento a lançamento — para o contador</span>
+      </p>
+    <?php endif; ?>
     <?php if ($lista === []): ?>
       <p class="dica" style="margin:0">Nada lançado neste caixa ainda.</p>
     <?php else: ?>

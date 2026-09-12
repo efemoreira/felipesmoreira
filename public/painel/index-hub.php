@@ -65,6 +65,7 @@ function tela_do_inicio(array $u, ?string $aviso, ?string $sucesso): void
         $aviso = match (true) {
             $negado === 'usuarios' => 'Só um administrador abre a lista de usuários.',
             $negado === 'gente'    => '“Sua gente” é de quem acompanha alguém. Peça à coordenação para ser apontada como líder.',
+            $negado === 'exportar' => 'Exportar é da coordenação: é dado pessoal saindo do sistema.',
             default                => 'Você não tem acesso a “' . (AREAS[$negado] ?? $negado) . '”. Peça a um administrador.',
         };
     }

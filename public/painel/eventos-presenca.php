@@ -58,6 +58,12 @@ function desenhar_presenca(array $aberto, array $eu): void
     <legend>
       Quem vem e quem veio (<?= count($pessoas) ?><?= $buscaP !== '' ? ' de ' . $naLista : '' ?>)
     </legend>
+    <?php if ($naLista > 0 && tem_capacidade('coordenacao')): ?>
+      <p class="dica exportar">
+        <a class="btn btn-mini" href="/painel/exportar.php?o=presencas&evento=<?= h(rawurlencode($aberto['id'])) ?>">Baixar CSV</a>
+        <span>a lista deste encontro, com quem confirmou e quem veio</span>
+      </p>
+    <?php endif; ?>
 
     <?php /* Só aparece quando há o que procurar: com oito nomes a caixa é um
              controle em cima de uma lista que cabe inteira na tela. */ ?>
