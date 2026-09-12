@@ -34,6 +34,7 @@ require_once __DIR__ . '/inscricoes-comum.php';  // nome_funcao(), para rotular 
 require_once __DIR__ . '/eventos-acoes.php';
 require_once __DIR__ . '/eventos-lista.php';
 require_once __DIR__ . '/eventos-encontro.php';
+require_once __DIR__ . '/eventos-cartaz.php';
 exigir_area('eventos');
 
 $eu = usuario_atual();
@@ -52,6 +53,8 @@ $aberto = achar_evento(limpar_texto($_GET['e'] ?? '', 40));
 
 if ($aberto === null) {
     tela_lista_de_encontros($coordena, $eu, $erro, $ok);
+} elseif (!empty($_GET['cartaz']) && $aberto['token'] !== '') {
+    tela_do_cartaz($aberto);   // a folha da mesa da Recepção — só ela, para imprimir
 } else {
     tela_do_encontro($aberto, $eu, $coordena, $erro, $ok);
 }

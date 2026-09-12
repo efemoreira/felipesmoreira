@@ -1579,7 +1579,7 @@ fieldset[id], .item[id], .ficha[id] { scroll-margin-top:18px; }
 .metas { display:grid; gap:12px; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); margin:0 0 14px; }
 .meta { border:3px solid var(--linha); background:var(--realce-1); padding:12px 14px; position:relative; }
 .meta-numero { margin:0; font-size:15px; }
-.meta-numero strong { font-family:var(--titulo-fonte, inherit); font-size:28px; line-height:1; }
+.meta-numero strong { font-family:var(--display); font-size:28px; line-height:1; }
 .meta-rotulo { margin:4px 0 0; font:400 11px/1.3 var(--etiqueta); letter-spacing:1.4px; text-transform:uppercase; color:var(--texto-fraco); }
 .meta-nota { margin:8px 0 0; font-size:13.5px; color:var(--texto-fraco); }
 .meta-feito { border-color:var(--ok-borda); }
@@ -1592,3 +1592,31 @@ fieldset[id], .item[id], .ficha[id] { scroll-margin-top:18px; }
 .tarefa-vencida { border-color:var(--erro-borda); }
 .tarefa-corpo { min-width:0; }
 @media (max-width:600px) { .tarefa { flex-direction:column; } }
+
+/* ---------- o cartaz da recepção ---------- */
+.cartaz-qr { max-width:640px; margin:0 auto; padding:28px 20px 60px; text-align:center; }
+.cartaz-kicker { font:400 13px/1 var(--etiqueta); letter-spacing:3px; text-transform:uppercase; color:var(--texto-fraco); margin:0 0 12px; }
+.cartaz-titulo { font-size:clamp(28px, 6vw, 44px); line-height:1.08; margin:0 0 8px; }
+.cartaz-quando { font:400 14px/1.4 var(--etiqueta); letter-spacing:1.5px; text-transform:uppercase; margin:0 0 26px; color:var(--texto-fraco); }
+.cartaz-papel { display:inline-block; background:#fff; color:#181203; border:4px solid #181203; padding:26px 26px 20px; box-shadow:8px 8px 0 rgba(24,18,3,.35); }
+.cartaz-arte { width:min(72vw, 360px); height:auto; aspect-ratio:1; margin:0 auto; }
+.cartaz-cheguei { font-family:var(--display); font-size:clamp(40px, 10vw, 64px); line-height:1; margin:18px 0 6px; letter-spacing:1px; text-transform:uppercase; }
+.cartaz-como { font-size:17px; line-height:1.4; margin:0; max-width:32ch; }
+.cartaz-nota { margin:24px auto 6px; max-width:52ch; font-size:15.5px; line-height:1.5; }
+.cartaz-url { font:400 12px/1.4 var(--etiqueta); letter-spacing:.5px; color:var(--texto-fraco); word-break:break-all; margin:0 0 22px; }
+.cartaz-acoes { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+@media print {
+  /* Uma folha só: o QR em 96 mm (lê a dois metros), a URL embaixo para quando
+     a câmera falhar, e nada que estoure para a página 2. Sem sombra no
+     título — na impressora ela sai como texto dobrado. */
+  .cartaz-qr { max-width:none; padding:0; color:#000; page-break-inside:avoid; }
+  .cartaz-kicker, .cartaz-quando, .cartaz-nota, .cartaz-url { color:#000; }
+  .cartaz-titulo { color:#000; text-shadow:none; font-size:30pt; }
+  .cartaz-papel { box-shadow:none; padding:18px 18px 14px; }
+  .cartaz-arte { width:96mm; }
+  .cartaz-cheguei { font-size:56pt; margin:12px 0 4px; text-shadow:none; }
+  .cartaz-nota { margin:14px auto 4px; font-size:12pt; }
+  .cartaz-url { font-size:9pt; margin:0; }
+  .cartaz-acoes { display:none; }
+  @page { margin:12mm; }
+}
