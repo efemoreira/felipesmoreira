@@ -81,6 +81,17 @@ if (PHP_SAPI !== 'cli' && !filter_var(ini_get('display_errors'), FILTER_VALIDATE
    por cima. `testes/acoes/cabecalhos.test.ts` confere os dois lados. */
 header('Cache-Control: no-store, private');
 
+/* A CONTENT-SECURITY-POLICY. Script só do próprio domínio ou com o nonce
+   desta requisição — o inline sem nonce, que é o vetor do XSS, não roda.
+   Estilo inline continua permitido (o painel tem `style=` em toda parte; é
+   dívida, não risco). Nada de terceiro: nem fonte, nem imagem, nem fetch.
+   O Estúdio serve o HTML do Next, cheio de script inline dele, e tira o
+   cabeçalho (`estudio.php`). `frame-ancestors 'none'`: o painel nunca abre
+   dentro de um iframe alheio. */
+header("Content-Security-Policy: default-src 'self'; script-src 'self' 'nonce-" . nonce_csp() . "'; "
+    . "style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; "
+    . "frame-ancestors 'none'; form-action 'self'; base-uri 'self'; object-src 'none'");
+
 /* ===================== infraestrutura ===================== */
 
 /**
@@ -116,6 +127,13 @@ function com_trava(string $arquivo, callable $fn): mixed
         flock($h, LOCK_UN);
         fclose($h);
     }
+}
+
+/** O nonce desta requisição — o mesmo no cabeçalho e em cada `<script>` inline. */
+function nonce_csp(): string
+{
+    static $nonce = null;
+    return $nonce ??= base64_encode(random_bytes(16));
 }
 
 /* ===================== o rastro ===================== */

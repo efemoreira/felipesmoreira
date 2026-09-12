@@ -198,7 +198,7 @@ function formulario_pessoa(?array $aberta, array $catalogo): void
                de risco dentro do formulário que se usa todo dia é o botão que se
                aperta por engano. */ ?>
       <form method="post" class="decidir-recusa"
-            onsubmit="return confirm(<?= texto_js('Apagar ' . $aberta['nome'] . ' e as presenças dela?') ?>)">
+            data-confirmar="<?= h('Apagar ' . $aberta['nome'] . ' e as presenças dela?') ?>">
         <input type="hidden" name="csrf" value="<?= h(token()) ?>">
         <input type="hidden" name="acao" value="apagar">
         <input type="hidden" name="id" value="<?= h($aberta['id']) ?>">
@@ -260,7 +260,7 @@ function bloco_duplicatas(array $duplicatas): void
           <div class="acoes">
             <?php foreach ([['a', 'b'], ['b', 'a']] as [$fica, $vai]): ?>
               <form method="post" style="display:inline"
-                    onsubmit="return confirm(<?= texto_js('Juntar tudo em “' . $d[$fica]['nome'] . '” e apagar a outra ficha?') ?>)">
+                    data-confirmar="<?= h('Juntar tudo em “' . $d[$fica]['nome'] . '” e apagar a outra ficha?') ?>">
                 <input type="hidden" name="csrf" value="<?= h(token()) ?>">
                 <input type="hidden" name="acao" value="juntar">
                 <input type="hidden" name="id" value="<?= h($d[$fica]['id']) ?>">
@@ -538,7 +538,7 @@ function tela_da_ficha(array $aberta, ?array $editando, ?string $erro, ?string $
       <div class="acoes">
         <a class="btn" href="/painel/exportar.php?o=pessoa&id=<?= h(rawurlencode($aberta['id'])) ?>">Baixar tudo sobre ela (JSON)</a>
         <form method="post" class="decidir-recusa" style="margin:0"
-              onsubmit="return confirm(<?= texto_js('Apagar a pedido de ' . $aberta['nome'] . '? Telefone, e-mail, endereço e conta vão embora; fica só a lápide.') ?>)">
+              data-confirmar="<?= h('Apagar a pedido de ' . $aberta['nome'] . '? Telefone, e-mail, endereço e conta vão embora; fica só a lápide.') ?>">
           <input type="hidden" name="csrf" value="<?= h(token()) ?>">
           <input type="hidden" name="acao" value="apagar">
           <input type="hidden" name="id" value="<?= h($aberta['id']) ?>">

@@ -108,7 +108,7 @@ function bloco_fila(array $fila, array $eu, string $buscaFa, callable $quando): 
                      dia em que o padrão mudasse. */ ?>
             <?php botao_modal('corrigir-fato', 'Corrigir a ficha', 'aba=fila&editar=' . urlencode($f['id']) . '#fila', 'btn btn-mini'); ?>
             <form method="post" style="display:inline"
-                  onsubmit="return confirm('Apagar esta ficha da fila? Ela não foi decidida, então nada aponta para ela — mas não tem desfazer.')">
+                  data-confirmar="Apagar esta ficha da fila? Ela não foi decidida, então nada aponta para ela — mas não tem desfazer.">
               <input type="hidden" name="csrf" value="<?= h(token()) ?>">
               <input type="hidden" name="id" value="<?= h($f['id']) ?>">
               <button type="submit" class="btn btn-mini btn-risco" name="acao" value="apagar">Apagar</button>

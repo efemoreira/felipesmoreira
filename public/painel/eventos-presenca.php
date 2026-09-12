@@ -273,7 +273,7 @@ function desenhar_presenca(array $aberto, array $eu): void
                     <input type="hidden" name="acao" value="classificar">
                     <?php /* Grava no cadastro DA PESSOA, e não nesta linha: ela é
                              militante em todo lugar, não só neste sábado. */ ?>
-                    <select name="tipo" onchange="this.form.submit()">
+                    <select name="tipo" data-envia-ao-mudar>
                       <?php foreach (TIPOS_PESSOA as $chave => $nome): ?>
                         <option value="<?= h($chave) ?>" <?= $q['tipo'] === $chave ? 'selected' : '' ?>><?= h($nome) ?></option>
                       <?php endforeach; ?>

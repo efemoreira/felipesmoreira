@@ -129,7 +129,8 @@ describe("lista: as ações da linha moram atrás dos três pontinhos", () => {
 
   test("o menu continua tendo CSS e script", () => {
     const css = readFileSync(path.join(PAINEL, "painel.css"), "utf8");
-    const layout = ler("layout.php");
+    /* O script comum saiu do layout.php para o painel.js em 12/09. */
+    const layout = readFileSync(path.join(PAINEL, "painel.js"), "utf8");
 
     /* Sem a caixa, o <details> abre um bloco solto no meio da célula; sem o
        script, ela sai recortada pela `.rolagem` da tabela — que é

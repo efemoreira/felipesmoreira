@@ -246,7 +246,7 @@ function aba_da_fila(array $novas, string $buscaIn, callable $formatar, ?array $
             </form>
 
             <form method="post" class="decidir-recusa"
-                  onsubmit="return confirm(<?= texto_js('Recusar a inscrição de ' . $i['nome'] . '? Ela fica registrada, mas não vira acesso.') ?>)">
+                  data-confirmar="<?= h('Recusar a inscrição de ' . $i['nome'] . '? Ela fica registrada, mas não vira acesso.') ?>">
               <input type="hidden" name="acao" value="recusar">
               <input type="hidden" name="id" value="<?= h($i['id']) ?>">
               <input type="hidden" name="csrf" value="<?= h(token()) ?>">

@@ -347,7 +347,7 @@ abrir_pagina('Manutenção');
   <fieldset>
     <legend>O que existe hoje</legend>
     <form method="post"
-          onsubmit="return confirm('Última pergunta: apagar de verdade? Isto não tem desfazer.')">
+          data-confirmar="Última pergunta: apagar de verdade? Isto não tem desfazer.">
       <input type="hidden" name="csrf" value="<?= h(token()) ?>">
 
       <?php foreach ($grupos as $chave => $grupo): ?>

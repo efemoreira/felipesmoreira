@@ -233,7 +233,7 @@ function tela_de_agenda(?string $aviso, ?string $sucesso, ?array $rascunho): voi
          script — o mesmo truque do `window.__PAINEL__` do Estúdio. As flags
          `JSON_HEX_*` não são decoração: um `</script>` dentro de um rótulo
          escaparia do bloco. */ ?>
-<script>
+<script nonce="<?= h(nonce_csp()) ?>">
   window.__AGENDA__ = <?= json_encode(
       ['maxUpload' => MAX_UPLOAD, 'plataformas' => PLATAFORMAS, 'temas' => TEMAS],
       JSON_UNESCAPED_UNICODE | JSON_HEX_QUOT | JSON_HEX_APOS | JSON_HEX_TAG | JSON_HEX_AMP

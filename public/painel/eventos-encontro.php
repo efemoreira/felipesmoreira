@@ -110,7 +110,7 @@ function tela_do_encontro(array $aberto, array $eu, bool $coordena, ?string $err
          seria pagar um arquivo para não desenhar nada. */ ?>
 <?php if ($aberto['token'] !== '' && $aba === 'pessoas'): ?>
   <script src="/painel/vendor/qrcode.js?v=<?= VERSAO_ESTILO ?>"></script>
-  <script>
+  <script nonce="<?= h(nonce_csp()) ?>">
     /* Desenha o QR em SVG. Servido do próprio domínio (ver vendor/LEIA-ME.md):
        nada do visitante vai para CDN de terceiro.
 

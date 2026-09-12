@@ -420,7 +420,7 @@ abrir_pagina('Candidatos');
                       </button>
                     </form>
                     <form method="post" style="display:inline"
-                          onsubmit="return confirm(<?= texto_js('Apagar a lista “' . $l['nome'] . '”? Os candidatos continuam cadastrados.') ?>)">
+                          data-confirmar="<?= h('Apagar a lista “' . $l['nome'] . '”? Os candidatos continuam cadastrados.') ?>">
                       <input type="hidden" name="csrf" value="<?= h(token()) ?>">
                       <input type="hidden" name="id" value="<?= h($l['id']) ?>">
                       <button class="btn btn-risco" name="acao" value="lista-apagar" type="submit">Apagar a lista</button>

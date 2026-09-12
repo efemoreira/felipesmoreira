@@ -115,7 +115,8 @@ Regras:
 
 ## Convenções do painel
 
-- Navegação mora em `layout.php`, e só lá; os componentes de tela estão em `componentes.php`, que ele inclui.
+- Navegação mora em `layout.php`, e só lá; os componentes de tela estão em `componentes.php`, que ele inclui. O JavaScript comum é `painel.js` (servido com `?v=VERSAO_ESTILO`).
+- **CSP com nonce**: nada de `onsubmit=`/`onclick=` inline — use `data-confirmar="pergunta"` no `<form>` e `data-envia-ao-mudar` no `<select>`; `<script>` inline leva `nonce="<?= h(nonce_csp()) ?>"`. `testes/acoes/cabecalhos.test.ts` prende.
 - Telas grandes seguem, por padrão:
 
 ```text

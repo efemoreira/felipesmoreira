@@ -370,7 +370,7 @@ function menu_acoes(array $itens, string $rotulo = 'Ações'): void
             <?php /* `menu-fim` é o traço acima do que não se desfaz: ele mora no
                      <form>, e não no botão, porque o botão já tem borda
                      própria — duas bordas encostadas viram uma linha grossa. */ ?>
-            <form method="post" class="<?= !empty($item['risco']) ? 'menu-fim' : '' ?>"<?= isset($item['confirmar']) ? ' onsubmit="return confirm(' . texto_js($item['confirmar']) . ')"' : '' ?>>
+            <form method="post" class="<?= !empty($item['risco']) ? 'menu-fim' : '' ?>"<?= isset($item['confirmar']) ? ' data-confirmar="' . h($item['confirmar']) . '"' : '' ?>>
               <input type="hidden" name="csrf" value="<?= h(token()) ?>">
               <?php foreach (($item['campos'] ?? []) as $nome => $valor): ?>
                 <input type="hidden" name="<?= h($nome) ?>" value="<?= h((string) $valor) ?>">
