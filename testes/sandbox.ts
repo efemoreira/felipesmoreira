@@ -81,6 +81,15 @@ export interface Sandbox {
   ): Promise<Resposta>;
   /** Uma tela pelo HTTP, com a mesma sessão do `postar()` — para ler o depois. */
   buscar(tela: string, querystring?: string): Promise<Resposta>;
+  /**
+   * Um POST de JSON num endpoint de `api/` — o que o site público manda.
+   *
+   * Sem cookie e sem csrf de propósito: é o visitante, não a conta de teste.
+   * `caminho` é relativo a `/painel/` e leva a querystring ("api/presenca.php?e=…").
+   * Vários em paralelo (`Promise.all`) são vários visitantes ao mesmo tempo —
+   * é assim que se testa a tranca de gravação.
+   */
+  postarJson(caminho: string, corpo: unknown): Promise<{ status: number; json: Registro; erros: string }>;
   /** O conteúdo de `dados/<nome>.php`, já em objeto. */
   ler(nome: string): Registro[];
   /**
@@ -309,10 +318,20 @@ session_write_close();
 `,
   );
 
-  async function subir(): Promise<string> {
+  /* A SUBIDA É UMA PROMESSA GUARDADA, e não um `if (servidor !== null)`: oito
+     `postarJson()` disparados juntos (`Promise.all`) passavam todos pelo `if`
+     antes de o primeiro servidor existir, e subiam oito servidores — cada um
+     com seus workers — que ninguém fechava. */
+  let subindo: Promise<string> | null = null;
+  function subir(): Promise<string> {
     if (servidor !== null) {
-      return base;
+      return Promise.resolve(base);
     }
+    subindo ??= subirDeVerdade();
+    return subindo;
+  }
+
+  async function subirDeVerdade(): Promise<string> {
     execFileSync("php", [path.join(dir, "sessao-fixa.php")], { stdio: "pipe" });
 
     const porta = await portaLivre();
@@ -325,7 +344,20 @@ session_write_close();
         "-S", `127.0.0.1:${porta}`,
         "-t", dir,
       ],
-      { stdio: ["ignore", "ignore", "pipe"] },
+      /* VÁRIOS PROCESSOS, e não um: com um só, o `php -S` atende uma conexão
+         por vez e fica esperando a próxima requisição da conexão que o Node
+         mantém aberta — vinte `fetch` em paralelo travam até o keep-alive
+         vencer. E é com processos de verdade, cada um lendo e gravando o mesmo
+         arquivo, que a tranca de `com_trava()` é posta à prova
+         (`acoes/concorrencia.test.ts`). */
+      {
+        stdio: ["ignore", "ignore", "pipe"],
+        env: { ...process.env, PHP_CLI_SERVER_WORKERS: "8" },
+        /* Grupo próprio: os workers são filhos do `php -S`, e matar só o pai
+           deixava oito órfãos segurando as conexões — o runner esperava o
+           event loop esvaziar e nunca terminava. `fechar()` mata o grupo. */
+        detached: true,
+      },
     );
     servidor.stderr?.setEncoding("utf8");
     servidor.stderr?.on("data", (d: string) => {
@@ -511,6 +543,26 @@ session_write_close();
       await r.text();
       return seguir(alvo, r.headers.get("location") ?? "", marca, r.status);
     },
+    async postarJson(caminho, corpo) {
+      await subir();
+      const marca = stderr.length;
+      const r = await fetch(`${base}/painel/${caminho}`, {
+        method: "POST",
+        redirect: "manual",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(corpo),
+      });
+      const texto = await r.text();
+      let json: Registro = null;
+      try {
+        json = JSON.parse(texto);
+      } catch {
+        json = { bruto: texto };
+      }
+      const erros = desde(marca);
+      exigirSilencio(caminho, erros);
+      return { status: r.status, json, erros };
+    },
     async buscar(tela, querystring = "") {
       exigirTela(tela);
       await subir();
@@ -620,8 +672,15 @@ gravar_pessoas($pessoas);
       execFileSync("php", [script], { stdio: "pipe" });
     },
     fechar() {
-      servidor?.kill();
+      if (servidor?.pid) {
+        try {
+          process.kill(-servidor.pid, "SIGTERM");
+        } catch {
+          servidor.kill();
+        }
+      }
       servidor = null;
+      subindo = null;
       rmSync(dir, { recursive: true, force: true });
     },
   };

@@ -235,16 +235,18 @@ function gravar_mutirao(array $mutirao): bool
  */
 function registrar_postagem(string $quem, ?bool $postou = null): ?string
 {
-    $mutirao = ler_mutirao();
-    $semana  = chave_da_semana();
-    $linha   = $mutirao[$semana] ?? ['peca' => '', 'escalados' => []];
-    if (!isset($linha['escalados'][$quem])) {
-        return 'Essa pessoa não está no mutirão desta semana.';
-    }
-    $estava = $linha['escalados'][$quem] === 'postou';
-    $linha['escalados'][$quem] = ($postou ?? !$estava) ? 'postou' : 'escalado';
-    $mutirao[$semana] = $linha;
-    return gravar_mutirao($mutirao) ? null : 'Não consegui gravar o mutirão.';
+    return com_trava(ARQ_MUTIRAO, function () use ($quem, $postou): ?string {
+        $mutirao = ler_mutirao();
+        $semana  = chave_da_semana();
+        $linha   = $mutirao[$semana] ?? ['peca' => '', 'escalados' => []];
+        if (!isset($linha['escalados'][$quem])) {
+            return 'Essa pessoa não está no mutirão desta semana.';
+        }
+        $estava = $linha['escalados'][$quem] === 'postou';
+        $linha['escalados'][$quem] = ($postou ?? !$estava) ? 'postou' : 'escalado';
+        $mutirao[$semana] = $linha;
+        return gravar_mutirao($mutirao) ? null : 'Não consegui gravar o mutirão.';
+    });
 }
 
 /** O que está combinado para esta semana — peça, escalados, e a ficha da peça. */

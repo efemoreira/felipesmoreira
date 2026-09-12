@@ -116,22 +116,27 @@ if (!in_array($resposta, ['topou', 'nao-posso'], true)) {
     responder(200, ['ok' => false, 'erro' => 'Resposta inválida.']);
 }
 
-$eventos = ler_eventos();
-foreach ($eventos as &$e) {
-    if ($e['id'] !== $c['evento']['id']) {
-        continue;
+/* Dentro da tranca: dois convidados respondendo no mesmo minuto liam o mesmo
+   encontro, e o segundo `gravar_eventos()` apagava o aceite do primeiro. */
+$gravou = com_trava(ARQ_EVENTOS, function () use ($c, $resposta): bool {
+    $eventos = ler_eventos(true);
+    foreach ($eventos as &$e) {
+        if ($e['id'] !== $c['evento']['id']) {
+            continue;
+        }
+        $e['aceites'][$c['peca']][$c['pessoa']['id']] = $resposta;
+        /* O relógio do silêncio é do CONVITE: quem responde não reabre contagem
+           nenhuma, e quem nunca foi carimbado ganha o carimbo agora para a régua
+           das 48h ter de onde contar. */
+        if (($e['convidadoEm'][$c['peca']][$c['pessoa']['id']] ?? '') === '') {
+            $e['convidadoEm'][$c['peca']][$c['pessoa']['id']] = date('c');
+        }
     }
-    $e['aceites'][$c['peca']][$c['pessoa']['id']] = $resposta;
-    /* O relógio do silêncio é do CONVITE: quem responde não reabre contagem
-       nenhuma, e quem nunca foi carimbado ganha o carimbo agora para a régua
-       das 48h ter de onde contar. */
-    if (($e['convidadoEm'][$c['peca']][$c['pessoa']['id']] ?? '') === '') {
-        $e['convidadoEm'][$c['peca']][$c['pessoa']['id']] = date('c');
-    }
-}
-unset($e);
+    unset($e);
+    return gravar_eventos($eventos);
+});
 
-if (!gravar_eventos($eventos)) {
+if (!$gravou) {
     responder(200, ['ok' => false, 'erro' => 'Não consegui gravar. Tente de novo.']);
 }
 

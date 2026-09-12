@@ -68,6 +68,41 @@ session_start();
 
 /* ===================== infraestrutura ===================== */
 
+/**
+ * Roda `$fn` com a tranca de `$arquivo` na mão — e é dentro dela que se lê.
+ *
+ * `gravar_atomico()` garante que o arquivo nunca fica pela metade; NÃO garante
+ * que duas requisições não leiam a mesma versão, mudem cada uma a sua e a
+ * segunda apague o que a primeira gravou. Todo caminho do painel é
+ * `ler_X()` → altera → `gravar_X()`, e onde trinta celulares leem o mesmo QR
+ * na porta (`api/presenca.php`) isso é uma presença que some sem erro nenhum.
+ *
+ * A tranca é `flock()` num `<arquivo>.lock` ao lado do dado — dentro de
+ * `/dados`, que o `.htaccess` fecha. Quem chama tem de LER DE NOVO dentro do
+ * `$fn` (`ler_pessoas(true)`): a cópia que a requisição já tinha na memória é
+ * de antes da fila, e é exatamente ela que não vale mais.
+ *
+ * Sem conseguir abrir o `.lock` (pasta ausente, disco só-leitura) roda sem
+ * tranca: melhor gravar como antes do que negar a presença de alguém.
+ */
+function com_trava(string $arquivo, callable $fn): mixed
+{
+    preparar_pastas();
+    $h = @fopen($arquivo . '.lock', 'c');
+    if ($h === false || !@flock($h, LOCK_EX)) {
+        if ($h !== false) {
+            fclose($h);
+        }
+        return $fn();
+    }
+    try {
+        return $fn();
+    } finally {
+        flock($h, LOCK_UN);
+        fclose($h);
+    }
+}
+
 function gravar_atomico(string $destino, string $conteudo): bool
 {
     /* O SUFIXO É SORTEADO de propósito. Com o `.tmp` fixo, o nome do arquivo do
@@ -508,14 +543,16 @@ function areas_do_usuario(): array
 
 function marcar_acesso(string $id): void
 {
-    $pessoas = ler_pessoas();
-    foreach ($pessoas as &$p) {
-        if ($p['id'] === $id) {
-            $p['ultimoAcesso'] = date('c');
-            gravar_pessoas($pessoas);
-            return;
+    com_trava(ARQ_PESSOAS, function () use ($id): void {
+        $pessoas = ler_pessoas(true);
+        foreach ($pessoas as &$p) {
+            if ($p['id'] === $id) {
+                $p['ultimoAcesso'] = date('c');
+                gravar_pessoas($pessoas);
+                return;
+            }
         }
-    }
+    });
 }
 
 /** Porteiro das páginas que não têm tela de login própria. */

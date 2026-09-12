@@ -76,6 +76,12 @@ function passou_do_limite(string $escopo = 'inscricao', int $porHora = LIMITE_PO
 
 function registrar_envio(string $escopo = 'inscricao'): void
 {
+    com_trava(ARQ_LIMITE, fn () => registrar_envio_travado($escopo));
+}
+
+/** O leitura-altera-grava de `registrar_envio()`, já com a tranca na mão. */
+function registrar_envio_travado(string $escopo): void
+{
     preparar_pastas();
     $agora = time();
     $chave = chave_visitante() . ':' . $escopo;
