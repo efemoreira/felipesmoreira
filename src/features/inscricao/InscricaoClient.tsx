@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link";
 import { Icon } from "@/components/icons";
 import catalogo from "@/data/funcoes.json";
+import { enviarInscricao } from "@/lib/api/inscricao";
 import type { CampoTexto, CatalogoFuncoes, Funcao, GrupoFuncao } from "./tipos";
 import {
   mascararTelefone,
@@ -35,7 +36,6 @@ const CATALOGO = catalogo as CatalogoFuncoes;
 const ORDEM_GRUPOS: GrupoFuncao[] = ["comunicacao", "eventos", "outro"];
 const TOTAL_PASSOS = 3;
 
-const ENDPOINT = "/painel/api/inscricao.php";
 
 type Envio = "parado" | "enviando" | "erro" | "pronto";
 
@@ -228,37 +228,29 @@ export default function InscricaoClient() {
     }
     setEnvio("enviando");
     setErroGeral(null);
-    try {
-      const resposta = await fetch(ENDPOINT, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          nome: campos.nome.trim().replace(/\s+/g, " "),
-          telefone: soDigitos(campos.telefone),
-          email: campos.email.trim(),
-          cidade: campos.cidade.trim(),
-          bairro: campos.bairro.trim(),
-          funcoes,
-          de: origem.current,
-          consentimento: true,
-          site: honeypot.current?.value ?? "",
-        }),
-      });
-      const json = await resposta.json().catch(() => null);
-      if (!resposta.ok || !json?.ok) {
-        setEnvio("erro");
-        setErroGeral(json?.erro ?? "Não deu para enviar agora. Confira sua internet e tente de novo.");
-        return;
-      }
-      /* Inscrição feita: o rascunho não tem mais razão de existir, e deixá-lo
-         faria a próxima pessoa a usar o mesmo celular abrir o formulário com os
-         dados de quem veio antes. */
-      try { sessionStorage.removeItem(CHAVE_RASCUNHO); } catch { /* aba anônima */ }
-      setEnvio("pronto");
-    } catch {
+    const r = await enviarInscricao({
+      nome: campos.nome.trim().replace(/\s+/g, " "),
+      telefone: soDigitos(campos.telefone),
+      email: campos.email.trim(),
+      cidade: campos.cidade.trim(),
+      bairro: campos.bairro.trim(),
+      funcoes,
+      de: origem.current,
+      consentimento: true,
+      site: honeypot.current?.value ?? "",
+    });
+    if (!r.ok) {
       setEnvio("erro");
-      setErroGeral("Não deu para enviar agora. Confira sua internet e tente de novo — o que você preencheu está guardado.");
+      setErroGeral(
+        r.erro || "Não deu para enviar agora. Confira sua internet e tente de novo — o que você preencheu está guardado.",
+      );
+      return;
     }
+    /* Inscrição feita: o rascunho não tem mais razão de existir, e deixá-lo
+       faria a próxima pessoa a usar o mesmo celular abrir o formulário com os
+       dados de quem veio antes. */
+    try { sessionStorage.removeItem(CHAVE_RASCUNHO); } catch { /* aba anônima */ }
+    setEnvio("pronto");
   };
 
   if (envio === "pronto") return <Sucesso nome={campos.nome} cidade={campos.cidade} escolhidas={escolhidas} />;

@@ -54,7 +54,8 @@ Regras:
   2. responde JSON com `Content-Type` correto;
   3. usa `Cache-Control: no-store, private` quando aplicável;
   4. prefere estado no corpo em vez de usar status HTTP para erro esperado.
-- Endpoints públicos atuais: inscrição e presença. Eles não usam CSRF; usam honeypot, teto, origem e validações de fluxo.
+- Endpoints públicos (sem sessão): `inscricao.php` e `presenca.php` (gravam — honeypot, teto, origem e `com_trava()`), `escala.php` (grava, por token HMAC), `candidatos.php` e `kit.php` (só leitura, cache curto), `presenca-previa.php` (só para o robô de prévia). Nenhum usa CSRF.
+- Todo ler→alterar→gravar que o público ou muita gente dispara passa por `com_trava()` (`sessao.php`) e relê o arquivo dentro dela.
 
 ## Regras centrais do produto
 

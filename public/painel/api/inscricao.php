@@ -18,8 +18,8 @@ require_once __DIR__ . '/../inscricoes-comum.php';
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store, private');
 
-/* Sem tipo de retorno `never`: ele exige PHP 8.1, e o painel só depende de 8.0
-   até aqui. Ambas encerram a requisição. */
+/* Ambas encerram a requisição. (O painel exige PHP 8.1 — `acoes-comum.php`
+   usa `: never` — mas aqui o tipo fica de fora por simetria com `responder()`.) */
 
 /** Encerra com uma resposta JSON — sempre no mesmo formato que o front espera. */
 function responder(int $status, array $corpo): void

@@ -43,8 +43,13 @@
 
 - Permissão normal é por capacidade.
 - Áreas são ajuste fino.
-- `pessoas` é restrita a `adm` por conter dado pessoal completo.
-- Área nova exige: `AREAS`, `DESTINO_AREA`, `GRUPOS_NAV`, `ROTULO_CURTO`, ícone e regra de URL limpa.
+- `pessoas` e `caixa` são só-`adm` (`areas_so_adm()` em `dominio.php`): a
+  rota exige `exigir_admin()`, e `normalizar_pessoa()` descarta as duas de
+  quem não tem a capacidade — o ajuste fino não as alcança.
+- Área nova exige: `AREAS`, `DESTINO_AREA`, `GRUPOS_NAV`, `ROTULO_CURTO`,
+  ícone e regra de URL limpa em `publish.yml`. A barra do celular
+  (`desenhar_barra_celular`) tem uma ordem de preferência e cai em `AREAS`
+  para o resto — área nova entra sozinha.
 - Área que tem fila ou medidor declara no seu `-comum.php`:
   `pendencias_<area>()`, `medidores_<area>()`, `estado_<area>()` — e entra em
   `ORDEM_AGORA`/`ARQUIVO_DO_AGORA` no `agora.php`, que só percorre e chama.
@@ -87,9 +92,11 @@
 
 ### Nome e telefone
 
-**Só `adm` e `coordenacao` leem nome e telefone de gente.** É regra do
-movimento, não detalhe de tela, e vale para qualquer lugar que desenhe uma
-pessoa — lista, seletor, linha do tempo, resultado de busca.
+**Nome e telefone de gente são de `adm` e `coordenacao` — e de quem lidera,
+só da própria gente.** É regra do movimento, não detalhe de tela, e vale para
+qualquer lugar que desenhe uma pessoa — lista, seletor, linha do tempo,
+resultado de busca. `gente.php` é a exceção desenhada: quem tem `lideranca`
+vê nome e WhatsApp de quem tem ela como `lider`, e de mais ninguém.
 
 - Telefone: `pode_ver_telefone()` (`privacidade.php`). Fora da coordenação sai
   encoberto por `telefone_encoberto()`. A exceção é quem cadastrou aquela

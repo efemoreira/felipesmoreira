@@ -4,8 +4,16 @@
 
 - O backend real está em `public/painel/`.
 - Endpoints novos reaproveitam `sessao.php`.
-- Chamadas do Next passam por `@/lib/api/client.ts` (`apiFetch`).
-- Endpoints públicos atuais: inscrição e presença.
+- Chamadas do Next passam por `@/lib/api/client.ts` (`apiFetch`), com um
+  wrapper por endpoint em `src/lib/api/`. A única leitura fora dele é o
+  `agenda.json` da programação, que é arquivo estático, não API.
+- Endpoints públicos (sem sessão): inscrição e presença (gravam), escala
+  (grava, por token HMAC), candidatos e kit (só leitura, cache de 5 min) e a
+  prévia da presença (só para o robô de prévia).
+- Gravação concorrente: `com_trava()` em `sessao.php` — `flock` num
+  `<arquivo>.lock` — envolve ler→alterar→gravar nos endpoints públicos e nos
+  gravadores frequentes (`marcar_acesso`, `registrar_envio`, progresso das
+  aulas, mutirão). Quem usa relê dentro da tranca.
 
 ## Onde guardar dado pessoal
 

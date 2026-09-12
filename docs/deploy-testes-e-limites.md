@@ -42,6 +42,27 @@ Pontos sensíveis do `.htaccess`:
 
 Ao mexer nisso, teste com Apache real, não só com `php -S` ou `python -m http.server`.
 
+## Como o site vai para o ar
+
+- `push` em `main` dispara `publish.yml`: `npm install`, `npm test`, `npm run
+  build`, cópia dos três catálogos para `out/` (`dados-semente.json`,
+  `funcoes.json`, `municipios-ce.json` — sem eles `cidade_valida()` e
+  `funcoes_validas()` degradam em silêncio), geração dos `.htaccess`, e o
+  conteúdo de `out/` é empurrado para a branch **`build`**.
+- A Hostinger puxa a branch `build` pela integração Git do hPanel. Não há
+  FTP nem SSH no repositório; trocar a branch ou a pasta é lá.
+- `public_html/dados/` fica fora do deploy. Os `.htaccess` de `/dados`,
+  `/dados/imagens` e `/dados/backups` são escritos **em runtime** por
+  `preparar_pastas()`, na primeira gravação — não pelo workflow.
+- Backup: cron da hospedagem `0 3 * * * php public_html/painel/backup.php`
+  (só CLI; pela web é 404) mais o botão em `/painel/manutencao`.
+
+## Versões
+
+- Node 24 (`testes/LEIA-ME.md`; o runner usa o padrão do `ubuntu-latest`).
+- **PHP 8.1 no mínimo**: `acoes-comum.php` usa `: never`. Local roda 8.5,
+  o runner 8.3 — `testes/sandbox.ts` comenta as diferenças do `php -S`.
+
 ## O que não mexer sem perguntar
 
 - `next.config.ts`

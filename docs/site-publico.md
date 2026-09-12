@@ -23,11 +23,21 @@ Regras:
 - `src/app/<rota>/page.tsx` só faz metadata + delegação.
 - Estado e efeitos ficam em `features/`.
 - Conteúdo tipado pode morar em `features/<nome>/data.ts`.
+- Exceções hoje, registradas e não modelo: a home (`src/app/page.tsx`, com
+  perfil e cartões inline) e `privacy`/`terms` (texto na própria page). O
+  plano em `update/` prevê movê-las para `features/`.
 - O Estúdio é exceção: é um produto à parte em `src/app/painel/estudio/`.
+- Toda rota do sitemap (fora as legais) tem `opengraph-image.tsx` próprio e
+  `twitter` espelhando o `openGraph` — o X não herda do openGraph.
+  `testes/contrato/og.test.ts` cobra.
 
 ## Tema e tokens
 
-- Fonte única: `src/lib/theme.ts`.
+- Fonte única: `src/lib/theme.ts`. (Duas exceções conhecidas e a corrigir:
+  `programacao/ProgramacaoClient.tsx` e `CompartilharClient.tsx` redefinem as
+  fontes, e `programacao/tipos.ts` reexporta o tema. Não copie o padrão.)
+- O cartão OG (`src/lib/ogCard.tsx`) usa as mesmas fontes, lidas de
+  `src/lib/fontes/*.ttf` no build — o Satori não lê woff2.
 - Use `C`, `FONT_ALFA`, `FONT_ELITE`, `FONT_BITTER`, `BORDA`/`borda()` e `TEXTO`.
 - Não escreva `3px solid` à mão.
 - A sombra dura sai de `sombra()` / `sombraErguida()` / `sombraAfundada()`.

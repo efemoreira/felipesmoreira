@@ -155,8 +155,9 @@ HTML administrativas que já existia. Regras para endpoint novo:
 4. No lado Next, toda chamada passa por `@/lib/api/client.ts`
    (`apiFetch`) — não use `fetch` solto para o painel dentro de uma feature.
 
-Endpoint de referência: `public/painel/api/sessao.php` +
-`src/lib/api/sessao.ts`.
+Endpoint de referência: `public/painel/api/presenca.php` +
+`src/lib/api/presenca.ts` (o par sessão/`sessao.ts` saiu em 11/09 — não tinha
+consumidor no site).
 
 ### Endpoints públicos (sem login)
 

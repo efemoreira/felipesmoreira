@@ -308,7 +308,15 @@ function desenhar_barra_celular(array $u, array $menu, string $aqui): void
     foreach (mesas_de($u) as $mesa) {
         $ordem[] = $mesa['area'];
     }
+    /* A ORDEM DE PREFERÊNCIA é esta lista; O ALCANCE é AREAS inteira. A lista
+       é o que a pessoa mais abre com o polegar, e não precisa ser completa —
+       o que ficar fora dela entra em seguida, na ordem de AREAS. Sem o
+       segundo laço, área nova (foi assim com caixa e leituras) nunca entrava
+       nos slots do celular, e ninguém percebia. */
     foreach (['eventos', 'fatos', 'municao', 'producao', 'inscricoes', 'agenda', 'pessoas', 'candidatos', 'aulas', 'estudio'] as $a) {
+        $ordem[] = $a;
+    }
+    foreach (array_keys(AREAS) as $a) {
         $ordem[] = $a;
     }
 

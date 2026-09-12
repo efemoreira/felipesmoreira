@@ -25,8 +25,9 @@ declare(strict_types=1);
  * POR QUE ISTO É PHP, E NÃO JSON EM src/data:
  *   O site é export estático — tudo que entra no bundle do Next é público.
  *   O manual é documento interno, então o conteúdo sai daqui pelo
- *   api/aulas.php só para quem tem a área 'aulas'. Um .php nunca é servido
- *   como texto: acessar este arquivo pela web devolve página em branco.
+ *   api/aulas.php só para quem tem conta no painel (e o Dia 0 por convite).
+ *   Um .php nunca é servido como texto: acessar este arquivo pela web
+ *   devolve página em branco.
  *
  * FASE ELEITORAL:
  *   O manual v1 foi escrito em pré-campanha e só descreve aquele período. O

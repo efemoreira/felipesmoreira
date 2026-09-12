@@ -8,7 +8,8 @@ declare(strict_types=1);
  * nesta página e não sai dela até trocar: é o exigir_login() que desvia.
  *
  * Esquecer a senha não tem conserto por aqui — só um administrador reseta,
- * em usuarios.php, porque o que fica guardado é o hash e hash não volta atrás.
+ * na ficha da pessoa (`pessoas.php?p=<id>&aba=acesso`), porque o que fica
+ * guardado é o hash e hash não volta atrás.
  */
 
 require_once __DIR__ . '/layout.php';
