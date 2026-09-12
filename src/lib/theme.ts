@@ -10,7 +10,12 @@ export const C = {
   paper: "#F3ECDA",
   gold: "#FFCB05",
   gold2: "#FFDE5A",
-  goldDim: "#B8860B",
+  /* Ouro queimado — o único ouro que vira TEXTO sobre papel ou creme (título
+     das seções legais, o "pessoas" do plano). #B8860B dava 2,76:1 sobre o
+     papel; este dá 4,85:1 no papel e 5,23:1 no creme — AA em qualquer
+     tamanho, e continua sendo ouro. `testes/contrato/contraste.test.ts`
+     mede. */
+  goldDim: "#856006",
   night: "#14110C",
 
   /* a tinta da sombra dura — ver SOMBRA, abaixo */
