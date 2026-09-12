@@ -54,3 +54,16 @@ describe("pessoas: lista e ficha são telas diferentes", () => {
     assert.doesNotMatch(html, /tipo=duplicatas/, "aba de duplicatas sem nenhuma duplicata");
   });
 });
+
+describe("pessoas: da ficha pendente para a decisão, em um toque", () => {
+  test("a ficha de quem espera aprovação leva à fila filtrada nela, com a decisão aberta", () => {
+    const { html } = painel.abrir("pessoas", `p=${MARIA}`);
+    assert.match(html, /Decidir sobre a inscrição/, "a ficha pendente não oferece decidir");
+    const alvo = html.match(/href="([^"]*inscricoes\.php\?[^"]*abrir=[^"]*)"/)?.[1] ?? "";
+    assert.ok(alvo, "sem link para a fila");
+    const qs = alvo.split("?")[1].replace(/#.*$/, "").replace(/&amp;/g, "&");
+    const fila = painel.abrir("inscricoes", qs).html;
+    assert.match(fila, /Maria da Silva Sauro/);
+    assert.match(fila, new RegExp(`<details class="decidir" open id="dec-${MARIA}"`), "a decisão dela não veio aberta");
+  });
+});

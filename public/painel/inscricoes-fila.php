@@ -186,7 +186,10 @@ function aba_da_fila(array $novas, string $buscaIn, callable $formatar, ?array $
         <?php endif; ?>
 
         <!-- a decisão fica recolhida: com fila grande, a lista continua legível -->
-        <details class="decidir">
+        <?php /* `?abrir=<id>` chega da ficha da pessoa: a coordenação estava
+                 lá, viu "esperando aprovação", e vem para cá decidir — a
+                 decisão já aberta é o passo a menos. */ ?>
+        <details class="decidir"<?= (($_GET['abrir'] ?? '') === $i['id']) ? ' open' : '' ?> id="dec-<?= h($i['id']) ?>">
           <summary class="btn btn-ouro">Decidir sobre esta inscrição</summary>
           <div class="decidir-corpo">
             <form method="post">

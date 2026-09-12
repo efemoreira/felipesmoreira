@@ -346,6 +346,16 @@ function tela_da_ficha(array $aberta, ?array $editando, ?string $erro, ?string $
         <?php if ($aberta['status'] !== ''): ?>
           <span class="selo selo-cinza"><?= h(STATUS_PESSOA[$aberta['status']]) ?></span>
         <?php endif; ?>
+        <?php /* PENDENTE E COM A PORTA DE DECIDIR: quem está na ficha viu
+                 "esperando aprovação" e ia voltar a Inscrições e procurar de
+                 novo. O link leva à fila já filtrada nela, com a decisão
+                 aberta — o formulário continua um só, lá. */ ?>
+        <?php if ($aberta['status'] === 'pendente' && pode('inscricoes')): ?>
+          <a class="btn btn-ouro btn-mini" style="margin-left:6px"
+             href="/painel/inscricoes.php?q=<?= h(rawurlencode($aberta['telefone'] !== '' ? $aberta['telefone'] : $aberta['nome'])) ?>&abrir=<?= h(rawurlencode($aberta['id'])) ?>#dec-<?= h($aberta['id']) ?>">
+            Decidir sobre a inscrição
+          </a>
+        <?php endif; ?>
         <?php /* A rede fica na mesma linha do que a pessoa é, e não junto das
                  funções: função é o que ela faz no movimento, rede é o que ela
                  é fora dele. Misturadas, a lista curada de um encontro
