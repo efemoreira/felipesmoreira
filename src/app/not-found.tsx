@@ -1,7 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { Icon } from "@/components/icons";
-import { BORDA, C, FONT_ALFA, FONT_ELITE, FONT_BITTER, borda, sombra, sombraErguida, sombraAfundada } from "@/lib/theme";
+import { BORDA, C, FONT_ALFA, FONT_ELITE, FONT_BITTER, borda, sombra, sombraErguida, sombraAfundada, bordaFina } from "@/lib/theme";
 
 /* versos de cordel para a página perdida */
 const versos = [
@@ -98,7 +98,7 @@ const NotFound: React.FC = () => {
             margin: "10px 0 26px",
             padding: "18px 22px",
             background: "rgba(20,17,12,.55)",
-            border: `2px solid ${C.ink}`,
+            border: bordaFina(C.ink),
             borderRadius: 4,
             backdropFilter: "blur(2px)",
           }}
@@ -148,7 +148,7 @@ const NotFound: React.FC = () => {
               borderRadius: 8,
               background: C.ink,
               color: C.gold,
-              border: `2px solid ${C.ink}`,
+              border: bordaFina(C.ink),
             }}
           >
             <Icon name="arrowLeft" size={22} />

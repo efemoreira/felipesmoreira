@@ -1,6 +1,7 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
 import React, { useEffect, useMemo, useState } from "react";
+import { bordaFina } from "@/lib/theme";
 import Link from "next/link";
 import { Icon, IconName } from "@/components/icons";
 import CompartilharClient from "./CompartilharClient";
@@ -518,7 +519,7 @@ const css = `
     display: inline-flex; align-items: center; gap: 7px;
     font-family: ${FONT_ELITE}; font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
     color: ${C.ink}; background: ${C.gold}; text-decoration: none;
-    padding: 11px 16px; min-height: 44px; border: 2px solid ${C.ink};
+    padding: 11px 16px; min-height: 44px; border: ${bordaFina(C.ink)};
     box-shadow: ${sombra("rente")};
     transition: transform .12s ease, box-shadow .12s ease;
   }
@@ -534,7 +535,7 @@ const css = `
   .ag-canal {
     width: 44px; height: 44px; display: grid; place-items: center;
     color: ${C.gold}; background: rgba(24,18,3,.85);
-    border: 2px solid ${C.gold}; border-radius: 50%; text-decoration: none;
+    border: ${bordaFina(C.gold)}; border-radius: 50%; text-decoration: none;
     transition: transform .12s ease, background .12s ease, color .12s ease;
   }
   .ag-canal:hover { background: ${C.gold}; color: ${C.ink}; transform: translateY(-2px); }
@@ -577,7 +578,7 @@ const css = `
     font-family: ${FONT_ELITE}; font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
     color: ${C.cream}; background: rgba(24,18,3,.85);
     padding: 11px 16px; min-height: 44px; cursor: pointer;
-    border: 2px solid ${C.gold};
+    border: ${bordaFina(C.gold)};
     box-shadow: ${sombra("rente", C.sombraNoite)};
     transition: transform .12s ease, box-shadow .12s ease, background .12s ease, color .12s ease;
   }
@@ -614,7 +615,7 @@ const css = `
     aspect-ratio: 16 / 9;
     overflow: hidden;
     background: ${C.night};
-    border: 2px solid ${C.ink};
+    border: ${bordaFina(C.ink)};
   }
   .ag-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
   /* Sem imagem — que é a maioria dos eventos: a hachura do cordel com a sigla
@@ -663,7 +664,7 @@ const css = `
 
   .ag-meta {
     display: flex; flex-direction: column; align-items: flex-end; gap: 2px;
-    padding-left: 18px; border-left: 2px solid rgba(24,18,3,.3);
+    padding-left: 18px; border-left: ${bordaFina("rgba(24,18,3,.3)")};
     text-align: right; white-space: nowrap;
   }
   .ag-cartao-claro .ag-meta { border-left-color: rgba(246,245,239,.3); }
@@ -681,14 +682,14 @@ const css = `
     width: 42px; height: 42px; flex: 0 0 auto;
     display: grid; place-items: center;
     background: var(--badge); color: var(--badge-fg);
-    border: 2px solid ${C.ink}; border-radius: 10px;
+    border: ${bordaFina(C.ink)}; border-radius: 10px;
     box-shadow: ${sombra("rente")};
   }
 
   .ag-vazio {
     text-align: center; font-family: ${FONT_ELITE}; letter-spacing: 1.5px;
     color: ${C.cream}; background: rgba(20,17,12,.6);
-    border: 2px solid ${C.ink}; padding: 26px 18px;
+    border: ${bordaFina(C.ink)}; padding: 26px 18px;
   }
   .ag-vazio p { margin: 0; }
   .ag-vazio-acoes { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 18px !important; }
@@ -745,7 +746,7 @@ const css = `
       flex-direction: row; align-items: baseline; justify-content: space-between;
       gap: 10px; width: 100%; text-align: left;
       padding: 10px 2px 2px; margin-top: 10px;
-      border-left: 0; border-top: 2px solid rgba(24,18,3,.3);
+      border-left: 0; border-top: ${bordaFina("rgba(24,18,3,.3)")};
       /* solta o nowrap: data/hora longa vinda do painel empurrava a coluna
          e gerava rolagem horizontal na página inteira */
       white-space: normal;

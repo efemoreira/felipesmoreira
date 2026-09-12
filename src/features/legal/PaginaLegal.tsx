@@ -1,7 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { Icon } from "@/components/icons";
-import { BORDA, C, FONT_ALFA, FONT_BITTER, FONT_ELITE, sombra } from "@/lib/theme";
+import { BORDA, C, FONT_ALFA, FONT_BITTER, FONT_ELITE, sombra, HATCH } from "@/lib/theme";
 import { WHATSAPP_COORDENACAO, TELEFONE_COORDENACAO } from "@/lib/contato";
 
 export interface Secao {
@@ -10,9 +10,6 @@ export interface Secao {
   blocos: (string | string[])[];
 }
 
-const HATCH =
-  "repeating-linear-gradient(88deg, rgba(24,18,3,.045) 0 2px, transparent 2px 15px)," +
-  "repeating-linear-gradient(-91deg, rgba(24,18,3,.03) 0 2px, transparent 2px 21px)";
 
 /**
  * Moldura das páginas legais (privacidade e termos), no mesmo cordel do site.

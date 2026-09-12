@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { bordaFina } from "@/lib/theme";
 import { sinal } from "@/lib/api/sinal";
 import { Icon } from "@/components/icons";
 import { C, BORDA, type Agenda, sombra, sombraErguida, sombraAfundada } from "./tipos";
@@ -250,7 +251,7 @@ const css = `
   }
   .cp-fechar {
     width: 44px; height: 44px; display: grid; place-items: center; cursor: pointer;
-    background: transparent; color: ${C.cream}; border: 2px solid rgba(246,245,239,.35);
+    background: transparent; color: ${C.cream}; border: ${bordaFina("rgba(246,245,239,.35)")};
   }
   .cp-fechar:hover { background: ${C.gold}; color: ${C.ink}; border-color: ${C.gold}; }
 
@@ -260,7 +261,7 @@ const css = `
     font-family: ${FONT_ELITE}; font-size: 11px; letter-spacing: 1.6px; text-transform: uppercase;
     color: ${C.cream}; background: transparent;
     min-height: 44px;
-    padding: 9px 8px; border: 2px solid rgba(255,203,5,.4);
+    padding: 9px 8px; border: ${bordaFina("rgba(255,203,5,.4)")};
     transition: background .12s ease, color .12s ease, border-color .12s ease;
   }
   .cp-formato:hover { border-color: ${C.gold}; background: rgba(255,203,5,.12); }
@@ -269,9 +270,9 @@ const css = `
 
   .cp-palco {
     min-height: 220px; display: grid; place-items: center;
-    background: rgba(0,0,0,.35); border: 2px solid rgba(255,203,5,.25); padding: 10px;
+    background: rgba(0,0,0,.35); border: ${bordaFina("rgba(255,203,5,.25)")}; padding: 10px;
   }
-  .cp-preview { display: block; max-width: 100%; max-height: 58dvh; width: auto; height: auto; border: 2px solid ${C.ink}; }
+  .cp-preview { display: block; max-width: 100%; max-height: 58dvh; width: auto; height: auto; border: ${bordaFina(C.ink)}; }
   .cp-status { font-family: ${FONT_ELITE}; font-size: 12px; letter-spacing: 2px; text-align: center; opacity: .85; }
 
   .cp-acoes { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
@@ -283,7 +284,7 @@ const css = `
     font-family: ${FONT_ELITE}; font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
     color: ${C.cream}; background: transparent; text-align: center;
     min-height: 44px;
-    padding: 12px 14px; border: 2px solid ${C.gold};
+    padding: 12px 14px; border: ${bordaFina(C.gold)};
     transition: background .12s ease, color .12s ease;
   }
   .cp-btn svg, .cp-abrir svg { flex: 0 0 auto; }

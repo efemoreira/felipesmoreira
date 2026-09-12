@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import { Icon } from "@/components/icons";
-import { C, FONT_ALFA, FONT_ELITE, borda, sombra } from "@/lib/theme";
+import { C, FONT_ALFA, FONT_ELITE, borda, sombra, bordaFina } from "@/lib/theme";
 import { Blocos } from "./Blocos";
 import { Player } from "./Player";
 import type { Aula as TipoAula } from "./tipos";
@@ -104,7 +104,7 @@ export const Aula: React.FC<Props> = ({
               letterSpacing: 1.3,
               textTransform: "uppercase",
               color: C.ok,
-              border: `2px solid ${C.okBorda}`,
+              border: bordaFina(C.okBorda),
               padding: "3px 7px",
             }}
           >

@@ -29,6 +29,12 @@ export const C = {
   erro: "#F4A79D",
   erroBorda: "#C2543F",
   sombraErro: "rgba(140,47,34,.3)",
+  /* erro SOBRE FUNDO CLARO (o formulário de inscrição, sobre papel): o par de
+     cima é para texto sobre a noite — salmão claro em tinta escura. Sobre
+     papel, salmão claro não se lê; aqui é fundo pálido e tinta vermelha,
+     6,75:1. Eram três paletas de erro no site; são estas duas, por contexto. */
+  erroFundo: "#FBE3E0",
+  erroTinta: "#8C2F22",
   ok: "#A7DBA0",
   okBorda: "#4E9B45",
 };
@@ -132,3 +138,22 @@ export const TEXTO = {
 export const FONT_ALFA = "var(--font-alfa), serif";
 export const FONT_ELITE = "var(--font-elite), monospace";
 export const FONT_BITTER = "var(--font-bitter), serif";
+
+/**
+ * A BORDA FINA — 2 px, a linha de dentro, de divisão, de campo. `BORDA` (3 px)
+ * é a moldura da peça; esta é o traço. Escrita à mão em 52 lugares até
+ * 12/09; agora é token, e `testes/contrato/tema.test.ts` barra o retorno.
+ */
+export const BORDA_FINA = 2;
+export function bordaFina(cor: string = C.ink): string {
+  return `${BORDA_FINA}px solid ${cor}`;
+}
+
+/**
+ * A HACHURA DO CORDEL — a textura de xilogravura por trás do papel. Era
+ * copiada, idêntica, em sete features; é a peça mais identitária do site e
+ * mora aqui.
+ */
+export const HATCH =
+  "repeating-linear-gradient(88deg, rgba(24,18,3,.045) 0 2px, transparent 2px 15px)," +
+  "repeating-linear-gradient(-91deg, rgba(24,18,3,.03) 0 2px, transparent 2px 21px)";

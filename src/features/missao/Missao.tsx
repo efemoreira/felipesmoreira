@@ -1,13 +1,10 @@
 import React from "react";
 import Link from "next/link";
 import { Icon } from "@/components/icons";
-import { BORDA, C, FONT_ALFA, FONT_ELITE, FONT_BITTER, borda, TEXTO, sombra } from "@/lib/theme";
+import { BORDA, C, FONT_ALFA, FONT_ELITE, FONT_BITTER, borda, TEXTO, sombra, HATCH, bordaFina } from "@/lib/theme";
 import { FaixaEleicao } from "@/components/FaixaEleicao";
 import { CARGO, CHAMADA, CHAPA, capitulos, porQueSeguranca } from "./data";
 
-const HATCH =
-  "repeating-linear-gradient(88deg, rgba(24,18,3,.045) 0 2px, transparent 2px 15px)," +
-  "repeating-linear-gradient(-91deg, rgba(24,18,3,.03) 0 2px, transparent 2px 21px)";
 
 const rotulo: React.CSSProperties = {
   fontFamily: FONT_ELITE,
@@ -85,7 +82,7 @@ export default function Missao() {
               textTransform: "uppercase",
               color: C.ink,
               background: C.gold,
-              border: `2px solid ${C.ink}`,
+              border: bordaFina(C.ink),
               padding: "4px 12px",
               margin: "0 0 14px",
             }}

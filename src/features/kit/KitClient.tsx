@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { sinal } from "@/lib/api/sinal";
 import Link from "next/link";
 import { Icon } from "@/components/icons";
-import { BORDA, C, FONT_ALFA, FONT_ELITE, FONT_BITTER, borda, TEXTO } from "@/lib/theme";
+import { BORDA, C, FONT_ALFA, FONT_ELITE, FONT_BITTER, borda, TEXTO, bordaFina } from "@/lib/theme";
 import { canvasParaBlob } from "@/lib/cordelCanvas";
 import { faseEm } from "@/lib/eleicao";
 import { RECADOS } from "./calendario";
@@ -264,7 +264,7 @@ export default function KitClient() {
               padding: "10px 12px",
               background: C.night,
               color: C.cream,
-              border: `2px solid ${C.goldDim}`,
+              border: bordaFina(C.goldDim),
               fontFamily: FONT_BITTER,
               fontSize: 16,
               marginTop: 8,
@@ -309,7 +309,7 @@ export default function KitClient() {
                 letterSpacing: 1.2,
                 background: formato === f ? C.gold : "transparent",
                 color: formato === f ? C.ink : C.cream,
-                border: `2px solid ${formato === f ? C.gold : C.goldDim}`,
+                border: bordaFina(formato === f ? C.gold : C.goldDim),
               }}
             >
               {FORMATOS[f].rotulo}

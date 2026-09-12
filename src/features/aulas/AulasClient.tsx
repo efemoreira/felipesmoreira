@@ -2,7 +2,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Icon } from "@/components/icons";
-import { C, FONT_ALFA, FONT_BITTER, FONT_ELITE, borda, sombra } from "@/lib/theme";
+import { C, FONT_ALFA, FONT_BITTER, FONT_ELITE, borda, sombra, bordaFina } from "@/lib/theme";
 import { obterAulas, marcarAula } from "@/lib/api/aulas";
 import { ListaDias } from "./ListaDias";
 import type { Dia, RespostaAulas } from "./tipos";
@@ -315,7 +315,7 @@ const Barra: React.FC<{ feitas: number; total: number }> = ({ feitas, total }) =
     aria-valuemin={0}
     aria-valuemax={total}
     aria-label="Aulas concluídas"
-    style={{ height: 12, border: `2px solid ${C.gold}`, background: "rgba(0,0,0,.35)" }}
+    style={{ height: 12, border: bordaFina(C.gold), background: "rgba(0,0,0,.35)" }}
   >
     <div
       style={{
@@ -372,7 +372,7 @@ const MinhaTrilha: React.FC<{
             minHeight: 44,
             padding: "8px 14px",
             textDecoration: "none",
-            border: "2px solid rgba(255,203,5,.45)",
+            border: bordaFina("rgba(255,203,5,.45)"),
             color: concluidas.has(a.id) ? C.ok : C.cream,
             fontSize: 14,
           }}

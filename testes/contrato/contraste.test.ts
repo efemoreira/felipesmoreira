@@ -41,6 +41,8 @@ describe("contraste: texto comum ≥ 4,5:1", () => {
     ["ouro queimado sobre papel (títulos das legais)", C.goldDim, C.paper],
     ["ouro queimado sobre creme (o 'pessoas' do plano)", C.goldDim, C.cream],
     ["erro sobre noite", C.erro, C.night],
+    ["tinta de erro sobre fundo de erro (inscrição)", C.erroTinta, C.erroFundo],
+    ["tinta de erro sobre papel", C.erroTinta, C.paper],
     ["ok sobre noite", C.ok, C.night],
   ];
   for (const [nome, texto, fundo] of pares) {

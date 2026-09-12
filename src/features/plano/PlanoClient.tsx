@@ -2,14 +2,10 @@
 import React, { useEffect, useRef } from "react";
 import Link from "next/link";
 import { Icon, IconName } from "@/components/icons";
-import { BORDA, C, FONT_ALFA, FONT_ELITE, FONT_BITTER, borda, TEXTO, sombra, sombraErguida, sombraAfundada } from "@/lib/theme";
+import { BORDA, C, FONT_ALFA, FONT_ELITE, FONT_BITTER, borda, TEXTO, sombra, sombraErguida, sombraAfundada, HATCH, bordaFina } from "@/lib/theme";
 import { escada, times, semana, fases, regras } from "./data";
 import { GRUPO_GERAL } from "@/lib/contato";
 
-/* hachuras de xilogravura sobre o papel (mesma textura da página de heróis) */
-const HATCH =
-  "repeating-linear-gradient(88deg, rgba(24,18,3,.045) 0 2px, transparent 2px 15px)," +
-  "repeating-linear-gradient(-91deg, rgba(24,18,3,.03) 0 2px, transparent 2px 21px)";
 
 /* estrelas fixas das seções noturnas (posições determinísticas p/ SSG) */
 const STARS: { l: number; t: number; s: number; d: number; g?: boolean }[] = [
@@ -192,7 +188,7 @@ const PlanoClient: React.FC = () => {
       {/* fita de progresso */}
       <div
         aria-hidden="true"
-        style={{ position: "fixed", top: 0, left: 0, right: 0, height: 8, zIndex: 50, background: "rgba(24,18,3,.85)", borderBottom: `2px solid ${C.ink}` }}
+        style={{ position: "fixed", top: 0, left: 0, right: 0, height: 8, zIndex: 50, background: "rgba(24,18,3,.85)", borderBottom: bordaFina(C.ink) }}
       >
         <div ref={progRef} style={{ height: "100%", background: C.gold, transform: "scaleX(0)", transformOrigin: "left" }} />
       </div>
@@ -308,12 +304,12 @@ const PlanoClient: React.FC = () => {
                   gap: 16,
                   alignItems: "flex-start",
                   background: "rgba(24,18,3,.55)",
-                  border: `2px solid ${C.goldDim}`,
+                  border: bordaFina(C.goldDim),
                   padding: "18px 20px",
                   transitionDelay: `${i * 0.12}s`,
                 }}
               >
-                <span style={{ width: 42, height: 42, flex: "0 0 auto", display: "grid", placeItems: "center", background: C.gold, border: `2px solid ${C.ink}`, color: C.ink }}>
+                <span style={{ width: 42, height: 42, flex: "0 0 auto", display: "grid", placeItems: "center", background: C.gold, border: bordaFina(C.ink), color: C.ink }}>
                   <Icon name={b.icon} size={22} />
                 </span>
                 <span>
@@ -353,7 +349,7 @@ const PlanoClient: React.FC = () => {
                   transitionDelay: `${i * 0.1}s`,
                 }}
               >
-                <span style={{ width: 40, height: 40, flex: "0 0 auto", display: "grid", placeItems: "center", background: C.gold, border: `2px solid ${C.ink}`, color: C.ink }}>
+                <span style={{ width: 40, height: 40, flex: "0 0 auto", display: "grid", placeItems: "center", background: C.gold, border: bordaFina(C.ink), color: C.ink }}>
                   <Icon name={d.icon} size={20} />
                 </span>
                 <span style={{ minWidth: 0 }}>
@@ -392,7 +388,7 @@ const PlanoClient: React.FC = () => {
                   transitionDelay: `${i * 0.1}s`,
                 }}
               >
-                <span style={{ width: 44, height: 44, display: "grid", placeItems: "center", background: C.ink, color: C.gold, border: `2px solid ${C.ink}`, marginBottom: 10 }}>
+                <span style={{ width: 44, height: 44, display: "grid", placeItems: "center", background: C.ink, color: C.gold, border: bordaFina(C.ink), marginBottom: 10 }}>
                   <Icon name={t.icon} size={24} />
                 </span>
                 <p style={{ fontFamily: FONT_ALFA, fontSize: 18, letterSpacing: 0.4, margin: "0 0 6px" }}>{t.nome}</p>
@@ -425,7 +421,7 @@ const PlanoClient: React.FC = () => {
                   alignItems: "center",
                   gap: 14,
                   background: C.cream,
-                  border: `2px solid ${C.ink}`,
+                  border: bordaFina(C.ink),
                   boxShadow: sombra("rente"),
                   padding: "10px 14px",
                   transitionDelay: `${i * 0.07}s`,
@@ -438,7 +434,7 @@ const PlanoClient: React.FC = () => {
                     letterSpacing: 1,
                     background: i >= 5 ? C.gold : C.ink,
                     color: i >= 5 ? C.ink : C.gold,
-                    border: `2px solid ${C.ink}`,
+                    border: bordaFina(C.ink),
                     padding: "4px 10px",
                     flex: "0 0 auto",
                     minWidth: 58,
@@ -717,7 +713,7 @@ const rollSpan: React.CSSProperties = {
 const caminho: React.CSSProperties = {
   display: "block",
   background: "rgba(24,18,3,.72)",
-  border: `2px solid ${C.ink}`,
+  border: bordaFina(C.ink),
   boxShadow: sombra(),
   padding: "13px 16px",
 };

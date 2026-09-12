@@ -2,7 +2,7 @@
 import React from "react";
 import Link from "next/link";
 import { Icon, IconName } from "@/components/icons";
-import { BORDA, C, FONT_ALFA, FONT_ELITE, FONT_BITTER, borda, sombra, sombraErguida, sombraAfundada } from "@/lib/theme";
+import { BORDA, C, FONT_ALFA, FONT_ELITE, FONT_BITTER, borda, sombra, sombraErguida, sombraAfundada, bordaFina } from "@/lib/theme";
 import { FaixaEleicao } from "@/components/FaixaEleicao";
 import { SigaCandidatos } from "@/features/candidatos/SigaCandidatos";
 import catalogo from "@/data/funcoes.json";
@@ -300,7 +300,7 @@ const Home: React.FC = () => {
             marginTop: 26,
             padding: "20px 22px",
             background: "rgba(20,17,12,.6)",
-            border: `2px solid ${C.ink}`,
+            border: bordaFina(C.ink),
             borderRadius: 4,
             backdropFilter: "blur(2px)",
           }}
@@ -450,7 +450,7 @@ const CardBody: React.FC<{ link: LinkCard }> = ({ link }) => (
         borderRadius: 8,
         background: link.accent ? C.ink : C.gold,
         color: link.accent ? C.gold : C.ink,
-        border: `2px solid ${C.ink}`,
+        border: bordaFina(C.ink),
       }}
     >
       <Icon name={link.icon} size={24} />

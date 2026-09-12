@@ -2,7 +2,7 @@
 import React from "react";
 import Link from "next/link";
 import { Icon } from "@/components/icons";
-import { C, FONT_ALFA, FONT_ELITE, FONT_BITTER, borda, sombra } from "@/lib/theme";
+import { C, FONT_ALFA, FONT_ELITE, FONT_BITTER, borda, sombra, bordaFina } from "@/lib/theme";
 import { filtroDaImagem } from "./filtro";
 
 /**
@@ -408,7 +408,7 @@ export const molduraDoCampo = (erro: string): React.CSSProperties => ({
   padding: "12px 14px",
   color: C.cream,
   background: "rgba(0,0,0,.35)",
-  border: `2px solid ${erro !== "" ? "#E4572E" : "rgba(255,203,5,.3)"}`,
+  border: bordaFina(erro !== "" ? C.erroBorda : "rgba(255,203,5,.3)"),
   borderRadius: 0,
 });
 
@@ -495,7 +495,7 @@ export const Campo: React.FC<{
       />
     )}
     {erro !== "" ? (
-      <p id={`${id}-erro`} role="alert" style={{ margin: "6px 0 0", fontSize: 13.5, color: "#F09A7E" }}>
+      <p id={`${id}-erro`} role="alert" style={{ margin: "6px 0 0", fontSize: 13.5, color: C.erro }}>
         {erro}
       </p>
     ) : (

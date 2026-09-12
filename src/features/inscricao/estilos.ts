@@ -1,4 +1,4 @@
-import { BORDA, C, FONT_ALFA, FONT_ELITE, FONT_BITTER, sombra, sombraErguida, sombraAfundada } from "@/lib/theme";
+import { BORDA, C, FONT_ALFA, FONT_ELITE, FONT_BITTER, sombra, sombraErguida, sombraAfundada, HATCH, bordaFina } from "@/lib/theme";
 
 /**
  * A folha de estilo do formulário de `/queroajudar`, num arquivo só.
@@ -13,9 +13,6 @@ import { BORDA, C, FONT_ALFA, FONT_ELITE, FONT_BITTER, sombra, sombraErguida, so
  * e é justamente essa interpolação que uma folha estática não faria.
  */
 
-const HATCH =
-  "repeating-linear-gradient(88deg, rgba(24,18,3,.045) 0 2px, transparent 2px 15px)," +
-  "repeating-linear-gradient(-91deg, rgba(24,18,3,.03) 0 2px, transparent 2px 21px)";
 
 export const css = `
   .in-fundo {
@@ -73,7 +70,7 @@ export const css = `
   .in-passo-marca b {
     width: 26px; height: 26px; flex: 0 0 auto; display: grid; place-items: center;
     font-family: ${FONT_ALFA}; font-size: 13px;
-    background: rgba(24,18,3,.14); color: rgba(24,18,3,.55); border: 2px solid transparent;
+    background: rgba(24,18,3,.14); color: rgba(24,18,3,.55); border: ${bordaFina("transparent")};
   }
   .in-passo-marca.ativo b { background: ${C.gold}; color: ${C.ink}; border-color: ${C.ink}; }
   .in-passo-marca i {
@@ -96,7 +93,7 @@ export const css = `
   .in-erro-geral {
     display: flex; align-items: flex-start; gap: 9px;
     font-size: 14.5px; line-height: 1.5; margin: 0 0 16px;
-    background: #FBE3E0; border: 2px solid #8C2F22; color: #6B1F15;
+    background: ${C.erroFundo}; border: ${bordaFina(C.erroTinta)}; color: ${C.erroTinta};
     padding: 12px 14px;
   }
   .in-erro-geral svg { flex: 0 0 auto; margin-top: 2px; }
@@ -133,7 +130,7 @@ export const css = `
   }
   .in-cartao-icone {
     width: 40px; height: 40px; flex: 0 0 auto; display: grid; place-items: center;
-    background: ${C.gold}; border: 2px solid ${C.ink}; color: ${C.ink};
+    background: ${C.gold}; border: ${bordaFina(C.ink)}; color: ${C.ink};
   }
   .in-cartao-texto { flex: 1; min-width: 0; }
   .in-cartao-nome {
@@ -192,11 +189,11 @@ export const css = `
     box-shadow: ${sombra("rente")};
   }
   .in-campo input:focus-visible, .in-campo select:focus-visible { outline: ${BORDA}px solid ${C.goldDim}; outline-offset: 2px; }
-  .in-campo input.com-erro, .in-campo select.com-erro { border-color: #8C2F22; box-shadow: ${sombra("rente", C.sombraErro)}; }
+  .in-campo input.com-erro, .in-campo select.com-erro { border-color: ${C.erroTinta}; box-shadow: ${sombra("rente", C.sombraErro)}; }
   .in-dica { font-size: 13px; line-height: 1.45; opacity: .7; margin: 6px 0 0; }
   .in-erro {
     font-size: 13.5px; line-height: 1.45; margin: 6px 0 0;
-    color: #8C2F22; font-weight: 600;
+    color: ${C.erroTinta}; font-weight: 600;
   }
 
   /* ---- passo 3: confirmação ---- */
@@ -213,7 +210,7 @@ export const css = `
   .in-resumo-funcoes li {
     display: inline-flex; align-items: center; gap: 7px;
     font-size: 14px; background: ${C.gold}; color: ${C.ink};
-    border: 2px solid ${C.ink}; padding: 6px 11px;
+    border: ${bordaFina(C.ink)}; padding: 6px 11px;
   }
   .in-resumo-dados { margin: 0; display: flex; flex-direction: column; gap: 9px; }
   .in-resumo-dados div { display: flex; gap: 10px; flex-wrap: wrap; font-size: 14.5px; }
@@ -247,7 +244,7 @@ export const css = `
 
   .in-consentimento {
     display: flex; align-items: flex-start; gap: 12px; cursor: pointer;
-    background: rgba(255,203,5,.1); border: 2px solid ${C.gold};
+    background: rgba(255,203,5,.1); border: ${bordaFina(C.gold)};
     padding: 13px; font-size: 14.5px; line-height: 1.55;
   }
   .in-consentimento input {
@@ -296,7 +293,7 @@ export const css = `
   .in-proximos b {
     width: 32px; height: 32px; flex: 0 0 auto; display: grid; place-items: center;
     font-family: ${FONT_ALFA}; font-size: 15px;
-    background: ${C.gold}; color: ${C.ink}; border: 2px solid ${C.ink};
+    background: ${C.gold}; color: ${C.ink}; border: ${bordaFina(C.ink)};
   }
   .in-agora-titulo {
     font-family: ${FONT_ELITE}; font-size: 11.5px; letter-spacing: 2.2px;

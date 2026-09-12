@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { C, FONT_ALFA, FONT_ELITE, borda, sombra } from "@/lib/theme";
+import { C, FONT_ALFA, FONT_ELITE, borda, sombra, bordaFina } from "@/lib/theme";
 import type { Bloco } from "./tipos";
 
 /**
@@ -178,7 +178,7 @@ const BlocoUm: React.FC<{ bloco: Bloco }> = ({ bloco }) => {
                     style={{
                       textAlign: "left",
                       padding: "10px 10px",
-                      borderBottom: `2px solid ${C.gold}`,
+                      borderBottom: bordaFina(C.gold),
                       fontFamily: FONT_ELITE,
                       fontSize: 11,
                       letterSpacing: 1.6,
@@ -200,7 +200,7 @@ const BlocoUm: React.FC<{ bloco: Bloco }> = ({ bloco }) => {
                       key={j}
                       style={{
                         padding: "10px 10px",
-                        borderBottom: "2px solid rgba(255,203,5,.14)",
+                        borderBottom: bordaFina("rgba(255,203,5,.14)"),
                         verticalAlign: "top",
                         lineHeight: 1.6,
                       }}

@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { C, FONT_ALFA, FONT_ELITE } from "@/lib/theme";
+import { C, FONT_ALFA, FONT_ELITE, bordaFina } from "@/lib/theme";
 import { Aula } from "./Aula";
 import type { Dia } from "./tipos";
 
@@ -49,7 +49,7 @@ export const ListaDias: React.FC<Props> = ({
                 textTransform: "uppercase",
                 color: completo ? C.ink : C.gold,
                 background: completo ? C.gold : "transparent",
-                border: `2px solid ${C.gold}`,
+                border: bordaFina(C.gold),
                 padding: "3px 10px",
                 margin: "0 0 10px",
               }}

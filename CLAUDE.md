@@ -43,7 +43,7 @@ Regras:
 
 - Cor, fonte, moldura e escala de texto saem de `@/lib/theme`.
 - Use `C`, `FONT_ALFA`, `FONT_ELITE`, `FONT_BITTER`, `BORDA`/`borda()` e `TEXTO`.
-- Não crie nova paleta local nem escreva `3px solid` à mão.
+- Não crie nova paleta local nem escreva `3px solid` à mão. Borda fina é `bordaFina()` (2 px), a hachura é `HATCH`, erro é `C.erro`/`C.erroBorda` sobre a noite e `C.erroFundo`/`C.erroTinta` sobre papel — `testes/contrato/tema.test.ts` barra o `2px solid`, o `const HATCH` e as cores de erro antigas.
 - **A sombra dura sai de `sombra()`**, com `sombraErguida()`/`sombraAfundada()` para hover e clique.
 - A escala é `SOMBRA` — `rente` (3), `cartao` (5), `alto` (8). Opacidade é uma só (`C.sombra`); quem carrega a altura é o deslocamento. Cor é decisão da peça, como em `borda()` (`C.sombraNoite` sobre fundo escuro, `C.sombraErro` no campo com erro).
 

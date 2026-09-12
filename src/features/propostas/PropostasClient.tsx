@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { Icon } from "@/components/icons";
-import { BORDA, C, FONT_ALFA, FONT_BITTER, FONT_ELITE, borda, TEXTO, sombra } from "@/lib/theme";
+import { BORDA, C, FONT_ALFA, FONT_BITTER, FONT_ELITE, borda, TEXTO, sombra, HATCH, bordaFina } from "@/lib/theme";
 import {
   CHAPA,
   CITACOES,
@@ -15,10 +15,6 @@ import {
 import { FaixaEleicao } from "@/components/FaixaEleicao";
 import type { Compromisso } from "./tipos";
 
-/* Hachura de xilogravura sobre o papel — mesma textura de /plano e /herois. */
-const HATCH =
-  "repeating-linear-gradient(88deg, rgba(24,18,3,.045) 0 2px, transparent 2px 15px)," +
-  "repeating-linear-gradient(-91deg, rgba(24,18,3,.03) 0 2px, transparent 2px 21px)";
 
 /* Curto de propósito: com o intervalo de páginas ao lado, um rótulo mais longo
    quebra em duas linhas a 390px e desalinha o número do título. */
@@ -194,7 +190,7 @@ const BlocoCompromisso: React.FC<{ c: Compromisso }> = ({ c }) => {
       <details
         open={aberto}
         onToggle={(e) => setAberto((e.currentTarget as HTMLDetailsElement).open)}
-        style={{ borderTop: `2px solid rgba(24,18,3,.2)`, paddingTop: 14 }}
+        style={{ borderTop: bordaFina("rgba(24,18,3,.2)"), paddingTop: 14 }}
       >
         <summary
           style={{
@@ -245,7 +241,7 @@ const BlocoCompromisso: React.FC<{ c: Compromisso }> = ({ c }) => {
                       textTransform: "uppercase",
                       background: C.gold,
                       color: C.ink,
-                      border: `2px solid ${C.ink}`,
+                      border: bordaFina(C.ink),
                       padding: "3px 8px",
                     }}
                   >
@@ -318,7 +314,7 @@ export default function PropostasClient() {
               textTransform: "uppercase",
               color: C.ink,
               background: C.gold,
-              border: `2px solid ${C.ink}`,
+              border: bordaFina(C.ink),
               padding: "4px 12px",
               margin: "0 0 14px",
             }}
@@ -438,7 +434,7 @@ export default function PropostasClient() {
                   fontSize: 12.5,
                   letterSpacing: 0.6,
                   background: C.cream,
-                  border: `2px solid ${C.ink}`,
+                  border: bordaFina(C.ink),
                   boxShadow: sombra("rente"),
                   padding: "6px 11px",
                 }}
@@ -464,7 +460,7 @@ export default function PropostasClient() {
                     minHeight: 44,
                     padding: "6px 12px",
                     background: C.cream,
-                    border: `2px solid ${C.ink}`,
+                    border: bordaFina(C.ink),
                     color: C.ink,
                     textDecoration: "none",
                     fontSize: 15,

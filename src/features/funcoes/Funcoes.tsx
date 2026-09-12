@@ -1,7 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { Icon, type IconName } from "@/components/icons";
-import { BORDA, C, FONT_ALFA, FONT_ELITE, FONT_BITTER, borda, TEXTO, sombra } from "@/lib/theme";
+import { BORDA, C, FONT_ALFA, FONT_ELITE, FONT_BITTER, borda, TEXTO, sombra, HATCH, bordaFina } from "@/lib/theme";
 import CATALOGO from "@/data/funcoes.json";
 import type { CatalogoFuncoes, Funcao, GrupoFuncao } from "@/features/inscricao/tipos";
 
@@ -20,9 +20,6 @@ const catalogo = CATALOGO as CatalogoFuncoes;
 
 const ORDEM: GrupoFuncao[] = ["comunicacao", "eventos", "outro"];
 
-const HATCH =
-  "repeating-linear-gradient(88deg, rgba(24,18,3,.045) 0 2px, transparent 2px 15px)," +
-  "repeating-linear-gradient(-91deg, rgba(24,18,3,.03) 0 2px, transparent 2px 21px)";
 
 const rotulo: React.CSSProperties = {
   fontFamily: FONT_ELITE,
@@ -90,7 +87,7 @@ const Ficha: React.FC<{ f: Funcao }> = ({ f }) => (
       </div>
     </dl>
 
-    <details style={{ borderTop: `2px solid rgba(24,18,3,.18)`, paddingTop: 12 }}>
+    <details style={{ borderTop: bordaFina("rgba(24,18,3,.18)"), paddingTop: 12 }}>
       <summary
         style={{
           cursor: "pointer",
@@ -186,7 +183,7 @@ export default function Funcoes() {
               textTransform: "uppercase",
               color: C.ink,
               background: C.gold,
-              border: `2px solid ${C.ink}`,
+              border: bordaFina(C.ink),
               padding: "4px 12px",
               margin: "0 0 14px",
             }}

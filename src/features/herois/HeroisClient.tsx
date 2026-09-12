@@ -2,13 +2,9 @@
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { Icon, IconName } from "@/components/icons";
-import { BORDA, C, FONT_ALFA, FONT_BITTER, FONT_ELITE, borda, sombra, sombraErguida, sombraAfundada, SOMBRA } from "@/lib/theme";
+import { BORDA, C, FONT_ALFA, FONT_BITTER, FONT_ELITE, borda, sombra, sombraErguida, sombraAfundada, SOMBRA, HATCH, bordaFina } from "@/lib/theme";
 import { heroes, type Hero } from "./data";
 
-/* textura de folheto: hachuras leves de xilogravura sobre o papel */
-const HATCH =
-  "repeating-linear-gradient(88deg, rgba(24,18,3,.045) 0 2px, transparent 2px 15px)," +
-  "repeating-linear-gradient(-91deg, rgba(24,18,3,.03) 0 2px, transparent 2px 21px)";
 
 /* Épocas em tons terrosos de xilogravura (combinam com tinta/papel/dourado) */
 const PERIOD_META: Record<string, { accent: string }> = {
@@ -47,7 +43,7 @@ const periodChip = (accent: string): React.CSSProperties => ({
   textTransform: "uppercase",
   background: accent,
   color: C.cream,
-  border: `2px solid ${C.ink}`,
+  border: bordaFina(C.ink),
   padding: "2px 8px",
   whiteSpace: "nowrap",
 });
@@ -300,7 +296,7 @@ export default function HeroisClient() {
                       display: "grid",
                       placeItems: "center",
                       background: C.gold,
-                      border: `2px solid ${C.ink}`,
+                      border: bordaFina(C.ink),
                       color: C.ink,
                     }}
                   >
@@ -463,7 +459,7 @@ export default function HeroisClient() {
                     key={item.label}
                     style={{
                       background: C.cream,
-                      border: `2px solid ${C.ink}`,
+                      border: bordaFina(C.ink),
                       borderLeft: `6px solid ${pm(selected).accent}`,
                       padding: "10px 14px",
                     }}
@@ -532,7 +528,7 @@ export default function HeroisClient() {
                         display: "grid",
                         placeItems: "center",
                         background: C.gold,
-                        border: `2px solid ${C.ink}`,
+                        border: bordaFina(C.ink),
                         color: C.ink,
                       }}
                     >
