@@ -1,30 +1,21 @@
+/* O Tailwind fica POR CAUSA DO ESTÚDIO, e só por ele: são 241 classes
+   utilitárias em src/app/painel/estudio. O site público não usa nenhuma — a
+   identidade dele vem de src/lib/theme.ts por inline style, e a do painel
+   dos tokens do painel.css. Não escreva classe utilitária fora do Estúdio;
+   testes/contrato/tema.test.ts é a régua do site. */
 @import "tailwindcss";
 
-/* A paleta cinza do template do Next saiu daqui: nenhum componente a usava.
-   A identidade do site vem de `src/lib/theme.ts` (C, FONT_ALFA/ELITE/BITTER)
-   aplicada por inline style, e a do painel vem dos tokens do `painel.css`.
-   Manter uma segunda paleta declarada convidava a usá-la por engano. */
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-/* `font-mono` é a única classe do Tailwind que o Estúdio usa daqui. */
 @theme inline {
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+/* O chão do site é a noite do cordel, não o branco do template: toda página
+   pinta o próprio fundo, e o que sobrar entre uma e outra (a barra de
+   endereço rolando, o overscroll do iPhone) fica da cor certa. */
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: #14110C;
+  color: #F6F5EF;
+  font-family: var(--font-bitter), Georgia, serif;
 }
 
 /* Trava global contra rolagem horizontal: `clip` não cria contexto de rolagem,

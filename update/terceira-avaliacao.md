@@ -97,8 +97,9 @@ suíte em 63 s.
 *Agora:* `painel.js` (é moldura, mas é mover, não reescrever — 4 h, com a
 fumaça inteira como rede); `estado_*()` para as nove áreas (2 h);
 `BORDA_FINA` e a paleta de erro única (item 19, 8 h). O que fica para
-depois é só o que muda 13 arquivos de uma vez sem ganho visível (home fina,
-Tailwind fora) — e mesmo isso cabe numa tarde com a suíte verde.
+depois é só o que muda 13 arquivos de uma vez sem ganho visível (home fina)
+— e mesmo isso cabe numa tarde com a suíte verde. *Tailwind fora* saiu da
+lista em 12/09: o Estúdio usa 241 classes; "sem uso" valia só para o site.
 
 ### 6. O dado
 

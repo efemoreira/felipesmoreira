@@ -5,7 +5,7 @@
 - Next.js 15 App Router com `output: "export"`.
 - Hospedagem estática via Apache/Hostinger.
 - Backend dinâmico fora do App Router, em `public/painel/`.
-- Tailwind v4 existe, mas a identidade principal sai de `src/lib/theme.ts`.
+- Tailwind v4 existe **por causa do Estúdio** (241 classes utilitárias lá); o site público não usa nenhuma, e a identidade sai de `src/lib/theme.ts`.
 
 ## Estrutura de `src/`
 
