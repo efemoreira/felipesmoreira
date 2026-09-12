@@ -6,6 +6,7 @@ import { BORDA, C, FONT_ALFA, FONT_ELITE, FONT_BITTER, sombra } from "@/lib/them
 import { canvasParaBlob } from "@/lib/cordelCanvas";
 import { faseEm, type Fase } from "@/lib/eleicao";
 import { obterChapa, pessoasDa, type Candidato, type Lista } from "@/lib/api/candidatos";
+import { CHAPA } from "@/features/missao/data";
 import {
   CABEM_POR_ARTE,
   gerarColinha,
@@ -20,6 +21,12 @@ import {
  * A lista vem do painel pela rede, e não do build: nome de urna e número saem
  * do registro no TSE e mudam até a véspera. Lista no código é lista que exige um
  * deploy para corrigir um dígito.
+ *
+ * **O número da chapa é a exceção**, e vem do build (`CHAPA`, a mesma fonte da
+ * home): ele não muda até a véspera, e é a única coisa que a página do número
+ * não pode deixar de dizer — com a rede fora, sem o painel, no 4G da fila.
+ * A página nunca abre em branco; o que a rede traz é a lista, e quando ela
+ * falha há um botão para tentar de novo.
  *
  * **A trava do calendário eleitoral mora aqui, no botão.** Compartilhar arte com
  * número é propaganda; no dia da votação publicar propaganda nova na internet é
@@ -39,20 +46,29 @@ export default function CandidatosClient() {
   /* Começa null e só é preenchida no efeito: num export estático a fase
      decidida no build congelaria na data em que o site foi publicado. */
   const [fase, setFase] = useState<Fase | null>(null);
+  const [falhou, setFalhou] = useState(false);
 
-  useEffect(() => {
-    setFase(faseEm());
+  const carregar = useCallback(() => {
+    setCarregando(true);
+    setFalhou(false);
     obterChapa()
       .then((chapa) => {
         setCandidatos(chapa.candidatos);
         setListas(chapa.listas);
       })
       .catch(() => {
-        /* A rede falhou. A página fica vazia, e é melhor assim do que mostrar
-           número velho guardado — número errado na urna não tem conserto. */
+        /* A rede falhou. A lista fica de fora, e é melhor assim do que mostrar
+           número velho guardado — número errado na urna não tem conserto. O
+           que fica é a chapa, que é do build, e o botão de tentar de novo. */
+        setFalhou(true);
       })
       .finally(() => setCarregando(false));
   }, []);
+
+  useEffect(() => {
+    setFase(faseEm());
+    carregar();
+  }, [carregar]);
 
   const podeCompartilhar = fase === "campanha" || fase === "reta-final";
 
@@ -151,9 +167,30 @@ export default function CandidatosClient() {
           </p>
         </header>
 
-        {carregando && <p className="cd-vazio">Carregando…</p>}
+        {/* A chapa vem do build e aparece sempre — é o que a página não pode
+            deixar de dizer, com ou sem rede. */}
+        <section className="cd-chapa" aria-label="A chapa">
+          <p className="cd-chapa-numero">{CHAPA.numero}</p>
+          <div>
+            <p className="cd-chapa-cargo">Governador</p>
+            <p className="cd-chapa-nome">{CHAPA.governador}</p>
+            <p className="cd-chapa-cargo">Vice</p>
+            <p className="cd-chapa-nome">{CHAPA.vice}</p>
+          </div>
+        </section>
 
-        {!carregando && candidatos.length === 0 && (
+        {carregando && <p className="cd-vazio">Carregando a lista…</p>}
+
+        {!carregando && falhou && (
+          <p className="cd-aviso" role="alert">
+            Não consegui carregar a lista dos candidatos agora.{" "}
+            <button type="button" className="cd-btn" onClick={carregar}>
+              Tentar de novo
+            </button>
+          </p>
+        )}
+
+        {!carregando && !falhou && candidatos.length === 0 && (
           <p className="cd-vazio">
             A lista ainda está sendo fechada. Volte já já — ou{" "}
             <Link href="/propostas" className="cd-elo">
@@ -313,6 +350,22 @@ const css = `
     margin: 0 0 14px; text-shadow: 3px 3px 0 ${C.ink}; text-wrap: balance;
   }
   .cd-chamada { font-size: 16.5px; line-height: 1.6; margin: 0; max-width: 58ch; opacity: .92; }
+
+  .cd-chapa {
+    display: flex; align-items: center; gap: 18px; margin: 0 0 30px; padding: 16px 18px;
+    background: ${C.gold}; color: ${C.ink};
+    border: ${BORDA}px solid ${C.ink}; box-shadow: ${sombra("cartao", C.sombraNoite)};
+  }
+  .cd-chapa-numero {
+    font-family: ${FONT_ALFA}; font-size: clamp(56px, 16vw, 84px); line-height: 1; margin: 0;
+    text-shadow: 3px 3px 0 rgba(24,18,3,.25);
+  }
+  .cd-chapa-cargo {
+    font-family: ${FONT_ELITE}; font-size: 11px; letter-spacing: 2.4px; text-transform: uppercase;
+    margin: 0; opacity: .8;
+  }
+  .cd-chapa-nome { font-family: ${FONT_ALFA}; font-size: 17px; line-height: 1.2; margin: 0 0 8px; }
+  .cd-chapa-nome:last-child { margin-bottom: 0; }
 
   .cd-secao { margin: 0 0 34px; }
   .cd-secao-topo { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
