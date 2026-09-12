@@ -1,6 +1,9 @@
 import { test, describe, before, beforeEach, after } from "node:test";
 import assert from "node:assert/strict";
 import { montarSandbox, ADMIN, type Sandbox } from "../sandbox.ts";
+import { execFileSync } from "node:child_process";
+import { writeFileSync } from "node:fs";
+import path from "node:path";
 
 /**
  * AÇÃO: a ficha de pessoa — cadastrar, dar conta, juntar duplicata, apagar.
@@ -361,5 +364,65 @@ describe("pessoas: as redes profissionais", () => {
        porque a ficha duplicada foi juntada. */
     const juntada = painel.ler("pessoas").find((p) => p.id === "dupla-a")!;
     assert.deepEqual([...juntada.redes].sort(), ["educacao", "medicos"]);
+  });
+});
+
+describe("pessoas: o ajuste fino não chega ao que é só-adm", () => {
+  /* "Pessoas e Caixa são só-adm" era o que o menu e o doc diziam — e a rota
+     conferia a ÁREA, que qualquer ficha podia carregar pelo ajuste fino. Quem
+     tivesse só a área conseguia abrir a lista, se dar `adm` e resetar a senha
+     de quem administra. Agora a rota pergunta à capacidade, e o modelo descarta
+     as duas áreas de quem não é adm — inclusive de ficha gravada antes. */
+  /* Grava a área CRUA, sem passar por normalizar_pessoa(): é o dado antigo,
+     de antes da regra — o que uma ficha marcada à mão carregava. */
+  function darAreaCrua(area: string) {
+    const script = path.join(painel.dir, "area-crua.php");
+    writeFileSync(
+      script,
+      `<?php
+require __DIR__ . '/painel/sessao.php';
+$pessoas = ler_pessoas();
+foreach ($pessoas as &$p) {
+  if ($p['id'] === ${JSON.stringify(ADMIN)}) { $p['capacidades'] = ['coordenacao']; $p['areas'][] = ${JSON.stringify(area)}; }
+}
+unset($p);
+gravar_atomico(ARQ_PESSOAS, "<?php\\nreturn " . var_export(array_values($pessoas), true) . ";\\n");
+`,
+    );
+    execFileSync("php", [script], { stdio: "pipe" });
+  }
+
+  test("a ficha com a área crua não abre Pessoas nem Caixa", async () => {
+    darAreaCrua("pessoas");
+    const pessoas = await painel.buscar("pessoas");
+    assert.equal(pessoas.status, 302, "abriu Pessoas só com a área");
+    assert.match(pessoas.location, /\?negado=pessoas$/);
+
+    darAreaCrua("caixa");
+    const caixa = await painel.buscar("caixa");
+    assert.equal(caixa.status, 302, "abriu o Caixa só com a área");
+    assert.match(caixa.location, /\?negado=caixa$/);
+  });
+
+  test("quem não é adm não consegue se dar adm nem pela própria ficha", async () => {
+    darAreaCrua("pessoas");
+    const r = await painel.postar("pessoas", {
+      acao: "salvar",
+      id: ADMIN,
+      nome: "Teste",
+      tipo: "coordenador",
+      "capacidades[]": ["adm"],
+    });
+    assert.match(r.location, /negado=pessoas/, "o POST passou pela porta");
+    const eu = painel.ler("pessoas").find((p) => p.id === ADMIN);
+    assert.ok(!eu.capacidades.includes("adm"), "se deu adm pela própria ficha");
+  });
+
+  test("a próxima gravação limpa a área crua de quem não é adm", () => {
+    darAreaCrua("pessoas");
+    painel.gravar("pessoas", painel.ler("pessoas"));
+    const eu = painel.ler("pessoas").find((p) => p.id === ADMIN);
+    assert.ok(!eu.areas.includes("pessoas"), "normalizar_pessoa() deixou 'pessoas' passar sem adm");
+    assert.ok(eu.areas.includes("inscricoes"), "tirou também o que a capacidade concede");
   });
 });

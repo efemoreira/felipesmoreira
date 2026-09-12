@@ -169,6 +169,7 @@ function formulario_pessoa(?array $aberta, array $catalogo): void
           </p>
           <div class="linha g2">
             <?php foreach (AREAS as $chave => $rotulo): ?>
+              <?php if (in_array($chave, areas_so_adm(), true)) continue; // só a capacidade dá ?>
               <label class="check">
                 <input type="checkbox" name="areas[]" value="<?= h($chave) ?>"
                        <?= in_array($chave, $aberta['areas'] ?? [], true) ? 'checked' : '' ?>>

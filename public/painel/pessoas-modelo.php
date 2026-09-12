@@ -87,9 +87,15 @@ function normalizar_pessoa($p): ?array
     foreach ($capacidades as $c) {
         $pedidas = array_merge($pedidas, areas_da_capacidade($c));
     }
+    /* O que nenhuma capacidade concede, o ajuste fino também não concede: sem
+       `adm`, `pessoas` e `caixa` caem aqui, mesmo que estejam no arquivo — é o
+       que corrige uma ficha gravada antes desta regra na próxima escrita. */
     $areas = in_array('adm', $capacidades, true)
         ? array_keys(AREAS)
-        : array_values(array_intersect(array_keys(AREAS), array_unique($pedidas)));
+        : array_values(array_diff(
+            array_intersect(array_keys(AREAS), array_unique($pedidas)),
+            areas_so_adm(),
+        ));
 
     $conta = limpar_texto($p['usuario'] ?? '', 40);
 

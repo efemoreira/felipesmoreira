@@ -41,13 +41,13 @@ const AREAS = [
  * a exceção — tirar o Estúdio de alguém de Comunicação sem inventar uma
  * capacidade nova.
  *
- * **`pessoas` e `caixa` só entram em `adm`, de propósito.** Dinheiro segue a
- * mesma régua do dado pessoal: acesso a ele não acompanha o trabalho do dia,
- * acompanha a responsabilidade sobre ele.
- *
- * **`pessoas` só entra em `adm`, de propósito.** É a tela com telefone, e-mail e
- * endereço de todo mundo: acesso a dado pessoal não acompanha o trabalho do dia,
- * acompanha a responsabilidade sobre ele.
+ * **`pessoas` e `caixa` só entram em `adm`, de propósito.** Uma é a tela com
+ * telefone, e-mail e endereço de todo mundo; a outra é dinheiro. As duas seguem
+ * a mesma régua: acesso a isso não acompanha o trabalho do dia, acompanha a
+ * responsabilidade sobre ele. E não é só o menu que diz isso: a rota exige
+ * `exigir_admin()`, e `normalizar_pessoa()` descarta essas áreas de quem não é
+ * `adm` — o "ajuste fino" não alcança o que nenhuma capacidade concede. Ver
+ * `areas_so_adm()`.
  *
  * **Ninguém precisa de área para ESTUDAR.** A formação é de todo mundo que tem
  * conta; a área `aulas` é para *editar* — pendurar o vídeo, ver quem estudou.
@@ -106,6 +106,23 @@ function areas_da_capacidade(string $chave): array
         return array_keys(AREAS);
     }
     return CAPACIDADES[$chave]['areas'] ?? [];
+}
+
+/**
+ * As áreas que nenhuma capacidade concede — só `adm` abre.
+ *
+ * É derivado de CAPACIDADES, e não uma lista escrita à mão, para que a regra
+ * tenha uma fonte só: área que entrar numa capacidade deixa de ser só-adm
+ * sozinha. `testes/contrato/painel.test.ts` faz a mesma conta para cobrar que
+ * essas áreas morem no grupo "Administração" do menu.
+ */
+function areas_so_adm(): array
+{
+    $concedidas = [];
+    foreach (CAPACIDADES as $c) {
+        $concedidas = array_merge($concedidas, $c['areas']);
+    }
+    return array_values(array_diff(array_keys(AREAS), $concedidas));
 }
 
 /**

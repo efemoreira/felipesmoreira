@@ -542,11 +542,19 @@ function exigir_area(string $area): void
     }
 }
 
-function exigir_admin(): void
+/**
+ * Só `adm` passa. `$negado` é o que o Início vai explicar: uma área de AREAS
+ * ("você não tem acesso a Pessoas") ou o genérico `usuarios`.
+ *
+ * É a trava de verdade das áreas só-adm (`areas_so_adm()`): `exigir_area()`
+ * confia em `areas`, e `areas` é o que alguém marcou numa ficha. Aqui a
+ * pergunta é à capacidade, que só outro administrador dá.
+ */
+function exigir_admin(string $negado = 'usuarios'): void
 {
     exigir_login();
     if (!e_admin()) {
-        header('Location: /painel/?negado=usuarios', true, 302);
+        header('Location: /painel/?negado=' . rawurlencode($negado), true, 302);
         exit;
     }
 }
