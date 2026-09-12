@@ -522,7 +522,7 @@ Regras do calendário:
 | 2 | 11/09 | OG 9 (`contrato/og`, cartões com Alfa Slab) · robustez 9 (chapa do build) · rascunho 8 · autenticação 9 (`acoes/login`) | 7,0 | 7,0 |
 | 3 | 12/09 | dev 9 (`comece-aqui`, `painel:local`) · coordenação 8 (`/painel/ajuda`, subtítulo por tela) · docs 8 (`contrato/docs`) · medição 6 (`acoes/sinal`, Leituras › Semana) · contrato Next↔PHP 8 (`apiFetch` sem exceção) | 7,4 | 7,4 |
 | 3+ | 12/09 | adiantado de B sem tocar produto: CI 8 (`verificar.yml`, Node/PHP pinados) · a11y 9 (`contrato/contraste`, goldDim) · estúdio 8 (`fumaca/estudio`) · ficha/lista (`fumaca/pessoas`, e o bug das abas) | 7,6 | 7,4 |
-| 4 (régua nova) | 12/09 | produto com teste, para quem usa: militante 8 (primeiros passos no hub) · semana/mês 5 (CSV) · rastro 8 (carimbo + lápide) · LGPD 8 (dossiê + apagar a pedido) · backup 9 (idade na Manutenção e na fila) · Playbook fechado · teto na escala · `/candidatos` vazio convida | **8,1** | — |
+| 4 (régua nova) | 12/09 | produto com teste, para quem usa: militante 8 (primeiros passos no hub) · semana/mês 5 (CSV) · rastro 8 (carimbo + lápide) · LGPD 8 (dossiê + apagar a pedido) · backup 9 (idade na Manutenção e na fila) · Playbook fechado · teto na escala · `/candidatos` vazio convida | **7,9** (era 8,1 — conta refeita na terceira avaliação) | — |
 | 3 | | | | 7,4 |
 
 ---

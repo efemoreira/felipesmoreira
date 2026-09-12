@@ -140,8 +140,8 @@ Pendência importante:
 
 A avaliação completa, a nota por visão e o plano estão em
 `update/avaliacao-e-plano-de-crescimento.md`; o passo a passo por critério, em
-`update/roteiro-das-notas.md`; a segunda leitura, com a nota refeita, em
-`update/segunda-avaliacao.md`.
+`update/roteiro-das-notas.md`; a segunda e a terceira leituras, com a nota
+refeita, em `update/segunda-avaliacao.md` e `update/terceira-avaliacao.md`.
 
 ## Testes
 
