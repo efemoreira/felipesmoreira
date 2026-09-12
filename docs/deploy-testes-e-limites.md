@@ -59,9 +59,17 @@ Ao mexer nisso, teste com Apache real, não só com `php -S` ou `python -m http.
 
 ## Versões
 
-- Node 24 (`testes/LEIA-ME.md`; o runner usa o padrão do `ubuntu-latest`).
-- **PHP 8.1 no mínimo**: `acoes-comum.php` usa `: never`. Local roda 8.5,
-  o runner 8.3 — `testes/sandbox.ts` comenta as diferenças do `php -S`.
+- Node 24 (`.nvmrc`, `engines` no `package.json`).
+- **PHP 8.1 no mínimo**: `acoes-comum.php` usa `: never`. Local roda 8.5;
+  `verificar.yml` roda a suíte em **8.1** de propósito — a versão mais velha
+  que a hospedagem pode estar rodando é a que tem de passar.
+
+## Os dois workflows
+
+- `verificar.yml` — em todo push e PR: `npm ci`, lint, `test:tipos`, `npm
+  test`. Não publica.
+- `publish.yml` — só em `main`: testa, faz o build e empurra `out/` para a
+  branch `build`. Não mexa sem alinhar.
 
 ## O que não mexer sem perguntar
 

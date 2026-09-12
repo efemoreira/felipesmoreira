@@ -1,0 +1,44 @@
+# Verifica sem publicar: lint, tipos e os três tipos de teste, em todo push e
+# em todo pull request. É o que faltava ao lado do publish.yml — ele roda
+# `npm test` antes de publicar, mas não o lint nem o tsc, e um `console.log`
+# solto ou um tipo errado passavam para o ar. Este não publica nada; quem
+# publica continua sendo o publish.yml, só em main.
+#
+# Versões pinadas de propósito: o publish usa o Node e o PHP que o runner
+# trouxer, e o dia em que o runner mudar é o dia em que "passa na minha
+# máquina" deixa de passar aqui. Node é o de .nvmrc; PHP é o mínimo que o
+# painel exige (8.1, por `: never` em acoes-comum.php) — a versão mais velha
+# que a hospedagem pode estar rodando é a que tem de passar.
+name: Verificar
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.1"
+          extensions: zip, gd, mbstring
+          coverage: none
+
+      - run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Tipos
+        run: npm run test:tipos
+
+      - name: Testes
+        run: npm test
