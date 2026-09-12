@@ -49,6 +49,8 @@ export interface Resposta {
   html: string;
   /** O que o PHP escreveu no stderr durante esta requisição (e o GET seguinte). */
   erros: string;
+  /** Os cabeçalhos da resposta — só em `buscar()`, que é o GET direto. */
+  cabecalhos?: Record<string, string>;
 }
 
 export interface Sandbox {
@@ -572,7 +574,13 @@ session_write_close();
       const html = await r.text();
       const erros = desde(marca);
       exigirSilencio(alvo, erros);
-      return { status: r.status, location: r.headers.get("location") ?? "", html, erros };
+      return {
+        status: r.status,
+        location: r.headers.get("location") ?? "",
+        html,
+        erros,
+        cabecalhos: Object.fromEntries(r.headers.entries()),
+      };
     },
     ler(nome) {
       /* O NOME É CONFERIDO CONTRA A LISTA, e não aceito como veio.

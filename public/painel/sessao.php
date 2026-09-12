@@ -65,6 +65,13 @@ session_set_cookie_params([
 ]);
 session_name('painel_agenda');
 session_start();
+/* DEPOIS do session_start(), de propósito: ele manda o seu Cache-Control
+   (`session.cache_limiter`), e o dele depende do php.ini da hospedagem. Este
+   não depende. Nenhuma tela do painel fica no cache do navegador — é a lista
+   de pessoas com telefone, num celular que às vezes é emprestado. Os endpoints
+   públicos que PODEM ser guardados (candidatos, kit, a prévia) mandam o deles
+   por cima. `testes/acoes/cabecalhos.test.ts` confere os dois lados. */
+header('Cache-Control: no-store, private');
 
 /* ===================== infraestrutura ===================== */
 
