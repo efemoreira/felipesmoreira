@@ -138,7 +138,9 @@ Pendência importante:
 - telas com `.rolagem` e tabela ainda precisam migrar para listas/cards quando a
   informação for de trabalho diário.
 
-O plano detalhado dessa auditoria está em `update/plano-evolucao-ferramenta-militancia.md`.
+A avaliação completa, a nota por visão e o plano estão em
+`update/avaliacao-e-plano-de-crescimento.md`; o passo a passo por critério, em
+`update/roteiro-das-notas.md`.
 
 ## Testes
 
