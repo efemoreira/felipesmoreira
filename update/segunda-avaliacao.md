@@ -67,12 +67,11 @@ abriram, quantos compartilharam, quantos chegaram ao passo 3.
 **Visto na tela (390 px):**
 - A home funciona no celular: kicker em duas linhas, faixa "Vote 14", os
   seis cartões, a história. Sem vazamento.
-- **Os cartões da home são translúcidos e o cordel de fundo passa por
-  cima**: as montanhas brancas e as estrelas cruzam "O que dá pra fazer",
-  "Programação da Semana" e "Heróis do Ceará", e o subtítulo dos três fica
-  meio coberto. É bonito no desktop e ruidoso no polegar. Um `background`
-  com opacidade maior nos cartões (ou o cordel com menos contraste atrás da
-  lista) resolve sem perder a identidade.
+- ~~Os cartões da home são translúcidos e o cordel passa por cima~~ —
+  **retirado em 12/09**: era artefato da captura (página dentro de iframe,
+  com a animação de entrada congelada pelo tempo virtual). Renderizada
+  direto, os cartões são opacos (`C.paper`) e o cordel fica atrás. Segunda
+  lição de método no mesmo dia: impressão visual também se mede.
 - `/candidatos` sem a lista (rede fora, ou lista não fechada) é a chapa e
   80% de tela vazia. A mensagem manda para `/propostas`; podia trazer a
   faixa da eleição e o botão "Quero ajudar" — o eleitor que abriu a página do
@@ -151,13 +150,11 @@ backup antes.
 **Forte:** rascunho em fatos e na ficha; a porta do Estúdio com teste;
 `fazer_backup()` calado quando a pasta não existe.
 
-**Ainda:** aula é código (4). E um achado de **conteúdo**, não de código: o
-Playbook das famílias de encontro e sete trechos das aulas ainda falam de
-"antes da campanha" como presente ("Antes da campanha, este formato só
-existe na versão encontro: sem pedir voto…") — a campanha já começou. O
-`Manual-da-Militancia.md` avisa disso no topo; `aulas-conteudo.php` e
-`FAMILIAS` em `eventos-comum.php` não. É o custo de aula-é-código na
-prática: corrigir é commit, e por isso ninguém corrigiu.
+**Ainda:** aula é código (4). ~~E os textos de "antes da campanha"
+desatualizados~~ — **retirado em 12/09**: os textos são deliberadamente
+neutros de fase, dizem "antes" e "durante" lado a lado, e a regra está
+escrita em `aulas-conteudo.php` ("nunca a data de virada: texto datado
+envelhece sozinho"). Leitura minha apressada; o código estava certo.
 
 ## 6. Ferramenta de organização — o que ainda dói
 
@@ -187,8 +184,8 @@ programação, hub, inscrições, lista de encontros, encontro aberto,
 Leituras. **Nenhuma vaza, nenhuma esconde ação.** O painel no polegar é
 melhor do que a primeira avaliação supôs lendo CSS — a barra de baixo, as
 abas em botão, os cartões no lugar das tabelas funcionam. O que sobra são
-os três pontos já ditos: o cordel sobre os cartões da home, o Playbook antes
-do preparo, e os chips de "A operação hoje" no hub quebrando em três linhas.
+dois pontos: o Playbook antes do preparo (feito em 12/09: virou `<details>`
+fechado) e os chips de "A operação hoje" no hub quebrando em três linhas.
 
 ### 9. O dia da eleição
 
@@ -231,14 +228,17 @@ acesso ao repositório e ao hPanel. Item 36 é C; a pessoa com acesso é agora.
 
 ## O que deve melhorar — a ordem
 
-**Esta semana, sem ferir o congelamento (uma manhã):**
-1. Monitor externo + data do último backup na Manutenção (olhar 9).
-2. `registrar_envio('escala')` em `api/escala.php`.
-3. Playbook do encontro em `<details>` fechado; cartões da home com fundo
-   menos translúcido — dois ajustes de CSS.
-4. Corrigir "antes da campanha" no Playbook (`FAMILIAS`) e nas aulas — é
-   texto, não código de negócio.
-5. Estado vazio de `/programacao` conferido.
+**A régua mudou em 12/09.** "Nada antes de 04/10" valia para refatoração
+de moldura; foi aplicada por engano ao que é camada nova com teste. A
+régua certa: **entra agora tudo o que melhora a vida de alguém e chega com
+teste; espera só o que reorganiza código sem mudar nada para o usuário.**
+Com ela, no mesmo dia: primeiros passos no hub (militante), CSV
+(coordenação), idade do backup na Manutenção e na fila do adm, teto na
+escala, Playbook fechado (feitos, `c3a4481`…`b1d50e6`).
+
+**O que fica desta lista:**
+1. Monitor externo de uptime — não é código; é cadastrar o endereço.
+2. Estado vazio de `/programacao` conferido.
 
 **Sua parte, esta semana:** validação em campo (item 10); o texto do dia
 05/10 (aposta 5); uma segunda pessoa com acesso e o `comece-aqui.md`
