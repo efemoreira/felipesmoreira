@@ -152,3 +152,11 @@ describe("fumaça: a ficha do fato na fila", () => {
     assert.doesNotMatch(html, /<dd>2026-08-20<\/dd>/);
   });
 });
+
+describe("fumaça: Leituras › Semana mede o dado", () => {
+  test("o administrador vê o tamanho e o tempo de pessoas.php", () => {
+    const { html } = painel.abrir("leituras", "aba=semana");
+    assert.match(html, /O tamanho do dado/);
+    assert.match(html, /pessoas\.php<\/strong>: \d+ fichas · [\d.]+ KB ·\s+lido e normalizado em [\d,.]+ ms/);
+  });
+});

@@ -315,7 +315,23 @@ const ProgramacaoClient: React.FC<{ semente: Agenda }> = ({ semente }) => {
 
         {/* ===== Lista da programação ===== */}
         {itens.length === 0 ? (
-          <p className="ag-vazio">{recadoDeVazio(todos.length, recorte)}</p>
+          <div className="ag-vazio">
+            <p>{recadoDeVazio(todos.length, recorte)}</p>
+            {/* Sem nada publicado, a página não pode ser um beco: o canal de
+                sempre e o convite, que é o que todas as rotas oferecem. */}
+            {todos.length === 0 && (
+              <p className="ag-vazio-acoes">
+                {agenda.disponivelEm?.[0] && (
+                  <a className="ag-btn" href={agenda.disponivelEm[0].url} target="_blank" rel="noopener noreferrer">
+                    Ver o canal no {agenda.disponivelEm[0].nome}
+                  </a>
+                )}
+                <Link className="ag-btn ag-btn-ouro" href="/queroajudar">
+                  Quero ajudar
+                </Link>
+              </p>
+            )}
+          </div>
         ) : (
           <ol className="ag-lista">
             {ordenados.map((item, i) => (
@@ -674,6 +690,15 @@ const css = `
     color: ${C.cream}; background: rgba(20,17,12,.6);
     border: 2px solid ${C.ink}; padding: 26px 18px;
   }
+  .ag-vazio p { margin: 0; }
+  .ag-vazio-acoes { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 18px !important; }
+  .ag-btn {
+    display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px;
+    font-family: ${FONT_ELITE}; font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase;
+    color: ${C.cream}; text-decoration: none; border: ${BORDA}px solid ${C.ink};
+    background: rgba(20,17,12,.8); box-shadow: ${sombra("rente", C.sombraNoite)};
+  }
+  .ag-btn-ouro { background: ${C.gold}; color: ${C.ink}; }
 
   .ag-rodape {
     margin-top: 30px; text-align: center;

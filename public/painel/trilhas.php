@@ -281,6 +281,23 @@ function ja_fez_algo_em(string $area, string $uid): bool
                 }
             }
             return false;
+        case 'agenda':
+            /* Publicar a agenda carimba `alteradoPor` no encontro espelhado —
+               e o Caixa/eventos também; qualquer encontro que a pessoa mexeu
+               vale, porque a mesa da Agenda é a mesma dos encontros. */
+            require_once __DIR__ . '/eventos-comum.php';
+            $nome = achar_pessoa($uid)['nome'] ?? '';
+            foreach (ler_eventos() as $e) {
+                if ($nome !== '' && (($e['criadoPor'] ?? '') === $nome || ($e['alteradoPor'] ?? '') === $nome)) {
+                    return true;
+                }
+            }
+            return false;
+        case 'estudio':
+            /* O Estúdio não grava nada no servidor — a arte fica no aparelho.
+               O que resta como rastro é ter entrado no painel depois de
+               aprovada: `ultimoAcesso` preenchido vale como "abriu a mesa". */
+            return (achar_pessoa($uid)['ultimoAcesso'] ?? '') !== '';
         default:
             return false;
     }
