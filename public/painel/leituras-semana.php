@@ -16,6 +16,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/layout.php';
 require_once __DIR__ . '/agora.php';      // panorama_de()
 require_once __DIR__ . '/kit-comum.php';  // mutirao_da_semana()
+require_once __DIR__ . '/sinais-comum.php'; // sinais_entre()
 
 function aba_da_semana(array $eu): void
 {
@@ -67,6 +68,55 @@ function aba_da_semana(array $eu): void
             · <a href="/painel/municao.php?aba=mutirao">cobrar quem falta</a>
           <?php endif; ?>
         </p>
+      <?php endif; ?>
+    </fieldset>
+
+    <?php /* O SITE: quantos abriram, quantos compartilharam, quantos se
+             inscreveram — por rota, esta semana e a anterior. É a medição
+             mínima (`sinais-comum.php`): contagem por dia, sem quem. Antes
+             disto, toda decisão sobre o site era impressão. */ ?>
+    <?php
+    $semana = semana_de();
+    $desta = sinais_entre(substr($semana['inicio'], 0, 10), dia_no_ceara());
+    $anterior = sinais_entre(
+        dia_no_ceara(strtotime($semana['inicio']) - 7 * 86400),
+        dia_no_ceara(strtotime($semana['inicio']) - 86400),
+    );
+    $colunas = ['abriu', 'compartilhou', 'enviou-inscricao'];
+    ?>
+    <fieldset>
+      <legend>O site</legend>
+      <?php if ($desta === [] && $anterior === []): ?>
+        <p class="dica" style="margin:0">Ainda sem sinal do site. Ele conta a partir da próxima publicação.</p>
+      <?php else: ?>
+        <p class="dica" style="margin:0 0 14px">
+          Por página: quem abriu, quem compartilhou, quem se inscreveu — esta semana,
+          e entre parênteses a anterior. Só contagem; ninguém é identificado.
+        </p>
+        <div class="rolagem cartoes">
+          <table>
+            <thead>
+              <tr>
+                <th>Página</th>
+                <?php foreach ($colunas as $c): ?><th><?= h(EVENTOS_SINAL[$c]) ?></th><?php endforeach; ?>
+              </tr>
+            </thead>
+            <tbody>
+              <?php foreach (ROTAS_SINAL as $rota => $nome): ?>
+                <?php if (!isset($desta[$rota]) && !isset($anterior[$rota])) continue; ?>
+                <tr>
+                  <td data-rotulo="Página"><strong>/<?= h($rota) ?></strong> <span class="dica"><?= h($nome) ?></span></td>
+                  <?php foreach ($colunas as $c): ?>
+                    <td data-rotulo="<?= h(EVENTOS_SINAL[$c]) ?>">
+                      <?= (int) ($desta[$rota][$c] ?? 0) ?>
+                      <span class="dica">(<?= (int) ($anterior[$rota][$c] ?? 0) ?>)</span>
+                    </td>
+                  <?php endforeach; ?>
+                </tr>
+              <?php endforeach; ?>
+            </tbody>
+          </table>
+        </div>
       <?php endif; ?>
     </fieldset>
 

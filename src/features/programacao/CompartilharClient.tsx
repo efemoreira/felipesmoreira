@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { sinal } from "@/lib/api/sinal";
 import { Icon } from "@/components/icons";
 import { C, BORDA, type Agenda, sombra, sombraErguida, sombraAfundada } from "./tipos";
 import { periodoVigente } from "./tempo";
@@ -81,6 +82,7 @@ const CompartilharClient: React.FC<{ agenda: Agenda }> = ({ agenda }) => {
     a.download = nomeArquivo(formato);
     a.click();
     setAviso("Imagem baixada.");
+    sinal("compartilhou");
   };
 
   const compartilhar = async () => {
@@ -97,6 +99,7 @@ const CompartilharClient: React.FC<{ agenda: Agenda }> = ({ agenda }) => {
              a imagem, e uma semana vencida escrita ali não tem mais conserto. */
           text: `${agenda.titulo} — ${periodoVigente(agenda)} · @moreiramissao`,
         });
+        sinal("compartilhou");
         return;
       } catch {
         return; // usuário cancelou o menu de compartilhamento

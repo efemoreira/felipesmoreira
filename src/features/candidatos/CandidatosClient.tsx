@@ -7,6 +7,7 @@ import { canvasParaBlob } from "@/lib/cordelCanvas";
 import { faseEm, type Fase } from "@/lib/eleicao";
 import { obterChapa, pessoasDa, type Candidato, type Lista } from "@/lib/api/candidatos";
 import { CHAPA } from "@/features/missao/data";
+import { sinal } from "@/lib/api/sinal";
 import {
   CABEM_POR_ARTE,
   gerarColinha,
@@ -99,6 +100,7 @@ export default function CandidatosClient() {
     if (typeof navigator.canShare === "function" && navigator.canShare({ files: [arquivo] })) {
       try {
         await navigator.share({ files: [arquivo], text: texto });
+        sinal("compartilhou");
         return;
       } catch (e) {
         if ((e as Error)?.name === "AbortError") return;
@@ -109,6 +111,7 @@ export default function CandidatosClient() {
     a.href = url;
     a.download = nome;
     a.click();
+    sinal("compartilhou");
     window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
   }, []);
 

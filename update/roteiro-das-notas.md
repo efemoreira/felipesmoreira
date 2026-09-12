@@ -490,7 +490,7 @@ mais, a ordem não muda — o que muda é quanto de B cabe em setembro.
 | 0 | — | ponto de partida (11/09) | — | **6,4** |
 | 1 | 11–17/09 | **Proteger.** ~~4.3 permissão (item 1)~~ · ~~3.3/4.4 concorrência (item 2)~~ · ~~4.5 backup antes de zerar (item 8)~~ · ~~`Cache-Control` no painel (item 7)~~ — **feitos em 11/09** · **decidir o texto do dia 05/10** (aposta 5) | permissão 3→9 · integridade 3→8 · concorrência 3→8 · backup 7→8 | **6,7** |
 | 2 | 18–24/09 | **Converter.** ~~1.4 OG (item 3)~~ · ~~1.5 semente de candidatos (item 5)~~ · ~~"17 funções" (item 4)~~ · ~~5.5 rascunho em fatos (item 9)~~ · ~~4.1 tentativas por IP (item 6)~~ — **feitos em 11/09**, adiantados | OG 4→9 · robustez 5→9 · rascunho 6→8 · autenticação 8→9 | **7,0** |
-| 3 | 25/09–01/10 | **Entrar e medir.** 7.3 `comece-aqui` + `painel:local` (item 25) · 7.2 `/painel/ajuda` (item 24) · 3.5 divergências dos docs (item 18) · 1.6 medição se couber (item 11) · **validação em campo** (item 10) no encontro da semana | dev 6→9 · coordenação 5→8 · docs 6→8 · medição 1→6 | **7,4** |
+| 3 | 25/09–01/10 | **Entrar e medir.** ~~7.3 `comece-aqui` + `painel:local` (item 25)~~ · ~~7.2 `/painel/ajuda` (item 24)~~ · ~~3.5 divergências dos docs (item 18)~~ · ~~1.6 medição (item 11)~~ — **feitos em 12/09**, adiantados · **validação em campo** (item 10) no encontro da semana — pendente, não é código | dev 6→9 · coordenação 5→8 · docs 6→8 · medição 1→6 | **7,4** |
 | — | 01–04/10 | **Congelado.** Reta final: só correção de erro visto em campo. Nada novo entra. | — | 7,4 |
 | 4 | 05–11/10 | **Post-mortem** (item 12) com os números de Leituras e do `sinal.php` · **reavaliação completa** (ficha abaixo) · decidir apostas 4 e 6 · ligar aposta 5 | — | 7,4 |
 | 5 | 12–18/10 | 6.3 exportar CSV (item 13) · 3.4 CI (item 17) · 3.6 `apiFetch` | semana/mês 3→5 · CI 5→8 · contrato 7→8 | 7,6 |
@@ -520,6 +520,7 @@ Regras do calendário:
 | 0 | 11/09 | ponto de partida | 6,4 | 6,4 |
 | 1 | 11/09 | permissão 9 (`acoes/pessoas`) · integridade 8 (`acoes/concorrencia`) · concorrência 8 · backup 8 (`acoes/backup`) | 6,7 | 6,7 |
 | 2 | 11/09 | OG 9 (`contrato/og`, cartões com Alfa Slab) · robustez 9 (chapa do build) · rascunho 8 · autenticação 9 (`acoes/login`) | 7,0 | 7,0 |
+| 3 | 12/09 | dev 9 (`comece-aqui`, `painel:local`) · coordenação 8 (`/painel/ajuda`, subtítulo por tela) · docs 8 (`contrato/docs`) · medição 6 (`acoes/sinal`, Leituras › Semana) · contrato Next↔PHP 8 (`apiFetch` sem exceção) | 7,4 | 7,4 |
 | 3 | | | | 7,4 |
 
 ---

@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Sinal } from "@/components/Sinal";
 import {
   Geist_Mono,
   Alfa_Slab_One,
@@ -178,6 +179,7 @@ export default function RootLayout({
         className={`${geistMono.variable} ${alfaSlab.variable} ${specialElite.variable} ${bitter.variable} antialiased`}
       >
         {children}
+        <Sinal />
       </body>
     </html>
   );

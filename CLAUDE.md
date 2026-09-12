@@ -55,7 +55,8 @@ Regras:
   2. responde JSON com `Content-Type` correto;
   3. usa `Cache-Control: no-store, private` quando aplicável;
   4. prefere estado no corpo em vez de usar status HTTP para erro esperado.
-- Endpoints públicos (sem sessão): `inscricao.php` e `presenca.php` (gravam — honeypot, teto, origem e `com_trava()`), `escala.php` (grava, por token HMAC), `candidatos.php` e `kit.php` (só leitura, cache curto), `presenca-previa.php` (só para o robô de prévia). Nenhum usa CSRF.
+- Endpoints públicos (sem sessão): `inscricao.php` e `presenca.php` (gravam — honeypot, teto, origem e `com_trava()`), `escala.php` (grava, por token HMAC), `sinal.php` (só contagem por dia × rota × evento, sem quem — a medição do site), `candidatos.php` e `kit.php` (só leitura, cache curto), `presenca-previa.php` (só para o robô de prévia). Nenhum usa CSRF.
+- **Não coloque analytics de terceiro no site.** A medição é `sinal()` (`src/lib/api/sinal.ts`) → `sinais-comum.php` → Leituras › Semana; listas fechadas de rota e evento nos dois lados, `testes/contrato/sinal.test.ts` prende.
 - Todo ler→alterar→gravar que o público ou muita gente dispara passa por `com_trava()` (`sessao.php`) e relê o arquivo dentro dela.
 
 ## Regras centrais do produto

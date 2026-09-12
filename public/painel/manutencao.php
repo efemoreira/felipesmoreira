@@ -104,13 +104,14 @@ function grupos_de_dados(): array
             ],
         ],
         'contadores' => [
-            'nome'   => 'Contadores e tentativas',
-            'resumo' => 'Teto de envio por visitante e o registro de erro de senha. '
-                . 'Some sozinho com o tempo; some junto por limpeza.',
+            'nome'   => 'Contadores, tentativas e sinais do site',
+            'resumo' => 'Teto de envio por visitante, o registro de erro de senha e a contagem '
+                . 'de aberturas do site. Some sozinho com o tempo; some junto por limpeza.',
             'arquivos' => [
                 PASTA_DADOS . '/tentativas.php',
                 PASTA_DADOS . '/tentativas.json',
                 PASTA_DADOS . '/inscricoes-limite.php',
+                PASTA_DADOS . '/sinais.php',
             ],
         ],
     ];

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Icon } from "@/components/icons";
 import catalogo from "@/data/funcoes.json";
 import { enviarInscricao } from "@/lib/api/inscricao";
+import { sinal } from "@/lib/api/sinal";
 import type { CampoTexto, CatalogoFuncoes, Funcao, GrupoFuncao } from "./tipos";
 import {
   mascararTelefone,
@@ -207,11 +208,13 @@ export default function InscricaoClient() {
         return;
       }
       setPasso(2);
+      sinal("passo-2");
       return;
     }
     if (passo === 2) {
       if (!validarPasso2()) return;
       setPasso(3);
+      sinal("passo-3");
     }
   };
 
@@ -251,6 +254,7 @@ export default function InscricaoClient() {
        dados de quem veio antes. */
     try { sessionStorage.removeItem(CHAVE_RASCUNHO); } catch { /* aba anônima */ }
     setEnvio("pronto");
+    sinal("enviou-inscricao");
   };
 
   if (envio === "pronto") return <Sucesso nome={campos.nome} cidade={campos.cidade} escolhidas={escolhidas} />;

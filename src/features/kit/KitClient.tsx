@@ -1,5 +1,6 @@
 "use client";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { sinal } from "@/lib/api/sinal";
 import Link from "next/link";
 import { Icon } from "@/components/icons";
 import { BORDA, C, FONT_ALFA, FONT_ELITE, FONT_BITTER, borda, TEXTO } from "@/lib/theme";
@@ -123,6 +124,7 @@ export default function KitClient() {
         if (typeof navigator.canShare === "function" && navigator.canShare({ files: [arquivo] })) {
           try {
             await navigator.share({ files: [arquivo], text: textoDe(p) });
+            sinal("compartilhou");
             return;
           } catch (e) {
             if ((e as Error)?.name === "AbortError") return; // ele fechou o menu
@@ -135,6 +137,7 @@ export default function KitClient() {
         a.href = url;
         a.download = arquivo.name;
         a.click();
+        sinal("compartilhou");
         /* Soltar a URL no tique seguinte, não na mesma linha: alguns
            navegadores só começam a leitura depois do clique voltar, e revogar
            imediatamente aborta o download que acabou de começar. */
