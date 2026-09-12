@@ -1577,3 +1577,10 @@ fieldset[id], .item[id], .ficha[id] { scroll-margin-top:18px; }
 .meta-feito { border-color:var(--ok-borda); }
 .meta-atrasado, .meta-vencida { border-color:var(--erro-borda); }
 .meta-apagar { margin-top:10px; }
+
+/* ---------- as tarefas ---------- */
+.tarefas { display:grid; gap:10px; }
+.tarefa { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; padding:12px 14px; border:3px solid var(--linha); background:var(--realce-1); }
+.tarefa-vencida { border-color:var(--erro-borda); }
+.tarefa-corpo { min-width:0; }
+@media (max-width:600px) { .tarefa { flex-direction:column; } }

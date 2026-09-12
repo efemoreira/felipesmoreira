@@ -182,7 +182,7 @@ teste.
 - `/painel/aulas`
 - `/painel/fatos`
 - `/painel/producao`
-- `/painel/eventos`
+- `/painel/eventos` — abas Próximos · Já aconteceram · Follow-up · **Tarefas** (o combinado com dono e prazo, `tarefas-comum.php`; vence no Início do dono)
 - `/painel/inscricoes`
 - `/painel/candidatos`
 - `/painel/pessoas`

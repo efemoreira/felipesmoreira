@@ -229,14 +229,17 @@ describe("painel: o que cada área diz ao Início é registro, não cadeia de if
     .filter((f) => f.endsWith("-comum.php"))
     .flatMap((f) => [...readFileSync(path.join(PAINEL, f), "utf8").matchAll(/^function (?:pendencias|medidores|estado)_([a-z]+)\(array \$u\)/gm)].map((m) => [m[1], f]));
 
-  test("ORDEM_AGORA só tem área que existe (ou 'gente', o item solto)", () => {
+  /* Os itens soltos: não são área, qualquer conta os tem. */
+  const SOLTOS = ["gente", "tarefas"];
+
+  test("ORDEM_AGORA só tem área que existe (ou item solto: gente, tarefas)", () => {
     assert.ok(ordem.length >= 5, `só achei ${ordem.length} em ORDEM_AGORA`);
-    const fora = ordem.filter((a) => a !== "gente" && !AREAS.includes(a));
+    const fora = ordem.filter((a) => !SOLTOS.includes(a) && !AREAS.includes(a));
     assert.deepEqual(fora, [], "área em ORDEM_AGORA que não existe em AREAS");
   });
 
   test("toda área de ORDEM_AGORA sabe em que -comum.php procurar", () => {
-    const semArquivo = ordem.filter((a) => a !== "gente" && !arquivos.some(([, chave]) => chave === a));
+    const semArquivo = ordem.filter((a) => !SOLTOS.includes(a) && !arquivos.some(([, chave]) => chave === a));
     assert.deepEqual(semArquivo, [], "área em ORDEM_AGORA sem entrada em ARQUIVO_DO_AGORA: o hub nunca inclui o -comum dela");
     for (const [, chave, arquivo] of arquivos) {
       assert.ok(readdirSync(PAINEL).includes(`${arquivo}-comum.php`), `${chave} aponta para ${arquivo}-comum.php, que não existe`);

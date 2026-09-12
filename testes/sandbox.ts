@@ -158,6 +158,7 @@ const DADOS = new Set([
   "mutirao",
   "caixa",
   "metas",
+  "tarefas",
   "inscricoes-limite",
   "tentativas",
   "segredo",
@@ -628,6 +629,8 @@ require __DIR__ . '/painel/candidatos-comum.php';
 require __DIR__ . '/painel/aulas-comum.php';
 require __DIR__ . '/painel/kit-comum.php';
 require __DIR__ . '/painel/caixa-comum.php';
+require __DIR__ . '/painel/metas-comum.php';
+require __DIR__ . '/painel/tarefas-comum.php';
 /* O nome do arquivo nem sempre é o nome da função: os cards do quadro moram
    em \`producao.php\` e quem os grava é \`gravar_cards()\`, e o progresso da
    formação é gravado por \`gravar_progresso()\`. O progresso é o único que não

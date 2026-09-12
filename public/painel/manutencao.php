@@ -76,6 +76,7 @@ function grupos_de_dados(): array
             'arquivos' => [
                 PASTA_DADOS . '/eventos.php',
                 PASTA_DADOS . '/agenda.json',
+                PASTA_DADOS . '/tarefas.php',
             ],
         ],
         'comunicacao' => [

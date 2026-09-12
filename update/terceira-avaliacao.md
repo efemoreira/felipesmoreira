@@ -137,7 +137,7 @@ conhece o repositório.
 | 11 | coordenação | Aulas editáveis por patch (`dados/aulas-texto.php`) — o maior, e o que tira "aula é código" de 4 | 12 |
 | 12 | coordenação | Metas nos medidores (`dados/metas.php`) | 6 |
 | 13 | coordenação | Tarefas com dono e prazo | 10 |
-| 14 | coordenação | Escala para quem não tem conta | 4 |
+| 14 | ~~Escala para quem não tem conta~~ — **já existia**: o seletor de responsáveis e a sugestão incluem quem pediu a função sem conta, e o convite responde por token (`eventos-dados.php`). Achado herdado de uma leitura antiga de `pessoas_ativas()`. | — |
 | 15 | administração | Importar planilha | 10 |
 
 Os itens 1–9 cabem em **dois dias**; levam a nota a ~8,3. **Feitos em
