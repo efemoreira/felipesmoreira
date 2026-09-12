@@ -144,16 +144,41 @@ describe("ação: o último administrador", () => {
 });
 
 describe("ação: apagar pessoa", () => {
-  test("as presenças dela vão junto", async () => {
-    const r = await painel.postar("pessoas", { acao: "apagar", id: MARIA });
+  test("as presenças dela vão junto, e fica a lápide sem dado pessoal", async () => {
+    const r = await painel.postar("pessoas", { acao: "apagar", id: MARIA, motivo: "cadastro de teste" });
 
-    assert.equal(painel.ler("pessoas").some((p) => p.id === MARIA), false);
     assert.equal(
       painel.ler("presencas").length,
       0,
       "presença de quem não existe mais é linha que só atrapalha a contagem",
     );
     assert.match(r.html, /apagada/);
+    /* Fora de toda lista… */
+    assert.doesNotMatch(painel.abrir("pessoas", "").html, /Maria da Silva Sauro/);
+    /* …e no arquivo só a lápide: nome, quando, quem, por quê — telefone e o
+       resto foram embora. */
+    const lapide = painel.ler("pessoas").find((p) => p.id === MARIA);
+    assert.ok(lapide, "a lápide sumiu — apagar deixou de ter rastro");
+    assert.notEqual(lapide.apagadoEm, "");
+    assert.equal(lapide.apagadoPor, "Coordenação de Teste");
+    assert.equal(lapide.apagadoMotivo, "cadastro de teste");
+    assert.equal(lapide.telefone, "");
+    assert.equal(lapide.email, "");
+    /* A linha do tempo diz quem apagou. */
+    assert.match(painel.abrir("leituras", "aba=atividade").html, /Maria da Silva Sauro foi apagada \(cadastro de teste\)/);
+  });
+
+  test("corrigir a ficha deixa 'quem e quando' — e o login não conta como alteração", async () => {
+    await painel.postar("pessoas", { acao: "salvar", id: MARIA, nome: "Maria da Silva Sauro", tipo: "militante", bairro: "Montese" });
+    const p = painel.ler("pessoas").find((x) => x.id === MARIA);
+    assert.notEqual(p.alteradoEm, "", "salvar não carimbou alteradoEm");
+    assert.equal(p.alteradoPor, "Coordenação de Teste");
+    assert.match(painel.abrir("pessoas", `p=${MARIA}&aba=historico`).html, /Ficha alterada/);
+
+    /* Gravar a mesma lista sem mudar nada não carimba de novo. */
+    const antes = p.alteradoEm;
+    painel.gravar("pessoas", painel.ler("pessoas"));
+    assert.equal(painel.ler("pessoas").find((x) => x.id === MARIA).alteradoEm, antes, "gravação igual carimbou");
   });
 });
 

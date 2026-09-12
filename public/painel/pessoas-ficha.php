@@ -202,6 +202,10 @@ function formulario_pessoa(?array $aberta, array $catalogo): void
         <input type="hidden" name="csrf" value="<?= h(token()) ?>">
         <input type="hidden" name="acao" value="apagar">
         <input type="hidden" name="id" value="<?= h($aberta['id']) ?>">
+        <div class="campo">
+          <label for="apagar-motivo">Por quê <span class="dica">— fica na linha do tempo, junto com quem apagou</span></label>
+          <input id="apagar-motivo" type="text" name="motivo" maxlength="120" placeholder="cadastro duplicado · pediu para sair · teste">
+        </div>
         <div class="acoes">
           <button class="btn btn-risco" type="submit">Apagar esta pessoa</button>
         </div>

@@ -104,15 +104,22 @@ describe("caixa: os dois nunca somam juntos", () => {
 });
 
 describe("caixa: apagar", () => {
-  test("apaga de verdade — corrigir é apagar e lançar de novo", async () => {
+  test("apagar tira de toda soma e lista — e deixa a lápide com quem apagou", async () => {
     painel.gravar("caixa", [{
       id: "x1", centavos: 5000, conta: "movimento", origem: "venda",
       descricao: "Errado", data: "2026-09-01", criadoEm: "2026-09-01T10:00:00-03:00",
     }]);
 
-    await painel.postar("caixa", { acao: "apagar", id: "x1" });
+    const r = await painel.postar("caixa", { acao: "apagar", id: "x1" });
     /* Um caixa que guarda o errado ao lado do certo soma duas vezes na primeira
-       distração. */
-    assert.equal(painel.ler("caixa").length, 0);
+       distração — a lápide não está ao lado, está fora de toda conta. */
+    assert.doesNotMatch(r.html, /Errado/, "o lançamento apagado continua no extrato");
+    assert.match(r.html, /<dt>Saldo<\/dt><dd>R\$ 0,00/, "a lápide entrou na soma");
+    const cru = painel.ler("caixa");
+    assert.equal(cru.length, 1, "a lápide sumiu — apagar deixou de ter rastro");
+    assert.notEqual(cru[0].apagadoEm, "");
+    assert.equal(cru[0].apagadoPor, "Coordenação de Teste");
+    /* E a linha do tempo diz. */
+    assert.match(painel.abrir("leituras", "aba=atividade").html, /Apagou do caixa: R\$ 50,00/);
   });
 });

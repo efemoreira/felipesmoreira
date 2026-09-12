@@ -213,8 +213,9 @@ function tratar_acoes_de_pessoa(): void
                 avisar('erro', 'Não dá para apagar o único administrador ativo.');
                 voltar('?p=' . $alvo['id']);
             }
-            $restantes = array_values(array_filter(ler_pessoas(), fn ($p) => $p['id'] !== $alvo['id']));
-            if (!gravar_pessoas($restantes)) {
+            /* Deixa a lápide — id, nome, quando, quem, por quê — e nada mais:
+               é o que a linha do tempo precisa para dizer que ela foi apagada. */
+            if (!apagar_pessoa($alvo['id'], limpar_texto($_POST['motivo'] ?? '', 120))) {
                 avisar('erro', 'Não consegui gravar em /dados.');
                 voltar('?p=' . $alvo['id']);
             }

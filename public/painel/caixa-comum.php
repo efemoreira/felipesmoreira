@@ -84,10 +84,31 @@ function normalizar_lancamento($l): ?array
         'eventoId' => limpar_texto($l['eventoId'] ?? '', 40),
         'criadoEm'  => limpar_texto($l['criadoEm'] ?? '', 40),
         'criadoPor' => limpar_texto($l['criadoPor'] ?? '', 60),
+        'alteradoEm'  => limpar_texto($l['alteradoEm'] ?? '', 40),
+        'alteradoPor' => limpar_texto($l['alteradoPor'] ?? '', 60),
+        'apagadoEm'   => limpar_texto($l['apagadoEm'] ?? '', 40),
+        'apagadoPor'  => limpar_texto($l['apagadoPor'] ?? '', 60),
     ];
 }
 
+/**
+ * Os lançamentos VIVOS. O apagado fica no arquivo como lápide (`apagar_lancamento()`)
+ * — valor, origem, quem apagou, quando — e não sai daqui: nenhuma soma o vê.
+ * "Um caixa que guarda o errado ao lado do certo soma duas vezes" continua
+ * verdade; a lápide não está ao lado, está fora de toda conta.
+ */
 function ler_caixa(): array
+{
+    return array_values(array_filter(ler_caixa_tudo(), fn ($l) => $l['apagadoEm'] === ''));
+}
+
+/** Só as lápides — para a linha do tempo. */
+function ler_caixa_apagados(): array
+{
+    return array_values(array_filter(ler_caixa_tudo(), fn ($l) => $l['apagadoEm'] !== ''));
+}
+
+function ler_caixa_tudo(): array
 {
     if (!is_file(ARQ_CAIXA)) {
         return [];
@@ -114,6 +135,13 @@ function gravar_caixa(array $lancamentos): bool
     foreach ($lancamentos as $l) {
         if ($ok = normalizar_lancamento($l)) {
             $limpos[] = $ok;
+        }
+    }
+    $limpos = carimbar_alteracoes(ler_caixa(), $limpos);
+    $ids = array_column($limpos, 'id');
+    foreach (ler_caixa_apagados() as $lapide) {
+        if (!in_array($lapide['id'], $ids, true)) {
+            $limpos[] = $lapide;
         }
     }
     $conteudo = "<?php\n// Gerado pelo painel. Dado financeiro — não versionar.\nreturn "
@@ -177,4 +205,37 @@ function somar_caixa(array $lancamentos): array
 function caixa_do_evento(string $eventoId): array
 {
     return array_values(array_filter(ler_caixa(), fn ($l) => $l['eventoId'] === $eventoId));
+}
+
+/** Apaga um lançamento deixando a lápide: o que era, quem apagou, quando. */
+function apagar_lancamento(string $id): bool
+{
+    $tudo = ler_caixa_tudo();
+    $achou = false;
+    foreach ($tudo as &$l) {
+        if ($l['id'] === $id && $l['apagadoEm'] === '') {
+            $l['apagadoEm']  = date('c');
+            $l['apagadoPor'] = quem_grava();
+            $achou = true;
+        }
+    }
+    unset($l);
+    if (!$achou) {
+        return false;
+    }
+    $limpos = [];
+    foreach ($tudo as $l) {
+        if ($ok = normalizar_lancamento($l)) {
+            $limpos[] = $ok;
+        }
+    }
+    $conteudo = "<?php\n// Gerado pelo painel. Dado financeiro — não versionar.\nreturn "
+        . var_export($limpos, true) . ";\n";
+    if (!gravar_atomico(ARQ_CAIXA, $conteudo)) {
+        return false;
+    }
+    if (function_exists('opcache_invalidate')) {
+        @opcache_invalidate(ARQ_CAIXA, true);
+    }
+    return true;
 }

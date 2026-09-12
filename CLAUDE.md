@@ -135,7 +135,7 @@ Regras:
   - `botao_modal()` / `abrir_modal()` / `fechar_modal()`
   - `menu_acoes()` — os três pontinhos da linha de lista
 - Formulário longo no painel usa `data-rascunho`; o rascunho nunca se aplica sozinho.
-- A linha do tempo é derivada dos carimbos existentes; não crie `dados/atividade.php`.
+- A linha do tempo é derivada dos carimbos existentes; não crie `dados/atividade.php`. **Rastro é campo na peça:** `carimbar_alteracoes()` (`sessao.php`) escreve `alteradoEm/alteradoPor` em pessoa, encontro e lançamento ao gravar; apagar pessoa ou lançamento deixa a **lápide** (`apagadoEm/apagadoPor/apagadoMotivo`, sem dado pessoal), que `ler_pessoas()`/`ler_caixa()` filtram e a linha do tempo lê. Não apague registro com `array_filter` — use `apagar_pessoa()`/`apagar_lancamento()`.
 
 ## Mobile first
 

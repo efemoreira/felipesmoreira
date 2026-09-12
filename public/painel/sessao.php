@@ -110,6 +110,53 @@ function com_trava(string $arquivo, callable $fn): mixed
     }
 }
 
+/* ===================== o rastro ===================== */
+
+/** Quem está gravando, pelo nome — como `decididoPor`. Vazio fora de sessão (site, cron). */
+function quem_grava(): string
+{
+    $u = function_exists('usuario_atual') ? usuario_atual() : null;
+    return $u === null ? '' : (string) $u['nome'];
+}
+
+/**
+ * Carimba `alteradoEm`/`alteradoPor` no que mudou entre a lista lida e a que
+ * vai ser gravada.
+ *
+ * É o rastro como CAMPO NA PEÇA, e não como arquivo de log: a linha do tempo
+ * continua derivada do que está gravado, só que agora "quem mexeu na ficha" e
+ * "quando" estão gravados. Compara por id, ignorando os próprios carimbos e o
+ * que `$ignorar` mandar (`ultimoAcesso`, senão todo login vira alteração).
+ * Registro novo não ganha carimbo: `criadoEm` já diz.
+ */
+function carimbar_alteracoes(array $antes, array $depois, array $ignorar = []): array
+{
+    $porId = [];
+    foreach ($antes as $a) {
+        if (isset($a['id'])) {
+            $porId[$a['id']] = $a;
+        }
+    }
+    $tirar = array_merge(['alteradoEm', 'alteradoPor'], $ignorar);
+    $miolo = function (array $r) use ($tirar): string {
+        foreach ($tirar as $k) {
+            unset($r[$k]);
+        }
+        return serialize($r);
+    };
+    foreach ($depois as &$d) {
+        if (!isset($d['id']) || !isset($porId[$d['id']])) {
+            continue;
+        }
+        if ($miolo($porId[$d['id']]) !== $miolo($d)) {
+            $d['alteradoEm']  = date('c');
+            $d['alteradoPor'] = quem_grava();
+        }
+    }
+    unset($d);
+    return $depois;
+}
+
 function gravar_atomico(string $destino, string $conteudo): bool
 {
     /* O SUFIXO É SORTEADO de propósito. Com o `.tmp` fixo, o nome do arquivo do

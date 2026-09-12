@@ -61,18 +61,17 @@ function tratar_acoes_de_caixa(array $eu): void
 
     if ($acao === 'apagar') {
         $id = limpar_texto($_POST['id'] ?? '', 40);
-        $restantes = array_values(array_filter($lancamentos, fn ($l) => $l['id'] !== $id));
-        if (count($restantes) === count($lancamentos)) {
+        if (!in_array($id, array_column($lancamentos, 'id'), true)) {
             avisar('erro', 'Lançamento não encontrado.');
             voltar_caixa();
         }
-        if (!gravar_caixa($restantes)) {
+        /* Sai de toda soma e de toda lista, mas deixa a lápide: quem apagou e
+           quando ficam na linha do tempo. Um caixa que guarda o errado ao lado
+           do certo soma duas vezes — a lápide não está ao lado, está fora. */
+        if (!apagar_lancamento($id)) {
             avisar('erro', 'Não consegui gravar em /dados.');
             voltar_caixa();
         }
-        /* Apaga de verdade, e não marca como cancelado: um caixa que guarda o
-           errado ao lado do certo é um caixa que soma duas vezes na primeira
-           distração. Corrigir é apagar e lançar de novo. */
         avisar('ok', 'Lançamento apagado.');
         voltar_caixa();
     }
