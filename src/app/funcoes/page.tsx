@@ -1,10 +1,15 @@
 import type { Metadata } from "next";
 import Funcoes from "@/features/funcoes/Funcoes";
+import catalogo from "@/data/funcoes.json";
+
+/* O número e os nomes saem do catálogo, não de uma frase escrita à mão: a frase
+   dizia "12" desde antes de o catálogo chegar a 17, e a própria página
+   imprimia o total certo logo abaixo. */
+const nomes = catalogo.funcoes.map((f) => f.nome);
 
 export const metadata: Metadata = {
   title: "O que dá pra fazer na militância",
-  description:
-    "As 12 funções da militância da Missão Ceará: Olheiro, Checagem, Roteirista, Design, Editor, Acervo, Local e Hora, Logística, Divulgação, Gravação e Recepção. O que cada uma entrega e quanto tempo pede.",
+  description: `As ${nomes.length} funções da militância da Missão Ceará: ${nomes.join(", ")}. O que cada uma entrega e quanto tempo pede.`,
   alternates: { canonical: "https://felipesmoreira.com/funcoes" },
   openGraph: {
     title: "O que dá pra fazer na militância — Missão Ceará",

@@ -32,7 +32,7 @@ function formulario_pessoa(?array $aberta, array $catalogo): void
 {
     $s = $aberta ? '-e' : '';
     ?>
-    <form method="post">
+    <form method="post" data-rascunho="pessoa-<?= $aberta ? h($aberta['id']) : 'nova' ?>">
       <input type="hidden" name="csrf" value="<?= h(token()) ?>">
       <input type="hidden" name="acao" value="salvar">
       <?php if ($aberta): ?>

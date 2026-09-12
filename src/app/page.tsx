@@ -5,6 +5,7 @@ import { Icon, IconName } from "@/components/icons";
 import { BORDA, C, FONT_ALFA, FONT_ELITE, FONT_BITTER, borda, sombra, sombraErguida, sombraAfundada } from "@/lib/theme";
 import { FaixaEleicao } from "@/components/FaixaEleicao";
 import { SigaCandidatos } from "@/features/candidatos/SigaCandidatos";
+import catalogo from "@/data/funcoes.json";
 
 const profile = {
   name: "Felipe Moreira",
@@ -75,7 +76,7 @@ const links: LinkCard[] = [
   {
     icon: "users",
     title: "O que dá pra fazer",
-    subtitle: "As 12 funções da militância",
+    subtitle: `As ${catalogo.funcoes.length} funções da militância`,
     description:
       "O que cada função entrega e quanto tempo pede — de Olheiro a Recepção — antes de você decidir",
     href: "/funcoes",

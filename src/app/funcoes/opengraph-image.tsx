@@ -1,4 +1,5 @@
 import { cartaoOG, TAMANHO_OG } from "@/lib/ogCard";
+import catalogo from "@/data/funcoes.json";
 
 export const alt = "O que dá pra fazer na militância da Missão Ceará";
 export const size = TAMANHO_OG;
@@ -9,6 +10,6 @@ export default function OpengraphImage() {
   return cartaoOG({
     kicker: "Militância",
     titulo: "Tem lugar pra você",
-    linha: "As 12 funções: o que cada uma entrega e quanto tempo pede",
+    linha: `As ${catalogo.funcoes.length} funções: o que cada uma entrega e quanto tempo pede`,
   });
 }

@@ -6,7 +6,7 @@ import CATALOGO from "@/data/funcoes.json";
 import type { CatalogoFuncoes, Funcao, GrupoFuncao } from "@/features/inscricao/tipos";
 
 /**
- * As 12 funções da militância, em página pública.
+ * As funções da militância (o catálogo em `data/funcoes.json`), em página pública.
  *
  * O texto é o mesmo `funcoes.json` que o formulário usa — **uma fonte só**. A
  * diferença é que aqui ele é indexável e dá pra mandar por link: "olha, tem uma

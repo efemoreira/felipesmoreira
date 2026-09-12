@@ -124,3 +124,21 @@ describe("fontes únicas: os arquivos que o Next e o PHP dividem", () => {
     assert.deepEqual(invalidas, [], "função sugerindo área que não existe em AREAS");
   });
 });
+
+describe("fontes únicas: o número de funções sai do catálogo", () => {
+  /* "As 12 funções" ficou escrito em três lugares enquanto o catálogo ia a 17,
+     e a própria página imprimia "17 funções" logo abaixo do cartão que dizia
+     12. Quem cita o número deriva de `catalogo.funcoes.length`. */
+  const arquivos = [
+    "src/app/page.tsx",
+    "src/app/funcoes/page.tsx",
+    "src/app/funcoes/opengraph-image.tsx",
+    "src/features/funcoes/Funcoes.tsx",
+    "src/features/inscricao/InscricaoClient.tsx",
+  ];
+  test("nenhum arquivo escreve 'N funções' com o número à mão", () => {
+    for (const a of arquivos) {
+      assert.doesNotMatch(ler(a), /\b\d+ funções/, `${a} tem o número de funções escrito à mão`);
+    }
+  });
+});

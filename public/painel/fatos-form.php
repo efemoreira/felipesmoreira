@@ -25,7 +25,10 @@ function formulario_fato(?array $f, array $rascunho = []): void
     $cat = (string) ($f['categoria'] ?? $rascunho['categoria'] ?? 'outro');
     $desd = !empty($f['desdobramento']) || !empty($rascunho['desdobramento']);
     ?>
-    <form method="post">
+    <?php /* Rascunho local: é o formulário mais digitado em pé, na rua, com a
+             fonte colada — e o WhatsApp chama no meio. A chave separa o "trazer"
+             da correção de cada fato. */ ?>
+    <form method="post" data-rascunho="fato-<?= $f !== null ? h($f['id']) : 'novo' ?>">
       <input type="hidden" name="csrf" value="<?= h(token()) ?>">
       <input type="hidden" name="acao" value="<?= $f !== null ? 'editar' : 'enviar' ?>">
       <?php if ($f !== null): ?>
