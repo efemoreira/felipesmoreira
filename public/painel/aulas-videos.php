@@ -26,6 +26,8 @@ require_once __DIR__ . '/sessao.php';
  */
 function bloco_videos(array $videos, callable $recorteAu): void
 {
+    require_once __DIR__ . '/aulas-texto.php';
+    $patches = ler_patches_de_aula();
     ?>
 <?php foreach (CURRICULO as $dia): ?>
   <?php
@@ -100,6 +102,58 @@ function bloco_videos(array $videos, callable $recorteAu): void
               <?php endif; ?>
             </div>
           </form>
+
+          <?php /* O TEXTO DA AULA, editável — a camada de patch de
+                   `aulas-texto.php`. Fechado num <details>: o vídeo é a rotina;
+                   corrigir uma frase é a exceção, e o formulário é longo. */ ?>
+          <?php $patch = $patches[$aula['id']] ?? null; $comPatch = aula_com_patch($aula, $patch); ?>
+          <details class="decidir" id="texto-<?= h($aula['id']) ?>"<?= (($_GET['texto'] ?? '') === $aula['id']) ? ' open' : '' ?>>
+            <summary class="btn">
+              Corrigir o texto da aula
+              <?php if ($patch !== null): ?>
+                <span class="selo selo-atencao">editada por <?= h($patch['alteradoPor'] ?: 'alguém') ?></span>
+              <?php endif; ?>
+            </summary>
+            <div class="decidir-corpo">
+              <p class="dica" style="margin:0 0 12px">
+                O que você mudar aqui vale na hora em /aulas, por cima do texto do código.
+                “Voltar ao original” desfaz. Título, minutos, tabelas e checklists
+                mudam só no código — são estrutura, não frase.
+              </p>
+              <form method="post" data-rascunho="aula-texto-<?= h($aula['id']) ?>">
+                <input type="hidden" name="csrf" value="<?= h(token()) ?>">
+                <input type="hidden" name="aula" value="<?= h($aula['id']) ?>">
+                <input type="hidden" name="acao" value="texto">
+
+                <div class="campo">
+                  <label for="resumo-<?= h($aula['id']) ?>">Resumo
+                    <?php if (isset($patch['resumo'])): ?>
+                      <label class="check" style="display:inline-flex;margin-left:10px"><input type="checkbox" name="original[]" value="resumo"> voltar ao original</label>
+                    <?php endif; ?>
+                  </label>
+                  <textarea id="resumo-<?= h($aula['id']) ?>" name="resumo" rows="2" maxlength="400"><?= h($comPatch['resumo']) ?></textarea>
+                </div>
+
+                <?php foreach ($comPatch['blocos'] as $i => $bloco): ?>
+                  <?php $campo = BLOCOS_EDITAVEIS[$bloco['tipo']] ?? null; if ($campo === null) continue; ?>
+                  <div class="campo">
+                    <label for="bloco-<?= h($aula['id']) ?>-<?= $i ?>">
+                      <?= h(ucfirst($bloco['tipo'])) ?> <?= $i + 1 ?>
+                      <?php if ($campo === 'itens'): ?><span class="dica">— um item por linha</span><?php endif; ?>
+                      <?php if (isset($patch['blocos'][$i])): ?>
+                        <label class="check" style="display:inline-flex;margin-left:10px"><input type="checkbox" name="original[]" value="<?= $i ?>"> voltar ao original</label>
+                      <?php endif; ?>
+                    </label>
+                    <textarea id="bloco-<?= h($aula['id']) ?>-<?= $i ?>" name="blocos[<?= $i ?>]" rows="<?= $campo === 'itens' ? max(3, count($bloco['itens'])) : 3 ?>"><?= h($campo === 'itens' ? implode("\n", $bloco['itens']) : $bloco['texto']) ?></textarea>
+                  </div>
+                <?php endforeach; ?>
+
+                <div class="acoes">
+                  <button type="submit" class="btn btn-ouro">Salvar o texto</button>
+                </div>
+              </form>
+            </div>
+          </details>
         </div>
       </details>
     <?php endforeach; ?>

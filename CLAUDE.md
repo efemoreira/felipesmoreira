@@ -108,7 +108,7 @@ Regras:
 
 ### Formação
 
-- O conteúdo das aulas fica em PHP (`public/painel/aulas-conteudo.php`), não em `src/`, para não ir para o bundle público.
+- O conteúdo das aulas fica em PHP (`public/painel/aulas-conteudo.php`), não em `src/`, para não ir para o bundle público. A coordenação corrige **texto** (resumo, `texto`/`aviso`/`passos`/`lista`/`nunca`) pelo painel: é a camada de patch em `dados/aulas-texto.php` (`aulas-texto.php`), aplicada por `curriculo_vigente()`; a Manutenção mostra o consolidado para colar no código e zerar. Estrutura (título, tabela, checklist, modelo) só no código.
 - `/aulas` lê pela API do painel.
 - `checklists.php` é fonte única dos “Pronto quando”.
 - `trilhas.php` é fonte única da trilha mínima por função — a aula, o checklist e a primeira ferramenta. Não escreva uma quarta lista ligando função a aula.

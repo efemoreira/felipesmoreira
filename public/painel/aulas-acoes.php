@@ -45,6 +45,17 @@ function tratar_acoes_de_aula(): void
         voltar();
     }
 
+    if ($acao === 'texto') {
+        require_once __DIR__ . '/aulas-texto.php';
+        $blocos = is_array($_POST['blocos'] ?? null) ? $_POST['blocos'] : [];
+        $originais = is_array($_POST['original'] ?? null) ? array_map('strval', $_POST['original']) : [];
+        $quantos = salvar_texto_de_aula($aulaId, (string) ($_POST['resumo'] ?? ''), $blocos, $originais, $aula);
+        avisar('ok', $quantos === 0
+            ? 'Texto igual ao do código — nada a sobrescrever.'
+            : "Texto salvo: {$quantos} trecho(s) por cima do código. Já vale em /aulas.");
+        voltar($aulaId);
+    }
+
     $videos = ler_videos();
 
     if ($acao === 'remover') {

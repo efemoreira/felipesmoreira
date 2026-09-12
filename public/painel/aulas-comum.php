@@ -373,10 +373,11 @@ function marcar_aula(string $usuarioId, string $aulaId, bool $concluida): bool
  */
 function curriculo_publico(): array
 {
+    require_once __DIR__ . '/aulas-texto.php';   // curriculo_vigente(): o código com o patch da coordenação
     $videos = ler_videos();
     $dias   = [];
 
-    foreach (CURRICULO as $dia) {
+    foreach (curriculo_vigente() as $dia) {
         $aulas = [];
         foreach ($dia['aulas'] as $aula) {
             $v = $videos[$aula['id']] ?? null;
