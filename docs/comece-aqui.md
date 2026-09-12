@@ -139,6 +139,9 @@ tempo passa por `com_trava()`.
 
 ## 8. Sua primeira tarefa
 
+O ciclo de trabalho e as regras que os testes cobram estão em
+`CONTRIBUTING.md`, na raiz.
+
 Escolha uma do `update/roteiro-das-notas.md` marcada como uma hora ou menos —
 elas existem para isso. Um commit por item, `npm test` verde antes, e o item
 não está feito sem a prova que a ficha dele pede.
