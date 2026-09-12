@@ -17,18 +17,12 @@ declare(strict_types=1);
  */
 
 require_once __DIR__ . '/eventos-comum.php';  // o modelo do encontro e da presença
-require_once __DIR__ . '/sessao.php';  // h(), limpar_texto(), pode(), combina_com() — o núcleo
+require_once __DIR__ . '/acoes-comum.php';  // avisar(), ir_para(), exigir_token_de_acao() — e o sessao.php junto
 require_once __DIR__ . '/pessoas-comum.php';
-
-function avisar(string $tipo, string $texto): void
-{
-    $_SESSION['recado'] = ['tipo' => $tipo, 'texto' => $texto];
-}
 
 function voltar(string $qs = ''): void
 {
-    header('Location: /painel/pessoas.php' . $qs, true, 302);
-    exit;
+    ir_para('/painel/pessoas.php' . $qs);
 }
 
 /** As áreas marcadas à mão — o ajuste fino por cima das capacidades. */
@@ -48,12 +42,7 @@ function capacidades_do_post(): array
 function tratar_acoes_de_pessoa(): void
 {
     if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
-        if (!token_valido()) {
-            avisar('erro', 'Sessão expirada. Entre de novo.');
-            derrubar_sessao();
-            header('Location: /painel/', true, 302);
-            exit;
-        }
+        exigir_token_de_acao();
 
         $acao = (string) ($_POST['acao'] ?? '');
         $alvo = achar_pessoa(limpar_texto($_POST['id'] ?? '', 40));
@@ -131,16 +120,16 @@ function tratar_acoes_de_pessoa(): void
         if ($acao === 'dar-conta') {
             if (tem_conta($alvo)) {
                 avisar('erro', 'Essa pessoa já tem conta.');
-                voltar('?p=' . $alvo['id']);
+                voltar('?p=' . $alvo['id'] . '&aba=acesso');
             }
             $login = mb_strtolower(trim((string) ($_POST['usuario'] ?? '')));
             if ($erro = validar_nome_usuario($login)) {
                 avisar('erro', $erro);
-                voltar('?p=' . $alvo['id']);
+                voltar('?p=' . $alvo['id'] . '&aba=acesso');
             }
             if (pessoa_por_usuario($login) !== null) {
                 avisar('erro', 'Esse login já está em uso.');
-                voltar('?p=' . $alvo['id']);
+                voltar('?p=' . $alvo['id'] . '&aba=acesso');
             }
 
             $provisoria = senha_provisoria();
@@ -162,11 +151,11 @@ function tratar_acoes_de_pessoa(): void
 
             if (!gravar_pessoas($pessoas)) {
                 avisar('erro', 'Não consegui gravar em /dados.');
-                voltar('?p=' . $alvo['id']);
+                voltar('?p=' . $alvo['id'] . '&aba=acesso');
             }
             $_SESSION['senha_nova'] = ['id' => $alvo['id'], 'usuario' => $login, 'senha' => $provisoria];
             avisar('ok', 'Conta criada.');
-            voltar('?p=' . $alvo['id']);
+            voltar('?p=' . $alvo['id'] . '&aba=acesso');
         }
 
         /* ---------- resetar senha ---------- */
@@ -182,18 +171,18 @@ function tratar_acoes_de_pessoa(): void
             unset($p);
             if (!gravar_pessoas($pessoas)) {
                 avisar('erro', 'Não consegui gravar em /dados.');
-                voltar('?p=' . $alvo['id']);
+                voltar('?p=' . $alvo['id'] . '&aba=acesso');
             }
             $_SESSION['senha_nova'] = ['id' => $alvo['id'], 'usuario' => $alvo['usuario'], 'senha' => $provisoria];
             avisar('ok', 'Senha trocada.');
-            voltar('?p=' . $alvo['id']);
+            voltar('?p=' . $alvo['id'] . '&aba=acesso');
         }
 
         /* ---------- ativar / desativar a conta ---------- */
         if ($acao === 'ativar') {
             if ($alvo['ativo'] && !tem_admin_ativo($alvo['id']) && in_array('adm', $alvo['capacidades'], true)) {
                 avisar('erro', 'Este é o único administrador ativo — desativá-lo tranca todo mundo para fora.');
-                voltar('?p=' . $alvo['id']);
+                voltar('?p=' . $alvo['id'] . '&aba=acesso');
             }
             $pessoas = ler_pessoas();
             foreach ($pessoas as &$p) {
@@ -204,7 +193,7 @@ function tratar_acoes_de_pessoa(): void
             unset($p);
             gravar_pessoas($pessoas);
             avisar('ok', $alvo['ativo'] ? 'Conta desativada. A pessoa continua na lista.' : 'Conta reativada.');
-            voltar('?p=' . $alvo['id']);
+            voltar('?p=' . $alvo['id'] . '&aba=acesso');
         }
 
         /* ---------- juntar duplicata ---------- */

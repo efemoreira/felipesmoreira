@@ -18,12 +18,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/fatos-comum.php';
 require_once __DIR__ . '/producao-comum.php';  // a aprovação abre card por saída
-require_once __DIR__ . '/sessao.php';
-
-function avisar(string $tipo, string $texto): void
-{
-    $_SESSION['recado'] = ['tipo' => $tipo, 'texto' => $texto];
-}
+require_once __DIR__ . '/acoes-comum.php';  // avisar(), ir_para(), exigir_token_de_acao() — e o sessao.php junto
 
 /**
  * Para onde a ação volta — a ABA junto da âncora.
@@ -43,8 +38,7 @@ function voltar(string $ancora = ''): void
     if ($ancora !== '') {
         $url .= '?aba=' . ($ancora === 'trazer' ? 'trazer' : 'fila') . '#' . $ancora;
     }
-    header('Location: ' . $url, true, 302);
-    exit;
+    ir_para($url);
 }
 
 /** Guarda o que foi digitado para o formulário voltar preenchido depois do erro. */
@@ -92,12 +86,7 @@ function posso_mexer(array $fato, array $eu): bool
 function tratar_acoes_de_fato(array $eu): void
 {
     if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
-        if (!token_valido()) {
-            avisar('erro', 'Sessão expirada. Entre de novo.');
-            derrubar_sessao();
-            header('Location: /painel/', true, 302);
-            exit;
-        }
+        exigir_token_de_acao();
 
         $acao = (string) ($_POST['acao'] ?? '');
 

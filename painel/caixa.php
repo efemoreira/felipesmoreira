@@ -19,14 +19,10 @@ require_once __DIR__ . '/eventos-comum.php';  // amarrar o lançamento a um enco
 require_once __DIR__ . '/caixa-acoes.php';
 require_once __DIR__ . '/caixa-tela.php';
 
-exigir_area('caixa');
+exigir_admin('caixa');
 
 tratar_acoes_de_caixa(usuario_atual() ?? []);
 
-$recado = $_SESSION['recado'] ?? null;
-unset($_SESSION['recado']);
+['erro' => $erro, 'ok' => $ok] = recado_pendente();
 
-tela_de_caixa(
-    ($recado['tipo'] ?? '') === 'erro' ? $recado['texto'] : null,
-    ($recado['tipo'] ?? '') === 'ok'   ? $recado['texto'] : null
-);
+tela_de_caixa($erro, $ok);

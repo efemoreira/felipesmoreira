@@ -47,6 +47,7 @@ const ICONE_AREA = [
     'candidatos' => 'users',
     'pessoas'    => 'users',
     'caixa'      => 'book',
+    'leituras'   => 'world',
 ];
 
 /** SVG inline, no mesmo traço do site (stroke 2, ponta e junta arredondadas). */

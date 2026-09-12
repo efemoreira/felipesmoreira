@@ -31,7 +31,7 @@ require_once __DIR__ . '/eventos-comum.php';   // em que encontros ela esteve
 require_once __DIR__ . '/inscricoes-comum.php'; // nome_funcao()
 require_once __DIR__ . '/pessoas-acoes.php';
 require_once __DIR__ . '/pessoas-lista.php';   // puxa o pessoas-ficha.php junto
-exigir_area('pessoas');
+exigir_admin('pessoas');
 
 /* As ações vêm antes de qualquer leitura de tela: quando há uma, ela termina em
    `voltar()`, que manda o header e sai. */
@@ -39,10 +39,7 @@ tratar_acoes_de_pessoa();
 
 /* ===================== a tela ===================== */
 
-$recado = $_SESSION['recado'] ?? null;
-unset($_SESSION['recado']);
-$erro = ($recado['tipo'] ?? '') === 'erro' ? $recado['texto'] : null;
-$ok   = ($recado['tipo'] ?? '') === 'ok'   ? $recado['texto'] : null;
+['erro' => $erro, 'ok' => $ok] = recado_pendente();
 
 $senhaNova = $_SESSION['senha_nova'] ?? null;
 unset($_SESSION['senha_nova']);

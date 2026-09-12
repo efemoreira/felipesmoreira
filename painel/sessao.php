@@ -4,16 +4,29 @@ declare(strict_types=1);
 /**
  * Núcleo do painel — felipesmoreira.com/painel
  *
- * Sessão, usuários e permissões. Todo arquivo do painel começa por aqui, então
- * é aqui que mora a única resposta para "quem é você" e "o que você pode abrir".
+ * Sessão, login e permissão. Todo arquivo do painel começa por aqui, então é
+ * aqui que mora a única resposta para "quem é você" e "o que você pode abrir".
  *
- * Os usuários ficam em public_html/dados/usuarios.php, fora do repositório: um
+ * O que NÃO mora mais aqui, e por quê:
+ *   dominio.php         AREAS, CAPACIDADES, TIPOS_PESSOA, REDES, CARGOS,
+ *                       DESTINO_AREA — o vocabulário; quem edita um cargo não
+ *                       precisa abrir a sessão, e os testes de contrato leem
+ *                       este arquivo por texto;
+ *   util.php            h(), limpar_texto(), sem_acento(), telefone, municípios
+ *                       — nada com efeito colateral;
+ *   pessoas-modelo.php  normalizar_pessoa(), ler/gravar_pessoas(), achar_* — a
+ *                       única porta para dados/pessoas.php.
+ * Os três entram por `require_once` logo abaixo: incluir `sessao.php` continua
+ * trazendo tudo.
+ *
+ * As pessoas ficam em public_html/dados/pessoas.php, fora do repositório: um
  * deploy novo nunca apaga quem tem acesso e nenhuma senha entra no Git. Só o
  * hash é guardado — senha não se recupera, só se troca.
- *
- * Cada usuário tem um papel (admin ou editor) e as áreas que pode abrir.
- * Admin enxerga todas as áreas e é o único que mexe na lista de usuários.
  */
+
+require_once __DIR__ . '/util.php';            // h(), limpar_texto(), sem_acento(), telefone, municípios — sem efeito colateral
+require_once __DIR__ . '/dominio.php';         // AREAS, CAPACIDADES, TIPOS_PESSOA, REDES, CARGOS, DESTINO_AREA — o vocabulário do movimento
+require_once __DIR__ . '/pessoas-modelo.php';  // normalizar_pessoa(), ler/gravar_pessoas(), achar_*
 
 const SESSAO_SEG = 7200;  // 2 h de inatividade
 
@@ -36,327 +49,6 @@ const MAX_TENTATIVAS = 5;
 const BLOQUEIO_SEG   = 900;  // 15 min
 const SENHA_MIN      = 8;   // com o bloqueio por login, 8 já segura tentativa às cegas
 
-/** As ferramentas do painel. É a permissão fina — ver CAPACIDADES logo abaixo. */
-const AREAS = [
-    'agenda'     => 'Agenda e eventos',
-    'estudio'    => 'Estúdio de artes',
-    'aulas'      => 'Editar a formação',
-    'fatos'      => 'Fatos do dia',
-    'producao'   => 'Produção',
-    'municao'    => 'Munição',
-    'eventos'    => 'Encontros',
-    'inscricoes' => 'Inscrições da militância',
-    'candidatos' => 'Candidatos',
-    'pessoas'    => 'Pessoas e dados pessoais',
-    'caixa'      => 'Caixa',
-];
-
-/**
- * O que se dá para alguém — quatro caixas, e não dez.
- *
- * Marcar dez áreas uma a uma é decisão demais para uma pergunta simples ("essa
- * pessoa coordena o quê?"), e quem marca acaba dando tudo por preguiça. As
- * capacidades são o jeito normal de conceder; as áreas continuam por baixo para
- * a exceção — tirar o Estúdio de alguém de Comunicação sem inventar uma
- * capacidade nova.
- *
- * **`pessoas` e `caixa` só entram em `adm`, de propósito.** Dinheiro segue a
- * mesma régua do dado pessoal: acesso a ele não acompanha o trabalho do dia,
- * acompanha a responsabilidade sobre ele.
- *
- * **`pessoas` só entra em `adm`, de propósito.** É a tela com telefone, e-mail e
- * endereço de todo mundo: acesso a dado pessoal não acompanha o trabalho do dia,
- * acompanha a responsabilidade sobre ele.
- *
- * **Ninguém precisa de área para ESTUDAR.** A formação é de todo mundo que tem
- * conta; a área `aulas` é para *editar* — pendurar o vídeo, ver quem estudou.
- */
-const CAPACIDADES = [
-    'comunicacao' => [
-        'nome'   => 'Comunicação',
-        'resumo' => 'O que o movimento publica: fato, roteiro, arte, peça do mutirão',
-        'areas'  => ['fatos', 'producao', 'municao', 'estudio'],
-    ],
-    'eventos' => [
-        'nome'   => 'Eventos',
-        'resumo' => 'Os encontros e a programação que aparece no site',
-        'areas'  => ['eventos', 'agenda'],
-    ],
-    /* Coordenação abre ENCONTROS também, e isso não é acréscimo de conveniência:
-       é a metade que faltava para a regra de dado pessoal fechar. O telefone de
-       quem esteve num encontro é da coordenação (ver `pode_ver_telefone()`), e o
-       follow-up depois do encontro — agradecer, mandar conteúdo, convidar de
-       novo — é trabalho dela. Sem `eventos` aqui, a única pessoa capaz de fazer
-       esse trabalho seria a administração, e a regra viraria "só o adm", que não
-       é o que ela diz. Quem tem só a capacidade Eventos continua organizando o
-       encontro e recebendo gente na porta; o que ela não leva junto é a agenda
-       de telefones do movimento. */
-    'coordenacao' => [
-        'nome'   => 'Coordenação',
-        'resumo' => 'Quem entra no movimento, os encontros, os candidatos e a formação do time',
-        'areas'  => ['inscricoes', 'candidatos', 'aulas', 'eventos', 'agenda'],
-    ],
-    /* NÃO ABRE TELA NENHUMA — `areas` vazio, e de propósito.
-       Ela habilita um bloco no Início: a lista de quem esta pessoa acompanha.
-       `pessoas` continua só em `adm`, e a diferença é o recorte: quem lidera vê
-       NOME e WHATSAPP da própria gente, e não a agenda do movimento.
-
-       Existe como capacidade, e não como efeito de alguém ter preenchido o
-       campo `lider` numa ficha, porque dar acesso a dado pessoal precisa ser uma
-       decisão registrada — e não uma consequência lateral de organizar times. */
-    'lideranca' => [
-        'nome'   => 'Liderança',
-        'resumo' => 'Acompanha um punhado de gente: vê nome e WhatsApp de quem está sob ela',
-        'areas'  => [],
-    ],
-    'adm' => [
-        'nome'   => 'Administração',
-        'resumo' => 'Tudo, inclusive a lista de pessoas com dado pessoal',
-        'areas'  => [],  // vazio: adm enxerga tudo por definição — ver a função
-    ],
-];
-
-/** As áreas que uma capacidade libera. `adm` libera todas. */
-function areas_da_capacidade(string $chave): array
-{
-    if ($chave === 'adm') {
-        return array_keys(AREAS);
-    }
-    return CAPACIDADES[$chave]['areas'] ?? [];
-}
-
-/**
- * As ferramentas do trabalho de todo dia, por oposição às de decisão.
- *
- * A diferença não é técnica — a permissão é a mesma caixa marcada. É só a
- * sugestão do que vem marcado ao cadastrar alguém: ferramenta não pertence a uma
- * função, e o Olheiro que quiser entender o quadro de Produção deve conseguir
- * abrir. Quem cadastra desmarca o que não quiser.
- */
-const AREAS_FERRAMENTA = ['fatos', 'producao', 'municao', 'eventos'];
-
-/**
- * O que a pessoa É para o movimento.
- *
- * Eixo diferente de `funcoes` (o que ela FAZ: Olheiro, Design…) e de
- * `capacidades` (o que ela ABRE no painel). Um coordenador tem função; um
- * militante também. Substituiu a antiga `classe` do lead — curioso,
- * simpatizante, militante, apoiador —, que dizia quase a mesma coisa com outras
- * palavras e vivia num arquivo à parte.
- */
-const TIPOS_PESSOA = [
-    'eleitor'     => 'Eleitor',
-    'apoiador'    => 'Apoiador',
-    'militante'   => 'Militante',
-    'coordenador' => 'Coordenador',
-    'candidato'   => 'Candidato',
-];
-
-/**
- * AS REDES PROFISSIONAIS — o quarto eixo da ficha.
- *
- * `tipo` diz o que a pessoa É, `funcoes` diz o que ela FAZ, `capacidades` diz o
- * que ela ABRE. Faltava de que rede ela FAZ PARTE — e é um eixo diferente dos
- * três: um médico pode ser eleitor, militante ou coordenador, e a rede não muda.
- *
- * A máquina do encontro já existe: `FAMILIAS['relacional']` traz o playbook, o
- * material e as seis travas jurídicas, e o §5.4 do manual descreve o formato.
- * O que faltava era saber quem chamar — e o Manual pede lista **curta e curada**
- * com convite pessoal, nunca grupo de WhatsApp. É exatamente o que um filtro por
- * rede produz.
- *
- * Lista fechada, pelo mesmo motivo que `CARGOS` é lista: "Médicos", "medicos" e
- * "Médicas e médicos" digitados por três pessoas viram três redes no filtro, e
- * a lista curada deixa de ser curada.
- *
- * NADA DISSO É PÚBLICO. Rede profissional não vira página no site.
- */
-const REDES = [
-    'medicos'     => ['nome' => 'Saúde',     'resumo' => 'Médicos, enfermagem e quem trabalha na ponta do SUS'],
-    'advogados'   => ['nome' => 'Direito',   'resumo' => 'Advocacia, defensoria e quem entende de conformidade'],
-    'empresarios' => ['nome' => 'Negócios',  'resumo' => 'Quem emprega, quem toca comércio e quem abre porta'],
-    'educacao'    => ['nome' => 'Educação',  'resumo' => 'Professores, direção de escola e quem forma gente'],
-    'seguranca'   => ['nome' => 'Segurança', 'resumo' => 'Polícia, bombeiros e quem conhece a violência por dentro'],
-    'igrejas'     => ['nome' => 'Igrejas',   'resumo' => 'Liderança religiosa e quem tem comunidade própria'],
-    'campo'       => ['nome' => 'Campo',     'resumo' => 'Produtores, cooperativas e o interior que trabalha a terra'],
-];
-
-/**
- * Os cargos que existem numa cédula. Escolha de lista, e não campo de texto.
- *
- * "Dep. Federal", "Deputado federal" e "DEPUTADO FEDERAL" digitados por três
- * pessoas viram três cargos diferentes no filtro e três grafias na colinha que
- * o eleitor recebe. São doze cargos no Brasil inteiro — cabe numa lista.
- *
- * `digitos` é quantos números se digitam na urna para aquele cargo, e é o que
- * a gravação confere: colinha com número errado é pior que colinha nenhuma.
- *
- * **Vice tem os dígitos do titular, e não zero.** O vice não tem número
- * próprio — o voto vai no número de quem encabeça a chapa —, e é justamente
- * por isso que o número dele na colinha é o do titular: é o que o eleitor
- * digita. É a mesma coisa que a `/amissao` explica com todas as letras.
- */
-const CARGOS = [
-    'presidente'        => ['nome' => 'Presidente',              'digitos' => 2],
-    'vice-presidente'   => ['nome' => 'Vice-Presidente',         'digitos' => 2],
-    'senador'           => ['nome' => 'Senador',                 'digitos' => 3],
-    'suplente-1'        => ['nome' => '1º Suplente de Senador',  'digitos' => 3],
-    'suplente-2'        => ['nome' => '2º Suplente de Senador',  'digitos' => 3],
-    'deputado-federal'  => ['nome' => 'Deputado Federal',        'digitos' => 4],
-    'governador'        => ['nome' => 'Governador',              'digitos' => 2],
-    'vice-governador'   => ['nome' => 'Vice-Governador',         'digitos' => 2],
-    'deputado-estadual' => ['nome' => 'Deputado Estadual',       'digitos' => 5],
-    'prefeito'          => ['nome' => 'Prefeito',                'digitos' => 2],
-    'vice-prefeito'     => ['nome' => 'Vice-Prefeito',           'digitos' => 2],
-    'vereador'          => ['nome' => 'Vereador',                'digitos' => 5],
-];
-
-/** Cargo de vice: o número que ele leva na colinha é o do titular. */
-function cargo_de_vice(string $chave): bool
-{
-    return str_starts_with($chave, 'vice-') || str_starts_with($chave, 'suplente-');
-}
-
-/** O nome do cargo como se escreve. Cargo em branco devolve string vazia. */
-function rotulo_cargo(string $chave): string
-{
-    return (string) (CARGOS[$chave]['nome'] ?? '');
-}
-
-/**
- * Os 184 municípios do Ceará — a mesma mecânica do catálogo de funções.
- *
- * O arquivo é gerado do `src/data/municipios-ce.json` pelo `publish.yml`, e é
- * fonte única para os dois lados: o formulário público desenha a lista a partir
- * dele no build, e o servidor confere o que chega contra o mesmo arquivo. Duas
- * listas seriam "Juazeiro do Norte" e "juazeiro do norte" no mesmo relatório.
- *
- * Fica aqui, e não no `inscricoes-comum.php` junto das funções, porque quem
- * pergunta "essa cidade existe?" é a inscrição, a presença, o cadastro de
- * pessoa e o de encontro — e o único arquivo que todos os quatro incluem é este.
- */
-const ARQ_MUNICIPIOS = __DIR__ . '/../municipios-ce.json';
-
-function municipios_ce(): array
-{
-    static $memo = null;
-    if ($memo !== null) {
-        return $memo;
-    }
-    $memo = ['fora' => 'Fora do Ceará', 'municipios' => []];
-    if (is_file(ARQ_MUNICIPIOS)) {
-        $bruto = json_decode((string) @file_get_contents(ARQ_MUNICIPIOS), true);
-        if (is_array($bruto) && is_array($bruto['municipios'] ?? null)) {
-            $memo['municipios'] = array_values(array_filter(array_map('strval', $bruto['municipios'])));
-            $memo['fora'] = (string) ($bruto['fora'] ?? $memo['fora']);
-        }
-    }
-    return $memo;
-}
-
-/** O rótulo de quem não é do Ceará. É opção da lista, não município. */
-function cidade_de_fora(): string
-{
-    return municipios_ce()['fora'];
-}
-
-/**
- * A cidade é do catálogo, ou é "Fora do Ceará", ou não é nada.
- *
- * Devolve a grafia do catálogo, e não a que chegou: quem digitou "fortaleza"
- * numa importação antiga entra como "Fortaleza", e o agrupamento por cidade
- * para de ter a mesma cidade duas vezes.
- *
- * **Vazio é resposta válida** — o campo é obrigatório no formulário público,
- * e não no modelo: pessoa cadastrada pela coordenação às pressas, na porta do
- * encontro, entra sem cidade e ganha uma depois.
- */
-function cidade_valida($bruta): string
-{
-    $v = trim((string) $bruta);
-    if ($v === '') {
-        return '';
-    }
-    $lista = municipios_ce();
-    $alvo = mb_strtolower(sem_acento($v));
-    if ($alvo === mb_strtolower(sem_acento($lista['fora']))) {
-        return $lista['fora'];
-    }
-    foreach ($lista['municipios'] as $nome) {
-        if (mb_strtolower(sem_acento($nome)) === $alvo) {
-            return $nome;
-        }
-    }
-    /* Catálogo ausente (deploy sem o arquivo copiado) não pode apagar a cidade
-       de quem se inscreveu: sem lista para conferir, vale o que veio. */
-    return $lista['municipios'] === [] ? mb_substr($v, 0, 60) : '';
-}
-
-/** A fila de entrada. Vazio = cadastrada direto pela coordenação. */
-const STATUS_PESSOA = [
-    ''         => 'Cadastrada',
-    'pendente' => 'Esperando aprovação',
-    'aprovada' => 'Aprovada',
-    'recusada' => 'Recusada',
-];
-
-/** Para onde cada área leva, e uma linha do que ela faz. */
-const DESTINO_AREA = [
-    'agenda'     => ['url' => '/painel/agenda.php', 'resumo' => 'Editar a programação que aparece em /programacao'],
-    'estudio'    => ['url' => '/painel/estudio.php', 'resumo' => 'Montar as artes dos posts a partir de um modelo'],
-    'aulas'      => ['url' => '/painel/aulas.php', 'resumo' => 'Pendurar o vídeo de cada aula e ver quem já estudou'],
-    'fatos'      => ['url' => '/painel/fatos.php', 'resumo' => 'Trazer o fato do dia com fonte e conferir o que chegou'],
-    'producao'   => ['url' => '/painel/producao.php', 'resumo' => 'O quadro do roteiro à publicação: quem faz o quê, e onde travou'],
-    'municao'    => ['url' => '/painel/municao.php', 'resumo' => 'As peças do mutirão: o número do plano com a fonte, pronto pra mandar no grupo'],
-    'eventos'    => ['url' => '/painel/eventos.php', 'resumo' => 'Preparar o encontro, confirmar presença e receber quem chega'],
-    'inscricoes' => ['url' => '/painel/inscricoes.php', 'resumo' => 'Aprovar quem se inscreveu em /queroajudar e mandar o acesso'],
-    'candidatos' => ['url' => '/painel/candidatos.php', 'resumo' => 'Nome de urna, número e @ de cada candidato — a colinha que o eleitor leva'],
-    'pessoas'    => ['url' => '/painel/pessoas.php', 'resumo' => 'Todo mundo do movimento: quem é, o que faz, em que encontros esteve'],
-    'caixa'      => ['url' => '/painel/caixa.php', 'resumo' => 'Todo real que entra e sai, com origem — e os dois caixas nunca somados juntos'],
-];
-
-/**
- * O grupo de trabalho — e **só aqui**, ao contrário do `GRUPO_GERAL`, que tem
- * par em `src/lib/contato.ts`.
- *
- * NÃO existe cópia em TypeScript, e não pode existir: num export estático tudo
- * que entra em `src/` vira bundle público, e o convite deste grupo é de quem já
- * tem conta. Se ele circulasse no site, encheria de gente que a coordenação
- * ainda não conferiu e viraria grupo de recados. Entrar nele é a primeira
- * obrigação de quem chega (ver index.php e agora.php).
- *
- * `testes/contrato/painel.test.ts` procura este convite em `src/` e falha se o
- * achar — o grep que o CLAUDE.md mandava fazer à mão.
- */
-const GRUPO_TRABALHO = 'https://chat.whatsapp.com/C8rQeoCzJpz6vObwyRFAbt';
-
-/**
- * O GRUPO DESTA PESSOA — o do líder dela, ou o geral.
- *
- * Um grupo só, com todo mundo dentro, é onde ninguém é chamado pelo nome — e é
- * a razão mais direta de alguém entrar no movimento e não se sentir parte. Com
- * a divisão por líder, cada pessoa cai num lugar onde há um punhado de gente e
- * alguém que responde por ela.
- *
- * O geral não deixa de existir: ele é o piso de quem ainda não tem líder, e o
- * canal do que é de todo mundo.
- */
-function grupo_de(array $pessoa): string
-{
-    if (($pessoa['lider'] ?? '') === '') {
-        return GRUPO_TRABALHO;
-    }
-    foreach (ler_pessoas() as $p) {
-        if ($p['id'] === $pessoa['lider'] && $p['grupo'] !== '') {
-            return $p['grupo'];
-        }
-    }
-    return GRUPO_TRABALHO;
-}
-
-/** O contato oficial. Não existe e-mail: este é o único canal. */
-const WHATSAPP_COORDENACAO = 'https://wa.me/5585981872972';
-
 header('X-Robots-Tag: noindex, nofollow');
 header('Referrer-Policy: same-origin');
 header('X-Content-Type-Options: nosniff');
@@ -373,13 +65,49 @@ session_set_cookie_params([
 ]);
 session_name('painel_agenda');
 session_start();
+/* DEPOIS do session_start(), de propósito: ele manda o seu Cache-Control
+   (`session.cache_limiter`), e o dele depende do php.ini da hospedagem. Este
+   não depende. Nenhuma tela do painel fica no cache do navegador — é a lista
+   de pessoas com telefone, num celular que às vezes é emprestado. Os endpoints
+   públicos que PODEM ser guardados (candidatos, kit, a prévia) mandam o deles
+   por cima. `testes/acoes/cabecalhos.test.ts` confere os dois lados. */
+header('Cache-Control: no-store, private');
 
 /* ===================== infraestrutura ===================== */
 
-/** Aceita qualquer coisa vinda do JSON (inclusive null/número) e devolve HTML seguro. */
-function h($s): string
+/**
+ * Roda `$fn` com a tranca de `$arquivo` na mão — e é dentro dela que se lê.
+ *
+ * `gravar_atomico()` garante que o arquivo nunca fica pela metade; NÃO garante
+ * que duas requisições não leiam a mesma versão, mudem cada uma a sua e a
+ * segunda apague o que a primeira gravou. Todo caminho do painel é
+ * `ler_X()` → altera → `gravar_X()`, e onde trinta celulares leem o mesmo QR
+ * na porta (`api/presenca.php`) isso é uma presença que some sem erro nenhum.
+ *
+ * A tranca é `flock()` num `<arquivo>.lock` ao lado do dado — dentro de
+ * `/dados`, que o `.htaccess` fecha. Quem chama tem de LER DE NOVO dentro do
+ * `$fn` (`ler_pessoas(true)`): a cópia que a requisição já tinha na memória é
+ * de antes da fila, e é exatamente ela que não vale mais.
+ *
+ * Sem conseguir abrir o `.lock` (pasta ausente, disco só-leitura) roda sem
+ * tranca: melhor gravar como antes do que negar a presença de alguém.
+ */
+function com_trava(string $arquivo, callable $fn): mixed
 {
-    return htmlspecialchars(is_scalar($s) ? (string) $s : '', ENT_QUOTES, 'UTF-8');
+    preparar_pastas();
+    $h = @fopen($arquivo . '.lock', 'c');
+    if ($h === false || !@flock($h, LOCK_EX)) {
+        if ($h !== false) {
+            fclose($h);
+        }
+        return $fn();
+    }
+    try {
+        return $fn();
+    } finally {
+        flock($h, LOCK_UN);
+        fclose($h);
+    }
 }
 
 function gravar_atomico(string $destino, string $conteudo): bool
@@ -422,24 +150,6 @@ function gravar_atomico(string $destino, string $conteudo): bool
     clearstatcache(true, $destino);
 
     return true;
-}
-
-/**
- * Corta, apara e tira caracteres de controle. Vale para todo texto que chega
- * de fora — mora aqui, e não no agenda.php, porque o formulário público e a
- * tela de inscrições também precisam e não podem incluir aquele arquivo.
- */
-function limpar_texto($v, int $max): string
-{
-    $s = is_scalar($v) ? trim((string) $v) : '';
-    $s = preg_replace('/[\x00-\x1F\x7F]/u', '', $s) ?? '';
-    return mb_substr($s, 0, $max);
-}
-
-/** Só os dígitos — é assim que telefone entra no arquivo e no link do WhatsApp. */
-function so_digitos($v): string
-{
-    return preg_replace('/\D/', '', is_scalar($v) ? (string) $v : '') ?? '';
 }
 
 /**
@@ -509,125 +219,6 @@ function segredo(): string
     return $memo;
 }
 
-/**
- * "Fila do Hospital Geral" -> "Fila do Hospital Geral" sem acento nenhum.
- *
- * Mapa escrito à mão em vez de iconv('ASCII//TRANSLIT'): o resultado do
- * TRANSLIT depende da libc, e o mesmo texto vira "ha" no Linux da Hostinger e
- * "h" no macOS de quem desenvolve. Nome de arquivo é contrato com o Acervo, e
- * slug de origem é contrato com o relatório — nenhum dos dois pode mudar
- * conforme a máquina que gerou.
- *
- * Mora aqui, e não no producao-comum.php onde nasceu, porque as inscrições
- * também precisam e não têm por que arrastar junto o quadro de produção
- * inteiro. O equivalente no JavaScript é `normalize("NFD")`, que o Unicode
- * define e que dá o mesmo resultado em qualquer máquina.
- */
-function sem_acento(string $texto): string
-{
-    return strtr($texto, [
-        'á' => 'a', 'à' => 'a', 'ã' => 'a', 'â' => 'a', 'ä' => 'a',
-        'é' => 'e', 'è' => 'e', 'ê' => 'e', 'ë' => 'e',
-        'í' => 'i', 'ì' => 'i', 'î' => 'i', 'ï' => 'i',
-        'ó' => 'o', 'ò' => 'o', 'õ' => 'o', 'ô' => 'o', 'ö' => 'o',
-        'ú' => 'u', 'ù' => 'u', 'û' => 'u', 'ü' => 'u',
-        'ç' => 'c', 'ñ' => 'n',
-        'Á' => 'A', 'À' => 'A', 'Ã' => 'A', 'Â' => 'A', 'Ä' => 'A',
-        'É' => 'E', 'È' => 'E', 'Ê' => 'E', 'Ë' => 'E',
-        'Í' => 'I', 'Ì' => 'I', 'Î' => 'I', 'Ï' => 'I',
-        'Ó' => 'O', 'Ò' => 'O', 'Õ' => 'O', 'Ô' => 'O', 'Ö' => 'O',
-        'Ú' => 'U', 'Ù' => 'U', 'Û' => 'U', 'Ü' => 'U',
-        'Ç' => 'C', 'Ñ' => 'N',
-    ]);
-}
-
-/**
- * 85912345678 -> (85) 91234-5678. Guardamos só dígitos; ler assim é humano.
- *
- * Mora aqui, e não no inscricoes-comum.php onde nasceu, porque a lista de
- * presença dos encontros também precisa e não tem por que arrastar junto toda
- * a maquinaria das inscrições.
- */
-function telefone_bonito(string $telefone): string
-{
-    $d = so_digitos($telefone);
-    if (strlen($d) === 11) {
-        return sprintf('(%s) %s-%s', substr($d, 0, 2), substr($d, 2, 5), substr($d, 7));
-    }
-    if (strlen($d) === 10) {
-        return sprintf('(%s) %s-%s', substr($d, 0, 2), substr($d, 2, 4), substr($d, 6));
-    }
-    return $d;
-}
-
-/**
- * Número no formato que o wa.me espera: 55 + DDD + número.
- *
- * Nasceu no `inscricoes-comum.php` e mudou de casa pela mesma razão do
- * `telefone_bonito()` logo acima: a lista de pessoas e a de presença montavam o
- * link na mão, escrevendo `wa.me/55` dentro do href. Três cópias da mesma
- * conta, e nenhuma delas sabia do nono dígito.
- *
- * O `55` só é considerado prefixo de país quando sobra número para um telefone
- * inteiro embaixo dele: `5599999999` é o celular de um DDD 55, não um número
- * já internacionalizado.
- */
-/**
- * "Maria da Silva Sauro" -> "Maria" — o nome quando só o primeiro cabe.
- *
- * Não confundir com `nome_encoberto()`, que existe para ESCONDER quem é numa
- * tela em que o nome inteiro seria vazamento. Aqui não há nada a esconder: é a
- * escala do encontro, lida por quem coordena, e o primeiro nome basta porque a
- * peça mostra quatro pessoas numa linha só.
- */
-function primeiro_nome(string $nome): string
-{
-    $partes = array_values(array_filter(explode(' ', trim($nome))));
-    return $partes === [] ? 'Alguém' : $partes[0];
-}
-
-function numero_whatsapp(string $telefone): string
-{
-    $d = so_digitos($telefone);
-    return strlen($d) > 11 && str_starts_with($d, '55') ? $d : '55' . $d;
-}
-
-/**
- * O MESMO número com o nono dígito do outro jeito — ou `''` quando não há.
- *
- * O nono dígito é obrigatório para discar, mas **não** para a conta do
- * WhatsApp: quem registrou o aparelho antes da mudança e nunca reinstalou
- * continua com oito dígitos lá dentro. Para essa pessoa o link de 13 dígitos
- * abre "número inválido" e o de 12 abre a conversa — e existe o caso oposto,
- * de quem foi cadastrado aqui sem o 9 e tem conta com ele.
- *
- * **Não dá para saber de fora qual dos dois é.** O WhatsApp não responde essa
- * pergunta, e adivinhar erra metade das vezes com quem já está do outro lado.
- * Por isso a tela oferece os dois links e deixa a escolha para quem está
- * mandando a mensagem: um clique errado custa uma aba, um número que não
- * existe custa a conversa.
- *
- * Só celular entra: fixo (2 a 5 no começo) nunca ganhou o 9, e telefone com
- * tamanho estranho não vira palpite.
- */
-function numero_whatsapp_outro(string $telefone): string
-{
-    $d = so_digitos($telefone);
-    if (strlen($d) > 11 && str_starts_with($d, '55')) {
-        $d = substr($d, 2);
-    }
-    $ddd = substr($d, 0, 2);
-    $resto = substr($d, 2);
-
-    if (strlen($d) === 11 && $resto[0] === '9') {
-        return '55' . $ddd . substr($resto, 1);
-    }
-    if (strlen($d) === 10 && in_array($resto[0], ['6', '7', '8', '9'], true)) {
-        return '55' . $ddd . '9' . $resto;
-    }
-    return '';
-}
-
 /** Escreve a regra só quando ela mudou — assim uma versão nova se conserta sozinha. */
 function fixar_regra(string $arquivo, string $conteudo): void
 {
@@ -693,331 +284,6 @@ function preparar_pastas(): void
 
 /* ===================== usuários ===================== */
 
-/** Preenche os campos que faltam e descarta registro sem o mínimo. */
-/**
- * UMA pessoa, e não quatro.
- *
- * Havia quatro cadastros que não se conheciam — contas do painel, inscrições da
- * fila, presenças de encontro e candidatos — e a mesma pessoa aparecia nos
- * quatro, com o nome escrito de três jeitos. Não dava para responder "em que
- * encontros o Fulano esteve", "esse número já é do time?" nem "quem está
- * duplicado".
- *
- * Agora é um registro só, com blocos opcionais:
- *
- *   identidade  nome, telefone, e-mail, onde mora        (sempre)
- *   movimento   tipo, funções                            (sempre)
- *   painel      usuário, senha, capacidades, áreas       (só quem tem conta)
- *   candidatura número de urna, cargo, @, foto           (só candidato)
- *   entrada     status da fila, origem, consentimento    (só quem se inscreveu)
- *
- * **O telefone é a chave natural.** É a única coisa que as quatro listas antigas
- * tinham em comum, é o que a pessoa digita na porta do encontro e é por ele que
- * a coordenação fala com ela. Não é chave primária (gente troca de número), mas
- * é por ele que se acha duplicata.
- *
- * O array é literal de propósito: campo que não estiver aqui some na próxima
- * gravação.
- */
-function normalizar_pessoa($p): ?array
-{
-    /* Antes exigia usuário e hash — porque só existia quem tinha login. Agora a
-       maioria das pessoas NÃO tem conta: quem confirmou presença num encontro é
-       uma pessoa do mesmo jeito. Nome é o mínimo.
-
-       NOME SÓ DE ESPAÇO NÃO É NOME, e é preciso limpar ANTES de conferir. Um
-       `empty()` sobre o campo cru deixava passar `"   "` — que é string
-       não-vazia —, e só depois o `limpar_texto()` lá embaixo a reduzia a `''`:
-       a ficha nascia sem nome, sem nenhum erro aparecer. Quem abre a lista de
-       pessoas vê uma linha em branco que não dá para procurar nem identificar,
-       e no cadastro de candidato a mesma brecha punha um número de urna na
-       colinha sem nome nenhum ao lado dele.
-
-       A conferência mora AQUI porque aqui é o portão único: `pessoas.php`,
-       `candidatos.php` e a presença gravam todos por esta função. Os endpoints
-       públicos exigem nome completo por conta própria, com régua mais dura. */
-    if (!is_array($p)) {
-        return null;
-    }
-    $nome = limpar_texto($p['nome'] ?? '', 80);
-    if ($nome === '') {
-        return null;
-    }
-
-    $tipo = (string) ($p['tipo'] ?? 'eleitor');
-    if (!isset(TIPOS_PESSOA[$tipo])) {
-        $tipo = 'eleitor';
-    }
-    $status = (string) ($p['status'] ?? '');
-    if (!isset(STATUS_PESSOA[$status])) {
-        $status = '';
-    }
-
-    $capacidades = [];
-    foreach ((array) ($p['capacidades'] ?? []) as $c) {
-        if (isset(CAPACIDADES[$c]) && !in_array($c, $capacidades, true)) {
-            $capacidades[] = (string) $c;
-        }
-    }
-
-    /* As áreas são as das capacidades MAIS o ajuste fino gravado. Guardar o
-       resultado, e não recalcular só na leitura, é o que permite tirar uma área
-       de alguém sem ter que inventar uma capacidade nova para isso. */
-    $pedidas = is_array($p['areas'] ?? null) ? $p['areas'] : [];
-    foreach ($capacidades as $c) {
-        $pedidas = array_merge($pedidas, areas_da_capacidade($c));
-    }
-    $areas = in_array('adm', $capacidades, true)
-        ? array_keys(AREAS)
-        : array_values(array_intersect(array_keys(AREAS), array_unique($pedidas)));
-
-    $conta = limpar_texto($p['usuario'] ?? '', 40);
-
-    return [
-        'id'   => (string) ($p['id'] ?? ''),
-        'nome' => $nome,
-        'tipo' => $tipo,
-
-        /* ---- como falar com ela ---- */
-        'telefone' => so_digitos($p['telefone'] ?? ''),
-        'email'    => limpar_texto($p['email'] ?? '', 120),
-        'cidade'   => cidade_valida($p['cidade'] ?? ''),
-        'bairro'   => limpar_texto($p['bairro'] ?? '', 60),
-
-        /* ---- o que ela faz no movimento (Olheiro, Design…) ---- */
-        'funcoes' => array_values(array_filter(array_map(
-            fn ($f) => limpar_texto($f, 40),
-            is_array($p['funcoes'] ?? null) ? $p['funcoes'] : []
-        ))),
-
-        /* ---- de que rede profissional ela faz parte ----
-           Mesmo padrão de `capacidades`: chave que não existe no catálogo some,
-           porque o arquivo é gravado por mais de uma tela. */
-        'redes' => array_values(array_filter(
-            array_unique(array_map(
-                fn ($r) => (string) $r,
-                is_array($p['redes'] ?? null) ? $p['redes'] : []
-            )),
-            fn ($r) => isset(REDES[$r])
-        )),
-
-        /* ---- o grupo de quem lidera ----
-           Só faz sentido para quem acompanha gente: é o link do sub-grupo dela.
-           Fica na FICHA, e não numa constante, porque assim um líder novo entra
-           sem deploy — e porque um mapa `chave => link` no código teria de ser
-           mantido em sincronia com o campo `lider` das fichas, que é onde a
-           divisão de fato mora. */
-        /* `limpar_link()` mora em `agenda-comum.php`, que depende DESTE arquivo:
-           chamá-la aqui inverteria a dependência. A régua é curta e basta —
-           convite de grupo é sempre https, e o que não for vira vazio em vez de
-           virar um `javascript:` colado numa tela do painel. */
-        'grupo' => str_starts_with(mb_strtolower(trim((string) ($p['grupo'] ?? ''))), 'https://')
-            ? limpar_texto($p['grupo'], 200) : '',
-
-        /* ---- quem acompanha esta pessoa ----
-           Um id de pessoa, e nada mais. É a camada que faltava entre o
-           coordenador e oitenta e sete pessoas: sem ela tudo funila em quem tem
-           `coordenacao`, que é uma pessoa só, e "não consigo acompanhar todos"
-           deixa de ser falta de disciplina e passa a ser aritmética. */
-        'lider' => limpar_texto($p['lider'] ?? '', 40),
-
-        /* ---- conta no painel: tudo vazio quando não tem ---- */
-        'usuario'      => $conta,
-        'hash'         => (string) ($p['hash'] ?? ''),
-        'capacidades'  => $capacidades,
-        'areas'        => $areas,
-        'ativo'        => !empty($p['ativo']),
-        'trocarSenha'  => !empty($p['trocarSenha']),
-        'ultimoAcesso' => (string) ($p['ultimoAcesso'] ?? ''),
-        /* Marcado quando a pessoa diz "já entrei" no grupo de trabalho. É a
-           primeira obrigação de quem chega, e vira TAREFA no hub até estar
-           marcada — banner some da vista em três dias. */
-        'entrouNoGrupo' => !empty($p['entrouNoGrupo']),
-
-        /* ---- candidatura: vazio para quem não é candidato ---- */
-        'urna'      => limpar_texto($p['urna'] ?? '', 60),
-        'cargo'     => isset(CARGOS[(string) ($p['cargo'] ?? '')]) ? (string) $p['cargo'] : '',
-        'numero'    => preg_replace('/\D/', '', (string) ($p['numero'] ?? '')) ?: '',
-        'partido'   => limpar_texto($p['partido'] ?? '', 40),
-        'instagram' => limpar_texto($p['instagram'] ?? '', 40),
-        'imagem'    => limpar_texto($p['imagem'] ?? '', 300),
-        /* Só o que está publicado desce para o site. */
-        'publicado' => !empty($p['publicado']),
-        /* Onde ela aparece na lista de candidatos. Menor primeiro; empate
-           desempata pelo nome. Zero para quem não é candidato. */
-        'ordem'     => (int) ($p['ordem'] ?? 0),
-
-        /* ---- como ela entrou ---- */
-        'status'   => $status,
-        'origem'   => limpar_texto($p['origem'] ?? '', 60),
-        'observacao' => limpar_texto($p['observacao'] ?? '', 400),
-        'criadoEm'   => (string) ($p['criadoEm'] ?? ''),
-        'decididoEm' => limpar_texto($p['decididoEm'] ?? '', 40),
-        'decididoPor' => limpar_texto($p['decididoPor'] ?? '', 60),
-        'consentimentoEm'     => limpar_texto($p['consentimentoEm'] ?? '', 40),
-        'consentimentoVersao' => limpar_texto($p['consentimentoVersao'] ?? '', 20),
-    ];
-}
-
-/** Tem login? É o que separa quem trabalha no painel de quem só está na lista. */
-function tem_conta(array $p): bool
-{
-    return $p['usuario'] !== '' && $p['hash'] !== '';
-}
-
-function ler_pessoas(bool $recarregar = false): array
-{
-    static $cache = null;
-    if ($cache !== null && !$recarregar) {
-        return $cache;
-    }
-
-    /* Aqui rodava a conversão dos quatro cadastros antigos — `usuarios.php`,
-       `inscricoes.php`, `leads.php` e `candidatos.php` — para o registro único
-       de pessoa. Ela cumpriu o papel e **saiu**: o que ficou foi um caminho de
-       código que ninguém exercita mais e que só sabia fazer uma coisa —
-       ressuscitar, na primeira leitura, exatamente os arquivos que a Manutenção
-       acabou de apagar. Zerar e ver tudo voltar não é um risco teórico.
-
-       Se um dia algum daqueles arquivos reaparecer numa hospedagem esquecida,
-       ele fica onde está: sem ninguém para lê-lo, é só um arquivo velho. */
-
-    $cache = [];
-    if (is_file(ARQ_PESSOAS)) {
-        $bruto = @include ARQ_PESSOAS;
-        foreach (is_array($bruto) ? $bruto : [] as $p) {
-            if ($limpo = normalizar_pessoa($p)) {
-                $cache[] = $limpo;
-            }
-        }
-    }
-    return $cache;
-}
-
-function gravar_pessoas(array $pessoas): bool
-{
-    preparar_pastas();
-    $limpos = [];
-    foreach ($pessoas as $p) {
-        if ($limpo = normalizar_pessoa($p)) {
-            $limpos[] = $limpo;
-        }
-    }
-    $conteudo = "<?php\n// Gerado pelo painel. Dado pessoal — não versionar, não editar à mão.\nreturn "
-        . var_export($limpos, true) . ";\n";
-
-    if (!gravar_atomico(ARQ_PESSOAS, $conteudo)) {
-        return false;
-    }
-    if (function_exists('opcache_invalidate')) {
-        @opcache_invalidate(ARQ_PESSOAS, true);
-    }
-    ler_pessoas(true);
-    return true;
-}
-
-/** Quem tem login — é isto que a tela de contas e o "primeiro admin" olham. */
-function contas(): array
-{
-    return array_values(array_filter(ler_pessoas(), 'tem_conta'));
-}
-
-function achar_pessoa(string $id): ?array
-{
-    foreach (ler_pessoas() as $p) {
-        if ($p['id'] === $id && $id !== '') {
-            return $p;
-        }
-    }
-    return null;
-}
-
-/** Pelo login. Caso-insensível: ninguém lembra se cadastrou com maiúscula. */
-function pessoa_por_usuario(string $usuario): ?array
-{
-    $usuario = mb_strtolower(trim($usuario));
-    foreach (ler_pessoas() as $p) {
-        if ($p['usuario'] !== '' && mb_strtolower($p['usuario']) === $usuario) {
-            return $p;
-        }
-    }
-    return null;
-}
-
-/**
- * Quem está tentando entrar — pelo LOGIN ou pelo E-MAIL.
- *
- * Ninguém decora o login que a coordenação escolheu por ele; todo mundo sabe o
- * próprio e-mail. Aceitar os dois na mesma caixa custa uma varredura e evita a
- * mensagem no WhatsApp perguntando "qual era mesmo o meu usuário?".
- *
- * Duas regras que não são zelo:
- *
- *   1. **o login ganha do e-mail.** Se as duas coisas casarem, quem manda é o
- *      login — ele é único por construção (`validar_nome_usuario()` recusa o
- *      `@`, então texto com arroba nunca é login e as buscas não se cruzam);
- *   2. **e-mail repetido não abre conta nenhuma.** O e-mail não é único: o da
- *      coordenação já está em ficha de mais de uma pessoa, e casal que divide
- *      caixa de entrada é comum. Com dois achados não há como saber qual conta
- *      abrir, e escolher por inferência é entregar a sessão de alguém.
- */
-function pessoa_por_login(string $texto): ?array
-{
-    $alvo = mb_strtolower(trim($texto));
-    if ($alvo === '') {
-        return null;
-    }
-    if (($pelo_login = pessoa_por_usuario($alvo)) !== null) {
-        return $pelo_login;
-    }
-    if (!str_contains($alvo, '@')) {
-        return null;
-    }
-
-    $achados = [];
-    foreach (ler_pessoas() as $p) {
-        /* Só quem TEM conta: e-mail de quem só apareceu num encontro não é
-           porta de entrada de coisa nenhuma. */
-        if (tem_conta($p) && $p['email'] !== '' && mb_strtolower($p['email']) === $alvo) {
-            $achados[] = $p;
-        }
-    }
-    return count($achados) === 1 ? $achados[0] : null;
-}
-
-/**
- * Pelo telefone — a chave natural.
- *
- * Devolve TODAS, e não a primeira: casa que divide celular tem duas pessoas no
- * mesmo número, e escolher uma por conta própria foi exatamente o defeito que a
- * tela de presença teve que consertar.
- */
-function pessoas_por_telefone(string $telefone): array
-{
-    $telefone = so_digitos($telefone);
-    if ($telefone === '') {
-        return [];
-    }
-    return array_values(array_filter(ler_pessoas(), fn ($p) => $p['telefone'] === $telefone));
-}
-
-/**
- * Sobrou alguém que administra?
- *
- * Chamada antes de tirar a capacidade `adm` de alguém ou desativá-lo: sem esta
- * checagem dá para o último administrador se rebaixar sozinho e ninguém mais
- * conseguir criar contas nem mexer em permissão.
- */
-function tem_admin_ativo(?string $ignorarId = null): bool
-{
-    foreach (ler_pessoas() as $p) {
-        if (in_array('adm', $p['capacidades'], true) && $p['ativo'] && tem_conta($p) && $p['id'] !== $ignorarId) {
-            return true;
-        }
-    }
-    return false;
-}
-
 /** '' quando serve; senão o motivo para mostrar na tela. */
 function validar_senha(string $senha): string
 {
@@ -1054,12 +320,39 @@ function senha_provisoria(): string
     return $senha;
 }
 
-function novo_id_pessoa(): string
+/* ===================== força bruta ===================== */
+
+/**
+ * Quem é o visitante, sem guardar o IP: um HMAC dele com o segredo do site.
+ *
+ * O `X-Forwarded-For` SÓ VALE ATRÁS DE PROXY. Antes, o primeiro endereço da
+ * lista era aceito sempre — e o header é escrito por quem manda a requisição:
+ * bastava trocá-lo a cada pedido para o teto de envios nunca fechar. Agora ele
+ * só é lido quando quem conectou (`REMOTE_ADDR`) é um endereço privado ou de
+ * loopback, que é o que um proxy da própria hospedagem tem. Com `REMOTE_ADDR`
+ * público, é ele o cliente, e o header é ignorado — ninguém forja o endereço
+ * de onde a conexão veio.
+ */
+function chave_visitante(): string
 {
-    return bin2hex(random_bytes(8));
+    $ip = (string) ($_SERVER['REMOTE_ADDR'] ?? '');
+    $ehProxy = $ip !== '' && filter_var(
+        $ip,
+        FILTER_VALIDATE_IP,
+        FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE,
+    ) === false;
+    $enc = (string) ($_SERVER['HTTP_X_FORWARDED_FOR'] ?? '');
+    if ($ehProxy && $enc !== '') {
+        $primeiro = trim(explode(',', $enc)[0]);
+        if (filter_var($primeiro, FILTER_VALIDATE_IP)) {
+            $ip = $primeiro;
+        }
+    }
+    return substr(hash_hmac('sha256', $ip, segredo()), 0, 24);
 }
 
-/* ===================== força bruta ===================== */
+/** Quantos erros, vindos de endereços diferentes ou não, trancam um ENDEREÇO. */
+const MAX_TENTATIVAS_IP = 15;
 
 function estado_tentativas(): array
 {
@@ -1078,62 +371,82 @@ function gravar_tentativas(array $tudo): void
     }
 }
 
-/** O bloqueio é por login: errar o meu não tranca o dos outros. */
+/**
+ * As duas chaves de um erro de senha: a CONTA vista deste endereço, e o
+ * ENDEREÇO sozinho.
+ *
+ * Só por conta, cinco senhas erradas em qualquer login conhecido trancavam a
+ * conta por quinze minutos — para o dono dela também. Era um jeito de deixar
+ * a coordenação fora do painel na noite da apuração sabendo só o login. Agora
+ * a conta tranca para o endereço que errou, e não para os outros; e o
+ * endereço que erra demais, em contas diferentes ou não, tranca por inteiro.
+ */
+function chaves_de_falha(string $usuario): array
+{
+    $visitante = chave_visitante();
+    return [
+        'conta' => mb_strtolower($usuario) . '@' . $visitante,
+        'ip'    => 'ip:' . $visitante,
+    ];
+}
+
+/** Até quando este visitante está barrado nesta conta — 0 quando não está. */
 function bloqueado_ate(string $usuario): int
 {
-    $chave = mb_strtolower($usuario);
-    $ate = (int) (estado_tentativas()[$chave]['ate'] ?? 0);
-    return $ate > time() ? $ate : 0;
+    $tudo = estado_tentativas();
+    $agora = time();
+    $maior = 0;
+    foreach (chaves_de_falha($usuario) as $chave) {
+        $ate = (int) ($tudo[$chave]['ate'] ?? 0);
+        if ($ate > $agora) {
+            $maior = max($maior, $ate);
+        }
+    }
+    return $maior;
 }
 
 function registrar_falha(string $usuario): void
 {
-    preparar_pastas();
-    $chave = mb_strtolower($usuario);
-    $tudo = estado_tentativas();
-    $atual = is_array($tudo[$chave] ?? null) ? $tudo[$chave] : ['contagem' => 0, 'ate' => 0];
+    com_trava(ARQ_TENTATIVAS, function () use ($usuario): void {
+        $tudo = estado_tentativas();
+        $agora = time();
+        $tetos = ['conta' => MAX_TENTATIVAS, 'ip' => MAX_TENTATIVAS_IP];
 
-    $atual['contagem'] = ((int) ($atual['contagem'] ?? 0)) + 1;
-    if ($atual['contagem'] >= MAX_TENTATIVAS) {
-        $atual['ate'] = time() + BLOQUEIO_SEG;
-        $atual['contagem'] = 0;
-    }
-    $tudo[$chave] = $atual;
-
-    // some com o que já expirou, para o arquivo não crescer sem fim
-    $agora = time();
-    foreach ($tudo as $k => $v) {
-        if ($k !== $chave && ((int) ($v['ate'] ?? 0)) < $agora && ((int) ($v['contagem'] ?? 0)) === 0) {
-            unset($tudo[$k]);
+        foreach (chaves_de_falha($usuario) as $tipo => $chave) {
+            $atual = is_array($tudo[$chave] ?? null) ? $tudo[$chave] : ['contagem' => 0, 'ate' => 0];
+            $atual['contagem'] = ((int) ($atual['contagem'] ?? 0)) + 1;
+            if ($atual['contagem'] >= $tetos[$tipo]) {
+                $atual['ate'] = $agora + BLOQUEIO_SEG;
+                $atual['contagem'] = 0;
+            }
+            $tudo[$chave] = $atual;
         }
-    }
-    gravar_tentativas($tudo);
+
+        // some com o que já expirou, para o arquivo não crescer sem fim
+        foreach ($tudo as $k => $v) {
+            if (((int) ($v['ate'] ?? 0)) < $agora && ((int) ($v['contagem'] ?? 0)) === 0) {
+                unset($tudo[$k]);
+            }
+        }
+        gravar_tentativas($tudo);
+    });
 }
 
+/** Entrou: a conta deste endereço zera. O contador do endereço fica — acertar
+    uma conta não prova nada sobre as outras que ele tentou. */
 function limpar_falhas(string $usuario): void
 {
-    $chave = mb_strtolower($usuario);
-    $tudo = estado_tentativas();
-    if (isset($tudo[$chave])) {
-        unset($tudo[$chave]);
-        gravar_tentativas($tudo);
-    }
+    com_trava(ARQ_TENTATIVAS, function () use ($usuario): void {
+        $tudo = estado_tentativas();
+        $chave = chaves_de_falha($usuario)['conta'];
+        if (isset($tudo[$chave])) {
+            unset($tudo[$chave]);
+            gravar_tentativas($tudo);
+        }
+    });
 }
 
 /* ===================== sessão ===================== */
-
-/**
- * Um caminho de volta que o navegador mandou, se for mesmo de dentro do painel.
- *
- * Vale para o `volta` do login e para o do seletor de tema. Sem esta trava, um
- * link cuidadosamente montado leva a pessoa a um domínio de fora depois de uma
- * ação que ela confiou — que é exatamente o que redirecionamento aberto é.
- */
-function caminho_interno_seguro($bruto, string $padrao = '/painel/'): string
-{
-    $c = is_string($bruto) ? $bruto : '';
-    return preg_match('#^/painel/[a-z0-9._/?&=-]*$#i', $c) === 1 ? $c : $padrao;
-}
 
 /* ===================== tema (claro / escuro / sistema) ===================== */
 
@@ -1256,38 +569,6 @@ function autenticado(): bool
     return usuario_atual() !== null;
 }
 
-/**
- * Como descrever o acesso de alguém em duas palavras — para a lateral e o topo
- * do Estúdio, onde não cabe a lista de capacidades.
- *
- * Substituiu o "papel" (Administrador/Editor), que era um segundo eixo de
- * permissão vivendo ao lado das áreas e dizendo quase a mesma coisa.
- */
-/**
- * O texto digitado numa caixa de procurar casa com algum destes campos?
- *
- * Sem acento e sem caixa dos dois lados: quem procura "jose" tem de achar
- * "José", e quem procura "PRAÇA" tem de achar "Praça da Sé". Busca vazia casa
- * com tudo — assim a tela filtra sem precisar perguntar antes se há filtro.
- *
- * `sem_acento()` e não `iconv('ASCII//TRANSLIT')`: o TRANSLIT depende da libc e
- * o mesmo texto vira coisa diferente no Linux da Hostinger e no macOS.
- */
-function combina_com(array $campos, string $busca): bool
-{
-    $alvo = mb_strtolower(sem_acento(trim($busca)));
-    if ($alvo === '') {
-        return true;
-    }
-    foreach ($campos as $campo) {
-        $campo = (string) $campo;
-        if ($campo !== '' && str_contains(mb_strtolower(sem_acento($campo)), $alvo)) {
-            return true;
-        }
-    }
-    return false;
-}
-
 function rotulo_do_acesso(array $p): string
 {
     if (in_array('adm', $p['capacidades'], true)) {
@@ -1334,14 +615,16 @@ function areas_do_usuario(): array
 
 function marcar_acesso(string $id): void
 {
-    $pessoas = ler_pessoas();
-    foreach ($pessoas as &$p) {
-        if ($p['id'] === $id) {
-            $p['ultimoAcesso'] = date('c');
-            gravar_pessoas($pessoas);
-            return;
+    com_trava(ARQ_PESSOAS, function () use ($id): void {
+        $pessoas = ler_pessoas(true);
+        foreach ($pessoas as &$p) {
+            if ($p['id'] === $id) {
+                $p['ultimoAcesso'] = date('c');
+                gravar_pessoas($pessoas);
+                return;
+            }
         }
-    }
+    });
 }
 
 /** Porteiro das páginas que não têm tela de login própria. */
@@ -1368,11 +651,19 @@ function exigir_area(string $area): void
     }
 }
 
-function exigir_admin(): void
+/**
+ * Só `adm` passa. `$negado` é o que o Início vai explicar: uma área de AREAS
+ * ("você não tem acesso a Pessoas") ou o genérico `usuarios`.
+ *
+ * É a trava de verdade das áreas só-adm (`areas_so_adm()`): `exigir_area()`
+ * confia em `areas`, e `areas` é o que alguém marcou numa ficha. Aqui a
+ * pergunta é à capacidade, que só outro administrador dá.
+ */
+function exigir_admin(string $negado = 'usuarios'): void
 {
     exigir_login();
     if (!e_admin()) {
-        header('Location: /painel/?negado=usuarios', true, 302);
+        header('Location: /painel/?negado=' . rawurlencode($negado), true, 302);
         exit;
     }
 }

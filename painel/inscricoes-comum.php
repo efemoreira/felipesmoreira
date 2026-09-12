@@ -14,8 +14,9 @@ declare(strict_types=1);
  */
 
 require_once __DIR__ . '/sessao.php';
+require_once __DIR__ . '/leituras-comum.php';  // o placar e o funil de origens, a militância por região — leitura, não inscrição
+require_once __DIR__ . '/limite-comum.php';    // o teto de envios dos endpoints públicos
 
-const ARQ_LIMITE     = PASTA_DADOS . '/inscricoes-limite.php';
 const ARQ_FUNCOES    = __DIR__ . '/../funcoes.json';
 
 /** Versão do texto de consentimento aceito no formulário. */
@@ -25,12 +26,6 @@ const VERSAO_CONSENTIMENTO = '1';
 /* A mesa da recepção: uma fila inteira sai do mesmo Wi‑Fi do local, em minutos.
    Alto o bastante para um encontro de verdade caber, baixo o bastante para
    quem quisesse varrer faixas de telefone não ter tentativa infinita. */
-const LIMITE_PRESENCA_HORA = 60;
-const LIMITE_PRESENCA_DIA  = 400;
-
-const LIMITE_POR_HORA = 5;
-const LIMITE_POR_DIA  = 20;
-
 /* ===================== catálogo de funções ===================== */
 
 /**
@@ -240,202 +235,6 @@ function horas_na_fila(array $pessoa): int
 }
 
 /**
- * De onde veio cada pessoa — o `?de=` do link que ela abriu.
- *
- * Devolve da maior para a menor, e **não inclui quem chegou sem origem**: essa
- * conta vai separada, porque "veio sozinho" não é um recrutador.
- *
- * Conta o TOTAL e as APROVADAS lado a lado de propósito: origem que traz muita
- * gente e nenhuma aprovada não é origem que funciona, e o número cru esconderia
- * isso.
- *
- * @return array{placar: list<array{origem: string, total: int, aprovadas: int}>, semOrigem: int}
- */
-function placar_de_origens(?array $pessoas = null): array
-{
-    $pessoas ??= ler_pessoas();
-
-    $soma = [];
-    $semOrigem = 0;
-    foreach ($pessoas as $p) {
-        /* Só quem passou pelo formulário conta: quem a coordenação cadastrou na
-           mão, ou quem apareceu num encontro, não veio de link nenhum. */
-        if ($p['status'] === '') {
-            continue;
-        }
-        if ($p['origem'] === '') {
-            $semOrigem++;
-            continue;
-        }
-        if (!isset($soma[$p['origem']])) {
-            $soma[$p['origem']] = ['origem' => $p['origem'], 'total' => 0, 'aprovadas' => 0];
-        }
-        $soma[$p['origem']]['total']++;
-        if ($p['status'] === 'aprovada') {
-            $soma[$p['origem']]['aprovadas']++;
-        }
-    }
-
-    usort($soma, fn ($a, $b) => [$b['total'], $b['aprovadas']] <=> [$a['total'], $a['aprovadas']]);
-    return ['placar' => array_values($soma), 'semOrigem' => $semOrigem];
-}
-
-/**
- * O FUNIL DE CADA ORIGEM — quem recruta, e o que converte.
- *
- * `placar_de_origens()` responde "quantas chegaram por aqui". Esta responde a
- * pergunta seguinte, que é a que decide onde a campanha põe esforço: **das que
- * chegaram, quantas viraram militante de verdade?**
- *
- * A diferença não é detalhe. Uma live que traz cinquenta inscrições e nenhuma
- * aprovada parece a melhor origem do movimento no número cru, e é a pior; um
- * militante que traz seis e vê as seis comparecendo é o que precisa ser copiado.
- * Contar só o topo do funil premia quem faz barulho, não quem traz gente.
- *
- * **Três degraus, e não dois:**
- *
- * 1. `chegaram` — preencheu o formulário. É o que o link fez.
- * 2. `aprovadas` — a coordenação conferiu e deu acesso.
- * 3. `militaram` — apareceu em pelo menos um encontro. Este é o único que não
- *    depende de a pessoa dizer que vai: é presença marcada na porta.
- *
- * **Quem recruta é separado de por onde veio, e a separação é lida do
- * cadastro**, não de uma segunda lista: se a origem é o slug do nome de alguém
- * que existe, a linha ganha o nome dessa pessoa. `?de=joao-silva` é gente,
- * `?de=live-domingo` é canal — o campo é um só porque na prática a pergunta é a
- * mesma, mas quem lê o relatório precisa distinguir os dois para saber se
- * agradece ou se repete.
- *
- * Não inclui quem chegou sem origem: essa conta vai separada, porque "veio
- * sozinho" não é um recrutador. E só conta quem passou pelo formulário — quem a
- * coordenação cadastrou na mão não veio de link nenhum.
- *
- * @return array{
- *   linhas: list<array{origem:string, quem:string, chegaram:int, aprovadas:int,
- *                      militaram:int, ultima:string}>,
- *   semOrigem: int, semOrigemMilitaram: int
- * }
- */
-function funil_de_origens(?array $pessoas = null): array
-{
-    require_once __DIR__ . '/eventos-comum.php';   // as presenças, para o 3º degrau
-
-    $pessoas ??= ler_pessoas();
-
-    /* Quem compareceu a pelo menos um encontro. Um `array` de ids em vez de uma
-       consulta por pessoa: são duas listas inteiras, e cruzá-las uma vez custa
-       menos que uma varredura por linha do relatório. */
-    $compareceu = [];
-    foreach (ler_presencas() as $l) {
-        if (!empty($l['compareceu'])) {
-            $compareceu[$l['pessoaId']] = true;
-        }
-    }
-
-    /* O slug do nome de cada pessoa → o nome dela. É assim que a origem
-       `joao-silva` vira "João Silva" na tela: o mesmo `normalizar_origem()` que
-       grava a origem, aplicado ao nome de quem já está no cadastro. Sem isso o
-       relatório mostra slug, e slug ninguém reconhece no grupo. */
-    $porSlug = [];
-    foreach ($pessoas as $p) {
-        $slug = normalizar_origem($p['nome']);
-        if ($slug !== '' && !isset($porSlug[$slug])) {
-            $porSlug[$slug] = $p['nome'];
-        }
-    }
-
-    $soma = [];
-    $semOrigem = 0;
-    $semOrigemMilitaram = 0;
-
-    foreach ($pessoas as $p) {
-        if ($p['status'] === '') {
-            continue;
-        }
-        $militou = isset($compareceu[$p['id']]);
-
-        if ($p['origem'] === '') {
-            $semOrigem++;
-            $semOrigemMilitaram += $militou ? 1 : 0;
-            continue;
-        }
-        $o = $p['origem'];
-        $soma[$o] ??= [
-            'origem'    => $o,
-            'quem'      => $porSlug[$o] ?? '',
-            'chegaram'  => 0,
-            'aprovadas' => 0,
-            'militaram' => 0,
-            'ultima'    => '',
-        ];
-        $soma[$o]['chegaram']++;
-        $soma[$o]['aprovadas'] += $p['status'] === 'aprovada' ? 1 : 0;
-        $soma[$o]['militaram'] += $militou ? 1 : 0;
-        if (($p['criadoEm'] ?? '') > $soma[$o]['ultima']) {
-            $soma[$o]['ultima'] = (string) $p['criadoEm'];
-        }
-    }
-
-    /* A ordem é por QUEM MILITOU, e o total só desempata. Ordenar pelo total
-       poria no topo justamente a origem que enche a fila e não entrega — que é
-       o erro de leitura que este relatório existe para desfazer. */
-    usort($soma, fn ($a, $b) => [$b['militaram'], $b['aprovadas'], $b['chegaram']]
-                           <=> [$a['militaram'], $a['aprovadas'], $a['chegaram']]);
-
-    return [
-        'linhas' => array_values($soma),
-        'semOrigem' => $semOrigem,
-        'semOrigemMilitaram' => $semOrigemMilitaram,
-    ];
-}
-
-/**
- * Quantos militantes por cidade/bairro — só aprovados, pelo mesmo motivo.
- *
- * Devolve LINHAS DE TABELA, e não o mapa cru `cidade => bairro => n`: a tela
- * desenha `cidade`, `total` e a lista de `bairros`, e era o mapa cru que ela
- * recebia — três chaves indefinidas por linha e a tabela saindo vazia.
- *
- * Cidade com mais gente primeiro, porque a pergunta é "onde já dá para montar
- * um time"; empate desempata pelo nome, sem acento.
- */
-function militancia_por_regiao(?array $pessoas = null): array
-{
-    $pessoas ??= ler_pessoas();
-    $mapa = [];
-    foreach ($pessoas as $p) {
-        if ($p['status'] !== 'aprovada' || $p['cidade'] === '') {
-            continue;
-        }
-        $bairro = $p['bairro'] !== '' ? $p['bairro'] : '';
-        $mapa[$p['cidade']][$bairro] = ($mapa[$p['cidade']][$bairro] ?? 0) + 1;
-    }
-
-    $linhas = [];
-    foreach ($mapa as $cidade => $bairros) {
-        $total = array_sum($bairros);
-        /* Bairro em branco não vira "—" numa etiqueta: a tela já diz "sem
-           bairro informado" quando não sobra nenhum, e uma etiqueta com travessão
-           no meio dos bairros de verdade só ocupa espaço. */
-        unset($bairros['']);
-        arsort($bairros);
-        $linhas[] = [
-            'cidade'  => (string) $cidade,
-            'total'   => $total,
-            'bairros' => array_map(
-                fn ($nome, $n) => ['nome' => (string) $nome, 'total' => $n],
-                array_keys($bairros),
-                array_values($bairros)
-            ),
-        ];
-    }
-
-    usort($linhas, fn ($a, $b) => [$b['total'], sem_acento($a['cidade'])]
-        <=> [$a['total'], sem_acento($b['cidade'])]);
-    return $linhas;
-}
-
-/**
  * Uma pessoa já cadastrada com este telefone, ou null.
  *
  * Continua existindo porque o endpoint público precisa saber se o número já é
@@ -453,82 +252,6 @@ function inscricao_por_telefone(string $telefone): ?array
 
 /* segredo() mora no sessao.php: é segredo do site inteiro, não das
    inscrições — as aulas também derivam o token de convite dele. */
-
-function chave_visitante(): string
-{
-    $ip = (string) ($_SERVER['REMOTE_ADDR'] ?? '');
-    // A Hostinger fica atrás de proxy; o primeiro da lista é o cliente.
-    $enc = (string) ($_SERVER['HTTP_X_FORWARDED_FOR'] ?? '');
-    if ($enc !== '') {
-        $partes = explode(',', $enc);
-        $primeiro = trim($partes[0]);
-        if (filter_var($primeiro, FILTER_VALIDATE_IP)) {
-            $ip = $primeiro;
-        }
-    }
-    return substr(hash_hmac('sha256', $ip, segredo()), 0, 24);
-}
-
-function estado_limite(): array
-{
-    if (!is_file(ARQ_LIMITE)) {
-        return [];
-    }
-    $v = @include ARQ_LIMITE;
-    return is_array($v) ? $v : [];
-}
-
-/**
- * true quando o visitante já passou do teto e deve ser barrado.
- *
- * O ESCOPO existe porque os dois usos não se parecem em nada.
- *
- * A inscrição é uma vez na vida por pessoa: cinco por hora do mesmo endereço já
- * é comportamento estranho. A presença é uma fila numa porta — trinta pessoas
- * lendo o mesmo QR, quase todas no mesmo Wi‑Fi do local, no mesmo quarto de
- * hora. Com o teto da inscrição, a sexta pessoa da fila levaria "você já se
- * cadastrou há pouco" e iria embora sem entrar na lista.
- *
- * O teto da presença continua existindo (a busca por telefone devolve nome, e
- * sem teto isso seria um oráculo para varrer faixas de número), só é alto o
- * bastante para caber um evento de verdade.
- */
-function passou_do_limite(string $escopo = 'inscricao', int $porHora = LIMITE_POR_HORA, int $porDia = LIMITE_POR_DIA): bool
-{
-    $agora = time();
-    $reg = estado_limite()[chave_visitante() . ':' . $escopo] ?? null;
-    if (!is_array($reg)) {
-        return false;
-    }
-    $hora = array_filter((array) ($reg['envios'] ?? []), fn ($t) => $t > $agora - 3600);
-    $dia  = array_filter((array) ($reg['envios'] ?? []), fn ($t) => $t > $agora - 86400);
-    return count($hora) >= $porHora || count($dia) >= $porDia;
-}
-
-function registrar_envio(string $escopo = 'inscricao'): void
-{
-    preparar_pastas();
-    $agora = time();
-    $chave = chave_visitante() . ':' . $escopo;
-    $tudo = estado_limite();
-
-    $envios = (array) ($tudo[$chave]['envios'] ?? []);
-    $envios[] = $agora;
-    // guarda só a janela de 24h, senão o arquivo cresce sem fim
-    $tudo[$chave] = ['envios' => array_values(array_filter($envios, fn ($t) => $t > $agora - 86400))];
-
-    foreach ($tudo as $k => $v) {
-        $restantes = array_filter((array) ($v['envios'] ?? []), fn ($t) => $t > $agora - 86400);
-        if ($restantes === []) {
-            unset($tudo[$k]);
-        }
-    }
-
-    gravar_atomico(ARQ_LIMITE, "<?php\nreturn " . var_export($tudo, true) . ";\n");
-    if (function_exists('opcache_invalidate')) {
-        @opcache_invalidate(ARQ_LIMITE, true);
-    }
-}
 
 /* ===================== convidar a fila para um encontro ===================== */
 
@@ -738,4 +461,90 @@ function mensagem_de_acesso(array $acesso, ?array $proximo = null): string
     }
 
     return $texto . 'Qualquer dúvida, é só chamar aqui. Bem-vindo(a)!';
+}
+
+/* ===================== o que esta área diz ao Início ===================== */
+
+/**
+ * O que está esperando por esta pessoa em `inscricoes` — a fila do Início e o selo do menu.
+ *
+ * Chamada por `tarefas_de()` (agora.php) para quem abre a área; o formato de
+ * cada item está documentado lá. Registrar aqui, e não numa cadeia de `if` no
+ * agora.php, é o que faz uma área nova entrar na fila sem tocar o hub.
+ */
+function pendencias_inscricoes(array $u): array
+{
+    require_once __DIR__ . '/agora.php';  // HORAS_SEM_SAIDA, degrau_de_prazo(), data_curta(), apelido_curto()
+    $tarefas = [];
+
+        /* ---------- Inscrições: quem está na porta ---------- */
+        require_once __DIR__ . '/inscricoes-comum.php';
+        require_once __DIR__ . '/pessoas-comum.php';
+
+        $fila = fila_de_entrada();
+        $novas = count($fila);
+        $horas = 0;
+        foreach ($fila as $i) {
+            // a mais antiga manda no recado: é ela que está perdendo a pessoa
+            $horas = max($horas, horas_na_fila($i));
+        }
+        if ($novas > 0) {
+            /* Passou de 48h, o recado sobe para urgente. Não é burocracia de
+               prazo: quem se inscreveu está no pico de entusiasmo no dia em que
+               se inscreveu, e uma fila parada três dias devolve gente fria. */
+            $parada = $horas >= HORAS_LIMITE_INSCRICAO;
+            $dias = (int) floor($horas / 24);
+
+            $tarefas[] = [
+                'area'    => 'inscricoes',
+                'icone'   => 'flag',
+                'urgente' => $parada,
+                'quantos' => $novas,
+                'texto'   => $novas === 1
+                    ? '1 pessoa esperando decisão'
+                    : "{$novas} pessoas esperando decisão",
+                'porque'  => $parada
+                    ? "a mais antiga está parada há {$dias} " . ($dias === 1 ? 'dia' : 'dias')
+                        . ' — quem espera demais não volta'
+                    : 'quem se inscreveu ainda não tem acesso nem resposta',
+                'url'     => '/painel/inscricoes.php',
+            ];
+        }
+
+    return $tarefas;
+}
+
+/**
+ * Os medidores de `inscricoes` — o retrato do time inteiro, para Leituras › Semana
+ * e para a linha "A operação hoje" do Início. Formato em `panorama_de()`.
+ */
+function medidores_inscricoes(array $u): array
+{
+    require_once __DIR__ . '/agora.php';  // HORAS_SEM_SAIDA, degrau_de_prazo(), data_curta(), apelido_curto()
+    $medidores = [];
+
+        /* ---------- Inscrições: o vão entre se inscrever e ser aprovado ---------- */
+        require_once __DIR__ . '/inscricoes-comum.php';
+        require_once __DIR__ . '/pessoas-comum.php';
+
+        $fila = fila_de_entrada();
+        $horas = 0;
+        foreach ($fila as $i) {
+            $horas = max($horas, horas_na_fila($i));
+        }
+        $dias = (int) floor($horas / 24);
+        $medidores[] = [
+            'num'    => (string) count($fila),
+            'rotulo' => 'Esperando entrar',
+            'nota'   => $fila === []
+                ? 'Ninguém parado na porta.'
+                : ($horas >= HORAS_LIMITE_INSCRICAO
+                    ? 'A mais antiga está parada há ' . $dias . ' ' . ($dias === 1 ? 'dia' : 'dias')
+                        . ' — quem espera demais não volta.'
+                    : 'Quem se inscreveu ainda não tem acesso nem resposta.'),
+            'estado' => $fila === [] ? 'ok' : degrau_de_prazo($horas, HORAS_LIMITE_INSCRICAO),
+            'url'    => '/painel/inscricoes.php',
+        ];
+
+    return $medidores;
 }

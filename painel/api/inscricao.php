@@ -18,8 +18,8 @@ require_once __DIR__ . '/../inscricoes-comum.php';
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store, private');
 
-/* Sem tipo de retorno `never`: ele exige PHP 8.1, e o painel só depende de 8.0
-   até aqui. Ambas encerram a requisição. */
+/* Ambas encerram a requisição. (O painel exige PHP 8.1 — `acoes-comum.php`
+   usa `: never` — mas aqui o tipo fica de fora por simetria com `responder()`.) */
 
 /** Encerra com uma resposta JSON — sempre no mesmo formato que o front espera. */
 function responder(int $status, array $corpo): void
@@ -111,31 +111,34 @@ if ($ja !== null) {
        coordenação. Ela não vira uma segunda ficha — entra na fila a ficha que já
        existe, com o que ela acabou de dizer por cima. Antes isso criava uma
        inscrição paralela, e a mesma pessoa passava a existir duas vezes. */
-    $pessoas = ler_pessoas();
-    foreach ($pessoas as &$p) {
-        if ($p['id'] !== $ja['id']) {
-            continue;
-        }
-        $p['nome']   = $nome;
-        $p['status'] = 'pendente';
-        $p['criadoEm'] = date('c');   // o relógio da fila começa agora
-        foreach (['email' => $email, 'cidade' => $cidade, 'bairro' => $bairro] as $campo => $valor) {
-            if ($valor !== '') {
-                $p[$campo] = $valor;
+    $gravou = com_trava(ARQ_PESSOAS, function () use ($ja, $nome, $email, $cidade, $bairro, $funcoes, $origem): bool {
+        $pessoas = ler_pessoas(true);
+        foreach ($pessoas as &$p) {
+            if ($p['id'] !== $ja['id']) {
+                continue;
             }
+            $p['nome']   = $nome;
+            $p['status'] = 'pendente';
+            $p['criadoEm'] = date('c');   // o relógio da fila começa agora
+            foreach (['email' => $email, 'cidade' => $cidade, 'bairro' => $bairro] as $campo => $valor) {
+                if ($valor !== '') {
+                    $p[$campo] = $valor;
+                }
+            }
+            if ($funcoes !== []) {
+                $p['funcoes'] = $funcoes;
+            }
+            if ($origem !== '' && $p['origem'] === '') {
+                $p['origem'] = $origem;
+            }
+            $p['consentimentoEm'] = date('c');
+            $p['consentimentoVersao'] = VERSAO_CONSENTIMENTO;
         }
-        if ($funcoes !== []) {
-            $p['funcoes'] = $funcoes;
-        }
-        if ($origem !== '' && $p['origem'] === '') {
-            $p['origem'] = $origem;
-        }
-        $p['consentimentoEm'] = date('c');
-        $p['consentimentoVersao'] = VERSAO_CONSENTIMENTO;
-    }
-    unset($p);
+        unset($p);
+        return gravar_pessoas($pessoas);
+    });
 
-    if (!gravar_pessoas($pessoas)) {
+    if (!$gravou) {
         recusar('Não consegui guardar sua inscrição agora. Tente de novo em alguns minutos.', 500);
     }
     registrar_envio();
@@ -143,27 +146,38 @@ if ($ja !== null) {
 }
 
 /* ---- grava ---- */
-$pessoas = ler_pessoas();
-$pessoas[] = [
-    'id'       => novo_id_pessoa(),
-    'nome'     => $nome,
-    /* Entra como eleitor: militante é o que ela vira quando a coordenação
-       aprova. Chamar de militante quem ainda não foi conferido inflaria a
-       contagem do movimento com quem só preencheu um formulário. */
-    'tipo'     => 'eleitor',
-    'telefone' => $telefone,
-    'email'    => $email,
-    'cidade'   => $cidade,
-    'bairro'   => $bairro,
-    'funcoes'  => $funcoes,
-    'origem'   => $origem,
-    'status'   => 'pendente',
-    'criadoEm' => date('c'),
-    'consentimentoEm'     => date('c'),
-    'consentimentoVersao' => VERSAO_CONSENTIMENTO,
-];
+/* Dentro da tranca, e conferindo o telefone DE NOVO lá dentro: o "já existe?"
+   de cima foi respondido antes da fila, e um clique duplo no botão mandava dois
+   POSTs que passavam os dois — duas fichas da mesma pessoa. */
+$gravou = com_trava(ARQ_PESSOAS, function () use ($nome, $telefone, $email, $cidade, $bairro, $funcoes, $origem): bool {
+    $pessoas = ler_pessoas(true);
+    foreach ($pessoas as $p) {
+        if ($p['telefone'] === $telefone) {
+            return true;   // a outra requisição já gravou; para quem clicou, deu certo
+        }
+    }
+    $pessoas[] = [
+        'id'       => novo_id_pessoa(),
+        'nome'     => $nome,
+        /* Entra como eleitor: militante é o que ela vira quando a coordenação
+           aprova. Chamar de militante quem ainda não foi conferido inflaria a
+           contagem do movimento com quem só preencheu um formulário. */
+        'tipo'     => 'eleitor',
+        'telefone' => $telefone,
+        'email'    => $email,
+        'cidade'   => $cidade,
+        'bairro'   => $bairro,
+        'funcoes'  => $funcoes,
+        'origem'   => $origem,
+        'status'   => 'pendente',
+        'criadoEm' => date('c'),
+        'consentimentoEm'     => date('c'),
+        'consentimentoVersao' => VERSAO_CONSENTIMENTO,
+    ];
+    return gravar_pessoas($pessoas);
+});
 
-if (!gravar_pessoas($pessoas)) {
+if (!$gravou) {
     recusar('Não consegui guardar sua inscrição agora. Tente de novo em alguns minutos.', 500);
 }
 

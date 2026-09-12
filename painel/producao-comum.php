@@ -289,3 +289,127 @@ function nome_de_arquivo(array $card): string
 
     return $data . '_' . $tipo . '_' . apelido($card['titulo']);
 }
+
+/* ===================== o que esta área diz ao Início ===================== */
+
+/**
+ * O que está esperando por esta pessoa em `producao` — a fila do Início e o selo do menu.
+ *
+ * Chamada por `tarefas_de()` (agora.php) para quem abre a área; o formato de
+ * cada item está documentado lá. Registrar aqui, e não numa cadeia de `if` no
+ * agora.php, é o que faz uma área nova entrar na fila sem tocar o hub.
+ */
+function pendencias_producao(array $u): array
+{
+    require_once __DIR__ . '/agora.php';  // HORAS_SEM_SAIDA, degrau_de_prazo(), data_curta(), apelido_curto()
+    $tarefas = [];
+
+        /* ---------- Produção: o que está com esta pessoa ---------- */
+        require_once __DIR__ . '/producao-comum.php';
+
+        $meus = cards_de($u['id']);
+        if ($meus !== []) {
+            $hoje = date('Y-m-d');
+            $atrasados = array_values(array_filter(
+                $meus,
+                fn ($c) => $c['prazo'] !== '' && $c['prazo'] < $hoje
+            ));
+
+            if ($atrasados !== []) {
+                $c = $atrasados[0];
+                $quantos = count($atrasados);
+                $tarefas[] = [
+                    'area'    => 'producao',
+                    'icone'   => 'bolt',
+                    'urgente' => true,
+                    'quantos' => $quantos,
+                    'texto'   => $quantos === 1
+                        ? 'Terminar “' . apelido_curto($c['titulo']) . '”'
+                        : "Destravar {$quantos} cards seus com prazo vencido",
+                    'porque'  => 'o prazo passou — roteiro sai no mesmo dia, vídeo em até 24h',
+                    'url'     => '/painel/producao.php#' . $c['id'],
+                ];
+            }
+
+            $emDia = count($meus) - count($atrasados);
+            if ($emDia > 0) {
+                $tarefas[] = [
+                    'area'    => 'producao',
+                    'icone'   => 'bolt',
+                    'urgente' => false,
+                    'quantos' => $emDia,
+                    'texto'   => $emDia === 1
+                        ? '1 card está com você no quadro'
+                        : "{$emDia} cards estão com você no quadro",
+                    'porque'  => '',
+                    'url'     => '/painel/producao.php',
+                ];
+            }
+        }
+
+    return $tarefas;
+}
+
+/**
+ * Os medidores de `producao` — o retrato do time inteiro, para Leituras › Semana
+ * e para a linha "A operação hoje" do Início. Formato em `panorama_de()`.
+ */
+function medidores_producao(array $u): array
+{
+    require_once __DIR__ . '/agora.php';  // HORAS_SEM_SAIDA, degrau_de_prazo(), data_curta(), apelido_curto()
+    $medidores = [];
+
+        /* ---------- Produção: o que está atrasado no quadro ---------- */
+        require_once __DIR__ . '/producao-comum.php';
+
+        $hoje = date('Y-m-d');
+        $abertos = 0;
+        $atrasados = 0;
+        $semDono = count(cards_da_coluna('a-fazer'));
+        foreach (ler_cards() as $c) {
+            if ($c['coluna'] === 'publicado') {
+                continue;
+            }
+            $abertos++;
+            if ($c['prazo'] !== '' && $c['prazo'] < $hoje) {
+                $atrasados++;
+            }
+        }
+        $medidores[] = [
+            'num'    => $atrasados . '/' . $abertos,
+            'rotulo' => 'Quadro atrasado',
+            'nota'   => $abertos === 0
+                ? 'Quadro vazio. O card nasce quando a Checagem aprova um fato.'
+                : ($atrasados > 0
+                    ? 'Cards com prazo vencido, do total em andamento.'
+                    : ($semDono > 0
+                        ? "Nenhum atraso. {$semDono} ainda sem dono."
+                        : 'Nenhum atraso e nenhum card sem dono.')),
+            /* Um card atrasado já é urgente: o prazo do manual é o mesmo dia
+               para roteiro e 24h para vídeo — não há degrau a percorrer. */
+            'estado' => $atrasados > 0 ? 'urgente' : ($semDono > 0 ? 'atencao' : 'ok'),
+            'url'    => '/painel/producao.php?dono=atrasados',
+        ];
+
+    return $medidores;
+}
+
+/** Uma linha sobre como está o trabalho em `producao`, para a mesa do Início. */
+function estado_producao(array $u): string
+{
+    require_once __DIR__ . '/agora.php';  // HORAS_SEM_SAIDA, degrau_de_prazo(), data_curta(), apelido_curto()
+        require_once __DIR__ . '/producao-comum.php';
+        $meus = count(cards_de($u['id']));
+        $fila = count(cards_da_coluna('a-fazer'));
+        if ($meus === 0 && $fila === 0) {
+            return 'Quadro vazio. O card nasce sozinho quando a Checagem aprova um fato.';
+        }
+        $partes = [];
+        if ($meus > 0) {
+            $partes[] = $meus === 1 ? '1 card com você' : "{$meus} cards com você";
+        }
+        if ($fila > 0) {
+            $partes[] = $fila === 1 ? '1 card sem dono' : "{$fila} cards sem dono";
+        }
+        return implode(' · ', $partes);
+}

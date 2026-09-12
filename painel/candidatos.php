@@ -40,9 +40,6 @@ tratar_acoes_de_candidato();
 
 /* ===================== a tela ===================== */
 
-$recado = $_SESSION['recado'] ?? null;
-unset($_SESSION['recado']);
-$erro = ($recado['tipo'] ?? '') === 'erro' ? $recado['texto'] : null;
-$ok   = ($recado['tipo'] ?? '') === 'ok'   ? $recado['texto'] : null;
+['erro' => $erro, 'ok' => $ok] = recado_pendente();
 
 tela_de_candidatos($erro, $ok);

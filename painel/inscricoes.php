@@ -31,6 +31,14 @@ require_once __DIR__ . '/inscricoes-acoes.php';
 require_once __DIR__ . '/inscricoes-tela.php';
 exigir_area('inscricoes');
 
+/* A aba "De onde vêm" virou Leituras › Origem. O link antigo circula em
+   mensagem de coordenação; quem o abre cai no lugar novo, e quem não tem
+   Leituras cai na fila com o aviso de sempre. */
+if (($_GET['aba'] ?? '') === 'origens') {
+    header('Location: ' . (pode('leituras') ? '/painel/leituras.php?aba=origem' : '/painel/inscricoes.php'), true, 302);
+    exit;
+}
+
 $eu = usuario_atual();
 
 /* As ações vêm antes de qualquer leitura de tela: quando há uma, ela termina em
@@ -39,10 +47,7 @@ tratar_acoes_de_inscricao($eu);
 
 /* ===================== a tela ===================== */
 
-$recado = $_SESSION['recado'] ?? null;
-unset($_SESSION['recado']);
-$erro = ($recado['tipo'] ?? '') === 'erro' ? $recado['texto'] : null;
-$ok   = ($recado['tipo'] ?? '') === 'ok'   ? $recado['texto'] : null;
+['erro' => $erro, 'ok' => $ok] = recado_pendente();
 
 /* Some da sessão assim que for mostrado uma vez: senha provisória que fica na
    tela é senha que alguém lê por cima do ombro na segunda vez que ela abre. */

@@ -10,8 +10,9 @@ declare(strict_types=1);
  *
  * Este endpoint é a ÚNICA porta do conteúdo das aulas. O texto não vai no
  * bundle do Next de propósito: o site é export estático e tudo que entra lá é
- * público, enquanto o manual é documento interno. Quem não tem a área 'aulas'
- * recebe `pode: false` e nenhuma linha do conteúdo.
+ * público, enquanto o manual é documento interno. O conteúdo vai para quem
+ * tem CONTA — a formação é de todo mundo do movimento; a área 'aulas' é para
+ * editar, não para estudar. Sem conta, só o Dia 0 por `?convite=`.
  *
  * Segue o contrato do painel: responde 200 com o estado no corpo em vez de
  * usar status HTTP para caso esperado — a página consulta isto antes de saber

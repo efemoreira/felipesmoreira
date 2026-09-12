@@ -4,17 +4,11 @@ declare(strict_types=1);
 /** O lado POST do caixa: lançar e apagar. Nenhuma linha de HTML aqui. */
 
 require_once __DIR__ . '/caixa-comum.php';
-require_once __DIR__ . '/sessao.php';
-
-function avisar_caixa(string $tipo, string $texto): void
-{
-    $_SESSION['recado'] = ['tipo' => $tipo, 'texto' => $texto];
-}
+require_once __DIR__ . '/acoes-comum.php';  // avisar(), ir_para(), exigir_token_de_acao()
 
 function voltar_caixa(): void
 {
-    header('Location: /painel/caixa.php', true, 302);
-    exit;
+    ir_para('/painel/caixa.php');
 }
 
 function tratar_acoes_de_caixa(array $eu): void
@@ -22,12 +16,7 @@ function tratar_acoes_de_caixa(array $eu): void
     if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
         return;
     }
-    if (!token_valido()) {
-        avisar_caixa('erro', 'Sessão expirada. Entre de novo.');
-        derrubar_sessao();
-        header('Location: /painel/', true, 302);
-        exit;
-    }
+    exigir_token_de_acao();
 
     $acao = (string) ($_POST['acao'] ?? '');
     $lancamentos = ler_caixa();
@@ -35,12 +24,12 @@ function tratar_acoes_de_caixa(array $eu): void
     if ($acao === 'lancar') {
         $centavos = centavos_de((string) ($_POST['valor'] ?? ''));
         if ($centavos <= 0) {
-            avisar_caixa('erro', 'Diga o valor — "12,50" ou "1.234,56", como for mais fácil.');
+            avisar('erro', 'Diga o valor — "12,50" ou "1.234,56", como for mais fácil.');
             voltar_caixa();
         }
         $descricao = limpar_texto($_POST['descricao'] ?? '', 120);
         if ($descricao === '') {
-            avisar_caixa('erro', 'Escreva do que se trata. Lançamento sem descrição não se confere depois.');
+            avisar('erro', 'Escreva do que se trata. Lançamento sem descrição não se confere depois.');
             voltar_caixa();
         }
 
@@ -63,10 +52,10 @@ function tratar_acoes_de_caixa(array $eu): void
         ];
 
         if (!gravar_caixa($lancamentos)) {
-            avisar_caixa('erro', 'Não consegui gravar em /dados.');
+            avisar('erro', 'Não consegui gravar em /dados.');
             voltar_caixa();
         }
-        avisar_caixa('ok', 'Lançado: ' . reais($saiu ? -$centavos : $centavos) . '.');
+        avisar('ok', 'Lançado: ' . reais($saiu ? -$centavos : $centavos) . '.');
         voltar_caixa();
     }
 
@@ -74,20 +63,20 @@ function tratar_acoes_de_caixa(array $eu): void
         $id = limpar_texto($_POST['id'] ?? '', 40);
         $restantes = array_values(array_filter($lancamentos, fn ($l) => $l['id'] !== $id));
         if (count($restantes) === count($lancamentos)) {
-            avisar_caixa('erro', 'Lançamento não encontrado.');
+            avisar('erro', 'Lançamento não encontrado.');
             voltar_caixa();
         }
         if (!gravar_caixa($restantes)) {
-            avisar_caixa('erro', 'Não consegui gravar em /dados.');
+            avisar('erro', 'Não consegui gravar em /dados.');
             voltar_caixa();
         }
         /* Apaga de verdade, e não marca como cancelado: um caixa que guarda o
            errado ao lado do certo é um caixa que soma duas vezes na primeira
            distração. Corrigir é apagar e lançar de novo. */
-        avisar_caixa('ok', 'Lançamento apagado.');
+        avisar('ok', 'Lançamento apagado.');
         voltar_caixa();
     }
 
-    avisar_caixa('erro', 'Ação desconhecida.');
+    avisar('erro', 'Ação desconhecida.');
     voltar_caixa();
 }

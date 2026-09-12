@@ -26,6 +26,7 @@ declare(strict_types=1);
  */
 
 require_once __DIR__ . '/sessao.php';
+require_once __DIR__ . '/privacidade.php';  // nome_encoberto() — a regra é do movimento, não do encontro
 require_once __DIR__ . '/agenda-comum.php';  // dias_ate_o_dia(), o relógio no fuso do Ceará
 
 /** Quantas linhas a timeline do hub mostra. */

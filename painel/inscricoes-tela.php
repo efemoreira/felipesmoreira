@@ -23,7 +23,6 @@ require_once __DIR__ . '/pessoas-comum.php';       // fila_de_entrada()
 require_once __DIR__ . '/eventos-comum.php';       // eventos_a_vir(), data_cheia()
 require_once __DIR__ . '/inscricoes-fila.php';
 require_once __DIR__ . '/inscricoes-decididas.php';
-require_once __DIR__ . '/inscricoes-origens.php';
 
 /**
  * Desenha a tela inteira.
@@ -135,64 +134,22 @@ function tela_de_inscricoes(?string $erro, ?string $ok, array $acessos): void
     </div>
   <?php endif; ?>
 
-  <?php $regioes = militancia_por_regiao($todas); ?>
-  <?php if ($regioes !== []): ?>
-    <details class="decidir" style="margin-bottom:22px">
-      <summary class="btn">Onde a militância mora (<?= count($regioes) ?>)</summary>
-      <div class="decidir-corpo">
-        <p class="dica" style="margin:0 0 12px">
-          Só quem já foi aprovado. É por aqui que dá pra ver onde já tem gente para um time
-          próprio — e quem está sozinho na cidade dele.
-        </p>
-        <?php /* Esta era a única tabela do painel sem `.rolagem`: numa tela
-                 estreita ela não ganhava barra, ela EMPURRAVA a página para o
-                 lado. */ ?>
-        <div class="rolagem cartoes">
-        <table class="tabela">
-          <thead>
-            <tr><th>Cidade</th><th>Gente</th><th>Bairros</th></tr>
-          </thead>
-          <tbody>
-            <?php foreach ($regioes as $r): ?>
-              <tr>
-                <td class="meia" data-rotulo="Cidade"><strong><?= h($r['cidade']) ?></strong></td>
-                <td class="meia" data-rotulo="Gente"><?= (int) $r['total'] ?></td>
-                <td data-rotulo="Bairros">
-                  <?php if ($r['bairros'] === []): ?>
-                    <span class="selo selo-cinza">sem bairro informado</span>
-                  <?php else: ?>
-                    <?php foreach ($r['bairros'] as $b): ?>
-                      <span class="selo"><?= h($b['nome']) ?> · <?= (int) $b['total'] ?></span>
-                    <?php endforeach; ?>
-                  <?php endif; ?>
-                </td>
-              </tr>
-            <?php endforeach; ?>
-          </tbody>
-        </table>
-        </div>
-      </div>
-    </details>
-  <?php endif; ?>
+  <?php /* "Onde a militância mora" e "De onde vêm" moravam aqui — um `<details>`
+           e uma terceira aba. São leitura semanal da coordenação, não decisão
+           de fila: foram para /painel/leituras (Território e Origem). */ ?>
 
   <?php
   /* A fila é o trabalho; as decididas são o arquivo. Empilhadas, o arquivo
      cresce para sempre e a fila — que é o que alguém veio fazer aqui — some
      para baixo. A aba abre na fila, sempre. */
-  $origens = funil_de_origens($todas);
   $pedida = (string) ($_GET['aba'] ?? '');
   $abaIn = 'fila';
   if ($pedida === 'decididas' && $decididas !== []) {
       $abaIn = 'decididas';
-  } elseif ($pedida === 'origens') {
-      $abaIn = 'origens';
   }
   barra_abas([
       'fila'      => ['nome' => 'Esperando decisão', 'conta' => count($novas)],
       'decididas' => ['nome' => 'Já decididas',      'conta' => count($decididas)],
-      /* O contador desta é o número de ORIGENS, e não de pessoas: a pergunta da
-         aba é "por quantos caminhos a militância está chegando". */
-      'origens'   => ['nome' => 'De onde vêm',       'conta' => count($origens['linhas'])],
   ], $abaIn, 'aba', 'Inscrições');
   ?>
 
@@ -232,10 +189,8 @@ function tela_de_inscricoes(?string $erro, ?string $ok, array $acessos): void
      moravam neste arquivo. Mexer nele muda o markup sem mudar nada visível. */
   if ($abaIn === 'fila') {
       aba_da_fila($novas, $buscaIn, $formatar, $encontro);
-  } elseif ($abaIn === 'decididas') {
-      aba_das_decididas($decididas, $buscaIn, $formatar);
   } else {
-      aba_das_origens($origens, $formatar);
+      aba_das_decididas($decididas, $buscaIn, $formatar);
   }
   ?>
 

@@ -24,7 +24,7 @@ declare(strict_types=1);
  */
 
 require_once __DIR__ . '/../eventos-comum.php';
-require_once __DIR__ . '/../inscricoes-comum.php';  // chave_visitante() e o teto de envios
+require_once __DIR__ . '/../limite-comum.php';  // chave_visitante() e o teto de envios
 
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store, private');
@@ -153,32 +153,38 @@ if (strlen($telefone) < 10 || strlen($telefone) > 11) {
  */
 function marcar(array $evento, array $pessoa, string $modo): void
 {
-    $presencas = ler_presencas();
-    $achou = false;
-    foreach ($presencas as &$l) {
-        if ($l['eventoId'] === $evento['id'] && $l['pessoaId'] === $pessoa['id']) {
-            $l['confirmou'] = true;
-            if ($modo === 'chegada') {
-                $l['compareceu'] = true;
+    /* Dentro da tranca de `presencas.php`: é o QR da porta, trinta celulares
+       no mesmo minuto, e cada um lia a lista, punha a sua linha e gravava por
+       cima da do vizinho. `null` no retorno é gravação que falhou. */
+    $achou = com_trava(ARQ_PRESENCAS, function () use ($evento, $pessoa, $modo): ?bool {
+        $presencas = ler_presencas(true);
+        $achou = false;
+        foreach ($presencas as &$l) {
+            if ($l['eventoId'] === $evento['id'] && $l['pessoaId'] === $pessoa['id']) {
+                $l['confirmou'] = true;
+                if ($modo === 'chegada') {
+                    $l['compareceu'] = true;
+                }
+                $achou = true;
             }
-            $achou = true;
         }
-    }
-    unset($l);
+        unset($l);
 
-    if (!$achou) {
-        $presencas[] = [
-            'id'       => novo_id_presenca(),
-            'eventoId' => $evento['id'],
-            'pessoaId' => $pessoa['id'],
-            'confirmou'  => true,
-            'compareceu' => $modo === 'chegada',  // quem lê o QR na porta está na porta
-            'origem'     => 'qr',
-            'criadoPorId' => '',
-            'criadoEm'    => date('c'),
-        ];
-    }
-    if (!gravar_presencas($presencas)) {
+        if (!$achou) {
+            $presencas[] = [
+                'id'       => novo_id_presenca(),
+                'eventoId' => $evento['id'],
+                'pessoaId' => $pessoa['id'],
+                'confirmou'  => true,
+                'compareceu' => $modo === 'chegada',  // quem lê o QR na porta está na porta
+                'origem'     => 'qr',
+                'criadoPorId' => '',
+                'criadoEm'    => date('c'),
+            ];
+        }
+        return gravar_presencas($presencas) ? $achou : null;
+    });
+    if ($achou === null) {
         recusar('Não consegui guardar agora. Procure alguém da recepção.', 500);
     }
     registrar_envio('presenca');
@@ -267,45 +273,65 @@ if ($bairro === '' || $cidade === '') {
     recusar('Diga seu bairro e escolha sua cidade na lista.');
 }
 
-$pessoas = ler_pessoas();
-$nova = [
-    'id'       => novo_id_pessoa(),
-    'nome'     => $nome,
-    /* Eleitor: quem apareceu num encontro ainda não é militante. Vira quando
-       assumir função — e a ponte para /queroajudar, no fim desta tela, é
-       exatamente o convite para isso. */
-    'tipo'     => 'eleitor',
-    'telefone' => $telefone,
-    'bairro'   => $bairro,
-    'cidade'   => $cidade,
-    'criadoEm' => date('c'),
-    'consentimentoEm'     => date('c'),
-    'consentimentoVersao' => VERSAO_CONSENTIMENTO_PRESENCA,
-];
-$pessoas[] = $nova;
-if (!gravar_pessoas($pessoas)) {
+/* A ficha nasce dentro da tranca, e o telefone é conferido DE NOVO lá dentro:
+   o `procurar` de antes respondeu "ninguém" antes da fila, e o mesmo celular
+   reenviando o formulário (sinal fraco, clique duplo) criava duas fichas. Se
+   alguém já gravou esse número, é essa a ficha — e ela recebe a presença. */
+$nova = com_trava(ARQ_PESSOAS, function () use ($nome, $telefone, $bairro, $cidade): ?array {
+    $pessoas = ler_pessoas(true);
+    foreach ($pessoas as $p) {
+        if ($p['telefone'] === $telefone) {
+            return $p;
+        }
+    }
+    $nova = [
+        'id'       => novo_id_pessoa(),
+        'nome'     => $nome,
+        /* Eleitor: quem apareceu num encontro ainda não é militante. Vira quando
+           assumir função — e a ponte para /queroajudar, no fim desta tela, é
+           exatamente o convite para isso. */
+        'tipo'     => 'eleitor',
+        'telefone' => $telefone,
+        'bairro'   => $bairro,
+        'cidade'   => $cidade,
+        'criadoEm' => date('c'),
+        'consentimentoEm'     => date('c'),
+        'consentimentoVersao' => VERSAO_CONSENTIMENTO_PRESENCA,
+    ];
+    $pessoas[] = $nova;
+    return gravar_pessoas($pessoas) ? normalizar_pessoa($nova) : null;
+});
+if ($nova === null) {
     recusar('Não consegui guardar agora. Procure alguém da recepção.', 500);
 }
 
 /* Quem convidou fica na PRESENÇA, e não na pessoa: é informação daquele
    encontro. A mesma pessoa pode ter sido trazida por gente diferente. */
 if ($convidadoPor !== '') {
-    $presencas = ler_presencas();
-    $presencas[] = [
-        'id'       => novo_id_presenca(),
-        'eventoId' => $evento['id'],
-        'pessoaId' => $nova['id'],
-        'convidadoPor' => $convidadoPor,
-        'confirmou'  => true,
-        'compareceu' => $modo === 'chegada',
-        'origem'     => 'qr',
-        'criadoEm'   => date('c'),
-    ];
-    if (!gravar_presencas($presencas)) {
+    $gravou = com_trava(ARQ_PRESENCAS, function () use ($evento, $nova, $convidadoPor, $modo): bool {
+        $presencas = ler_presencas(true);
+        foreach ($presencas as $l) {
+            if ($l['eventoId'] === $evento['id'] && $l['pessoaId'] === $nova['id']) {
+                return true;   // o reenvio chegou depois do primeiro: já está na lista
+            }
+        }
+        $presencas[] = [
+            'id'       => novo_id_presenca(),
+            'eventoId' => $evento['id'],
+            'pessoaId' => $nova['id'],
+            'convidadoPor' => $convidadoPor,
+            'confirmou'  => true,
+            'compareceu' => $modo === 'chegada',
+            'origem'     => 'qr',
+            'criadoEm'   => date('c'),
+        ];
+        return gravar_presencas($presencas);
+    });
+    if (!$gravou) {
         recusar('Não consegui guardar agora. Procure alguém da recepção.', 500);
     }
     registrar_envio('presenca');
     responder(200, ['ok' => true, 'jaEstava' => false, 'nome' => explode(' ', $nome)[0], 'inscrito' => false]);
 }
 
-marcar($evento, normalizar_pessoa($nova), $modo);
+marcar($evento, $nova, $modo);

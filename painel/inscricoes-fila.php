@@ -227,6 +227,7 @@ function aba_da_fila(array $novas, string $buscaIn, callable $formatar, ?array $
                     exceção — dar uma ferramenta solta sem a capacidade inteira.
                   </p>
                   <?php foreach (AREAS as $chave => $rotulo): ?>
+                    <?php if (in_array($chave, areas_so_adm(), true)) continue; // só a capacidade dá ?>
                     <label class="check">
                       <input type="checkbox" name="areas[]" value="<?= h($chave) ?>"
                         <?= in_array($chave, $sugeridas, true) ? ' checked' : '' ?>>

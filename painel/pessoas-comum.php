@@ -248,3 +248,79 @@ function possiveis_lideres(): array
     usort($lista, fn ($a, $b) => strcmp($a['nome'], $b['nome']));
     return $lista;
 }
+
+/* ===================== o que esta área diz ao Início ===================== */
+
+/**
+ * O que está esperando por esta pessoa em `pessoas` — a fila do Início e o selo do menu.
+ *
+ * Chamada por `tarefas_de()` (agora.php) para quem abre a área; o formato de
+ * cada item está documentado lá. Registrar aqui, e não numa cadeia de `if` no
+ * agora.php, é o que faz uma área nova entrar na fila sem tocar o hub.
+ */
+function pendencias_pessoas(array $u): array
+{
+    require_once __DIR__ . '/agora.php';  // HORAS_SEM_SAIDA, degrau_de_prazo(), data_curta(), apelido_curto()
+    $tarefas = [];
+
+        /* ---------- Pessoas: quem esfriou e ainda dá para chamar ----------
+           Vem depois das filas de decisão de propósito: não é urgente, e não tem
+           prazo do manual vencendo. É a tarefa que some da semana sem ninguém
+           notar — e é justamente por isso que ela precisa estar na lista, e não
+           na memória de quem coordena. */
+        require_once __DIR__ . '/reativacao.php';
+        $esfriaram = quantas_para_reativar();
+        if ($esfriaram > 0) {
+            $tarefas[] = [
+                'area'    => 'pessoas',
+                'icone'   => 'users',
+                'urgente' => false,
+                'quantos' => $esfriaram,
+                'texto'   => $esfriaram === 1
+                    ? 'Chamar de volta 1 pessoa que esfriou'
+                    : "Chamar de volta {$esfriaram} pessoas que esfriaram",
+                'porque'  => 'já disseram sim uma vez — quem já veio custa uma mensagem, e um inscrito novo custa um encontro inteiro',
+                'url'     => '/painel/pessoas.php?tipo=reativar#reativar',
+            ];
+        }
+
+    return $tarefas;
+}
+
+/**
+ * O que está esperando por esta pessoa em `gente` — a fila do Início e o selo do menu.
+ *
+ * Chamada por `tarefas_de()` (agora.php) para quem abre a área; o formato de
+ * cada item está documentado lá. Registrar aqui, e não numa cadeia de `if` no
+ * agora.php, é o que faz uma área nova entrar na fila sem tocar o hub.
+ */
+function pendencias_gente(array $u): array
+{
+    require_once __DIR__ . '/agora.php';  // HORAS_SEM_SAIDA, degrau_de_prazo(), data_curta(), apelido_curto()
+    $tarefas = [];
+
+        /* ---------- Sua gente: quem está sob esta pessoa e esfriou ----------
+           A mesma régua da reativação, no recorte de quem lidera. É a tarefa que
+           faz "acompanhar alguém" ser trabalho com número, e não intenção: sem
+           ela, a líder só descobre que alguém sumiu quando a coordenação
+           pergunta. `area` é 'gente' — não é área de AREAS, é o nome do item
+           solto do menu, e é o que dá o selo a ele. */
+        require_once __DIR__ . '/pessoas-comum.php';
+        require_once __DIR__ . '/reativacao.php';
+        $minhaEsfriando = count(array_filter(minha_gente($u), fn ($p) => motivo_de_reativacao($p) !== null));
+        if ($minhaEsfriando > 0) {
+            $tarefas[] = [
+                'area'    => 'gente',
+                'icone'   => 'users',
+                'urgente' => false,
+                'quantos' => $minhaEsfriando,
+                'texto'   => $minhaEsfriando === 1
+                    ? '1 pessoa da sua gente esfriou'
+                    : "{$minhaEsfriando} pessoas da sua gente esfriaram",
+                'porque'  => 'você é o primeiro nome que elas veem — uma mensagem sua vale mais que um aviso no grupo',
+                'url'     => '/painel/gente.php?tipo=esfriando',
+            ];
+        }
+
+    return $tarefas;
+}

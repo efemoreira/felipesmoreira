@@ -4,7 +4,8 @@ declare(strict_types=1);
 /**
  * Manutenção — felipesmoreira.com/painel/manutencao
  *
- * Uma tela só, com uma ação só: **começar do zero**. Ela existe porque a fase
+ * Duas ações, e as duas sobre o disco: **guardar** (o backup de /dados) e
+ * **começar do zero**. A segunda existe porque a fase
  * de testes deixou fichas de teste, encontros de teste e contas de teste
  * misturadas com as de verdade, e não há como olhar um relatório e saber qual
  * é qual. Apagar arquivo por arquivo no gerenciador da hospedagem funciona,
@@ -21,7 +22,27 @@ declare(strict_types=1);
  */
 
 require_once __DIR__ . '/layout.php';
+require_once __DIR__ . '/backup-comum.php';
+require_once __DIR__ . '/acoes-comum.php';
 exigir_admin();
+
+/* BAIXAR UM BACKUP. Vem antes de qualquer HTML: a resposta é o zip, e não uma
+   página. `backup_por_nome()` é quem decide se o nome é de backup — o que vem
+   na URL nunca vira caminho sem passar por ele. */
+$baixar = (string) ($_GET['baixar'] ?? '');
+if ($baixar !== '') {
+    $caminho = backup_por_nome($baixar);
+    if ($caminho === null) {
+        http_response_code(404);
+        exit;
+    }
+    header('Content-Type: application/zip');
+    header('Content-Disposition: attachment; filename="' . $baixar . '"');
+    header('Content-Length: ' . (string) filesize($caminho));
+    header('Cache-Control: no-store, private');
+    readfile($caminho);
+    exit;
+}
 
 /**
  * Tudo o que o painel grava em /dados, agrupado pela pergunta que responde.
@@ -59,11 +80,19 @@ function grupos_de_dados(): array
         ],
         'comunicacao' => [
             'nome'   => 'Fatos, produção e munição',
-            'resumo' => 'A fila da Checagem, o quadro de produção e as peças do mutirão.',
+            'resumo' => 'A fila da Checagem, o quadro de produção, as peças e o mutirão de cada semana.',
             'arquivos' => [
                 PASTA_DADOS . '/fatos.php',
                 PASTA_DADOS . '/producao.php',
                 PASTA_DADOS . '/kit.php',
+                PASTA_DADOS . '/mutirao.php',
+            ],
+        ],
+        'caixa' => [
+            'nome'   => 'Caixa',
+            'resumo' => 'Todo lançamento de dinheiro, dos dois caixas. Grupo próprio: dinheiro não se apaga por tabela.',
+            'arquivos' => [
+                PASTA_DADOS . '/caixa.php',
             ],
         ],
         'formacao' => [
@@ -75,13 +104,14 @@ function grupos_de_dados(): array
             ],
         ],
         'contadores' => [
-            'nome'   => 'Contadores e tentativas',
-            'resumo' => 'Teto de envio por visitante e o registro de erro de senha. '
-                . 'Some sozinho com o tempo; some junto por limpeza.',
+            'nome'   => 'Contadores, tentativas e sinais do site',
+            'resumo' => 'Teto de envio por visitante, o registro de erro de senha e a contagem '
+                . 'de aberturas do site. Some sozinho com o tempo; some junto por limpeza.',
             'arquivos' => [
                 PASTA_DADOS . '/tentativas.php',
                 PASTA_DADOS . '/tentativas.json',
                 PASTA_DADOS . '/inscricoes-limite.php',
+                PASTA_DADOS . '/sinais.php',
             ],
         ],
     ];
@@ -101,10 +131,7 @@ function quantos_em(string $arquivo): ?int
     return is_array($v) ? count($v) : 0;
 }
 
-$recado = $_SESSION['recado'] ?? null;
-unset($_SESSION['recado']);
-$erro = ($recado['tipo'] ?? '') === 'erro' ? $recado['texto'] : null;
-$ok   = ($recado['tipo'] ?? '') === 'ok'   ? $recado['texto'] : null;
+['erro' => $erro, 'ok' => $ok] = recado_pendente();
 
 const PALAVRA_ZERAR = 'ZERAR TUDO';
 
@@ -115,19 +142,37 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         exit;
     }
 
+    /* O BACKUP NÃO PEDE A PALAVRA: não apaga nada, e pedir "ZERAR TUDO" para
+       guardar seria ensinar a digitá-la no reflexo. */
+    if (($_POST['acao'] ?? '') === 'backup') {
+        $feito = fazer_backup();
+        if ($feito === null) {
+            avisar('erro', 'O backup não foi gravado. Confira se /dados tem alguma coisa e se /dados/backups aceita escrita.');
+        } else {
+            avisar('ok', 'Backup gravado: ' . basename($feito) . '. Baixe e guarde fora da hospedagem.');
+        }
+        ir_para('/painel/manutencao.php');
+    }
+
     if (trim((string) ($_POST['confirmacao'] ?? '')) !== PALAVRA_ZERAR) {
-        $_SESSION['recado'] = [
-            'tipo'  => 'erro',
-            'texto' => 'Nada foi apagado: a confirmação tem que ser exatamente “' . PALAVRA_ZERAR . '”.',
-        ];
-        header('Location: /painel/manutencao.php', true, 302);
-        exit;
+        avisar('erro', 'Nada foi apagado: a confirmação tem que ser exatamente “' . PALAVRA_ZERAR . '”.');
+        ir_para('/painel/manutencao.php');
     }
 
     $pedidos = is_array($_POST['grupos'] ?? null) ? $_POST['grupos'] : [];
     $grupos = grupos_de_dados();
     $apagados = 0;
     $zerouPessoas = false;
+
+    /* O ZIP VEM ANTES DO UNLINK. Zerar existe para sair da fase de teste — e
+       a palavra certa digitada na base errada, uma vez, é o cadastro inteiro
+       indo embora sem cópia. Se o backup não gravar, nada é apagado: melhor
+       uma base de teste que sobra do que uma base de verdade que some. Só há
+       o que guardar se há arquivo; base vazia zera sem zip. */
+    if ($pedidos !== [] && arquivos_para_backup() !== [] && fazer_backup() === null) {
+        avisar('erro', 'Nada foi apagado: o backup de antes de zerar não foi gravado. Confira se /dados/backups aceita escrita.');
+        ir_para('/painel/manutencao.php');
+    }
 
     /* Lida ANTES de apagar: depois do `unlink` não há mais de onde tirá-la, e é
        ela que volta para o arquivo logo abaixo. */
@@ -177,45 +222,67 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         if ($eu !== null) {
             gravar_pessoas([$eu]);
         }
-        $_SESSION['recado'] = [
-            'tipo'  => 'ok',
-            'texto' => $apagados . ' arquivo(s) apagado(s). O cadastro recomeça vazio — '
+        avisar('ok', $apagados . ' arquivo(s) apagado(s). O cadastro recomeça vazio — '
                 . 'só a sua conta ficou, para o painel não voltar a aceitar que '
-                . 'qualquer visitante crie um administrador.',
-        ];
-        header('Location: /painel/manutencao.php', true, 302);
-        exit;
+                . 'qualquer visitante crie um administrador.');
+        ir_para('/painel/manutencao.php');
     }
 
-    $_SESSION['recado'] = [
-        'tipo'  => 'ok',
-        'texto' => $apagados === 0
+    avisar('ok', $apagados === 0
             ? 'Não havia nada para apagar nos grupos marcados.'
-            : $apagados . ' arquivo(s) apagado(s). O painel recomeça vazio nessas áreas.',
-    ];
-    header('Location: /painel/manutencao.php', true, 302);
-    exit;
+            : $apagados . ' arquivo(s) apagado(s). O painel recomeça vazio nessas áreas.');
+    ir_para('/painel/manutencao.php');
 }
 
-$grupos = grupos_de_dados();
+$grupos  = grupos_de_dados();
+$backups = backups_existentes();
 
 abrir_pagina('Manutenção');
 ?>
 <div class="capa">
   <?php cabecalho_pagina(
       'Manutenção',
-      'Apagar o que o painel gravou e recomeçar limpo.',
+      'Guardar o que o painel gravou — ou apagar e recomeçar limpo.',
       ['url' => '/painel/conta.php', 'texto' => 'Minha conta'],
       null,
       [
-          'Serve para sair da fase de teste: apaga o que foi cadastrado para experimentar.',
-          'Marque só os grupos que quer zerar — cada um é independente do outro.',
-          'Zerar “Pessoas e contas” apaga TAMBÉM os logins, inclusive o seu: o painel volta à tela de criar o primeiro administrador.',
-          'Não tem desfazer, e não há cópia de segurança automática. Baixe /dados antes se quiser guardar.',
+          'O backup é um zip de /dados inteiro: cadastro, presenças, fatos, caixa, imagens. Fica na hospedagem, fechado para a web; baixe e guarde fora dela.',
+          'Um cron pode gravar o backup todo dia chamando backup.php pela linha de comando. O botão aqui faz o mesmo na hora.',
+          'Zerar serve para sair da fase de teste: apaga o que foi cadastrado para experimentar. Marque só os grupos que quer — cada um é independente.',
+          'Zerar “Pessoas e contas” apaga os outros logins; só a sua conta fica, para o painel não voltar a aceitar que qualquer visitante crie um administrador.',
+          'Zerar não tem desfazer. Faça o backup antes.',
       ]
   ); ?>
 
   <?php recado($erro, $ok); ?>
+
+  <fieldset id="backup">
+    <legend>Backup<?= $backups !== [] ? ' (' . count($backups) . ')' : '' ?></legend>
+    <form method="post" class="acoes" style="margin:0 0 14px">
+      <input type="hidden" name="csrf" value="<?= h(token()) ?>">
+      <input type="hidden" name="acao" value="backup">
+      <button class="btn btn-ouro" type="submit">Fazer backup agora</button>
+    </form>
+    <?php if ($backups === []): ?>
+      <p class="dica" style="margin:0">
+        Nenhum backup ainda. Para o cron da hospedagem, todo dia às 3h:
+        <code>0 3 * * * php <?= h(realpath(__DIR__) ?: __DIR__) ?>/backup.php</code>
+      </p>
+    <?php else: ?>
+      <p class="dica" style="margin:0 0 10px">
+        Os <?= MAX_BACKUPS_DADOS ?> mais recentes ficam; o resto vai embora sozinho.
+        Cron: <code>0 3 * * * php <?= h(realpath(__DIR__) ?: __DIR__) ?>/backup.php</code>
+      </p>
+      <ul class="lista-backups">
+        <?php foreach ($backups as $b): ?>
+          <li>
+            <a href="/painel/manutencao.php?baixar=<?= h($b['nome']) ?>"><?= h($b['nome']) ?></a>
+            <span class="dica"><?= h(date('d/m/Y H:i', $b['quando'])) ?> · <?= h(tamanho_legivel($b['bytes'])) ?></span>
+          </li>
+        <?php endforeach; ?>
+      </ul>
+    <?php endif; ?>
+  </fieldset>
 
   <fieldset>
     <legend>O que existe hoje</legend>
@@ -246,9 +313,8 @@ abrir_pagina('Manutenção');
 
       <div class="decidir-recusa" style="margin-top:22px">
         <p class="dica" style="margin:0 0 12px">
-          <strong>Isto não tem desfazer.</strong> Não há cópia de segurança automática:
-          se quiser guardar o que existe, baixe a pasta <code>/dados</code> pelo
-          gerenciador de arquivos antes de apertar.
+          <strong>Isto não tem desfazer.</strong> Se quiser guardar o que existe,
+          faça o backup acima e baixe o zip antes de apertar.
         </p>
         <div class="campo">
           <label for="conf">Para confirmar, digite <code><?= h(PALAVRA_ZERAR) ?></code></label>
@@ -274,7 +340,8 @@ abrir_pagina('Manutenção');
       saem os links de convite do Dia 0, as referências da página de presença e o
       embaralhamento do teto de envio — apagá-lo invalidaria todos os convites que já
       circulam, e isso não é limpeza, é quebra. O <code>.htaccess</code> que fecha a pasta
-      para a internet também fica, pela razão óbvia.
+      para a internet também fica, pela razão óbvia. E os <strong>backups</strong> ficam:
+      zerar apaga o que está em uso, não a cópia do que estava.
     </p>
   </fieldset>
 </div>

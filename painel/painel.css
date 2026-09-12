@@ -654,6 +654,33 @@ input[type=file]::file-selector-button {
 .gente-lista li + li { border-top:1px solid var(--linha-2); }
 .gente-quem { display:flex; flex-wrap:wrap; gap:8px; align-items:center; min-width:0; }
 
+/* ---- /painel/gente: um cartão por pessoa ----
+   Pilha vertical com respiro, como `.area-cartao`: nome e selo na cabeça, o
+   estado numa linha, o que dizer embaixo e o botão do WhatsApp. É lista de
+   trabalho lida no celular, uma pessoa por vez. */
+.gente-cartoes { list-style:none; margin:0; padding:0; }
+.gente-cartao {
+  padding:14px 16px; margin:0 0 12px;
+  border:3px solid var(--linha); background:var(--realce-1);
+}
+.gente-cartao:last-child { margin-bottom:0; }
+.gente-cabeca { display:flex; flex-wrap:wrap; gap:6px 10px; align-items:center; margin:0 0 6px; }
+.gente-cabeca strong { font:400 17px/1.25 var(--display); letter-spacing:.3px; }
+.gente-cabeca .selo { margin:0; }
+.gente-estado { margin:0 0 6px; font-size:14px; line-height:1.5; color:var(--texto-fraco); }
+.gente-dizer { margin:0 0 10px; }
+.gente-cartao .acoes { margin:0; }
+
+/* ---- os backups da Manutenção ----
+   O mesmo desenho da lista de gente: um zip por linha, nome à esquerda e
+   data/tamanho à direita, com a linha fina separando. */
+.lista-backups { list-style:none; margin:0; padding:0; }
+.lista-backups li {
+  display:flex; flex-wrap:wrap; gap:8px; align-items:center;
+  justify-content:space-between; padding:10px 0; min-height:44px;
+}
+.lista-backups li + li { border-top:1px solid var(--linha-2); }
+
 /* ---- aprovar em lote ----
    Gruda no topo da lista: com setenta e duas fichas, um botão no fim é um botão
    que exige rolar a fila inteira depois de marcar a última — e rolar de volta
@@ -989,6 +1016,18 @@ input[type=file]::file-selector-button {
   .hub { grid-template-columns:1fr; }
   .hub-lado { order:-1; }
 }
+
+/* ---- as linhas do hub ----
+   O que cabe numa linha fica numa linha: quem te acompanha, a operação hoje
+   (só o que venceu), o grupo depois de entrar. Eram cartões e seções; no
+   celular cada um custava uma rolagem antes da fila. */
+.hub-linha {
+  display:flex; flex-wrap:wrap; gap:6px 8px; align-items:center;
+  margin:0 0 14px; font-size:15px; line-height:1.5; color:var(--texto-fraco);
+}
+.hub-linha svg { flex:0 0 auto; color:var(--acento); }
+.hub-linha strong { color:var(--texto); }
+.hub-linha .selo { margin:0; }
 
 .cartao-grupo {
   border:3px solid var(--linha-2); background:var(--superficie);
@@ -1489,3 +1528,15 @@ fieldset[id], .item[id], .ficha[id] { scroll-margin-top:18px; }
   body { background:#fff; color:#000; }
   .qr-papel { box-shadow:none; }
 }
+
+/* ---------- ajuda ---------- */
+.ajuda-grade { display:grid; gap:14px; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); margin:0 0 30px; }
+.ajuda-cartao { border:3px solid var(--linha); background:var(--realce-1); padding:14px 16px; }
+.ajuda-cartao h3 { margin:0 0 10px; font-size:16px; }
+.ajuda-cartao h3 a { display:inline-flex; align-items:center; gap:8px; color:inherit; text-decoration:none; min-height:44px; }
+.ajuda-cartao dl { margin:0; }
+.ajuda-cartao dt { font:400 11px/1 var(--etiqueta); letter-spacing:1.5px; text-transform:uppercase; color:var(--texto-fraco); margin-top:10px; }
+.ajuda-cartao dd { margin:2px 0 0; font-size:14.5px; line-height:1.5; }
+.ajuda-glossario { margin:0; max-width:70ch; }
+.ajuda-glossario dt { font-weight:700; margin-top:14px; }
+.ajuda-glossario dd { margin:4px 0 0; line-height:1.55; }

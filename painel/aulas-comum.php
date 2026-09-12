@@ -342,19 +342,24 @@ function marcar_aula(string $usuarioId, string $aulaId, bool $concluida): bool
     if ($usuarioId === '' || aula_por_id($aulaId) === null) {
         return false;
     }
-    $tudo = ler_progresso();
+    /* Com a tranca: é o arquivo que mais gravações por minuto recebe — cada
+       pessoa marcando a sua aula — e duas marcações no mesmo segundo perdiam
+       uma. Ler de novo dentro da tranca é o que faz a segunda ver a primeira. */
+    return (bool) com_trava(ARQ_PROGRESSO, function () use ($usuarioId, $aulaId, $concluida): bool {
+        $tudo = ler_progresso(true);
 
-    if ($concluida) {
-        $tudo[$usuarioId][$aulaId] = date('c');
-    } else {
-        unset($tudo[$usuarioId][$aulaId]);
-        // sem aula nenhuma, o usuário sai do arquivo em vez de virar array vazio
-        if (($tudo[$usuarioId] ?? []) === []) {
-            unset($tudo[$usuarioId]);
+        if ($concluida) {
+            $tudo[$usuarioId][$aulaId] = date('c');
+        } else {
+            unset($tudo[$usuarioId][$aulaId]);
+            // sem aula nenhuma, o usuário sai do arquivo em vez de virar array vazio
+            if (($tudo[$usuarioId] ?? []) === []) {
+                unset($tudo[$usuarioId]);
+            }
         }
-    }
 
-    return gravar_progresso($tudo);
+        return gravar_progresso($tudo);
+    });
 }
 
 /* ===================== o que o site recebe ===================== */

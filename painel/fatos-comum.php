@@ -194,3 +194,155 @@ function fatos_esperando(): int
 {
     return count(fatos_com_status('a-checar'));
 }
+
+/* ===================== o que esta área diz ao Início ===================== */
+
+/**
+ * O que está esperando por esta pessoa em `fatos` — a fila do Início e o selo do menu.
+ *
+ * Chamada por `tarefas_de()` (agora.php) para quem abre a área; o formato de
+ * cada item está documentado lá. Registrar aqui, e não numa cadeia de `if` no
+ * agora.php, é o que faz uma área nova entrar na fila sem tocar o hub.
+ */
+function pendencias_fatos(array $u): array
+{
+    require_once __DIR__ . '/agora.php';  // HORAS_SEM_SAIDA, degrau_de_prazo(), data_curta(), apelido_curto()
+    $tarefas = [];
+
+        /* ---------- Fatos: a fila da Checagem ---------- */
+        require_once __DIR__ . '/fatos-comum.php';
+        require_once __DIR__ . '/producao-comum.php';
+
+        /* O fato que a própria pessoa trouxe não é pendência dela: ela não pode
+           checá-lo. Contá-lo aqui mandaria alguém para uma tela onde a única
+           coisa a fazer é esperar — e o selo no menu ficaria aceso para sempre
+           quando a fila fosse só de fato próprio. Para o resto do time ele
+           continua contando normalmente. */
+        $fila = array_values(array_filter(
+            fatos_com_status('a-checar'),
+            fn ($f) => $f['autorId'] !== $u['id']
+        ));
+        if ($fila !== []) {
+            // o mais antigo manda no recado: é ele que estoura o prazo
+            $horas = 0;
+            foreach ($fila as $f) {
+                $horas = max($horas, horas_esperando($f));
+            }
+            $quantos = count($fila);
+            $tarefas[] = [
+                'area'    => 'fatos',
+                'icone'   => 'search',
+                'urgente' => $horas >= 2,
+                'quantos' => $quantos,
+                'texto'   => $quantos === 1 ? 'Checar 1 fato' : "Checar {$quantos} fatos",
+                'porque'  => $horas >= 2
+                    ? "o mais antigo está parado há {$horas}h — o prazo da checagem é 2h"
+                    : 'nada dorme sem status: a meta é zerar a fila do dia',
+                'url'     => '/painel/fatos.php#fila',
+            ];
+        }
+
+        /* ---------- Fatos: aprovado e parado, sem virar peça nenhuma ----------
+           A pergunta "o que foi feito com o fato" só tem resposta se ficar sem
+           resposta doer. Aprovar sem marcar saída é legítimo — decidir depois é
+           normal —, mas passar de 48h assim é o fato morrendo em silêncio, que é
+           exatamente o que o status 'arquivado' existe para evitar. */
+        $parados = array_values(array_filter(
+            fatos_com_status('ok-checado'),
+            fn ($f) => saidas_do_fato($f['id']) === [] && horas_esperando($f) >= HORAS_SEM_SAIDA
+        ));
+        if ($parados !== []) {
+            $quantos = count($parados);
+            $tarefas[] = [
+                'area'    => 'fatos',
+                'icone'   => 'search',
+                'urgente' => false,
+                'quantos' => $quantos,
+                'texto'   => $quantos === 1
+                    ? 'Decidir o que fazer com 1 fato aprovado'
+                    : "Decidir o que fazer com {$quantos} fatos aprovados",
+                'porque'  => 'passaram da checagem e não viraram peça nenhuma — abra uma saída ou arquive com o motivo',
+                'url'     => '/painel/fatos.php?aba=decididos#checados',
+            ];
+        }
+
+    return $tarefas;
+}
+
+/**
+ * Os medidores de `fatos` — o retrato do time inteiro, para Leituras › Semana
+ * e para a linha "A operação hoje" do Início. Formato em `panorama_de()`.
+ */
+function medidores_fatos(array $u): array
+{
+    require_once __DIR__ . '/agora.php';  // HORAS_SEM_SAIDA, degrau_de_prazo(), data_curta(), apelido_curto()
+    $medidores = [];
+
+        /* ---------- Checagem: a fila e a idade dela ---------- */
+        require_once __DIR__ . '/fatos-comum.php';
+        require_once __DIR__ . '/producao-comum.php';
+
+        $fila = fatos_com_status('a-checar');
+        $horas = 0;
+        foreach ($fila as $f) {
+            $horas = max($horas, horas_esperando($f));
+        }
+        $medidores[] = [
+            'num'    => (string) count($fila),
+            'rotulo' => 'Na checagem',
+            'nota'   => $fila === []
+                ? 'Fila zerada — nada dorme sem status.'
+                : ($horas >= 2
+                    ? "O mais antigo está parado há {$horas}h; o prazo é 2h."
+                    : 'Dentro do prazo de 2h.'),
+            /* Fila vazia é ok mesmo quando o relógio não correu ainda: o que
+               pinta o medidor é a idade do mais antigo, e sem fila não há
+               idade nenhuma. */
+            'estado' => $fila === [] ? 'ok' : degrau_de_prazo($horas, 2),
+            'url'    => '/painel/fatos.php#fila',
+        ];
+
+        /* Aprovado e sem virar peça: o vão entre "decidido" e "feito". */
+        $parados = array_filter(
+            fatos_com_status('ok-checado'),
+            fn ($f) => saidas_do_fato($f['id']) === []
+        );
+        $velho = 0;
+        foreach ($parados as $f) {
+            $velho = max($velho, horas_esperando($f));
+        }
+        $medidores[] = [
+            'num'    => (string) count($parados),
+            'rotulo' => 'Sem saída',
+            'nota'   => $parados === []
+                ? 'Todo fato aprovado virou peça ou foi arquivado.'
+                : 'Passaram da checagem e não viraram peça — abra uma saída ou arquive.',
+            'estado' => $parados === [] ? 'ok' : degrau_de_prazo($velho, HORAS_SEM_SAIDA),
+            'url'    => '/painel/fatos.php?aba=decididos#checados',
+        ];
+
+    return $medidores;
+}
+
+/** Uma linha sobre como está o trabalho em `fatos`, para a mesa do Início. */
+function estado_fatos(array $u): string
+{
+    require_once __DIR__ . '/agora.php';  // HORAS_SEM_SAIDA, degrau_de_prazo(), data_curta(), apelido_curto()
+        require_once __DIR__ . '/fatos-comum.php';
+        $fila = fatos_esperando();
+        $meus = count(array_filter(
+            fatos_com_status('ok-checado'),
+            fn ($f) => $f['autorId'] === $u['id']
+        ));
+        if ($fila === 0 && $meus === 0) {
+            return 'Nenhum fato na fila. Duas varreduras por dia: de manhã e no fim da tarde.';
+        }
+        $partes = [];
+        if ($fila > 0) {
+            $partes[] = $fila === 1 ? '1 fato esperando checagem' : "{$fila} fatos esperando checagem";
+        }
+        if ($meus > 0) {
+            $partes[] = $meus === 1 ? '1 fato seu já aprovado' : "{$meus} fatos seus já aprovados";
+        }
+        return implode(' · ', $partes);
+}

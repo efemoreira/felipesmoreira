@@ -18,7 +18,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/agenda-comum.php';
 require_once __DIR__ . '/eventos-comum.php';  // a importação cria encontros
-require_once __DIR__ . '/sessao.php';
+require_once __DIR__ . '/acoes-comum.php';  // avisar(), ir_para() — e o sessao.php junto
 
 
 /**
@@ -138,11 +138,11 @@ function tratar_acoes_de_agenda(): array
 
         if ($quantos > 0 && gravar_eventos($eventos)) {
             republicar_agenda();
-            $_SESSION['recado'] = ['tipo' => 'ok', 'texto' => $quantos . ' item(ns) viraram encontros. Confira a família de cada um.'];
+            avisar('ok', $quantos . ' item(ns) viraram encontros. Confira a família de cada um.');
         } elseif ($quantos === 0) {
-            $_SESSION['recado'] = ['tipo' => 'ok', 'texto' => 'Nada a importar — tudo que estava na agenda já tem encontro.'];
+            avisar('ok', 'Nada a importar — tudo que estava na agenda já tem encontro.');
         } else {
-            $_SESSION['recado'] = ['tipo' => 'erro', 'texto' => 'Não consegui gravar em /dados.'];
+            avisar('erro', 'Não consegui gravar em /dados.');
         }
         header('Location: /painel/agenda.php', true, 302);
         exit;

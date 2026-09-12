@@ -18,13 +18,8 @@ declare(strict_types=1);
  */
 
 require_once __DIR__ . '/agenda-comum.php';  // o relógio e o pipeline de imagem
-require_once __DIR__ . '/sessao.php';  // h(), limpar_texto(), pode(), combina_com() — o núcleo
+require_once __DIR__ . '/acoes-comum.php';  // avisar(), ir_para(), exigir_token_de_acao() — e o sessao.php junto
 require_once __DIR__ . '/candidatos-comum.php';
-
-function avisar(string $tipo, string $texto): void
-{
-    $_SESSION['recado'] = ['tipo' => $tipo, 'texto' => $texto];
-}
 
 /**
  * Volta para a aba de onde a ação saiu.
@@ -35,20 +30,14 @@ function avisar(string $tipo, string $texto): void
  */
 function voltar(string $aba = 'candidatos'): void
 {
-    header('Location: /painel/candidatos.php?aba=' . urlencode($aba), true, 302);
-    exit;
+    ir_para('/painel/candidatos.php?aba=' . urlencode($aba));
 }
 
 /** Trata o POST desta tela, se houver um. Não volta quando de fato agiu. */
 function tratar_acoes_de_candidato(): void
 {
     if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
-        if (!token_valido()) {
-            avisar('erro', 'Sessão expirada. Entre de novo.');
-            derrubar_sessao();
-            header('Location: /painel/', true, 302);
-            exit;
-        }
+        exigir_token_de_acao();
 
         $acao = (string) ($_POST['acao'] ?? '');
 

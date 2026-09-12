@@ -29,6 +29,9 @@ RewriteRule ^painel/pessoas/?$ /painel/pessoas.php [L]
 RewriteRule ^painel/caixa/?$ /painel/caixa.php [L]
 RewriteRule ^painel/procurar/?$ /painel/procurar.php [L]
 RewriteRule ^painel/conta/?$ /painel/conta.php [L]
+RewriteRule ^painel/gente/?$ /painel/gente.php [L]
+RewriteRule ^painel/ajuda/?$ /painel/ajuda.php [L]
+RewriteRule ^painel/leituras/?$ /painel/leituras.php [L]
 RewriteRule ^painel/manutencao/?$ /painel/manutencao.php [L]
 # ===== Prévia do link de presença (WhatsApp, Telegram, Facebook…) =====
 # O site é estático: existe UM presenca.html para todos os encontros, e
