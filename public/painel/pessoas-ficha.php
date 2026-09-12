@@ -327,7 +327,7 @@ function tela_da_ficha(array $aberta, ?array $editando, ?string $erro, ?string $
     </div>
   <?php endif; ?>
 
-  <?php barra_abas($abas, $aba, 'aba', 'Seções da ficha'); ?>
+  <?php barra_abas($abas, $aba, 'aba', 'Seções da ficha', ['p']); ?>
 
   <?php if ($aba === 'ficha'): ?>
     <fieldset id="ficha">

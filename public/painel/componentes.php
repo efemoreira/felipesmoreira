@@ -35,7 +35,7 @@ require_once __DIR__ . '/icones.php';
  * A aba aberta é um `<span aria-current>`, e não um link — link que leva ao
  * lugar onde já se está é ruído para quem navega por teclado ou leitor de tela.
  */
-function barra_abas(array $abas, string $atual, string $param = 'aba', string $rotulo = 'Abas'): void
+function barra_abas(array $abas, string $atual, string $param = 'aba', string $rotulo = 'Abas', array $manter = []): void
 {
     $base = strtok((string) ($_SERVER['REQUEST_URI'] ?? ''), '?');
     ?>
@@ -45,9 +45,17 @@ function barra_abas(array $abas, string $atual, string $param = 'aba', string $r
         $qs = $_GET;
         /* Trocar de aba fecha o que estava aberto por cima dela: modal e ficha
            são estado de uma aba só, e carregá-los para a outra abre um
-           formulário no meio de uma tela que fala de outra coisa. */
-        unset($qs['p'], $qs['c'], $qs['novo'], $qs['nova'], $qs['editar'],
-              $qs['pessoa'], $qs['puxar']);
+           formulário no meio de uma tela que fala de outra coisa.
+
+           `$manter` é a exceção de quem É a coisa aberta: na ficha de pessoa
+           (`pessoas?p=`) as abas são da ficha, e tirar o `p` mandava cada
+           clique de volta para a lista — desde que a ficha virou tela
+           própria, em 10/09, até a fumaça pegar. */
+        foreach (['p', 'c', 'novo', 'nova', 'editar', 'pessoa', 'puxar'] as $solto) {
+            if (!in_array($solto, $manter, true)) {
+                unset($qs[$solto]);
+            }
+        }
         $qs[$param] = $chave;
         $url = $base . '?' . http_build_query($qs);
         $conta = $aba['conta'] ?? null;
