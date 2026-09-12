@@ -41,3 +41,15 @@ describe("og: toda rota indexável tem cartão e twitter", () => {
     });
   }
 });
+
+describe("a porta do painel está no site", () => {
+  /* Quem tinha conta só achava /painel/ digitando a URL — foi a reclamação.
+     A home e a Munição levam lá, embaixo, para quem já é do movimento. */
+  for (const f of ["src/features/home/Home.tsx", "src/features/kit/KitClient.tsx"]) {
+    test(`${f} liga para /painel/`, () => {
+      const src = readFileSync(path.join(RAIZ, f), "utf8");
+      assert.match(src, /href="\/painel\/"/, `${f} sem o link 'Área do militante'`);
+      assert.match(src, /Área do militante/);
+    });
+  }
+});

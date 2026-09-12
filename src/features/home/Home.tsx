@@ -293,6 +293,20 @@ export default function Home() {
           >
             @moreiramissao · © {new Date().getFullYear()} Felipe Moreira
           </p>
+          {/* A PORTA DE QUEM JÁ É DO MOVIMENTO. Embaixo, discreta, e no site
+              público — porque quem tinha conta só achava o painel digitando a
+              URL, e "a área do militante não tem link" foi a reclamação que
+              chegou. Não é CTA de eleitor: é o caminho de volta de quem já
+              entrou. */}
+          <nav aria-label="Área do militante" className="cordel-militante-nav">
+            <a href="/painel/" className="cordel-militante">
+              <Icon name="users" size={16} />
+              Área do militante
+            </a>
+            <Link href="/aulas" className="cordel-militante">
+              Formação
+            </Link>
+          </nav>
         </footer>
       </main>
 
@@ -303,6 +317,18 @@ export default function Home() {
         .cordel-social { transition: transform .12s ease, box-shadow .12s ease; }
         .cordel-social:hover { transform: translate(-2px,-2px); box-shadow: ${sombraErguida("rente")}; }
         .cordel-social:active { transform: translate(2px,2px); box-shadow: ${sombraAfundada("rente")}; }
+        .cordel-militante-nav {
+          display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap; justify-content: center;
+          margin-top: 18px; padding: 2px 8px;
+          background: rgba(20,17,12,.82); border: ${bordaFina(C.ink)};
+        }
+        .cordel-militante {
+          display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 10px;
+          font-family: ${FONT_ELITE}; font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
+          color: ${C.gold2}; text-decoration: none;
+        }
+        .cordel-militante + .cordel-militante { border-left: ${bordaFina("rgba(255,203,5,.3)")}; }
+        .cordel-militante:hover { text-decoration: underline; }
         .cordel-card:focus-visible, .cordel-social:focus-visible { outline: ${BORDA}px solid #FFCB05; outline-offset: 3px; }
         @keyframes cordelIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
         main > * { animation: cordelIn .5s ease-out backwards; }

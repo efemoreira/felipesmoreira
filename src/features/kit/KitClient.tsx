@@ -459,6 +459,15 @@ export default function KitClient() {
             </li>
           </ol>
         </section>
+
+        {/* A Munição é a ferramenta do militante; o painel é a casa dele. O
+            caminho de um para o outro estava só na URL. */}
+        <p style={{ marginTop: 30, textAlign: "center" }}>
+          <a href="/painel/" style={{ ...voltar, color: C.gold2 }}>
+            <Icon name="users" size={16} />
+            Área do militante
+          </a>
+        </p>
       </div>
 
       <style>{`
