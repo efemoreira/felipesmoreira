@@ -5,6 +5,7 @@ movido para docs para reduzir custo de contexto no início das sessões.
 
 ## Onde ler o detalhe
 
+- `docs/comece-aqui.md` — o primeiro dia: rodar, testar, publicar, vocabulário.
 - `docs/arquitetura-completa.md` — mapa curto da arquitetura.
 - `docs/arquitetura-referencia.md` — referência longa/histórica, quando o rational completo importar.
 - `docs/painel.md` — operação do painel PHP, dados e fluxos administrativos.

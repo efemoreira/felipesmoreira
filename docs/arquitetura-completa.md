@@ -5,6 +5,10 @@ quebrado por tema para reduzir custo de leitura e facilitar busca por assunto.
 
 ## Como ler a arquitetura
 
+- `docs/comece-aqui.md`
+  No primeiro dia: rodar o site e o painel, testar, publicar, o vocabulário
+  e o fluxo central desenhado.
+
 - `docs/site-publico.md`
   Quando a tarefa tocar em rotas públicas, `src/`, tema, programação,
   candidatos públicos, Munição ou responsividade do site.

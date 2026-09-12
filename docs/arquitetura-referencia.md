@@ -5,7 +5,28 @@ arquitetura.
 
 Use este documento quando precisar do rational completo, dos exemplos mais
 longos ou do histórico de decisões palavra por palavra. Para o trabalho normal,
-prefira os docs temáticos:
+prefira os docs temáticos (e `docs/comece-aqui.md` no primeiro dia):
+
+## Leia isto quando…
+
+| …a tarefa tocar em | seção |
+| --- | --- |
+| por que Next estático + PHP, e não outra coisa | Stack e por quê |
+| a pasta `src/`, o Estúdio (Konva/MediaPipe) | Estrutura de `src/` |
+| um endpoint novo, onde guardar dado pessoal | O contrato Next.js ↔ PHP |
+| chapa, número, `/propostas` | A candidatura e as propostas |
+| peças, calendário eleitoral, colinha, peça sem deploy | A Munição |
+| agenda, pôster, semana de domingo a sábado | A agenda |
+| catálogo de funções, `funcoes.json` | Funções da militância |
+| WhatsApp, grupo, e-mail | Os canais de contato |
+| pessoas, capacidades, duplicatas, migração antiga | Uma pessoa, e não quatro cadastros |
+| inscrição, Dia 0, presença, os 4 obrigatórios, origem | Fluxo de entrada de militante |
+| celular, três temas, navegação do painel | Responsividade · Visual do painel |
+| onde fica a trava de editar/remover, linha do tempo sem log | Visual do painel (permissões) |
+| a forma de um fluxo público | Como um fluxo público se divide |
+| slug, acento, nome de arquivo | Convenção de nomes |
+| por que os testes são assim | Os testes |
+| as quatro regras do `.htaccess` e como foram descobertas | O que não mexer sem perguntar |
 
 - `docs/site-publico.md`
 - `docs/dominio-e-fluxos.md`

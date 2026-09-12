@@ -4,6 +4,21 @@
 
 - O backend real está em `public/painel/`.
 - Endpoints novos reaproveitam `sessao.php`.
+## O fluxo central, desenhado
+
+```mermaid
+flowchart LR
+  Q["/queroajudar"] -->|api/inscricao.php| P["Pessoa · pendente"]
+  E["/presenca (QR ou link)"] -->|api/presenca.php| P
+  E --> PR["Presença (pessoa × encontro)"]
+  P -->|"Inscrições › Aprovar"| A["Pessoa aprovada, com conta"]
+  A -->|"/aulas · trilhas.php"| F["Formação"]
+  F --> M["Militante em função"]
+  PR -->|"funil D+0 · D+3 · D+7"| A
+  M -->|"?de="| Q
+  P & PR & A & F -.-> L["Leituras (derivado)"]
+```
+
 - Chamadas do Next passam por `@/lib/api/client.ts` (`apiFetch`), com um
   wrapper por endpoint em `src/lib/api/`. A única leitura fora dele é o
   `agenda.json` da programação, que é arquivo estático, não API.
