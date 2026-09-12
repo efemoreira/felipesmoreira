@@ -212,6 +212,9 @@ abrir_pagina('Pessoas');
             Baixar CSV (<?= count($todas) ?>)
           </a>
           <span>o recorte de cima, em planilha — abre no Excel e no Google Planilhas</span>
+          <?php if (e_admin()): ?>
+            <a class="btn btn-mini" href="/painel/importar.php">Importar uma planilha</a>
+          <?php endif; ?>
         </p>
       <?php endif; ?>
     <?php endif; ?>

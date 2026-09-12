@@ -190,6 +190,7 @@ teste.
 - `/painel/conta`
 - `/painel/gente` — tela pessoal de quem acompanha alguém (`pode_liderar()`), não é área
 - `/painel/ajuda` — cada tela em três frases e o glossário; gerada de `dominio.php` + `ajuda-comum.php`
+- `/painel/importar` — CSV de gente em dois passos (prévia linha a linha, depois grava o marcado); só `adm`; telefone é a chave
 - `/painel/exportar` — CSV de pessoas (o recorte da lista), presenças de um encontro e um caixa; só GET, capacidade `coordenacao` (caixa só `adm`)
 
 Os endpoints em `public/painel/api/` continuam sendo chamados pelo caminho real,
