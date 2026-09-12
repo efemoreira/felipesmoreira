@@ -156,3 +156,143 @@ function trilha_da_funcao(string $funcaoId): array
     ];
     return $memo[$funcaoId];
 }
+
+/* ===================== os primeiros passos ===================== */
+
+/**
+ * Os três primeiros passos de quem acabou de chegar — e se cada um já foi dado.
+ *
+ * O hub inteiro (mesas, fila, encontros, formação, atividade) é a tela certa
+ * para quem já trabalha aqui. Para quem foi aprovada ontem, é ruído: dez
+ * blocos e nenhuma resposta para "o que eu faço primeiro?". A trilha mínima
+ * já dizia (grupo → aula → ferramenta); o que faltava era o hub abrir com ELA
+ * enquanto não estiver completa, e só com ela.
+ *
+ * O terceiro passo é derivado do que a pessoa já gravou — um fato trazido,
+ * um card assumido, uma presença marcada, uma peça postada. Sem função com
+ * ferramenta, o terceiro passo é o mutirão: é o que gente aprovada esta
+ * semana consegue fazer sem depender de ninguém.
+ */
+function primeiros_passos(array $u): array
+{
+    require_once __DIR__ . '/aulas-comum.php';   // aulas_concluidas(), retrato_de_estudo()
+
+    /* 1. o grupo */
+    $passos = [[
+        'chave' => 'grupo',
+        'titulo' => 'Entrar no grupo de trabalho',
+        'porque' => 'É por ali que sai a convocação da semana.',
+        'url'    => '/painel/#grupo',
+        'feito'  => !empty($u['entrouNoGrupo']),
+    ]];
+
+    /* 2. a aula da função — a primeira função que tem uma; senão, a primeira
+          aula que ela concluir vale */
+    $trilha = null;
+    foreach ($u['funcoes'] as $f) {
+        $t = trilha_da_funcao($f);
+        if ($t['aula'] !== null) {
+            $trilha = $t;
+            break;
+        }
+    }
+    $concluidas = aulas_concluidas($u['id']);
+    $passos[] = $trilha !== null
+        ? [
+            'chave'  => 'aula',
+            'titulo' => 'Fazer a aula: ' . $trilha['aula']['titulo'],
+            'porque' => $trilha['aula']['minutos'] > 0
+                ? $trilha['aula']['minutos'] . ' minutos — é o que a sua função precisa saber primeiro.'
+                : 'É o que a sua função precisa saber primeiro.',
+            'url'    => '/aulas#' . $trilha['aula']['id'],
+            'feito'  => in_array($trilha['aula']['id'], $concluidas, true),
+        ]
+        : [
+            'chave'  => 'aula',
+            'titulo' => 'Fazer a primeira aula',
+            'porque' => 'O Dia 0 explica como esta formação funciona.',
+            'url'    => '/aulas',
+            'feito'  => $concluidas !== [],
+        ];
+
+    /* 3. a primeira coisa na mesa */
+    $ferramenta = $trilha['ferramenta'] ?? null;
+    if ($ferramenta !== null && pode($ferramenta['area'])) {
+        $passos[] = [
+            'chave'  => 'mesa',
+            'titulo' => $ferramenta['acao'] . ' em ' . $ferramenta['nome'],
+            'porque' => 'A sua mesa. A primeira vez é a que conta.',
+            'url'    => $ferramenta['url'],
+            'feito'  => ja_fez_algo_em($ferramenta['area'], $u['id']),
+        ];
+    } else {
+        require_once __DIR__ . '/kit-comum.php';
+        $mutirao = mutirao_da_semana();
+        $passos[] = [
+            'chave'  => 'mesa',
+            'titulo' => 'Postar a peça da semana',
+            'porque' => 'O mutirão não depende de ninguém: a peça já vem pronta.',
+            'url'    => '/painel/#peca',
+            'feito'  => ($mutirao['escalados'][$u['id']] ?? '') === 'postou',
+        ];
+    }
+
+    return $passos;
+}
+
+/** A pessoa já deixou rastro nesta ferramenta? Derivado do que está gravado. */
+function ja_fez_algo_em(string $area, string $uid): bool
+{
+    switch ($area) {
+        case 'fatos':
+            require_once __DIR__ . '/fatos-comum.php';
+            foreach (ler_fatos() as $f) {
+                if ($f['autorId'] === $uid) {
+                    return true;
+                }
+            }
+            return false;
+        case 'producao':
+            require_once __DIR__ . '/producao-comum.php';
+            foreach (ler_cards() as $c) {
+                if ($c['donoId'] === $uid) {
+                    return true;
+                }
+            }
+            return false;
+        case 'eventos':
+            require_once __DIR__ . '/eventos-comum.php';
+            foreach (ler_presencas() as $l) {
+                if ($l['criadoPorId'] === $uid) {
+                    return true;
+                }
+            }
+            foreach (ler_eventos() as $e) {
+                if (($e['criadoPor'] ?? '') === $uid) {
+                    return true;
+                }
+            }
+            return false;
+        case 'municao':
+            require_once __DIR__ . '/kit-comum.php';
+            foreach (ler_mutirao() as $semana) {
+                if (($semana['escalados'][$uid] ?? '') === 'postou') {
+                    return true;
+                }
+            }
+            return false;
+        default:
+            return false;
+    }
+}
+
+/** Todos os três passos dados? Aí o hub inteiro é a tela certa. */
+function trilha_completa(array $u): bool
+{
+    foreach (primeiros_passos($u) as $p) {
+        if (!$p['feito']) {
+            return false;
+        }
+    }
+    return true;
+}
