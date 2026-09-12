@@ -64,7 +64,7 @@ function bloco_fila(array $fila, array $eu, string $buscaFa, callable $quando): 
         <dl class="ficha-dados">
           <div><dt>Quem</dt><dd><?= h($f['quem']) ?></dd></div>
           <?php if ($f['quando'] !== ''): ?>
-            <div><dt>Quando</dt><dd><?= h($f['quando']) ?></dd></div>
+            <div><dt>Quando</dt><dd><?= h(data_humana($f['quando'])) ?></dd></div>
           <?php endif; ?>
           <?php if ($f['quanto'] !== ''): ?>
             <div><dt>Quanto</dt><dd><?= h($f['quanto']) ?></dd></div>
@@ -73,7 +73,7 @@ function bloco_fila(array $fila, array $eu, string $buscaFa, callable $quando): 
             <div><dt>Afetados</dt><dd><?= h($f['afetados']) ?></dd></div>
           <?php endif; ?>
           <div class="ficha-funcoes">
-            <dt>Fonte<?= $f['fonteData'] !== '' ? ' · ' . h($f['fonteData']) : '' ?></dt>
+            <dt>Fonte<?= $f['fonteData'] !== '' ? ' · ' . h(data_humana($f['fonteData'])) : '' ?></dt>
             <dd><a href="<?= h($f['fonteUrl']) ?>" target="_blank" rel="noopener noreferrer"><?= h($f['fonteUrl']) ?></a></dd>
           </div>
           <?php if ($f['segundaFonte'] !== ''): ?>
@@ -101,18 +101,17 @@ function bloco_fila(array $fila, array $eu, string $buscaFa, callable $quando): 
                  depois da Checagem a ficha vira registro do que ela viu. Pelo
                  mesmo motivo do bloco acima, quem não pode nem vê os botões. */ ?>
         <?php if (posso_mexer($f, $eu)): ?>
-          <div class="acoes" style="margin:0 0 12px">
-            <?php /* O `aba=fila` no link não é enfeite: `botao_modal()` monta a URL do
-                     zero, e sem ele a correção abriria numa tela recém-recarregada
-                     na aba padrão — que por sorte é esta, mas deixaria de ser no
-                     dia em que o padrão mudasse. */ ?>
-            <?php botao_modal('corrigir-fato', 'Corrigir a ficha', 'aba=fila&editar=' . urlencode($f['id']) . '#fila', 'btn btn-mini'); ?>
-            <form method="post" style="display:inline"
-                  data-confirmar="Apagar esta ficha da fila? Ela não foi decidida, então nada aponta para ela — mas não tem desfazer.">
-              <input type="hidden" name="csrf" value="<?= h(token()) ?>">
-              <input type="hidden" name="id" value="<?= h($f['id']) ?>">
-              <button type="submit" class="btn btn-mini btn-risco" name="acao" value="apagar">Apagar</button>
-            </form>
+          <?php /* Um botão visível por ficha é o teto (a régua do celular); o
+                   resto vai para os três pontinhos — e "Apagar", que é risco,
+                   deixa de ficar em vermelho ao lado do que se usa todo dia.
+                   O `aba=fila` no link não é enfeite: sem ele a correção abriria
+                   na aba padrão, que por sorte é esta. */ ?>
+          <div class="acoes-celula" style="margin:0 0 12px">
+            <?php menu_acoes([
+                ['texto' => 'Corrigir a ficha', 'url' => '?aba=fila&editar=' . urlencode($f['id']) . '#fila', 'modal' => 'corrigir-fato'],
+                ['texto' => 'Apagar', 'acao' => 'apagar', 'campos' => ['id' => $f['id']], 'risco' => true,
+                 'confirmar' => 'Apagar esta ficha da fila? Ela não foi decidida, então nada aponta para ela — mas não tem desfazer.'],
+            ]); ?>
           </div>
         <?php endif; ?>
         <?php if ($meu && !e_admin()): ?>

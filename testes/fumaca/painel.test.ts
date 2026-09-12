@@ -138,3 +138,17 @@ describe("fumaça: o hub cabe em poucos blocos", () => {
     assert.ok(cartoes <= 3, `${cartoes} cartões na lateral — a régua é três (gente, peça, grupo)`);
   });
 });
+
+describe("fumaça: a ficha do fato na fila", () => {
+  test("um botão visível por ficha; corrigir e apagar atrás dos três pontinhos; data legível", () => {
+    const { html } = painel.abrir("fatos", "");
+    const ficha = html.slice(html.indexOf('class="ficha'), html.indexOf("Checar este fato"));
+    assert.match(ficha, /<details class="menu-acoes">/, "as ações da ficha não estão no menu");
+    const antesDoMenu = ficha.slice(0, ficha.indexOf('<details class="menu-acoes">'));
+    assert.doesNotMatch(antesDoMenu, />Apagar</, "Apagar visível fora do menu");
+    assert.doesNotMatch(antesDoMenu, />Corrigir a ficha</, "Corrigir visível fora do menu");
+    /* A semente grava "2026-08-20" no Quando; a tela mostra 20/08/2026. */
+    assert.match(html, /20\/08\/2026/, "a data do fato saiu em ISO");
+    assert.doesNotMatch(html, /<dd>2026-08-20<\/dd>/);
+  });
+});

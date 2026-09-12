@@ -48,6 +48,20 @@ function so_digitos($v): string
  * inteiro. O equivalente no JavaScript é `normalize("NFD")`, que o Unicode
  * define e que dá o mesmo resultado em qualquer máquina.
  */
+/**
+ * "20/08/2026" a partir de "2026-08-20" — e o que não for data ISO volta como
+ * veio ("agosto de 2024", "semana passada"). O campo "Quando" do fato é texto
+ * livre porque nem todo fato tem dia; quando tem, o Olheiro digitou no
+ * `<input type="date">`, que grava ISO — e ISO não se lê em voz alta.
+ */
+function data_humana(string $texto): string
+{
+    if (preg_match('/^(\d{4})-(\d{2})-(\d{2})/', $texto, $m) === 1) {
+        return "{$m[3]}/{$m[2]}/{$m[1]}";
+    }
+    return $texto;
+}
+
 function sem_acento(string $texto): string
 {
     return strtr($texto, [
