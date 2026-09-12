@@ -23,9 +23,9 @@ Regras:
 - `src/app/<rota>/page.tsx` só faz metadata + delegação.
 - Estado e efeitos ficam em `features/`.
 - Conteúdo tipado pode morar em `features/<nome>/data.ts`.
-- Exceções hoje, registradas e não modelo: a home (`src/app/page.tsx`, com
-  perfil e cartões inline) e `privacy`/`terms` (texto na própria page). O
-  plano em `update/` prevê movê-las para `features/`.
+- A home mora em `features/home/` (`Home.tsx` + `data.ts`) e os textos
+  legais em `features/legal/{privacidade,termos}.ts` desde 12/09 — nenhuma
+  rota é exceção à regra.
 - O Estúdio é exceção: é um produto à parte em `src/app/painel/estudio/`.
 - Toda rota do sitemap (fora as legais) tem `opengraph-image.tsx` próprio e
   `twitter` espelhando o `openGraph` — o X não herda do openGraph.

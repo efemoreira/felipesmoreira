@@ -130,7 +130,7 @@ describe("fontes únicas: o número de funções sai do catálogo", () => {
      e a própria página imprimia "17 funções" logo abaixo do cartão que dizia
      12. Quem cita o número deriva de `catalogo.funcoes.length`. */
   const arquivos = [
-    "src/app/page.tsx",
+    "src/features/home/data.ts",
     "src/app/funcoes/page.tsx",
     "src/app/funcoes/opengraph-image.tsx",
     "src/features/funcoes/Funcoes.tsx",
