@@ -54,12 +54,21 @@ before(() => {
   /* Um encontro HOJE, no fuso do Ceará. A hora sai de `diaDe()` — a mesma
      função que o painel usa para recortar — e não de `new Date()` cru: quem
      roda o teste às 23h de outro fuso já está no dia seguinte, e o encontro
-     "de hoje" nasceria fora de hoje. */
+     "de hoje" nasceria fora de hoje.
+
+     E fica no FIM do dia, não às 10h: semeado de manhã, depois do almoço ele
+     já era `passado` para o painel, o hub deixava de anunciá-lo (certo) e o
+     teste ficava vermelho só à tarde. Em hora de parede do Ceará, não em
+     `toISOString()`: `inicio_iso()` lê os dígitos e carimba o fuso, e 23:59
+     em UTC é 02:59 de amanhã. */
+  const ymd = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Fortaleza", year: "numeric", month: "2-digit", day: "2-digit",
+  }).format(diaDe(new Date()).inicio);
   encontros.push({
     id: "ev-hoje",
     titulo: "Mutirão de hoje no Montese",
     familia: "militancia",
-    inicio: new Date(diaDe(new Date()).inicio.getTime() + 10 * 3_600_000).toISOString(),
+    inicio: `${ymd}T23:59:00-03:00`,
     local: "Montese",
     status: "confirmado",
     criadoEm: "2026-01-01T10:00:00-03:00",
