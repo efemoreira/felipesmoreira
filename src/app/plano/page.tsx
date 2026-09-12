@@ -16,6 +16,11 @@ export const metadata: Metadata = {
     title: "O Plano — Missão Ceará",
     description: "De grupo de WhatsApp à militância mais organizada do Ceará.",
   },
+  /* O X não herda do openGraph: sem isto o cartão dele mostra o título da raiz. */
+  twitter: {
+    title: "O Plano — Missão Ceará",
+    description: "De grupo de WhatsApp à militância mais organizada do Ceará.",
+  },
 };
 
 export default function PlanoPage() {

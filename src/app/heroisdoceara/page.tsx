@@ -12,6 +12,12 @@ export const metadata: Metadata = {
     description:
       "Cordel dos que fizeram nossa história: da fundação do Ceará à cultura que o mundo conhece.",
   },
+  /* O X não herda do openGraph: sem isto o cartão dele mostra o título da raiz. */
+  twitter: {
+    title: "Heróis do Ceará — Missão Ceará",
+    description:
+      "Cordel dos que fizeram nossa história: da fundação do Ceará à cultura que o mundo conhece.",
+  },
 };
 
 /**

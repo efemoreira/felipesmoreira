@@ -11,6 +11,12 @@ export const metadata: Metadata = {
     description:
       "Sete compromissos com meta, prazo e de onde vem o recurso. Escrito para ser cobrado.",
   },
+  /* O X não herda do openGraph: sem isto o cartão dele mostra o título da raiz. */
+  twitter: {
+    title: "Retomar para Reconstruir — o plano de governo",
+    description:
+      "Sete compromissos com meta, prazo e de onde vem o recurso. Escrito para ser cobrado.",
+  },
 };
 
 export default function PropostasPage() {

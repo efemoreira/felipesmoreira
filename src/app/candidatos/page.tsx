@@ -9,6 +9,15 @@ export const metadata: Metadata = {
     "Os candidatos da Missão no Ceará: nome de urna, cargo, número e perfil de cada um. "
     + "Monte a colinha e leve o número para a urna.",
   alternates: { canonical: "https://felipesmoreira.com/candidatos" },
+  openGraph: {
+    title: "Em que número votar — os candidatos da Missão no Ceará",
+    description: "Nome de urna, cargo e número de cada candidato. Monte a colinha e leve para a urna.",
+  },
+  /* O X não herda do openGraph: sem isto o cartão dele mostra o título da raiz. */
+  twitter: {
+    title: "Em que número votar — os candidatos da Missão no Ceará",
+    description: "Nome de urna, cargo e número de cada candidato. Monte a colinha e leve para a urna.",
+  },
 };
 
 export default function CandidatosPage() {

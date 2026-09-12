@@ -17,6 +17,12 @@ export const metadata: Metadata = {
     description:
       "Todas as lives e conteúdos da semana de Felipe Moreira: dia, horário e plataforma.",
   },
+  /* O X não herda do openGraph: sem isto o cartão dele mostra o título da raiz. */
+  twitter: {
+    title: "Programação da Semana — Missão Ceará",
+    description:
+      "Todas as lives e conteúdos da semana de Felipe Moreira: dia, horário e plataforma.",
+  },
 };
 
 export default function ProgramacaoPage() {

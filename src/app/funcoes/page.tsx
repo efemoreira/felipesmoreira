@@ -16,6 +16,12 @@ export const metadata: Metadata = {
     description:
       "Cada função diz o que você entrega e quanto tempo pede, antes de você decidir. Tem lugar pra quem tem dez horas por semana e pra quem tem trinta minutos.",
   },
+  /* O X não herda do openGraph: sem isto o cartão dele mostra o título da raiz. */
+  twitter: {
+    title: "O que dá pra fazer na militância — Missão Ceará",
+    description:
+      "Cada função diz o que você entrega e quanto tempo pede, antes de você decidir. Tem lugar pra quem tem dez horas por semana e pra quem tem trinta minutos.",
+  },
 };
 
 export default function FuncoesPage() {

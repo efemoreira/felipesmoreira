@@ -1,4 +1,6 @@
 import { ImageResponse } from "next/og";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 
 /**
  * O cartão que aparece quando alguém cola um link do site no WhatsApp.
@@ -8,9 +10,11 @@ import { ImageResponse } from "next/og";
  * internet a militante de rua") desperdiça a única linha que o WhatsApp mostra.
  * Cada rota diz do que ela trata.
  *
- * **Sem fonte carregada de propósito.** O `next/og` teria que baixar e embutir
- * o woff de Alfa Slab One a cada geração; a família do sistema já dá o peso que
- * o cartão precisa, e a identidade aqui é carregada pela moldura e pelo ouro.
+ * **As fontes são as do site**, lidas do disco no build (`src/lib/fontes/`,
+ * TTF sob a OFL — o Satori não lê woff2). Ficou um tempo em sans do sistema
+ * "porque a moldura e o ouro carregam a identidade"; carregavam, menos no
+ * lugar em que o cartão mais circula, o WhatsApp, onde só o título aparece.
+ * Todo cartão é `force-static`: a leitura acontece uma vez, na exportação.
  * As cores são as de `theme.ts`, escritas à mão porque este módulo roda no
  * runtime de imagem e não no navegador.
  */
@@ -31,7 +35,20 @@ export interface CartaoOG {
   linha?: string;
 }
 
-export function cartaoOG({ kicker, titulo, linha }: CartaoOG) {
+const PASTA_FONTES = path.join(process.cwd(), "src/lib/fontes");
+
+async function fontes() {
+  const [alfa, bitter] = await Promise.all([
+    readFile(path.join(PASTA_FONTES, "AlfaSlabOne-Regular.ttf")),
+    readFile(path.join(PASTA_FONTES, "Bitter-Regular.ttf")),
+  ]);
+  return [
+    { name: "Alfa Slab One", data: alfa, weight: 400 as const, style: "normal" as const },
+    { name: "Bitter", data: bitter, weight: 400 as const, style: "normal" as const },
+  ];
+}
+
+export async function cartaoOG({ kicker, titulo, linha }: CartaoOG) {
   return new ImageResponse(
     (
       <div
@@ -44,7 +61,7 @@ export function cartaoOG({ kicker, titulo, linha }: CartaoOG) {
           justifyContent: "center",
           background: "linear-gradient(160deg, #14110C 0%, #241C10 55%, #3A2A16 100%)",
           color: CREME,
-          fontFamily: "sans-serif",
+          fontFamily: "Bitter, serif",
           position: "relative",
         }}
       >
@@ -82,8 +99,9 @@ export function cartaoOG({ kicker, titulo, linha }: CartaoOG) {
 
         <div
           style={{
+            fontFamily: "Alfa Slab One, serif",
             fontSize: titulo.length > 26 ? 78 : 104,
-            fontWeight: 900,
+            fontWeight: 400,
             marginTop: 28,
             color: OURO,
             textShadow: `4px 4px 0 ${TINTA}`,
@@ -115,6 +133,6 @@ export function cartaoOG({ kicker, titulo, linha }: CartaoOG) {
         </div>
       </div>
     ),
-    { ...TAMANHO_OG },
+    { ...TAMANHO_OG, fonts: await fontes() },
   );
 }

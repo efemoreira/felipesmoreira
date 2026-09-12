@@ -11,6 +11,12 @@ export const metadata: Metadata = {
     description:
       "De militante de internet a candidato a Vice-Governador. O caminho passou por uma sala de jovens na igreja.",
   },
+  /* O X não herda do openGraph: sem isto o cartão dele mostra o título da raiz. */
+  twitter: {
+    title: "A Missão — Felipe Moreira",
+    description:
+      "De militante de internet a candidato a Vice-Governador. O caminho passou por uma sala de jovens na igreja.",
+  },
 };
 
 export default function AMissaoPage() {
