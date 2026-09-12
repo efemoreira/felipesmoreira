@@ -145,7 +145,7 @@ function bloco_fila(array $fila, array $eu, string $buscaFa, callable $quando): 
 
               <fieldset class="saidas">
                 <legend>O que este fato vira?</legend>
-                <p class="dica" style="margin:0 0 10px">
+                <p class="dica folga">
                   Marque o que faz sentido — pode ser mais de um, e pode ser nenhum.
                   Fato aprovado sem peça fica esperando decisão, e aparece no hub
                   depois de 48h.

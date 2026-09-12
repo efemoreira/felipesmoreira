@@ -154,7 +154,7 @@ function aba_de_pecas(): void
     ?>
   <fieldset id="pecas">
     <legend>As peças (<?= $noAr ?> no ar de <?= count($pecasKit) ?>)</legend>
-      <p class="dica" style="margin:0 0 14px">
+      <p class="dica folga">
       A <a href="/municao" target="_blank">Munição</a> já vem com as peças fixas do plano de
       governo, que não envelhecem. Aqui entra o que é da semana — o fato que acabou de sair, o
       número novo. Só aparece no site depois de publicada, e <strong>peça sem fonte não é

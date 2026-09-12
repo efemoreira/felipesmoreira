@@ -53,7 +53,7 @@ function aba_de_atividade(): void
       <legend>O que andou acontecendo (<?= count($visiveis) ?><?= count($visiveis) !== count($todas) ? ' de ' . count($todas) : '' ?>)</legend>
 
       <?php if ($todas === []): ?>
-        <p class="dica" style="margin:0">Nada gravado ainda nas áreas que você abre.</p>
+        <p class="dica colado">Nada gravado ainda nas áreas que você abre.</p>
       <?php else: ?>
         <?php barra_filtros(
             [

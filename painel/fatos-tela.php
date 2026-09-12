@@ -168,7 +168,7 @@ abrir_pagina('Fatos do dia');
            reorganiza a árvore sozinho — o formulário some sem erro no console. */ ?>
   <?php if ($corrigindo !== null): ?>
     <?php abrir_modal('corrigir-fato', 'Corrigir a ficha', true); ?>
-      <p class="dica" style="margin:0 0 14px">
+      <p class="dica folga">
         Ela continua na fila depois de salvar — corrigir não é decidir.
       </p>
       <?php formulario_fato($corrigindo); ?>

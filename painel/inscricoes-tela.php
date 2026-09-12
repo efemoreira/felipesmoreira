@@ -112,7 +112,7 @@ function tela_de_inscricoes(?string $erro, ?string $ok, array $acessos): void
         <strong><?= count($acessos) === 1 ? 'Acesso criado.' : count($acessos) . ' acessos criados.' ?></strong>
         Mande agora — as senhas não aparecem de novo.
       </p>
-      <p class="dica" style="margin:0 0 10px">
+      <p class="dica folga">
         Se a pessoa já mandou o oi, o botão abre a conversa que existe e a mensagem entra como
         <strong>resposta</strong>. É essa diferença que mantém o número da coordenação de pé:
         o WhatsApp bloqueia quem inicia muitas conversas com quem nunca falou com ele.

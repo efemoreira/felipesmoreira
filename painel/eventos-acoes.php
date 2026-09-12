@@ -82,6 +82,60 @@ function tratar_acoes_de_evento(array $eu, bool $coordena): void
 
         $acao = (string) ($_POST['acao'] ?? '');
 
+        /* ---------- as tarefas combinadas ---------- */
+        if (str_starts_with($acao, 'tarefa-')) {
+            require_once __DIR__ . '/tarefas-comum.php';
+            $tarefas = ler_tarefas_tudo();
+            $voltarTarefas = fn () => ir_para('/painel/eventos.php?aba=tarefas#tarefas');
+
+            if ($acao === 'tarefa-nova') {
+                exigir_coordenacao($coordena);
+                $nova = normalizar_tarefa([
+                    'id'        => 'tar-' . bin2hex(random_bytes(5)),
+                    'titulo'    => $_POST['titulo'] ?? '',
+                    'donoId'    => $_POST['donoId'] ?? '',
+                    'ate'       => $_POST['ate'] ?? '',
+                    'eventoId'  => $_POST['eventoId'] ?? '',
+                    'criadoEm'  => date('c'),
+                    'criadoPor' => $eu['nome'],
+                ]);
+                if ($nova === null || achar_pessoa($nova['donoId']) === null) {
+                    avisar('erro', 'Tarefa precisa do quê e de quem.');
+                    $voltarTarefas();
+                }
+                $tarefas[] = $nova;
+                avisar(gravar_tarefas($tarefas) ? 'ok' : 'erro', 'Combinado: ' . $nova['titulo'] . '.');
+                $voltarTarefas();
+            }
+
+            $id = limpar_texto($_POST['id'] ?? '', 40);
+            foreach ($tarefas as &$t) {
+                if ($t['id'] !== $id) {
+                    continue;
+                }
+                if ($acao === 'tarefa-feita') {
+                    if ($t['donoId'] !== $eu['id'] && !$coordena) {
+                        avisar('erro', 'Só quem é dono da tarefa (ou a coordenação) marca como feita.');
+                        $voltarTarefas();
+                    }
+                    $t['feitaEm']  = date('c');
+                    $t['feitaPor'] = $eu['nome'];
+                    avisar(gravar_tarefas($tarefas) ? 'ok' : 'erro', 'Feita: ' . $t['titulo'] . '.');
+                    $voltarTarefas();
+                }
+                if ($acao === 'tarefa-apagar') {
+                    exigir_coordenacao($coordena);
+                    $t['apagadoEm']  = date('c');
+                    $t['apagadoPor'] = $eu['nome'];
+                    avisar(gravar_tarefas($tarefas) ? 'ok' : 'erro', 'Tarefa apagada.');
+                    $voltarTarefas();
+                }
+            }
+            unset($t);
+            avisar('erro', 'Tarefa não encontrada.');
+            $voltarTarefas();
+        }
+
         /* ---------- criar o encontro (coordenação) ---------- */
         if ($acao === 'criar') {
             exigir_coordenacao($coordena);

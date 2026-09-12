@@ -46,7 +46,7 @@ abrir_pagina($busca !== '' ? 'Procurar: ' . $busca : 'Procurar');
   <?php barra_busca($busca, 'nome, número, telefone, título…'); ?>
 
   <?php if ($busca === ''): ?>
-    <p class="dica" style="margin:0">
+    <p class="dica colado">
       Digite o que você está procurando. Vale nome de gente, nome de encontro,
       número de urna, telefone, título de card ou trecho de um fato.
     </p>
@@ -54,7 +54,7 @@ abrir_pagina($busca !== '' ? 'Procurar: ' . $busca : 'Procurar');
   <?php elseif (mb_strlen($busca) < 2): ?>
     <?php /* Uma letra casa com metade do cadastro: devolver tudo é pior que
              devolver nada, e não dizer por quê é pior ainda. */ ?>
-    <p class="dica" style="margin:0">Escreva pelo menos duas letras.</p>
+    <p class="dica colado">Escreva pelo menos duas letras.</p>
 
   <?php elseif ($achados === []): ?>
     <?php nada_encontrado($busca, '/painel/procurar.php', ''); ?>

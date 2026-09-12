@@ -28,7 +28,7 @@ function aba_de_formacao(array $prontidao): void
       <legend>Prontidão por função (<?= count($porFuncao) ?>)</legend>
 
       <?php if ($porFuncao === []): ?>
-        <p class="dica" style="margin:0">
+        <p class="dica colado">
           Ninguém com função registrada ainda. A função se escolhe em /queroajudar e se
           ajusta na ficha da pessoa.
         </p>
@@ -38,7 +38,7 @@ function aba_de_formacao(array $prontidao): void
           <div><dt>Cumpriram a trilha</dt><dd><?= $prontas ?></dd></div>
           <div><dt>Sem função</dt><dd><?= count($semFuncao) ?></dd></div>
         </dl>
-        <p class="dica" style="margin:0 0 14px">
+        <p class="dica folga">
           Cumprir a trilha é ter feito a aula da função — o que dá para conferir. Pronta
           para tocar sozinha é julgamento de quem acompanhou, e o painel não tem esse
           carimbo. Os nomes estão em <a href="/painel/aulas.php?aba=prontidao">Formação › Trilhas e prontidão</a>.

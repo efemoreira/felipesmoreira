@@ -296,7 +296,7 @@ abrir_pagina('Candidatos');
     <!-- ============ as listas ============ -->
     <fieldset id="listas">
       <legend>Listas (<?= count($listas) ?>)</legend>
-      <p class="dica" style="margin:0 0 14px">
+      <p class="dica folga">
         Cada lista vira uma colinha no site, com o nome dela por título. A ordem em
         que os candidatos aparecem é a ordem da colinha — quem vem primeiro é quem
         você quer que seja lembrado primeiro.
@@ -323,7 +323,7 @@ abrir_pagina('Candidatos');
         <?php endif; ?>
 
         <?php if ($listas === []): ?>
-          <p class="dica" style="margin:0">
+          <p class="dica colado">
             Nenhuma lista ainda. Sem lista publicada o bloco da página inicial não
             aparece — melhor não dizer nada do que deixar um buraco onde o eleitor
             espera um número.
@@ -405,21 +405,21 @@ abrir_pagina('Candidatos');
                              conteúdo de campanha e o nome dela é o título da
                              colinha. Vem primeiro por isso. */ ?>
                     <?php botao_modal('editar-lista', 'Renomear', 'aba=listas&lista=' . urlencode($l['id']), 'btn'); ?>
-                    <form method="post" style="display:inline">
+                    <form method="post">
                       <input type="hidden" name="csrf" value="<?= h(token()) ?>">
                       <input type="hidden" name="id" value="<?= h($l['id']) ?>">
                       <button class="btn" name="acao" value="lista-publicar" type="submit">
                         <?= $l['publicada'] ? 'Recolher do site' : 'Publicar no site' ?>
                       </button>
                     </form>
-                    <form method="post" style="display:inline">
+                    <form method="post">
                       <input type="hidden" name="csrf" value="<?= h(token()) ?>">
                       <input type="hidden" name="id" value="<?= h($l['id']) ?>">
                       <button class="btn" name="acao" value="lista-home" type="submit">
                         <?= $l['naHome'] ? 'Tirar da página inicial' : 'Mostrar na página inicial' ?>
                       </button>
                     </form>
-                    <form method="post" style="display:inline"
+                    <form method="post"
                           data-confirmar="<?= h('Apagar a lista “' . $l['nome'] . '”? Os candidatos continuam cadastrados.') ?>">
                       <input type="hidden" name="csrf" value="<?= h(token()) ?>">
                       <input type="hidden" name="id" value="<?= h($l['id']) ?>">
@@ -455,7 +455,7 @@ abrir_pagina('Candidatos');
            página com o formulário aberto — o mesmo desenho dos outros modais. */ ?>
   <?php if ($fora !== []): ?>
     <?php abrir_modal('puxar-pessoa', 'Puxar da lista de pessoas', isset($_GET['puxar'])); ?>
-      <p class="dica" style="margin:0 0 12px">
+      <p class="dica folga">
         Quem já está no movimento não precisa de uma segunda ficha: escolha o nome e
         preencha só o que a candidatura acrescenta — número, cargo, @ e foto. O
         histórico dela (encontros, telefone, conta) continua o mesmo.
@@ -482,7 +482,7 @@ abrir_pagina('Candidatos');
 
   <?php if ($dePessoa !== null): ?>
     <?php abrir_modal('candidato-de-pessoa', $dePessoa['nome'] . ' como candidato', true); ?>
-      <p class="dica" style="margin:0 0 14px">
+      <p class="dica folga">
         Esta ficha já existe em <a href="/painel/pessoas.php?p=<?= h($dePessoa['id']) ?>">/painel/pessoas</a>.
         Salvar acrescenta a candidatura a ela — não cria um segundo cadastro.
       </p>

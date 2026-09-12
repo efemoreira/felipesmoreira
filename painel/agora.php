@@ -158,7 +158,7 @@ function pendencias_index(array $u): array
  * A ordem em que as áreas entram na fila e no panorama. É a ordem de leitura
  * da fila do dia — decisão de coordenação, não alfabética.
  */
-const ORDEM_AGORA = ['fatos', 'pessoas', 'gente', 'producao', 'eventos', 'agenda', 'inscricoes'];
+const ORDEM_AGORA = ['tarefas', 'fatos', 'pessoas', 'gente', 'producao', 'eventos', 'agenda', 'inscricoes'];
 
 /**
  * Se esta pessoa abre a área para o efeito do Início. `gente` não é área de
@@ -170,6 +170,12 @@ function abre_no_agora(string $area, array $u): bool
     if ($area === 'gente') {
         require_once __DIR__ . '/pessoas-comum.php';
         return pode_liderar($u);
+    }
+    /* Tarefa é item solto também: qualquer conta pode ser dona de uma,
+       tenha a área que tiver. */
+    if ($area === 'tarefas') {
+        require_once __DIR__ . '/tarefas-comum.php';
+        return true;
     }
     if (!pode($area)) {
         return false;
@@ -263,7 +269,10 @@ function contagens_por_area(?array $u = null): array
 
     $conta = [];
     foreach (tarefas_de($u) as $t) {
-        $conta[$t['area']] = ($conta[$t['area']] ?? 0) + ($t['quantos'] ?? 1);
+        /* A tarefa combinada mora na aba Tarefas de Encontros: é lá que o selo
+           do menu a soma. */
+        $area = $t['area'] === 'tarefas' ? 'eventos' : $t['area'];
+        $conta[$area] = ($conta[$area] ?? 0) + ($t['quantos'] ?? 1);
     }
     return $conta;
 }

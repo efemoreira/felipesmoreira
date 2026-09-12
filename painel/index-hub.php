@@ -344,7 +344,7 @@ function tela_do_inicio(array $u, ?string $aviso, ?string $sucesso): void
                 Próxima 🚗 Dia <?= (int) $formacao['proxima']['dia']['numero'] ?> — <?= h($formacao['proxima']['aula']['titulo']) ?>
               </a>
             <?php else: ?>
-              <p class="dica" style="margin:0">
+              <p class="dica colado">
                 Você fez todas as Pistas Rápidas. As Pistas Lentas continuam em
                 <a href="/aulas">/aulas</a> para quando precisar de um ponto específico.
               </p>

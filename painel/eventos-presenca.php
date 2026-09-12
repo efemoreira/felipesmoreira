@@ -80,7 +80,7 @@ function desenhar_presenca(array $aberto, array $eu): void
           <p class="qr-chamada">Aponte a câmera</p>
         </div>
         <div class="qr-texto">
-          <p class="dica" style="margin:0 0 10px">
+          <p class="dica folga">
             <strong>QR da mesa da Recepção.</strong> Imprima e cole na entrada: quem
             chega faz o <strong>check-in</strong> no próprio celular, e a lista já sai
             organizada — sem fila para alguém digitar depois.
@@ -101,7 +101,7 @@ function desenhar_presenca(array $aberto, array $eu): void
       <details class="decidir" style="margin:0 0 22px">
         <summary class="btn">Link de RSVP, para mandar no grupo</summary>
         <div class="decidir-corpo">
-          <p class="dica" style="margin:0 0 12px">
+          <p class="dica folga">
             <strong>É um link diferente do QR da mesa</strong>, de propósito. Este é o
             <strong>RSVP</strong>, que roda ANTES; o do QR é o <strong>check-in</strong>
             da porta. Com um link só, quem recebesse a mensagem no grupo se marcaria
@@ -109,7 +109,7 @@ function desenhar_presenca(array $aberto, array $eu): void
             (Para quem recebe, o link não diz “RSVP”: na tela dele está escrito
             “confirmação prévia”, que é a palavra de quem não organiza evento.)
           </p>
-          <p class="dica" style="margin:0 0 12px">
+          <p class="dica folga">
             Quem já veio a algum encontro, já se inscreveu ou já tem conta digita
             <strong>só o WhatsApp</strong> e pronto — nome, bairro e cidade a gente já tem.
             Quem é novo preenche quatro campos.
@@ -148,7 +148,7 @@ function desenhar_presenca(array $aberto, array $eu): void
       <details class="decidir" style="margin:0 0 22px">
         <summary class="btn">Escalar o time (<?= count($doTime) ?> ainda fora da lista)</summary>
         <div class="decidir-corpo">
-          <p class="dica" style="margin:0 0 12px">
+          <p class="dica folga">
             Quem tem conta no painel <strong>não lê o QR da mesa</strong> — está atrás
             dela, recebendo os outros. Sem escalar, a lista do encontro conta só quem
             entrou pela porta, e o relatório esquece justamente quem fez o encontro

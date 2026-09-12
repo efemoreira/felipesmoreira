@@ -70,9 +70,11 @@ function tela_de_leituras(array $eu): void
           'Formação: por função, quem cumpriu a trilha mínima, quem travou há mais de sete dias e quem nem começou.',
           'Semana: os medidores do time inteiro, o mutirão e, para quem administra, os caixas.',
           'Atividade: a linha do tempo inteira, com busca e recorte por área. É derivada do que já está gravado — não há registro de auditoria por trás.',
-          'Aqui não se grava nada. Cada linha leva à mesa onde se faz.',
+          'Aqui não se grava dado do movimento. A única coisa que se escreve são as metas — a régua com que se lê o resto.',
       ]
   ); ?>
+
+  <?php ['erro' => $erroLe, 'ok' => $okLe] = recado_pendente(); recado($erroLe, $okLe); ?>
 
   <?php barra_abas($abas, $aba, 'aba', 'Leituras'); ?>
 

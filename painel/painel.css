@@ -522,6 +522,14 @@ input:focus, select:focus, textarea:focus {
 .btn-risco { border-color:var(--erro-borda); color:var(--erro); }
 .btn-risco:hover { background:var(--erro-fundo-2); }
 .acoes { display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
+/* O <form> de um botão dentro da linha de ações é item do flex, sem margem:
+   era `style="display:inline"` em onze lugares — a classe cobre. */
+.acoes > form { display:inline-flex; margin:0; }
+/* As margens da .dica que eram style= em cem lugares: colada (0), com folga
+   embaixo (12px) e com folga curta (8px). */
+.colado { margin:0 !important; }
+.folga { margin:0 0 12px !important; }
+.folga-curta { margin:0 0 8px !important; }
 .barra { position:sticky; bottom:0; background:linear-gradient(180deg,var(--fundo-fade),var(--fundo) 40%); padding:20px 0 6px; }
 
 /* ---- recados ----
@@ -1566,3 +1574,21 @@ fieldset[id], .item[id], .ficha[id] { scroll-margin-top:18px; }
 /* ---------- o estado vazio com ação ---------- */
 .vazio { margin:0; color:var(--texto-fraco); font-size:15px; line-height:1.6; max-width:70ch; }
 .vazio .btn { margin-left:8px; vertical-align:middle; }
+
+/* ---------- as metas ---------- */
+.metas { display:grid; gap:12px; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); margin:0 0 14px; }
+.meta { border:3px solid var(--linha); background:var(--realce-1); padding:12px 14px; position:relative; }
+.meta-numero { margin:0; font-size:15px; }
+.meta-numero strong { font-family:var(--titulo-fonte, inherit); font-size:28px; line-height:1; }
+.meta-rotulo { margin:4px 0 0; font:400 11px/1.3 var(--etiqueta); letter-spacing:1.4px; text-transform:uppercase; color:var(--texto-fraco); }
+.meta-nota { margin:8px 0 0; font-size:13.5px; color:var(--texto-fraco); }
+.meta-feito { border-color:var(--ok-borda); }
+.meta-atrasado, .meta-vencida { border-color:var(--erro-borda); }
+.meta-apagar { margin-top:10px; }
+
+/* ---------- as tarefas ---------- */
+.tarefas { display:grid; gap:10px; }
+.tarefa { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; padding:12px 14px; border:3px solid var(--linha); background:var(--realce-1); }
+.tarefa-vencida { border-color:var(--erro-borda); }
+.tarefa-corpo { min-width:0; }
+@media (max-width:600px) { .tarefa { flex-direction:column; } }

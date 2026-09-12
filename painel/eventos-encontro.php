@@ -296,7 +296,7 @@ function desenhar_preparo(array $aberto, array $familia, array $preparo, bool $c
   <details class="explicacao playbook">
     <summary>Playbook — <?= h($familia['nome']) ?> <span class="dica">· serve para <?= h(mb_strtolower($familia['serve'])) ?></span></summary>
     <p class="dica" style="margin:12px 0"><strong>Serve para:</strong> <?= h($familia['serve']) ?></p>
-    <p class="dica" style="margin:0 0 12px"><strong>Métrica de sucesso:</strong> <?= h($familia['metrica']) ?></p>
+    <p class="dica folga"><strong>Métrica de sucesso:</strong> <?= h($familia['metrica']) ?></p>
 
     <div class="msg msg-erro">
       <strong>Travas desta família</strong>
@@ -309,6 +309,29 @@ function desenhar_preparo(array $aberto, array $familia, array $preparo, bool $c
 
     <p class="dica"><strong>Material específico:</strong> <?= h(implode(' · ', $familia['material'])) ?></p>
   </details>
+
+  <?php /* AS TAREFAS DESTE ENCONTRO — só as combinadas com nome e prazo; o
+           checklist das peças continua sendo o preparo. Lista curta, com o
+           caminho para a aba onde se combina. */ ?>
+  <?php require_once __DIR__ . '/tarefas-comum.php'; $tarefasDoEncontro = array_filter(tarefas_do_evento($aberto['id']), fn ($t) => $t['feitaEm'] === ''); ?>
+  <?php if ($tarefasDoEncontro !== [] || $coordena): ?>
+    <fieldset id="tarefas-do-encontro">
+      <legend>Combinado para este encontro (<?= count($tarefasDoEncontro) ?>)</legend>
+      <?php if ($tarefasDoEncontro === []): ?>
+        <?php vazio('Nada combinado com nome e prazo ainda.', ['url' => '/painel/eventos.php?aba=tarefas&nova=1&evento=' . rawurlencode($aberto['id']), 'texto' => 'Combinar uma tarefa']); ?>
+      <?php else: ?>
+        <ul class="dica folga-curta">
+          <?php foreach ($tarefasDoEncontro as $t): ?>
+            <li<?= tarefa_vencida($t) ? ' style="color:var(--erro)"' : '' ?>>
+              <a href="/painel/eventos.php?aba=tarefas#t-<?= h($t['id']) ?>"><?= h($t['titulo']) ?></a>
+              — <?= h(achar_pessoa($t['donoId'])['nome'] ?? 'sem dono') ?><?= $t['ate'] !== '' ? ' · até ' . h(data_humana($t['ate'])) : '' ?>
+            </li>
+          <?php endforeach; ?>
+        </ul>
+        <?php if ($coordena): ?><p class="dica colado"><a href="/painel/eventos.php?aba=tarefas&nova=1&evento=<?= h(rawurlencode($aberto['id'])) ?>">Combinar outra</a></p><?php endif; ?>
+      <?php endif; ?>
+    </fieldset>
+  <?php endif; ?>
 
   <fieldset id="preparo">
     <?php /* "As peças", e não "as cinco": elas passaram a depender da família, e

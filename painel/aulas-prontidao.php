@@ -39,7 +39,7 @@ function bloco_prontidao(): void
     ?>
   <fieldset id="trilhas">
     <legend>A trilha mínima de cada função</legend>
-    <p class="dica" style="margin:0 0 14px">
+    <p class="dica folga">
       Três respostas por função: a aula que ensina, o “Pronto quando” que confere
       e a primeira ferramenta que a pessoa vai abrir. Nenhuma delas é escrita à
       mão — saem do currículo, dos checklists e da mesa da função.
@@ -83,14 +83,14 @@ function bloco_prontidao(): void
 
   <fieldset id="quem-pode">
     <legend>Quem já cumpriu a trilha da função</legend>
-    <p class="dica" style="margin:0 0 14px">
+    <p class="dica folga">
       Cumprir a trilha é ter feito a aula da função. Não é o mesmo que estar
       pronta para tocar sozinha — isso quem diz é quem acompanhou o trabalho, e
       o painel não tem esse carimbo. O que ele responde é o que dá para conferir.
     </p>
 
     <?php if ($porFuncao === []): ?>
-      <p class="dica" style="margin:0">
+      <p class="dica colado">
         Ninguém com função registrada ainda. A função se escolhe em
         <a href="/queroajudar" target="_blank">/queroajudar</a> e se ajusta na ficha da
         pessoa, em <a href="/painel/pessoas.php">Pessoas</a>.

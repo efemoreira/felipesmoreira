@@ -122,7 +122,7 @@ abrir_pagina('Pessoas');
         <strong>Login:</strong> <span class="provisoria"><?= h($senhaNova['usuario']) ?></span>
         &nbsp; <strong>Senha provisória:</strong> <span class="provisoria"><?= h($senhaNova['senha']) ?></span>
       </p>
-      <p class="dica" style="margin:0">
+      <p class="dica colado">
         Aparece <strong>uma vez só</strong> — só o hash fica guardado, e hash não volta
         a ser senha. Mande agora; no primeiro acesso a pessoa é obrigada a trocar.
       </p>
@@ -212,6 +212,9 @@ abrir_pagina('Pessoas');
             Baixar CSV (<?= count($todas) ?>)
           </a>
           <span>o recorte de cima, em planilha — abre no Excel e no Google Planilhas</span>
+          <?php if (e_admin()): ?>
+            <a class="btn btn-mini" href="/painel/importar.php">Importar uma planilha</a>
+          <?php endif; ?>
         </p>
       <?php endif; ?>
     <?php endif; ?>

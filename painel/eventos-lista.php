@@ -168,7 +168,7 @@ function tela_lista_de_encontros(bool $coordena, array $eu, ?string $erro, ?stri
          Os contadores contam o RECORTE, e não a base: procurar "Juazeiro" com a
          aba dizendo o total faria o zero da lista parecer defeito. */
       $pedidaEv = (string) ($_GET['aba'] ?? '');
-      $abaEv = in_array($pedidaEv, ['passados', 'follow-up'], true) ? $pedidaEv : 'proximos';
+      $abaEv = in_array($pedidaEv, ['passados', 'follow-up', 'tarefas'], true) ? $pedidaEv : 'proximos';
 
       /* O FOLLOW-UP É DA COORDENAÇÃO — quem só executa não vê telefone nem
          responde por lead, e a aba nem existe para ele. A mesma trava da aba
@@ -190,12 +190,17 @@ function tela_lista_de_encontros(bool $coordena, array $eu, ?string $erro, ?stri
              hoje?" obrigava a abrir dez telas para ser respondida. */
           $abasEv['follow-up'] = ['nome' => 'Follow-up', 'conta' => count($vencidos)];
       }
+      /* A quarta aba também não lista encontros: é o que foi COMBINADO — quem
+         faz o quê até quando. Mora aqui porque quase toda tarefa nasce de um
+         encontro; todo mundo da área vê e marca a sua. */
+      require_once __DIR__ . '/tarefas-comum.php';
+      $abasEv['tarefas'] = ['nome' => 'Tarefas', 'conta' => count(tarefas_abertas())];
       barra_abas($abasEv, $abaEv, 'aba', 'Encontros');
       ?>
 
       <?php /* Só aparece quando há o que procurar: com três encontros os
                controles ficam em cima de uma lista que já cabe na tela. */ ?>
-      <?php if ($abaEv !== 'follow-up' && ($quantosTem > 6 || $recortado)): ?>
+      <?php if (!in_array($abaEv, ['follow-up', 'tarefas'], true) && ($quantosTem > 6 || $recortado)): ?>
         <?php barra_filtros(
             [
                 ['tipo' => 'busca', 'valor' => $buscaEv, 'dica' => 'nome, local, cidade ou data'],
@@ -229,6 +234,8 @@ function tela_lista_de_encontros(bool $coordena, array $eu, ?string $erro, ?stri
 
       <?php if ($abaEv === 'follow-up'): ?>
         <?php bloco_follow_up($eu, $vencidos, $buscaEv); ?>
+      <?php elseif ($abaEv === 'tarefas'): ?>
+        <?php require_once __DIR__ . '/eventos-tarefas.php'; bloco_tarefas($eu, $coordena); ?>
       <?php elseif ($abaEv === 'proximos'): ?>
         <fieldset id="proximos">
           <legend>
@@ -243,7 +250,7 @@ function tela_lista_de_encontros(bool $coordena, array $eu, ?string $erro, ?stri
               <a class="btn btn-mini" href="/painel/eventos.php?novo=1">Marcar o primeiro encontro</a>
             </p>
           <?php elseif ($proximos === []): ?>
-            <p class="dica" style="margin:0">Nenhum dos próximos casa com o recorte.</p>
+            <p class="dica colado">Nenhum dos próximos casa com o recorte.</p>
           <?php endif; ?>
 
           <?php foreach ($proximos as $e): ?>
@@ -264,7 +271,7 @@ function tela_lista_de_encontros(bool $coordena, array $eu, ?string $erro, ?stri
           <?php if ($passados === [] && !$recortado): ?>
             <?php vazio('Nenhum encontro aconteceu ainda.', ['url' => '/painel/eventos.php?novo=1', 'texto' => 'Marcar o primeiro']); ?>
           <?php elseif ($passados === []): ?>
-            <p class="dica" style="margin:0">Nenhum dos já realizados casa com o recorte.</p>
+            <p class="dica colado">Nenhum dos já realizados casa com o recorte.</p>
           <?php endif; ?>
 
           <?php foreach ($mostrados as $e): ?>

@@ -109,7 +109,7 @@ abrir_pagina('Aulas em vídeo');
     <details class="decidir" style="margin-bottom:20px">
       <summary class="btn">Link do Dia 0 para quem ainda não tem acesso</summary>
       <div class="decidir-corpo">
-        <p class="dica" style="margin:0 0 10px">
+        <p class="dica folga">
           Mande para quem acabou de se inscrever. Abre <strong>só o Dia 0</strong> — as regras que
           valem para todo mundo — sem conta e sem gravar progresso. O resto da formação continua
           exigindo login, e o texto nunca sai do painel.

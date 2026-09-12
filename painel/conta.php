@@ -109,7 +109,7 @@ abrir_pagina('Minha senha', !$obrigatoria);
   <?php if (e_admin() && !$obrigatoria): ?>
     <fieldset style="margin-top:28px">
       <legend>Administração</legend>
-      <p class="dica" style="margin:0 0 12px">
+      <p class="dica folga">
         Terminou a fase de teste e quer recomeçar limpo? A Manutenção apaga o que o
         painel gravou — por grupo, com confirmação digitada.
       </p>
