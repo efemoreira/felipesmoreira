@@ -303,9 +303,6 @@ export default function Home() {
               <Icon name="users" size={16} />
               Área do militante
             </a>
-            <Link href="/aulas" className="cordel-militante">
-              Formação
-            </Link>
           </nav>
         </footer>
       </main>
@@ -327,7 +324,6 @@ export default function Home() {
           font-family: ${FONT_ELITE}; font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
           color: ${C.gold2}; text-decoration: none;
         }
-        .cordel-militante + .cordel-militante { border-left: ${bordaFina("rgba(255,203,5,.3)")}; }
         .cordel-militante:hover { text-decoration: underline; }
         .cordel-card:focus-visible, .cordel-social:focus-visible { outline: ${BORDA}px solid #FFCB05; outline-offset: 3px; }
         @keyframes cordelIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
