@@ -30,6 +30,7 @@ const AREAS = [
     'pessoas'    => 'Pessoas e dados pessoais',
     'caixa'      => 'Caixa',
     'leituras'   => 'Leituras',
+    'oficina'    => 'Oficina de formatos',
 ];
 
 /**
@@ -87,6 +88,17 @@ const CAPACIDADES = [
        Existe como capacidade, e não como efeito de alguém ter preenchido o
        campo `lider` numa ficha, porque dar acesso a dado pessoal precisa ser uma
        decisão registrada — e não uma consequência lateral de organizar times. */
+    /* ABRE UMA TELA SÓ, e é a razão de existir como capacidade: a Oficina é
+       pessoal — cada um que a recebe tem a sua, e ninguém vê a de ninguém —,
+       mas quem a concede é a administração, pessoa a pessoa. Sem uma capacidade
+       que a conceda, `normalizar_pessoa()` a apagaria de toda ficha que não é
+       `adm` (ver `areas_so_adm()`), e o desafio de formatos seria do
+       administrador em vez de ser de quem cria conteúdo. */
+    'criacao' => [
+        'nome'   => 'Criação',
+        'resumo' => 'A oficina de formatos: testar, publicar e medir o próprio vídeo',
+        'areas'  => ['oficina'],
+    ],
     'lideranca' => [
         'nome'   => 'Liderança',
         'resumo' => 'Acompanha um punhado de gente: vê nome e WhatsApp de quem está sob ela',
@@ -245,6 +257,7 @@ const DESTINO_AREA = [
     'pessoas'    => ['url' => '/painel/pessoas.php', 'resumo' => 'Todo mundo do movimento: quem é, o que faz, em que encontros esteve'],
     'caixa'      => ['url' => '/painel/caixa.php', 'resumo' => 'Todo real que entra e sai, com origem — e os dois caixas nunca somados juntos'],
     'leituras'   => ['url' => '/painel/leituras.php', 'resumo' => 'A leitura da semana: de onde vem a militância, onde ela mora, o que venceu e o que andou acontecendo'],
+    'oficina'    => ['url' => '/painel/oficina.php', 'resumo' => 'Testar um formato de vídeo por vez e medir qual deles funciona no seu nicho'],
 ];
 
 /**

@@ -25,7 +25,7 @@ require_once __DIR__ . '/agora.php';
 require_once __DIR__ . '/componentes.php';  // barra_abas(), barra_busca(), modal, menu_acoes(), links_whatsapp(), recado()…
 
 /** Versão do CSS — muda junto com o painel.css para furar o cache do navegador. */
-const VERSAO_ESTILO = '41';
+const VERSAO_ESTILO = '42';
 
 /**
  * Os grupos da navegação, na ordem em que aparecem.
@@ -47,7 +47,7 @@ const VERSAO_ESTILO = '41';
    `testes/contrato/painel.test.ts` prende: área sem capacidade mora aqui, e
    só ela. */
 const GRUPOS_NAV = [
-    'Comunicação'   => ['fatos', 'producao', 'municao', 'estudio'],
+    'Comunicação'   => ['fatos', 'producao', 'municao', 'estudio', 'oficina'],
     'Encontros'     => ['eventos', 'agenda'],
     'Coordenação'   => ['inscricoes', 'candidatos', 'aulas', 'leituras'],
     'Administração' => ['pessoas', 'caixa'],
@@ -67,6 +67,7 @@ const ROTULO_CURTO = [
     'candidatos' => 'Candidatos',
     'caixa'      => 'Caixa',
     'leituras'   => 'Leituras',
+    'oficina'    => 'Oficina',
 ];
 
 /** fechar_pagina() precisa saber se abriu a moldura, para não fechar div à toa. */

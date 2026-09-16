@@ -1620,3 +1620,23 @@ fieldset[id], .item[id], .ficha[id] { scroll-margin-top:18px; }
   .cartaz-acoes { display:none; }
   @page { margin:12mm; }
 }
+
+/* ===== Oficina de formatos: a capa de cada formato =====
+   A capa base é DESENHADA (um SVG com o esquema do plano), e a imagem real do
+   reel entra por cima quando existe — só 16 dos 37 formatos têm vídeo público
+   para ilustrar, e uma lista com metade dos cartões vazios faz a falta parecer
+   defeito. As duas ocupam a MESMA caixa, na proporção de vídeo em pé: trocar o
+   desenho pela foto não pode mexer na altura da linha. */
+.capa-formato {
+  flex:none; display:flex; align-items:center; justify-content:center;
+  width:40px; height:56px; overflow:hidden;
+  border:2px solid var(--linha); border-radius:4px;
+  background:var(--superficie-2); color:var(--acento);
+}
+.capa-formato img { width:100%; height:100%; object-fit:cover; display:block; }
+.capa-grande { width:80px; height:112px; border-width:3px; }
+/* A linha da tabela e o topo do cartão do formato da vez: a capa à esquerda, o
+   texto ao lado, e no celular os dois continuam lado a lado — empilhar uma
+   miniatura de 40px em cima do nome só gasta altura. */
+.com-capa { display:flex; align-items:flex-start; gap:12px; }
+.com-capa > div { min-width:0; }
