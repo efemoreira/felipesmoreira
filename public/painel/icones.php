@@ -48,6 +48,7 @@ const ICONE_AREA = [
     'pessoas'    => 'users',
     'caixa'      => 'book',
     'leituras'   => 'world',
+    'oficina'    => 'play',
 ];
 
 /** SVG inline, no mesmo traço do site (stroke 2, ponta e junta arredondadas). */

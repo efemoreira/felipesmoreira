@@ -157,6 +157,7 @@ const DADOS = new Set([
   "kit",
   "mutirao",
   "caixa",
+  "oficina",
   "metas",
   "tarefas",
   "inscricoes-limite",
@@ -629,6 +630,7 @@ require __DIR__ . '/painel/candidatos-comum.php';
 require __DIR__ . '/painel/aulas-comum.php';
 require __DIR__ . '/painel/kit-comum.php';
 require __DIR__ . '/painel/caixa-comum.php';
+require __DIR__ . '/painel/oficina-comum.php';
 require __DIR__ . '/painel/metas-comum.php';
 require __DIR__ . '/painel/tarefas-comum.php';
 /* O nome do arquivo nem sempre é o nome da função: os cards do quadro moram

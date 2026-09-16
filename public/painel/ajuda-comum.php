@@ -30,6 +30,7 @@ const SAI_DE_AREA = [
     'pessoas'    => 'A ficha única de cada pessoa: contato, função, acesso, encontros.',
     'caixa'      => 'O extrato de cada conta, lançamento a lançamento, com origem.',
     'leituras'   => 'Nada — Leituras só lê. É o que se manda no grupo da coordenação.',
+    'oficina'    => 'Nada para fora: é a sua bancada. O que sai é a resposta de quais formatos funcionam no seu nicho.',
 ];
 
 /** As telas pessoais, que não são área e não têm capacidade. */
