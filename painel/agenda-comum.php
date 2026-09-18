@@ -78,6 +78,15 @@ const FILTRO_PADRAO = 'medio';
 
 const DIAS = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
 
+/**
+ * Em que dia a semana da programação abre. Escolha da capa (`agenda.php`), e
+ * não constante: uma semana de rua abre no domingo, uma semana de lives abre
+ * na segunda, e a coordenação é quem sabe qual das duas está vivendo.
+ * Espelhado em `INICIOS_SEMANA` de `src/features/programacao/tempo.ts`.
+ */
+const INICIOS_SEMANA = ['domingo' => 'Domingo', 'segunda' => 'Segunda-feira'];
+const INICIO_SEMANA_PADRAO = 'domingo';
+
 /* Os meses por extenso e em minúscula — é assim que eles entram no período
    ("29 de agosto a 4 de setembro"), e não como número. `strftime()` faria isso
    sozinho, mas depende do locale instalado no servidor: na Hostinger sai em
@@ -119,9 +128,18 @@ function agenda_atual(): array
         'periodo'      => '',
         'periodoSemana' => '',
         'chamada'      => '',
+        'grupo'        => '',
+        'inicioSemana' => INICIO_SEMANA_PADRAO,
         'disponivelEm' => CANAIS_PADRAO,
         'programacao'  => [],
     ];
+}
+
+/** O começo da semana que a capa escolheu; qualquer coisa fora da lista é domingo. */
+function comeco_da_semana(array $agenda): string
+{
+    $v = (string) ($agenda['inicioSemana'] ?? '');
+    return isset(INICIOS_SEMANA[$v]) ? $v : INICIO_SEMANA_PADRAO;
 }
 
 /* limpar_texto() agora mora no sessao.php: o formulário público de inscrição
@@ -235,40 +253,64 @@ function estado_do_evento(string $inicio, ?int $agora = null): string
 /* ===================== a semana corrente ===================== */
 
 /**
- * A SEMANA VAI DE DOMINGO A SÁBADO, no fuso do Ceará.
+ * A SEMANA DA PROGRAMAÇÃO, no fuso do Ceará — de domingo a sábado por padrão,
+ * de segunda a domingo quando a capa pede (`$comeco`).
  *
  * Espelha `semanaDe()` em `src/features/programacao/tempo.ts`. As duas existem
  * pelo motivo de sempre: o site calcula no navegador de quem visita, e o painel
  * calcula no PHP — e se discordarem, o encontro de domingo aparece "nesta
  * semana" num lado e "na semana que vem" no outro.
  *
- * DOMINGO, e não segunda: a programação é lida como calendário de parede, onde
- * a linha da semana abre no domingo. Com a semana ISO, o domingo caía no fim da
- * lista, colado no sábado da semana anterior — e o encontro de domingo, que é
- * o mais comum na rua, aparecia como o rabo da semana que estava acabando.
+ * DOMINGO É O PADRÃO: a programação é lida como calendário de parede, onde a
+ * linha da semana abre no domingo, e o encontro de domingo é o mais comum na
+ * rua. Mas semana de lives se pensa de segunda a domingo — por isso o começo
+ * é escolha da capa (`INICIOS_SEMANA`), e quem chama por conta da programação
+ * passa `comeco_da_semana(agenda_atual())`.
+ *
+ * QUEM NÃO PASSA NADA FICA NO DOMINGO, E É DE PROPÓSITO: `kit-comum.php`,
+ * `oficina-comum.php` e `leituras-semana.php` usam esta semana como CHAVE de
+ * arquivo (a peça da semana, a rodada da oficina, a leitura). Uma chave que
+ * muda porque a capa trocou de preferência de exibição faria a rodada em
+ * andamento virar outra rodada no meio da semana.
  *
  * O fuso é o do Ceará, e não o do servidor, pelo mesmo motivo de
  * `partes_de_exibicao()`: a Hostinger roda em UTC, e às 22h de sábado o
  * servidor já está no domingo — a semana viraria seis horas cedo demais.
  *
- * Devolve os dois instantes em ISO: `inicio` é domingo 00:00 e `fim` é o
- * primeiro instante do domingo seguinte. O intervalo é fechado na frente e
- * aberto atrás (`inicio <= t < fim`), que é o que evita o sábado 23:59:59
+ * Devolve os dois instantes em ISO: `inicio` é o primeiro dia 00:00 e `fim` é o
+ * primeiro instante da semana seguinte. O intervalo é fechado na frente e
+ * aberto atrás (`inicio <= t < fim`), que é o que evita o último dia 23:59:59
  * ficar de fora por um segundo.
  */
-function semana_de(?int $agora = null): array
+function semana_de(?int $agora = null, string $comeco = INICIO_SEMANA_PADRAO): array
 {
     $fuso = new DateTimeZone('America/Fortaleza');
     $hoje = (new DateTimeImmutable('@' . ($agora ?? time())))->setTimezone($fuso);
     /* Contando os dias para trás, e não com `modify('sunday this week')`: para o
        PHP a semana é a do ISO-8601 (segunda a domingo), então "sunday this week"
        devolve o domingo do FIM da semana — seis dias à frente, e não o de trás. */
-    $diasDesdeDomingo = (int) $hoje->format('w');  // 0 = domingo
-    $domingo = $hoje->modify('-' . $diasDesdeDomingo . ' days')->setTime(0, 0);
+    $w = (int) $hoje->format('w');  // 0 = domingo
+    $diasDesdeOComeco = $comeco === 'segunda' ? ($w + 6) % 7 : $w;
+    $primeiro = $hoje->modify('-' . $diasDesdeOComeco . ' days')->setTime(0, 0);
 
     return [
-        'inicio' => $domingo->format('c'),
-        'fim'    => $domingo->modify('+7 days')->format('c'),
+        'inicio' => $primeiro->format('c'),
+        'fim'    => $primeiro->modify('+7 days')->format('c'),
+    ];
+}
+
+/**
+ * A semana seguinte à corrente — o recorte "próxima semana" de /programacao e
+ * da lista de encontros. Sete dias à frente da mesma régua, e não "hoje + 7":
+ * na sexta, "a próxima semana" começa no domingo que vem, não na sexta que vem.
+ */
+function proxima_semana_de(?int $agora = null, string $comeco = INICIO_SEMANA_PADRAO): array
+{
+    $desta = semana_de($agora, $comeco);
+    $inicio = new DateTimeImmutable($desta['fim']);
+    return [
+        'inicio' => $inicio->format('c'),
+        'fim'    => $inicio->modify('+7 days')->format('c'),
     ];
 }
 
@@ -328,33 +370,44 @@ function dentro_do_periodo(string $inicio, array $janela): bool
  * voltava na semana seguinte deixava o site anunciando uma semana encerrada, e
  * a página continuava desenhando sem sinal de que estava mentindo.
  *
- * Por isso o texto vai gravado com o domingo da semana em que foi escrito.
+ * Por isso o texto vai gravado com o primeiro dia da semana em que foi escrito.
  * Escrever ali é dizer "ESTA semana não é uma semana" — e uma frase sobre a
  * semana corrente expira sozinha quando ela vira. Texto sem carimbo (o que
  * ficou gravado antes disto) conta como vencido: ninguém sabe de que semana
- * ele falava.
+ * ele falava. Trocar o começo da semana na capa também vence o texto: o
+ * carimbo era de uma semana que, com a régua nova, já não existe.
  */
 function periodo_em_cartaz(array $agenda, ?int $agora = null): string
 {
     $escrito = trim((string) ($agenda['periodo'] ?? ''));
     $carimbo = trim((string) ($agenda['periodoSemana'] ?? ''));
+    $comeco  = comeco_da_semana($agenda);
     if ($escrito !== '' && $carimbo !== '') {
         $quando = strtotime($carimbo);
-        $desta  = strtotime(semana_de($agora)['inicio']);
+        $desta  = strtotime(semana_de($agora, $comeco)['inicio']);
         if ($quando !== false && $desta !== false && $quando === $desta) {
             return $escrito;
         }
     }
-    return periodo_da_semana($agora);
+    return periodo_da_semana($agora, $comeco);
 }
 
-function periodo_da_semana(?int $agora = null): string
+function periodo_da_semana(?int $agora = null, string $comeco = INICIO_SEMANA_PADRAO): string
+{
+    return periodo_da_janela(semana_de($agora, $comeco));
+}
+
+/**
+ * Qualquer janela `[inicio, fim)` escrita por extenso — "29 de agosto a 4 de
+ * setembro". Serve à semana corrente, à próxima e ao que mais o site recortar;
+ * espelha `periodoDaJanela()` no TypeScript.
+ */
+function periodo_da_janela(array $janela): string
 {
     $fuso = new DateTimeZone('America/Fortaleza');
-    $semana = semana_de($agora);
-    $de  = (new DateTimeImmutable($semana['inicio']))->setTimezone($fuso);
-    /* O fim da janela é o domingo seguinte; o sábado é o dia anterior a ela. */
-    $ate = (new DateTimeImmutable($semana['fim']))->setTimezone($fuso)->modify('-1 day');
+    $de  = (new DateTimeImmutable($janela['inicio']))->setTimezone($fuso);
+    /* O fim da janela é o primeiro dia de fora; o último dia dentro é o anterior. */
+    $ate = (new DateTimeImmutable($janela['fim']))->setTimezone($fuso)->modify('-1 day');
 
     $mesDe  = MESES[(int) $de->format('n') - 1];
     $mesAte = MESES[(int) $ate->format('n') - 1];

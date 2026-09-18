@@ -55,6 +55,10 @@ function tela_de_agenda(?string $aviso, ?string $sucesso, ?array $rascunho): voi
         }
     }
     $canaisAtivos = array_column($agenda['disponivelEm'] ?? CANAIS_PADRAO, 'icone');
+    /* A régua da semana que a capa escolheu: o placeholder, a dica e a lista
+       "o que está no ar" falam da MESMA semana que o site vai desenhar. */
+    $comeco = comeco_da_semana($agenda);
+    $ultimoDia = $comeco === 'segunda' ? 'domingo' : 'sábado';
 
     abrir_pagina('Agenda da semana');
     ?>
@@ -100,23 +104,25 @@ function tela_de_agenda(?string $aviso, ?string $sucesso, ?array $rascunho): voi
                    dois dias de mutirão, "de 2 a 15 de outubro". Escrever aqui é
                    dizer "esta semana não é uma semana", e aí a mão ganha do
                    relógio — MAS SÓ ATÉ A SEMANA VIRAR. O texto vai gravado com o
-                   domingo da semana em que foi escrito, e vence junto com ela:
+                   primeiro dia da semana em que foi escrito, e vence junto com ela:
                    era assim que "24/08 a 30/08" continuava no ar em setembro,
                    sem ninguém perceber, porque a página desenhava igual. */ ?>
           <input id="p" type="text" name="periodo" value="<?= h($agenda['periodo'] ?? '') ?>"
-                 maxlength="60" placeholder="<?= h(periodo_da_semana()) ?>">
+                 maxlength="60" placeholder="<?= h(periodo_da_semana(null, $comeco)) ?>">
           <p class="dica">
             <?php if (($agenda['periodo'] ?? '') === ''): ?>
-              A página está mostrando <strong><?= h(periodo_da_semana()) ?></strong>, calculado
-              na hora em que alguém abre — no domingo ele vira sozinho.
+              A página está mostrando <strong><?= h(periodo_da_semana(null, $comeco)) ?></strong>, calculado
+              na hora em que alguém abre — vira sozinho quando chega
+              <?= h(strtolower(INICIOS_SEMANA[$comeco])) ?>. Quem muda de recorte na
+              página (hoje, próxima semana, tudo) vê a data daquele recorte.
             <?php elseif (periodo_em_cartaz($agenda) === trim((string) $agenda['periodo'])): ?>
               Escrito à mão: a página mostra <strong><?= h($agenda['periodo']) ?></strong>
-              <strong>até este sábado</strong>. Depois disso ele vence e a página volta
-              sozinha para a semana corrente — escreva de novo se a próxima também
-              for atípica. Apague para voltar já.
+              <strong>até este <?= h($ultimoDia) ?></strong>, no recorte "esta semana". Depois
+              disso ele vence e a página volta sozinha para a semana corrente — escreva de
+              novo se a próxima também for atípica. Apague para voltar já.
             <?php else: ?>
               <strong>Este texto venceu.</strong> Foi escrito para outra semana, então a
-              página já está mostrando <strong><?= h(periodo_da_semana()) ?></strong>, que é
+              página já está mostrando <strong><?= h(periodo_da_semana(null, $comeco)) ?></strong>, que é
               a semana corrente. Apague o campo, ou escreva o período desta semana.
             <?php endif; ?>
           </p>
@@ -125,6 +131,37 @@ function tela_de_agenda(?string $aviso, ?string $sucesso, ?array $rascunho): voi
       <div class="campo">
         <label for="c">Chamada</label>
         <input id="c" type="text" name="chamada" value="<?= h($agenda['chamada'] ?? '') ?>" maxlength="200">
+      </div>
+      <div class="linha g2">
+        <div class="campo">
+          <label for="is">A semana começa</label>
+          <?php /* Domingo é o calendário de parede e a semana de rua; segunda é
+                   a semana de lives. É esta escolha que decide o que "esta
+                   semana" e "próxima semana" recortam na página e o que o
+                   período por extenso escreve — nos dois lados, PHP e site. */ ?>
+          <select id="is" name="inicioSemana">
+            <?php foreach (INICIOS_SEMANA as $chave => $nome): ?>
+              <option value="<?= h($chave) ?>" <?= $comeco === $chave ? 'selected' : '' ?>>
+                <?= h($nome) ?> (<?= $chave === 'segunda' ? 'segunda a domingo' : 'domingo a sábado' ?>)
+              </option>
+            <?php endforeach; ?>
+          </select>
+          <p class="dica">Vale para o recorte da página e para a data embaixo do título.</p>
+        </div>
+        <div class="campo">
+          <label for="g">Grupo de quem ajuda na organização <span class="dica">— opcional</span></label>
+          <?php /* Só o link. Com ele preenchido a página ganha, embaixo da lista,
+                   o convite "quer ajudar na organização? entre no grupo". Vazio,
+                   o convite não aparece — a página não promete porta que não
+                   existe. */ ?>
+          <input id="g" type="url" name="grupo" value="<?= h($agenda['grupo'] ?? '') ?>"
+                 maxlength="300" placeholder="https://chat.whatsapp.com/…" inputmode="url"
+                 autocapitalize="none" spellcheck="false">
+          <p class="dica">
+            Cole o link de convite do grupo. A página passa a mostrar um botão
+            “Ajudar na organização” que leva direto para ele; apague para tirar o botão.
+          </p>
+        </div>
       </div>
       <div class="campo">
         <label>Disponível em</label>

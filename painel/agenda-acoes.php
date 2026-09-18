@@ -44,12 +44,20 @@ function montar_agenda_do_post(array $post, array &$recados): array
        uma semana que já acabou. Campo vazio não carimba nada — quem responde
        passa a ser o relógio. Ver `periodo_em_cartaz()`. */
     $periodo = limpar_texto($post['periodo'] ?? '', 80);
+    /* O começo da semana entra ANTES do carimbo: o período escrito à mão é
+       carimbado com a semana da régua que está sendo gravada junto com ele. */
+    $comeco = comeco_da_semana(['inicioSemana' => (string) ($post['inicioSemana'] ?? '')]);
 
     return [
         'titulo'       => limpar_texto($post['titulo'] ?? '', 80) ?: 'Agenda da Semana',
         'periodo'      => $periodo,
-        'periodoSemana' => $periodo !== '' ? semana_de()['inicio'] : '',
+        'periodoSemana' => $periodo !== '' ? semana_de(null, $comeco)['inicio'] : '',
         'chamada'      => limpar_texto($post['chamada'] ?? '', 200),
+        /* O grupo de quem quer ajudar na organização. Só o link: o texto do
+           convite é o mesmo sempre, e quem muda é o grupo. `limpar_link()` barra
+           `javascript:` e completa o https de quem colou "chat.whatsapp.com/…". */
+        'grupo'        => limpar_link($post['grupo'] ?? ''),
+        'inicioSemana' => $comeco,
         'disponivelEm' => $canais,
         'programacao'  => [],  // preenchida por quem chama, com itens_publicos()
         'atualizadoEm' => date('c'),
