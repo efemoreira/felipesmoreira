@@ -53,6 +53,7 @@ const PONTES = [
     'recusa_de_inscricao',
     'trilha_da_funcao',
     'semana_de',
+    'proxima_semana_de',
     'dia_de',
     'periodo_da_semana',
     'periodo_em_cartaz',

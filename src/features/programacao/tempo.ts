@@ -160,22 +160,50 @@ function meiaNoiteNoCeara(ano: number, mes: number, dia: number, referencia: Dat
 }
 
 /**
- * A SEMANA VAI DE DOMINGO A SÁBADO, no fuso do Ceará.
+ * Em que dia a semana da programação abre. Escolha da capa, no painel; espelha
+ * `INICIOS_SEMANA` em `public/painel/agenda-comum.php`.
+ */
+export const INICIOS_SEMANA = ["domingo", "segunda"] as const;
+export type InicioSemana = (typeof INICIOS_SEMANA)[number];
+export const INICIO_SEMANA_PADRAO: InicioSemana = "domingo";
+
+/** O começo que a capa escolheu; qualquer coisa fora da lista é domingo. */
+export function comecoDaSemana(agenda: Pick<Agenda, "inicioSemana">): InicioSemana {
+  return agenda.inicioSemana === "segunda" ? "segunda" : INICIO_SEMANA_PADRAO;
+}
+
+/**
+ * A SEMANA DA PROGRAMAÇÃO, no fuso do Ceará — de domingo a sábado por padrão,
+ * de segunda a domingo quando a capa pede (`comeco`).
  *
  * Espelha `semana_de()` em `public/painel/agenda-comum.php`. As duas existem
  * porque uma roda no navegador de quem visita e a outra no PHP que monta o
  * painel — e se discordarem, o encontro de domingo aparece "nesta semana" num
  * lado e "na semana que vem" no outro.
  *
- * DOMINGO, e não segunda: quem abre `/programacao` lê a semana como lê um
+ * DOMINGO É O PADRÃO: quem abre `/programacao` lê a semana como lê um
  * calendário de parede, onde o domingo abre a linha — e a maior parte dos
- * encontros de rua é justamente de fim de semana. Com a semana começando na
- * segunda, o domingo caía no fim da lista, colado no sábado da semana anterior.
+ * encontros de rua é justamente de fim de semana. Mas semana de lives se pensa
+ * de segunda a domingo, e é a coordenação quem sabe qual das duas está vivendo.
  */
-export function semanaDe(agora: Date = new Date()): Janela {
+export function semanaDe(agora: Date = new Date(), comeco: InicioSemana = INICIO_SEMANA_PADRAO): Janela {
   const { ano, mes, dia, semana } = partesNoCeara(agora);
-  const inicio = meiaNoiteNoCeara(ano, mes, dia - semana, agora);
+  const desdeOComeco = comeco === "segunda" ? (semana + 6) % 7 : semana;
+  const inicio = meiaNoiteNoCeara(ano, mes, dia - desdeOComeco, agora);
   return { inicio, fim: new Date(inicio.getTime() + 7 * 86_400_000) };
+}
+
+/**
+ * A semana seguinte à corrente — o recorte "próxima semana". Sete dias à
+ * frente da mesma régua, e não "hoje + 7": na sexta, a próxima semana começa
+ * no domingo que vem, não na sexta que vem.
+ */
+export function proximaSemanaDe(
+  agora: Date = new Date(),
+  comeco: InicioSemana = INICIO_SEMANA_PADRAO,
+): Janela {
+  const { fim } = semanaDe(agora, comeco);
+  return { inicio: fim, fim: new Date(fim.getTime() + 7 * 86_400_000) };
 }
 
 /** O dia de hoje no Ceará, do primeiro instante ao primeiro instante de amanhã. */
@@ -224,29 +252,76 @@ export function dentroDoPeriodo(item: ItemAgenda, janela: Janela): boolean {
  * ninguém sabe de que semana ele falava.
  */
 export function periodoVigente(
-  agenda: Pick<Agenda, "periodo" | "periodoSemana">,
+  agenda: Pick<Agenda, "periodo" | "periodoSemana" | "inicioSemana">,
   agora: Date = new Date(),
 ): string {
+  const comeco = comecoDaSemana(agenda);
   const escrito = agenda.periodo?.trim();
   if (escrito && agenda.periodoSemana) {
     const carimbo = Date.parse(agenda.periodoSemana);
-    if (!Number.isNaN(carimbo) && carimbo === semanaDe(agora).inicio.getTime()) {
+    if (!Number.isNaN(carimbo) && carimbo === semanaDe(agora, comeco).inicio.getTime()) {
       return escrito;
     }
   }
-  return periodoDaSemana(agora);
+  return periodoDaSemana(agora, comeco);
 }
 
-export function periodoDaSemana(agora: Date = new Date()): string {
-  const { inicio, fim } = semanaDe(agora);
-  /* O fim da janela é o domingo seguinte; o sábado é o dia anterior a ela. */
-  const sabado = new Date(fim.getTime() - 86_400_000);
+export function periodoDaSemana(
+  agora: Date = new Date(),
+  comeco: InicioSemana = INICIO_SEMANA_PADRAO,
+): string {
+  return periodoDaJanela(semanaDe(agora, comeco));
+}
+
+/**
+ * Qualquer janela `[inicio, fim)` escrita por extenso — "29 de agosto a 4 de
+ * setembro". Espelha `periodo_da_janela()` no PHP.
+ */
+export function periodoDaJanela({ inicio, fim }: Janela): string {
+  /* O fim da janela é o primeiro dia de fora; o último dia dentro é o anterior. */
+  const ultimo = new Date(fim.getTime() - 86_400_000);
 
   const de = partesNoCeara(inicio);
-  const ate = partesNoCeara(sabado);
+  const ate = partesNoCeara(ultimo);
 
   if (de.mes === ate.mes) {
     return `${de.dia} a ${ate.dia} de ${MESES[ate.mes - 1]}`;
   }
   return `${de.dia} de ${MESES[de.mes - 1]} a ${ate.dia} de ${MESES[ate.mes - 1]}`;
+}
+
+/** "18 de setembro" — um dia só, por extenso. */
+export function diaPorExtenso(quando: Date): string {
+  const { dia, mes } = partesNoCeara(quando);
+  return `${dia} de ${MESES[mes - 1]}`;
+}
+
+export type Recorte = "hoje" | "semana" | "proxima" | "tudo";
+
+/**
+ * A DATA EMBAIXO DO TÍTULO ACOMPANHA O RECORTE.
+ *
+ * Ela dizia sempre a semana corrente, mesmo com "tudo" ou "hoje" apertado — e
+ * quem lia "13 a 19 de setembro" em cima de uma lista que ia até outubro não
+ * sabia em qual dos dois acreditar. Agora cada botão tem a sua frase:
+ * "esta semana" continua sendo `periodoVigente()` (o escrito à mão ganha, até
+ * vencer); "próxima semana" é a janela seguinte por extenso; "hoje" é o dia;
+ * "tudo" é "a partir de hoje", porque a lista só mostra o que vem.
+ */
+export function periodoDoRecorte(
+  agenda: Pick<Agenda, "periodo" | "periodoSemana" | "inicioSemana">,
+  recorte: Recorte,
+  agora: Date = new Date(),
+): string {
+  const comeco = comecoDaSemana(agenda);
+  switch (recorte) {
+    case "hoje":
+      return `hoje, ${diaPorExtenso(agora)}`;
+    case "proxima":
+      return periodoDaJanela(proximaSemanaDe(agora, comeco));
+    case "tudo":
+      return `a partir de ${diaPorExtenso(agora)}`;
+    default:
+      return periodoVigente(agenda, agora);
+  }
 }

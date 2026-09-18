@@ -8,17 +8,20 @@ import CompartilharClient from "./CompartilharClient";
 import { C, BORDA, sigla, temaDe, type Agenda, type ItemAgenda, sombra, sombraErguida, sombraAfundada } from "./tipos";
 import { CAMINHO_AGENDA_AO_VIVO, normalizarAgenda } from "./dados";
 import {
+  comecoDaSemana,
   dentroDoPeriodo,
   diaDe,
   emOrdem,
   estadoDe,
   estaAoVivo,
   idEmDestaque,
-  periodoVigente,
+  periodoDoRecorte,
+  proximaSemanaDe,
   quantosPassaram,
   semanaDe,
   soFuturos,
   type Estado,
+  type Recorte,
 } from "./tempo";
 
 const FONT_ALFA = "var(--font-alfa), serif";
@@ -46,15 +49,16 @@ const iconeSeguro = (nome: string | undefined, padrao: IconName): IconName =>
 /**
  * O que a página diz quando o recorte não sobrou nada.
  *
- * São três silêncios diferentes, e dizer a mesma frase nos três mandaria a
+ * São quatro silêncios diferentes, e dizer a mesma frase nos quatro mandaria a
  * pessoa para um botão que também está vazio. Agora que o que já passou sai da
  * lista, "nada marcado" quase sempre quer dizer "já aconteceu" — e é isso que
  * precisa estar escrito, senão a página parece quebrada.
  */
-const recadoDeVazio = (quantosPublicados: number, recorte: "hoje" | "semana" | "tudo"): string => {
+const recadoDeVazio = (quantosPublicados: number, recorte: Recorte): string => {
   if (quantosPublicados === 0) return "A agenda desta semana ainda está sendo fechada. Volte já já.";
   if (recorte === "tudo") return "Nada mais marcado por enquanto. A próxima semana sai já já.";
   if (recorte === "hoje") return "Nada mais marcado para hoje. Toque em “Esta semana” para ver o resto.";
+  if (recorte === "proxima") return "A próxima semana ainda está sendo fechada. Toque em “Tudo” para ver o que já está marcado.";
   return "Nada mais marcado para esta semana. Toque em “Tudo” para ver o que vem depois.";
 };
 
@@ -102,18 +106,26 @@ const ProgramacaoClient: React.FC<{ semente: Agenda }> = ({ semente }) => {
    * abre no domingo à noite quer saber o que vem, não o que passou em julho.
    *
    * Começa em `semana` porque é o que o título promete; "hoje" é para quem já
-   * sabe que vai sair de casa, e "tudo" continua a um toque para quem procura
-   * um encontro específico.
+   * sabe que vai sair de casa, "próxima semana" é para quem está se
+   * organizando, e "tudo" continua a um toque para quem procura um encontro
+   * específico.
+   *
+   * Onde a semana abre (domingo ou segunda) é escolha da capa, no painel —
+   * `comecoDaSemana()` lê do mesmo `agenda.json`, então o recorte daqui e o
+   * do painel são a mesma semana.
    */
-  const [recorte, setRecorte] = useState<"hoje" | "semana" | "tudo">("semana");
+  const [recorte, setRecorte] = useState<Recorte>("semana");
+  const comeco = comecoDaSemana(agenda);
 
   /* ANTES DO RELÓGIO ACORDAR, MOSTRA TUDO. O HTML do build e o primeiro render
      do cliente precisam sair iguais — recortar por uma data no servidor
      congelaria a semana da compilação dentro do HTML estático. */
   const janela = useMemo(() => {
     if (!agora || recorte === "tudo") return null;
-    return recorte === "hoje" ? diaDe(agora) : semanaDe(agora);
-  }, [recorte, agora]);
+    if (recorte === "hoje") return diaDe(agora);
+    if (recorte === "proxima") return proximaSemanaDe(agora, comeco);
+    return semanaDe(agora, comeco);
+  }, [recorte, agora, comeco]);
 
   const noRecorte = useMemo(
     () => (janela ? todos.filter((i) => dentroDoPeriodo(i, janela)) : todos),
@@ -261,22 +273,20 @@ const ProgramacaoClient: React.FC<{ semente: Agenda }> = ({ semente }) => {
             )}
           </h1>
 
-          {/* O PERÍODO SEGUE O RELÓGIO quando a coordenação não escreveu um.
-              Digitado à mão ele envelhecia sozinho: quem esquecia de trocar na
-              segunda deixava o site anunciando a semana passada, e a página
-              continuava desenhando sem sinal de que estava errada.
-
-              O campo do painel continua ganhando enquanto for da semana em que
-              foi escrito — é para a semana atípica, o feriadão, o mutirão. Na
-              virada ele vence e o relógio volta a responder. */}
+          {/* A DATA ACOMPANHA O RECORTE. Em "esta semana" ela segue o relógio
+              quando a coordenação não escreveu um período — digitado à mão ele
+              envelhecia sozinho, e o campo do painel só ganha enquanto for da
+              semana em que foi escrito. Em "próxima semana" é a semana seguinte
+              por extenso; em "hoje" é o dia; em "tudo" é "a partir de hoje".
+              Dizer sempre a semana corrente em cima de uma lista que ia até o
+              mês que vem deixava a pessoa sem saber em qual dos dois acreditar. */}
           {(agenda.periodo || agora) && (
             <p className="ag-periodo">
               <Icon name="calendar" size={14} />
               {/* Antes do relógio acordar sai o que veio no arquivo, para o HTML
                   do build e o primeiro render baterem; depois quem decide é
-                  `periodoVigente()`, que só deixa o texto escrito à mão passar
-                  enquanto ele for da semana corrente. */}
-              <span>{agora ? periodoVigente(agenda, agora) : agenda.periodo}</span>
+                  `periodoDoRecorte()`. */}
+              <span>{agora ? periodoDoRecorte(agenda, recorte, agora) : agenda.periodo}</span>
             </p>
           )}
 
@@ -298,6 +308,7 @@ const ProgramacaoClient: React.FC<{ semente: Agenda }> = ({ semente }) => {
               [
                 ["hoje", "Hoje"],
                 ["semana", "Esta semana"],
+                ["proxima", "Próxima semana"],
                 ["tudo", "Tudo"],
               ] as const
             ).map(([chave, rotulo]) => (
@@ -362,6 +373,23 @@ const ProgramacaoClient: React.FC<{ semente: Agenda }> = ({ semente }) => {
               </li>
             ))}
           </ol>
+        )}
+
+        {/* O CONVITE PARA QUEM QUER AJUDAR NA ORGANIZAÇÃO. Só quando a capa
+            tem o link do grupo: a página não promete porta que não existe. Fica
+            depois da lista, e não no cabeçalho — quem lê a agenda inteira e
+            chega aqui é quem já se interessou o bastante para entrar. */}
+        {agenda.grupo && (
+          <aside className="ag-grupo" aria-label="Ajudar na organização">
+            <p className="ag-grupo-texto">
+              <strong>Quer ajudar na organização?</strong> Quem monta os encontros
+              combina tudo num grupo — entre e diga em que pode ajudar.
+            </p>
+            <a className="ag-btn ag-btn-ouro" href={agenda.grupo} target="_blank" rel="noopener noreferrer">
+              <Icon name="whatsapp" size={16} />
+              <span>Entrar no grupo</span>
+            </a>
+          </aside>
         )}
 
         <footer className="ag-rodape">
@@ -694,12 +722,24 @@ const css = `
   .ag-vazio p { margin: 0; }
   .ag-vazio-acoes { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 18px !important; }
   .ag-btn {
-    display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px;
+    display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px;
     font-family: ${FONT_ELITE}; font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase;
     color: ${C.cream}; text-decoration: none; border: ${BORDA}px solid ${C.ink};
     background: rgba(20,17,12,.8); box-shadow: ${sombra("rente", C.sombraNoite)};
   }
   .ag-btn-ouro { background: ${C.gold}; color: ${C.ink}; }
+
+  /* O convite do grupo: uma faixa de papel entre a lista e o rodapé, com a
+     mesma moldura dura do resto — é a única coisa clara da página, e é para
+     ser. */
+  .ag-grupo {
+    display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+    margin: 28px 0 0; padding: 18px 20px;
+    background: ${C.paper}; color: ${C.ink};
+    border: ${BORDA}px solid ${C.ink}; box-shadow: ${sombra("cartao")};
+  }
+  .ag-grupo-texto { margin: 0; flex: 1 1 260px; font-size: 15px; line-height: 1.5; }
+  .ag-grupo-texto strong { font-family: ${FONT_ALFA}; letter-spacing: 1px; text-transform: uppercase; font-weight: 400; display: block; margin-bottom: 2px; }
 
   .ag-rodape {
     margin-top: 30px; text-align: center;

@@ -63,6 +63,17 @@ export interface Agenda {
    */
   periodoSemana?: string;
   chamada?: string;
+  /**
+   * O link do grupo de quem quer ajudar na organização. Com ele a página
+   * ganha o convite embaixo da lista; sem ele, o convite não aparece.
+   */
+  grupo?: string;
+  /**
+   * Em que dia a semana abre — "domingo" (padrão) ou "segunda". Decide o que
+   * "esta semana" e "próxima semana" recortam e o que o período escreve.
+   * A lista fechada é `INICIOS_SEMANA`, em `tempo.ts`.
+   */
+  inicioSemana?: "domingo" | "segunda";
   disponivelEm?: Canal[];
   programacao: ItemAgenda[];
 }

@@ -69,6 +69,8 @@ export function normalizarAgenda(bruto: unknown): Agenda | null {
       return v && !Number.isNaN(Date.parse(v)) ? v : undefined;
     })(),
     chamada: texto(o.chamada, 200) || undefined,
+    grupo: caminhoSeguro(texto(o.grupo, 300)),
+    inicioSemana: o.inicioSemana === "segunda" ? "segunda" : "domingo",
     disponivelEm: Array.isArray(o.disponivelEm)
       ? o.disponivelEm
           .filter((c): c is Record<string, unknown> => !!c && typeof c === "object")

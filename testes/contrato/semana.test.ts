@@ -2,11 +2,15 @@ import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import {
   semanaDe,
+  proximaSemanaDe,
   diaDe,
   periodoDaSemana,
+  periodoDaJanela,
+  periodoDoRecorte,
   periodoVigente,
   dentroDoPeriodo,
   soFuturos,
+  INICIOS_SEMANA,
 } from "../../src/features/programacao/tempo.ts";
 import type { ItemAgenda } from "../../src/features/programacao/tipos.ts";
 import { chamarPhp } from "./ponte.ts";
@@ -127,6 +131,94 @@ describe("semana e dia: o PHP e o TypeScript leem o mesmo relógio", () => {
 
     assert.equal(periodoDaSemana(sabado), "23 a 29 de agosto");
     assert.equal(periodoDaSemana(domingo), "30 de agosto a 5 de setembro");
+  });
+
+  /**
+   * A CAPA PODE ABRIR A SEMANA NA SEGUNDA. Semana de lives se pensa de segunda
+   * a domingo, e a escolha vale nos dois lados: o mesmo domingo que fecha a
+   * semana no site tem de fechá-la no painel.
+   */
+  test("com começo na segunda, os dois lados abrem na mesma segunda e fecham no mesmo domingo", () => {
+    const doPhp = chamarPhp(
+      MOMENTOS.map(([, iso]) => ({
+        fn: "semana_de",
+        args: [Math.floor(Date.parse(iso) / 1000), "segunda"],
+      })),
+    ) as { inicio: string; fim: string }[];
+
+    MOMENTOS.forEach(([nome, iso], i) => {
+      const daTs = semanaDe(new Date(iso), "segunda");
+      assert.equal(daTs.inicio.getTime(), Date.parse(doPhp[i].inicio), `${nome}: começo na segunda divergiu`);
+      assert.equal(daTs.fim.getTime(), Date.parse(doPhp[i].fim), `${nome}: fim no domingo divergiu`);
+    });
+
+    /* A regra em si: o domingo é o ÚLTIMO dia, e não o primeiro. */
+    const domingo = new Date("2026-08-30T01:00:00-03:00");
+    const segunda = new Date("2026-08-31T01:00:00-03:00");
+    assert.equal(periodoDaSemana(domingo, "segunda"), "24 a 30 de agosto");
+    assert.equal(periodoDaSemana(segunda, "segunda"), "31 de agosto a 6 de setembro");
+  });
+
+  test("a próxima semana é a mesma nos dois lados, nas duas réguas", () => {
+    for (const comeco of INICIOS_SEMANA) {
+      const doPhp = chamarPhp(
+        MOMENTOS.map(([, iso]) => ({
+          fn: "proxima_semana_de",
+          args: [Math.floor(Date.parse(iso) / 1000), comeco],
+        })),
+      ) as { inicio: string; fim: string }[];
+
+      MOMENTOS.forEach(([nome, iso], i) => {
+        const daTs = proximaSemanaDe(new Date(iso), comeco);
+        assert.equal(daTs.inicio.getTime(), Date.parse(doPhp[i].inicio), `${nome} (${comeco}): a próxima semana começa diferente`);
+        assert.equal(daTs.fim.getTime(), Date.parse(doPhp[i].fim), `${nome} (${comeco}): a próxima semana acaba diferente`);
+      });
+    }
+
+    /* Sete dias à frente da RÉGUA, e não de hoje: na sexta, a próxima semana
+       começa no domingo que vem — não na sexta que vem. */
+    const sexta = new Date("2026-08-28T15:00:00-03:00");
+    assert.equal(periodoDaJanela(proximaSemanaDe(sexta)), "30 de agosto a 5 de setembro");
+    assert.equal(periodoDaJanela(proximaSemanaDe(sexta, "segunda")), "31 de agosto a 6 de setembro");
+  });
+
+  test("o período escrito à mão vale para a semana da régua da capa", () => {
+    /* Capa que abre na segunda: o carimbo é a segunda, e o texto vale até o
+       domingo — inclusive no domingo, que na régua padrão já seria outra semana. */
+    const segunda = new Date("2026-08-24T12:00:00-03:00");
+    const domingo = new Date("2026-08-30T12:00:00-03:00");
+    const carimbo = semanaDe(segunda, "segunda").inicio.toISOString();
+    const capa = { periodo: "semana de lives", periodoSemana: carimbo, inicioSemana: "segunda" as const };
+
+    const doPhp = chamarPhp([
+      { fn: "periodo_em_cartaz", args: [capa, Math.floor(domingo.getTime() / 1000)] },
+      /* A mesma capa, mas com a régua trocada de volta para domingo: o carimbo
+         já não é o começo de semana nenhuma, e o texto vence. */
+      { fn: "periodo_em_cartaz", args: [{ ...capa, inicioSemana: "domingo" }, Math.floor(domingo.getTime() / 1000)] },
+    ]) as string[];
+
+    assert.equal(periodoVigente(capa, domingo), "semana de lives");
+    assert.equal(periodoVigente({ ...capa, inicioSemana: "domingo" }, domingo), "30 de agosto a 5 de setembro");
+    assert.deepEqual(doPhp, ["semana de lives", "30 de agosto a 5 de setembro"]);
+  });
+
+  /**
+   * A DATA EMBAIXO DO TÍTULO ACOMPANHA O BOTÃO. Só no site — o painel não tem
+   * os botões — mas a frase de "esta semana" continua sendo a de
+   * `periodoVigente()`, que tem par.
+   */
+  test("cada recorte tem a sua data", () => {
+    const quarta = new Date("2026-08-26T12:00:00-03:00");
+    const capa = { periodo: "", periodoSemana: "", inicioSemana: "domingo" as const };
+
+    assert.equal(periodoDoRecorte(capa, "semana", quarta), "23 a 29 de agosto");
+    assert.equal(periodoDoRecorte(capa, "proxima", quarta), "30 de agosto a 5 de setembro");
+    assert.equal(periodoDoRecorte(capa, "hoje", quarta), "hoje, 26 de agosto");
+    assert.equal(periodoDoRecorte(capa, "tudo", quarta), "a partir de 26 de agosto");
+    /* O escrito à mão só ganha em "esta semana": é dela que ele fala. */
+    const escrita = { ...capa, periodo: "feirão", periodoSemana: semanaDe(quarta).inicio.toISOString() };
+    assert.equal(periodoDoRecorte(escrita, "semana", quarta), "feirão");
+    assert.equal(periodoDoRecorte(escrita, "proxima", quarta), "30 de agosto a 5 de setembro");
   });
 });
 

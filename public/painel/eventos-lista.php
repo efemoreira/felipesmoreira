@@ -112,9 +112,10 @@ function tela_lista_de_encontros(bool $coordena, array $eu, ?string $erro, ?stri
       }
 
       /* O PERÍODO SEGUE O RELÓGIO, e não uma data digitada. "Esta semana" é a
-         semana corrente de domingo a sábado, no fuso do Ceará — a mesma que o
-         site usa em /programacao, e por isso vem de `semana_de()`, que tem par
-         em TypeScript.
+         semana corrente no fuso do Ceará — de domingo a sábado, ou de segunda a
+         domingo, conforme a capa da programação escolheu — a mesma que o site
+         usa em /programacao, e por isso vem de `semana_de()`, que tem par em
+         TypeScript, com o começo lido de `comeco_da_semana()`.
 
          O padrão é TUDO, de propósito: esta é a tela de trabalho da
          coordenação, e abrir escondendo os encontros do mês que vem seria
@@ -125,11 +126,14 @@ function tela_lista_de_encontros(bool $coordena, array $eu, ?string $erro, ?stri
          "de hoje" seria inventar uma data que ninguém digitou. Ele continua em
          "todos". */
       $quandoEv = (string) ($_GET['quando'] ?? '');
-      if (!in_array($quandoEv, ['hoje', 'semana'], true)) {
+      if (!in_array($quandoEv, ['hoje', 'semana', 'proxima'], true)) {
           $quandoEv = '';
       }
+      $comecoSemana = comeco_da_semana(agenda_atual());
       if ($quandoEv !== '') {
-          $janela = $quandoEv === 'hoje' ? dia_de() : semana_de();
+          $janela = $quandoEv === 'hoje' ? dia_de()
+              : ($quandoEv === 'proxima' ? proxima_semana_de(null, $comecoSemana)
+              : semana_de(null, $comecoSemana));
           $noPeriodo = fn (array $e) => dentro_do_periodo($e['inicio'], $janela);
           $proximos = array_values(array_filter($proximos, $noPeriodo));
           $passados = array_values(array_filter($passados, $noPeriodo));
@@ -206,7 +210,7 @@ function tela_lista_de_encontros(bool $coordena, array $eu, ?string $erro, ?stri
                 ['tipo' => 'busca', 'valor' => $buscaEv, 'dica' => 'nome, local, cidade ou data'],
                 ['tipo' => 'escolha', 'nome' => 'quando', 'rotulo' => 'Quando',
                  'valor' => $quandoEv, 'vazio' => 'todos',
-                 'opcoes' => ['hoje' => 'Hoje', 'semana' => 'Esta semana']],
+                 'opcoes' => ['hoje' => 'Hoje', 'semana' => 'Esta semana', 'proxima' => 'Próxima semana']],
             ],
             $recortado,
             '/painel/eventos.php?aba=' . $abaEv,
@@ -222,8 +226,8 @@ function tela_lista_de_encontros(bool $coordena, array $eu, ?string $erro, ?stri
         <?php /* nada a dizer sobre listas de encontro nesta aba */ ?>
       <?php elseif ($quandoEv !== '' && $proximos === [] && $passados === []): ?>
         <p class="dica" style="margin:0 0 18px">
-          Nenhum encontro <?= $quandoEv === 'hoje' ? 'hoje' : 'nesta semana' ?>
-          (<?= h($quandoEv === 'hoje' ? 'hoje' : periodo_da_semana()) ?>).
+          Nenhum encontro <?= $quandoEv === 'hoje' ? 'hoje' : ($quandoEv === 'proxima' ? 'na próxima semana' : 'nesta semana') ?>
+          (<?= h($quandoEv === 'hoje' ? 'hoje' : periodo_da_janela($janela)) ?>).
           <a href="/painel/eventos.php?aba=<?= h($abaEv) ?>">Ver todos</a>.
         </p>
       <?php elseif ($buscaEv !== '' && $proximos === [] && $passados === []): ?>
