@@ -481,7 +481,7 @@ const FORMATOS_OFICINA = [
  * ferramenta. Fica no rodapé da aba Formatos.
  */
 const APOIO_OFICINA = [
-    ['rotulo' => 'Quadro completo no Trello',        'url' => 'https://trello.com/b/VOx6su53/formatos-criativos-de-conteudo'],
+    ['rotulo' => 'Quadro completo no Trello',        'url' => 'https://trello.com/b/VOx6su53/formatos-criativos-de-conteudo-alunos'],
     ['rotulo' => 'Por que encontrar o seu formato',  'url' => 'https://trello.com/c/aGR8cWvA/6-porque-encontrar-o-seu-formato'],
     ['rotulo' => 'SOFIA, para adaptar roteiro',      'url' => 'https://hotmart.com/pt-BR/club/edicaodofuturopelocapcut/products/5942825/content/b4K9mRG57X'],
     ['rotulo' => 'Estrutura AIDA',                   'url' => 'https://trello.com/c/LlynMByS/7-universal-aida'],
@@ -490,6 +490,18 @@ const APOIO_OFICINA = [
     ['rotulo' => 'Ele, eu, você e futuro',           'url' => 'https://trello.com/c/ZXOJk86T/28-ele-eu-você-e-futuro'],
     ['rotulo' => 'Análise estratégica',              'url' => 'https://trello.com/c/b0Gco8Uj/30-análise-estratégica'],
     ['rotulo' => 'Bônus: mentoria de iluminação',    'url' => 'https://hotmart.com/pt-BR/club/edicaodofuturopelocapcut/products/4921225/content/E4zNXJq64l'],
+    /* OS SEIS ELEMENTOS VICIANTES, do mesmo quadro do Trello.
+       São um terceiro eixo, ao lado do formato e do gancho: o formato diz como
+       se grava, o gancho diz como se abre, e estes dizem por que a pessoa fica.
+       Entram como leitura de apoio e não como campo do registro — medir três
+       eixos com trinta e sete vídeos não dá amostra para nenhum dos três. */
+    ['rotulo' => 'Elemento: relevância emocional',      'url' => 'https://trello.com/c/3cRu2MB4'],
+    ['rotulo' => 'Elemento: linguagem familiar',        'url' => 'https://trello.com/c/hzejF59o'],
+    ['rotulo' => 'Elemento: tema e moral da história',  'url' => 'https://trello.com/c/Dn78Bbh7'],
+    ['rotulo' => 'Elemento: conflito e mudança',        'url' => 'https://trello.com/c/gh2UFJhI'],
+    ['rotulo' => 'Elemento: curiosidade e efeito aháa', 'url' => 'https://trello.com/c/Do9DjpUb'],
+    ['rotulo' => 'Elemento: contraste',                 'url' => 'https://trello.com/c/z7DR433U'],
+    ['rotulo' => 'Músicas emocionalmente relevantes',   'url' => 'https://trello.com/c/1rPNKNdo'],
     /* As fontes da metade que não veio do curso — os formatos 20 a 37 e o anexo
        de ganchos saíram daqui, e ficam citadas para que a origem de cada dica
        continue conferível sem abrir o md. */

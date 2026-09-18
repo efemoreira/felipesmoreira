@@ -32,7 +32,7 @@ function capa_do_formato(string $chave, string $nome, bool $grande = false): voi
 }
 
 /** O cartão de um formato: etiqueta, o que é, como gravar e os links. */
-function cartao_de_formato(array $formato): void
+function cartao_de_formato(string $chave, array $formato): void
 {
     ?>
     <p class="sub">
@@ -59,6 +59,27 @@ function cartao_de_formato(array $formato): void
       <?php endforeach; ?>
       <?php if ($pedeConta): ?>
         <p class="dica">As aulas pedem o seu login da Hotmart; o reel da Hanah e os cards do Trello abrem direto.</p>
+      <?php endif; ?>
+    <?php endif; ?>
+
+    <?php /* QUEM JÁ FEZ — o que tira a página em branco. Saber o formato não diz
+             o que filmar; ver o mesmo formato aplicado em política, e depois em
+             moda e em comida, diz. Os do nicho mais próximo vêm primeiro
+             (`referencias_de()`), mas os outros ficam: a referência de
+             enquadramento que serve costuma vir de um nicho que não é o seu. */ ?>
+    <?php $refs = referencias_de($chave, 6); ?>
+    <?php if ($refs !== []): ?>
+      <?php $total = count(referencias_de($chave)); ?>
+      <p class="dica"><strong>Quem já fez:</strong></p>
+      <div class="acoes">
+        <?php foreach ($refs as $ref): ?>
+          <a class="btn btn-mini" href="<?= h($ref['url']) ?>" target="_blank" rel="noopener">
+            <?= h($ref['nicho'] !== '' ? mb_strtolower($ref['nicho']) : 'exemplo') ?>
+          </a>
+        <?php endforeach; ?>
+      </div>
+      <?php if ($total > count($refs)): ?>
+        <p class="dica">Mais <?= $total - count($refs) ?> exemplos na aplicação do formato, no Trello.</p>
       <?php endif; ?>
     <?php endif; ?>
     <?php
@@ -120,7 +141,7 @@ function tela_de_oficina(?string $erro, ?string $ok, array $eu): void
           <?php capa_do_formato($vez['chave'], $vez['formato']['nome'], true); ?>
           <div>
             <h2><?= h($vez['formato']['nome']) ?></h2>
-            <?php cartao_de_formato($vez['formato']); ?>
+            <?php cartao_de_formato($vez['chave'], $vez['formato']); ?>
           </div>
         </div>
 
@@ -290,6 +311,13 @@ function tela_de_oficina(?string $erro, ?string $ok, array $eu): void
               $itens = [];
               foreach ($formato['links'] as $link) {
                   $itens[] = ['texto' => $link['rotulo'], 'url' => $link['url'], 'novaAba' => true];
+              }
+              foreach (referencias_de($chave, 3) as $ref) {
+                  $itens[] = [
+                      'texto'   => 'quem já fez: ' . mb_strtolower($ref['nicho'] !== '' ? $ref['nicho'] : 'exemplo'),
+                      'url'     => $ref['url'],
+                      'novaAba' => true,
+                  ];
               }
               if ($quantos === 0) {
                   $itens[] = $adiado
