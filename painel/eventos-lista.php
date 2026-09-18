@@ -138,7 +138,32 @@ function tela_lista_de_encontros(bool $coordena, array $eu, ?string $erro, ?stri
           $proximos = array_values(array_filter($proximos, $noPeriodo));
           $passados = array_values(array_filter($passados, $noPeriodo));
       }
-      $recortado = $buscaEv !== '' || $quandoEv !== '';
+      /* A FAMÍLIA é a categoria do encontro — militância, público, ato de
+         campanha, relacional, digital, pautado. As opções mostradas são só as
+         famílias que têm encontro no recorte de busca/período atual, cada
+         uma com a contagem: mesma régua do filtro de cargo em
+         candidatos-tela.php — oferecer as seis sempre é oferecer becos
+         vazios na maior parte do tempo. */
+      $familiaEv = (string) ($_GET['familia'] ?? '');
+      if (!isset(FAMILIAS[$familiaEv])) {
+          $familiaEv = '';
+      }
+      $porFamilia = array_count_values(array_column(array_merge($proximos, $passados), 'familia'));
+      if ($familiaEv !== '') {
+          $daFamilia = fn (array $e) => $e['familia'] === $familiaEv;
+          $proximos = array_values(array_filter($proximos, $daFamilia));
+          $passados = array_values(array_filter($passados, $daFamilia));
+      }
+      $opcoesFamilia = [];
+      foreach (FAMILIAS as $chave => $fam) {
+          $n = $porFamilia[$chave] ?? 0;
+          if ($n === 0 && $familiaEv !== $chave) {
+              continue;
+          }
+          $opcoesFamilia[$chave] = $fam['nome'] . ' (' . $n . ')';
+      }
+
+      $recortado = $buscaEv !== '' || $quandoEv !== '' || $familiaEv !== '';
 
       /* Um HTML só para as duas listas. Duas cópias do cartão divergiriam na
          primeira vez que alguém acrescentasse um dado a uma delas. */
@@ -211,6 +236,8 @@ function tela_lista_de_encontros(bool $coordena, array $eu, ?string $erro, ?stri
                 ['tipo' => 'escolha', 'nome' => 'quando', 'rotulo' => 'Quando',
                  'valor' => $quandoEv, 'vazio' => 'todos',
                  'opcoes' => ['hoje' => 'Hoje', 'semana' => 'Esta semana', 'proxima' => 'Próxima semana']],
+                ['tipo' => 'escolha', 'nome' => 'familia', 'rotulo' => 'Família',
+                 'valor' => $familiaEv, 'vazio' => 'todas', 'opcoes' => $opcoesFamilia],
             ],
             $recortado,
             '/painel/eventos.php?aba=' . $abaEv,

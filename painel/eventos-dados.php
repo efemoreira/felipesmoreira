@@ -66,6 +66,20 @@ function desenhar_dados(array $aberto, array $time, int $naLista): void
           <label for="e-titulo">Nome</label>
           <input id="e-titulo" type="text" name="titulo" maxlength="120" value="<?= h($aberto['titulo']) ?>">
         </div>
+        <div class="campo">
+          <label for="e-familia">Família</label>
+          <select id="e-familia" name="familia">
+            <?php foreach (FAMILIAS as $chave => $fam): ?>
+              <option value="<?= h($chave) ?>" <?= $aberto['familia'] === $chave ? 'selected' : '' ?>><?= h($fam['nome']) ?> — <?= h($fam['serve']) ?></option>
+            <?php endforeach; ?>
+          </select>
+          <p class="dica">
+            Trocar a família muda o playbook, as travas e as peças oferecidas — mas não apaga o
+            que já foi marcado nas peças da família anterior. Se este encontro já tem checklist
+            ou escala preenchidos, confira-os depois de trocar: eles podem não bater com o
+            playbook novo.
+          </p>
+        </div>
         <div class="linha g2">
           <div class="campo">
             <label for="e-dia">Dia</label>
@@ -104,6 +118,19 @@ function desenhar_dados(array $aberto, array $time, int $naLista): void
           <input type="hidden" name="local" value="<?= h($aberto['local']) ?>">
           <input type="hidden" name="endereco" value="<?= h($aberto['endereco']) ?>">
         <?php endif; ?>
+
+        <div class="campo">
+          <label for="e-grupo">Grupo de WhatsApp deste encontro <span class="dica">— opcional</span></label>
+          <input id="e-grupo" type="url" name="grupo" maxlength="300" value="<?= h($aberto['grupo']) ?>"
+                 placeholder="https://chat.whatsapp.com/…" inputmode="url"
+                 autocapitalize="none" spellcheck="false">
+          <p class="dica">
+            Cole o link de convite. Com ele preenchido, o cartão deste encontro em
+            <a href="/programacao" target="_blank">/programacao</a> ganha um botão “Quero ajudar” que leva
+            direto para o grupo — diferente do grupo geral da capa da agenda, este é só de quem topa
+            ajudar a montar <strong>este</strong> encontro. Apague para tirar o botão.
+          </p>
+        </div>
 
         <?php /* ===== o que o site mostra ===== */ ?>
         <label class="check">

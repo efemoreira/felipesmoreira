@@ -184,6 +184,7 @@ function tratar_acoes_de_evento(array $eu, bool $coordena): void
                 'inicio'  => $inicio,
                 'local'   => limpar_texto($_POST['local'] ?? '', 120),
                 'endereco' => limpar_texto($_POST['endereco'] ?? '', 200),
+                'grupo'   => limpar_link($_POST['grupo'] ?? ''),
                 'publicoEsperado' => (int) ($_POST['publicoEsperado'] ?? 0),
                 'naAgenda' => !empty($_POST['naAgenda']),
                 'imagem'   => $imagemNova,
@@ -227,10 +228,22 @@ function tratar_acoes_de_evento(array $eu, bool $coordena): void
                         $e['status'] = $novoStatus;
                     }
                 } else {
+                    /* A família passa a ser editável. Trocá-la não apaga nada:
+                       `normalizar_evento()` guarda `responsaveis`/`feitos` de
+                       TODAS as peças, não só da família atual — a peça que sai
+                       de cena continua no arquivo, só some da tela até alguém
+                       trocar a família de volta. O aviso de que checklist e
+                       escala podem ficar desalinhados está na própria tela
+                       (`eventos-dados.php`), ao lado do seletor. */
+                    $novaFamilia = limpar_texto($_POST['familia'] ?? $e['familia'], 20);
+                    if (isset(FAMILIAS[$novaFamilia])) {
+                        $e['familia'] = $novaFamilia;
+                    }
                     $e['titulo']   = limpar_texto($_POST['titulo'] ?? $e['titulo'], 120);
                     $e['inicio']   = inicio_de_dia_e_hora($_POST['dia'] ?? '', $_POST['hora'] ?? '');
                     $e['local']    = limpar_texto($_POST['local'] ?? '', 120);
                     $e['endereco'] = limpar_texto($_POST['endereco'] ?? '', 200);
+                    $e['grupo']    = limpar_link($_POST['grupo'] ?? '');
                     $e['publicoEsperado'] = (int) ($_POST['publicoEsperado'] ?? 0);
                     $e['orcamento']   = limpar_texto($_POST['orcamento'] ?? '', 60);
                     $e['observacoes'] = limpar_texto($_POST['observacoes'] ?? '', 600);
