@@ -18,8 +18,20 @@ beforeEach(() => painel.ressemear());
 after(() => painel.fechar());
 
 const MARIA = "pes00000000teste";
-const ontem = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-const amanha = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+/**
+ * O dia NO FUSO DO CEARÁ, e não em UTC.
+ *
+ * `toISOString()` devolve a data em UTC, e quem decide se a tarefa venceu é
+ * `tarefa_vencida()` (tarefas-comum.php), que fecha o prazo às 23:59:59 de
+ * America/Fortaleza. Entre 21h e a meia-noite em Fortaleza o UTC já está no dia
+ * seguinte — "ontem" calculado em UTC devolve HOJE, a tarefa nasce com prazo de
+ * hoje, não vence, e o teste falha. Três horas por dia, todo dia.
+ */
+const diaNoCeara = (deslocamento: number) =>
+  new Date(Date.now() + deslocamento).toLocaleDateString("en-CA", { timeZone: "America/Fortaleza" });
+
+const ontem = diaNoCeara(-86400000);
+const amanha = diaNoCeara(+86400000);
 
 describe("tarefas: combinar, cobrar, fazer", () => {
   test("combinar grava e aparece na aba, com dono e prazo", async () => {

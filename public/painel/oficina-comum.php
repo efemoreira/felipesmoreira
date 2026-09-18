@@ -32,6 +32,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/sessao.php';
 require_once __DIR__ . '/oficina-catalogo.php';
+require_once __DIR__ . '/oficina-referencias.php';
 require_once __DIR__ . '/agenda-comum.php';  // semana_de() — domingo a sábado, no fuso do Ceará
 
 const ARQ_OFICINA = PASTA_DADOS . '/oficina.php';
@@ -263,6 +264,45 @@ function apagar_tentativa(array $eu, string $id, string $motivo = ''): bool
         @opcache_invalidate(ARQ_OFICINA, true);
     }
     return true;
+}
+
+/**
+ * Os vídeos de referência de um formato, os do nicho mais próximo primeiro.
+ *
+ * A ORDEM É A OPINIÃO DESTA TELA. O quadro traz o formato aplicado em 186
+ * nichos, de sushi a fotografia, e uma lista na ordem em que ela foi escrita
+ * começa por qualquer um deles. Quem abre esta tela faz conteúdo de campanha —
+ * então política, ativismo, projeto social e educação sobem, o resto desce, e
+ * o que não tem rótulo nenhum fica por último, porque não dá para saber se
+ * serve.
+ *
+ * Não filtra: mostrar só o nicho próximo seria esconder o Dinamismo de moda que
+ * é exatamente a referência de enquadramento que faltava. Ordena.
+ */
+function referencias_de(string $chave, int $limite = 0): array
+{
+    $tudo = REFERENCIAS_OFICINA[$chave] ?? [];
+    $perto = $rotulados = $soltos = [];
+    foreach ($tudo as $r) {
+        if ($r['nicho'] === '') {
+            $soltos[] = $r;
+            continue;
+        }
+        $proximo = false;
+        foreach (NICHOS_PROXIMOS as $pedaco) {
+            if (str_contains($r['nicho'], $pedaco)) {
+                $proximo = true;
+                break;
+            }
+        }
+        if ($proximo) {
+            $perto[] = $r;
+        } else {
+            $rotulados[] = $r;
+        }
+    }
+    $ordenadas = array_merge($perto, $rotulados, $soltos);
+    return $limite > 0 ? array_slice($ordenadas, 0, $limite) : $ordenadas;
 }
 
 /* ------------------------------------------------------------------ */

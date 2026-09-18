@@ -168,6 +168,103 @@ describe("oficina: o catálogo não perde nenhuma referência do md de origem", 
   });
 });
 
+describe("oficina: as referências do quadro do Trello", () => {
+  /* Saíram das checklists do quadro público "Formatos Criativos de Conteúdo
+     [Alunos]", onde cada card de APLICAÇÃO lista o formato aplicado em nichos
+     diferentes. É o que responde COM O QUÊ filmar — o resto da Oficina responde
+     qual formato e como ele se grava. */
+  const painelRef = montarSandbox({ semear: false }).dir + "/painel";
+  const rr = spawnSync(
+    "php",
+    [
+      "-r",
+      `require ${JSON.stringify(painelRef + "/oficina-comum.php")};
+       $amostra = [];
+       foreach (array_keys(FORMATOS_OFICINA) as $c) $amostra[$c] = referencias_de($c, 3);
+       echo json_encode([
+         'refs'     => REFERENCIAS_OFICINA,
+         'proximos' => NICHOS_PROXIMOS,
+         'ordenado' => $amostra,
+       ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);`,
+    ],
+    { encoding: "utf8" },
+  );
+  if (rr.status !== 0) throw new Error(`as referências não carregaram: ${rr.stderr.trim()}`);
+  const ref: {
+    refs: Record<string, { nicho: string; url: string }[]>;
+    proximos: string[];
+    ordenado: Record<string, { nicho: string; url: string }[]>;
+  } = JSON.parse(rr.stdout);
+
+  const todas = Object.values(ref.refs).flat();
+
+  test("todo formato com referência existe no catálogo", () => {
+    const forasteiros = Object.keys(ref.refs).filter((c) => !formatos[c]);
+    assert.deepEqual(forasteiros, [], "referência pendurada num formato que não existe");
+  });
+
+  test("os 16 formatos que vieram do curso têm referência", () => {
+    /* Os 13 de pesquisa externa não têm, e não deviam ter: eles não saíram do
+       quadro. Telepatia, Análise e Analogia também não — são as três aulas que
+       o artefato já dizia não ter card no Trello. */
+    assert.equal(Object.keys(ref.refs).length, 16);
+    for (const c of Object.keys(ref.refs)) {
+      assert.notEqual(formatos[c].fonte, "desafio", `${c} é de pesquisa externa e não devia ter card`);
+    }
+  });
+
+  test("toda referência é uma URL, e nenhuma se repete", () => {
+    for (const r of todas) assert.match(r.url, /^https:\/\/[^\s]+$/, `referência torta: ${r.url}`);
+    const urls = todas.map((r) => r.url);
+    assert.equal(new Set(urls).size, urls.length, "a mesma referência em dois lugares");
+  });
+
+  test("o nicho do lado de campanha vem primeiro", () => {
+    /* A ordem é a opinião desta tela: quem a abre faz conteúdo de campanha, e
+       186 nichos na ordem em que foram escritos começam por qualquer um. */
+    for (const [c, primeiras] of Object.entries(ref.ordenado)) {
+      const proximas = (ref.refs[c] ?? []).filter((r) =>
+        ref.proximos.some((p) => r.nicho.includes(p)),
+      );
+      if (proximas.length === 0) continue;
+      assert.ok(
+        ref.proximos.some((p) => primeiras[0].nicho.includes(p)),
+        `${c} tem referência de nicho próximo, mas ela não abriu a lista`,
+      );
+    }
+  });
+
+  test("referência sem rótulo de nicho fica por último", () => {
+    /* Sem rótulo não dá para saber se serve ao nicho de quem abre — então ela
+       não toma o lugar de uma que se sabe. A ordenação inteira sai de
+       `referencias_de()` sem limite: próximo, rotulado, sem rótulo. */
+    const rr2 = spawnSync(
+      "php",
+      [
+        "-r",
+        `require ${JSON.stringify(painelRef + "/oficina-comum.php")};
+         $tudo = [];
+         foreach (array_keys(REFERENCIAS_OFICINA) as $c) $tudo[$c] = referencias_de($c);
+         echo json_encode($tudo, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);`,
+      ],
+      { encoding: "utf8" },
+    );
+    const ordenadas: Record<string, { nicho: string; url: string }[]> = JSON.parse(rr2.stdout);
+
+    for (const [c, lista] of Object.entries(ordenadas)) {
+      const primeiroSemRotulo = lista.findIndex((r) => r.nicho === "");
+      if (primeiroSemRotulo === -1) continue;
+      const rotuladaDepois = lista.slice(primeiroSemRotulo).find((r) => r.nicho !== "");
+      assert.equal(rotuladaDepois, undefined, `em ${c}, uma referência com nicho ficou atrás de uma sem`);
+    }
+  });
+
+  test("formato sem referência devolve lista vazia, e não explode", () => {
+    assert.deepEqual(ref.ordenado["pov"], []);
+    assert.deepEqual(ref.ordenado["faceless"], []);
+  });
+});
+
 describe("oficina: os ganchos são o segundo eixo da medição", () => {
   test("são as oito estruturas do anexo do desafio", () => {
     assert.equal(Object.keys(ganchos).length, 8);

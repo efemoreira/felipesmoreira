@@ -184,6 +184,25 @@ describe("fumaça: o fecho mostra a métrica, e não a dica", () => {
   });
 });
 
+describe("fumaça: quem já fez", () => {
+  before(() => painel.gravar("oficina", []));
+
+  test("o formato da vez mostra exemplos de quem já aplicou", () => {
+    const { html, erros } = painel.abrir("oficina", "");
+    assert.doesNotMatch(erros, /Warning|Undefined|Deprecated/, erros);
+    assert.match(html, /Quem já fez/);
+    assert.match(html, /instagram\.com|short\.gy/);
+    assert.match(html, /Mais \d+ exemplos/);
+  });
+
+  test("os elementos viciantes entram no apoio", () => {
+    const { html } = painel.abrir("oficina", "aba=formatos");
+    assert.match(html, /Elemento: relevância emocional/);
+    assert.match(html, /Elemento: contraste/);
+    assert.match(html, /Músicas emocionalmente relevantes/);
+  });
+});
+
 describe("fumaça: a capa de cada formato", () => {
   before(() => painel.gravar("oficina", []));
 
