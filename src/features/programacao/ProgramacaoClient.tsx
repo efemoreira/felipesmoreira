@@ -10,15 +10,13 @@ import { CAMINHO_AGENDA_AO_VIVO, normalizarAgenda } from "./dados";
 import {
   comecoDaSemana,
   dentroDoPeriodo,
-  diaDe,
   emOrdem,
   estadoDe,
   estaAoVivo,
   idEmDestaque,
+  janelaDoRecorte,
   periodoDoRecorte,
-  proximaSemanaDe,
   quantosPassaram,
-  semanaDe,
   soFuturos,
   type Estado,
   type Recorte,
@@ -120,12 +118,10 @@ const ProgramacaoClient: React.FC<{ semente: Agenda }> = ({ semente }) => {
   /* ANTES DO RELÓGIO ACORDAR, MOSTRA TUDO. O HTML do build e o primeiro render
      do cliente precisam sair iguais — recortar por uma data no servidor
      congelaria a semana da compilação dentro do HTML estático. */
-  const janela = useMemo(() => {
-    if (!agora || recorte === "tudo") return null;
-    if (recorte === "hoje") return diaDe(agora);
-    if (recorte === "proxima") return proximaSemanaDe(agora, comeco);
-    return semanaDe(agora, comeco);
-  }, [recorte, agora, comeco]);
+  const janela = useMemo(
+    () => (agora ? janelaDoRecorte(recorte, agora, comeco) : null),
+    [recorte, agora, comeco],
+  );
 
   const noRecorte = useMemo(
     () => (janela ? todos.filter((i) => dentroDoPeriodo(i, janela)) : todos),
@@ -134,7 +130,10 @@ const ProgramacaoClient: React.FC<{ semente: Agenda }> = ({ semente }) => {
 
   /* E, dentro do recorte, SÓ O QUE AINDA VAI ACONTECER — inclusive em "tudo".
      O evento que já passou não é agenda: quem abre a página quer saber o que
-     vem. Ele continua inteiro no painel, que é onde a coordenação o procura. */
+     vem. Ele continua inteiro no painel, que é onde a coordenação o procura.
+     (É o mesmo par janela + `soFuturos()` de `itensDoRecorte()`, que o pôster
+     usa; aqui fica em dois passos porque o rodapé conta os `passados` do
+     recorte, e para isso precisa ver a lista antes do corte.) */
   const itens = useMemo(
     () => (agora ? soFuturos(noRecorte, agora) : noRecorte),
     [noRecorte, agora],
@@ -292,9 +291,10 @@ const ProgramacaoClient: React.FC<{ semente: Agenda }> = ({ semente }) => {
 
           {agenda.chamada && <p className="ag-chamada">{agenda.chamada}</p>}
 
-          {/* Gera o PNG da agenda no próprio navegador */}
+          {/* Gera o PNG da agenda no próprio navegador — com o recorte que
+              está apertado: o que se vê é o que se compartilha. */}
           <div className="ag-compartilhar">
-            <CompartilharClient agenda={agenda} />
+            <CompartilharClient agenda={agenda} recorte={recorte} />
           </div>
         </header>
 

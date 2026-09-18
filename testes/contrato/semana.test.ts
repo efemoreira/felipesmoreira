@@ -9,6 +9,7 @@ import {
   periodoDoRecorte,
   periodoVigente,
   dentroDoPeriodo,
+  itensDoRecorte,
   soFuturos,
   INICIOS_SEMANA,
 } from "../../src/features/programacao/tempo.ts";
@@ -274,5 +275,42 @@ describe("o recorte de período: quem entra e quem fica de fora", () => {
       "2026-08-29T09:00:00-03:00",
       "sem horário",
     ]);
+  });
+
+  /**
+   * O QUE SE VÊ É O QUE SE COMPARTILHA. O pôster saía com a agenda inteira
+   * enquanto a tela mostrava só esta semana; agora a página e o cartaz pedem a
+   * lista à mesma função, com o mesmo botão apertado.
+   */
+  test("cada recorte devolve a sua lista — e o pôster usa a mesma", () => {
+    const agora = new Date("2026-08-26T20:00:00-03:00");  // quarta
+    const programacao = [
+      item("2026-08-25T19:00:00-03:00"),  // ontem: fora de tudo
+      item("2026-08-26T21:00:00-03:00"),  // hoje à noite
+      item("2026-08-29T09:00:00-03:00"),  // sábado: esta semana
+      item("2026-08-30T09:00:00-03:00"),  // domingo: próxima semana (régua no domingo)
+      item("2026-09-10T09:00:00-03:00"),  // daqui a duas semanas: só em "tudo"
+      item(),                              // sem horário: só em "tudo"
+    ];
+    const de = (recorte: "hoje" | "semana" | "proxima" | "tudo", inicioSemana?: "domingo" | "segunda") =>
+      itensDoRecorte({ programacao, inicioSemana }, recorte, agora).map((i) => i.inicio ?? "sem horário");
+
+    assert.deepEqual(de("hoje"), ["2026-08-26T21:00:00-03:00"]);
+    assert.deepEqual(de("semana"), ["2026-08-26T21:00:00-03:00", "2026-08-29T09:00:00-03:00"]);
+    assert.deepEqual(de("proxima"), ["2026-08-30T09:00:00-03:00"]);
+    assert.deepEqual(de("tudo"), [
+      "2026-08-26T21:00:00-03:00",
+      "2026-08-29T09:00:00-03:00",
+      "2026-08-30T09:00:00-03:00",
+      "2026-09-10T09:00:00-03:00",
+      "sem horário",
+    ]);
+    /* Com a semana abrindo na segunda, o domingo ainda é desta semana. */
+    assert.deepEqual(de("semana", "segunda"), [
+      "2026-08-26T21:00:00-03:00",
+      "2026-08-29T09:00:00-03:00",
+      "2026-08-30T09:00:00-03:00",
+    ]);
+    assert.deepEqual(de("proxima", "segunda"), []);
   });
 });

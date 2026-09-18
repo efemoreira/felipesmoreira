@@ -298,6 +298,36 @@ export function diaPorExtenso(quando: Date): string {
 
 export type Recorte = "hoje" | "semana" | "proxima" | "tudo";
 
+/** A janela que o recorte pede — `null` em "tudo", que não recorta. */
+export function janelaDoRecorte(
+  recorte: Recorte,
+  agora: Date,
+  comeco: InicioSemana = INICIO_SEMANA_PADRAO,
+): Janela | null {
+  if (recorte === "tudo") return null;
+  if (recorte === "hoje") return diaDe(agora);
+  if (recorte === "proxima") return proximaSemanaDe(agora, comeco);
+  return semanaDe(agora, comeco);
+}
+
+/**
+ * OS ITENS QUE O RECORTE MOSTRA — dentro da janela, e só o que ainda vem.
+ *
+ * Uma função só, e não um filtro na página e outro no pôster: o cartaz saía
+ * com a agenda inteira enquanto a tela mostrava só esta semana, e quem
+ * apertava "Próxima semana" e compartilhava mandava para o grupo uma imagem
+ * que não era a que estava vendo. O que a pessoa vê é o que ela compartilha.
+ */
+export function itensDoRecorte(
+  agenda: Pick<Agenda, "programacao" | "inicioSemana">,
+  recorte: Recorte,
+  agora: Date = new Date(),
+): ItemAgenda[] {
+  const janela = janelaDoRecorte(recorte, agora, comecoDaSemana(agenda));
+  const todos = agenda.programacao ?? [];
+  return soFuturos(janela ? todos.filter((i) => dentroDoPeriodo(i, janela)) : todos, agora);
+}
+
 /**
  * A DATA EMBAIXO DO TÍTULO ACOMPANHA O RECORTE.
  *

@@ -18,7 +18,7 @@ import {
 import { CHAPA } from "@/features/missao/data";
 import { dataPorExtenso, faseEm } from "@/lib/eleicao";
 import { C, temaDe, sigla, type Agenda, type ItemAgenda } from "./tipos";
-import { periodoVigente, soFuturos } from "./tempo";
+import { itensDoRecorte, periodoDoRecorte, type Recorte } from "./tempo";
 
 export { canvasParaBlob };
 
@@ -117,7 +117,11 @@ function fundo(ctx: CanvasRenderingContext2D, h: number) {
 }
 
 /* ===== poster ===== */
-export async function gerarPoster(agenda: Agenda, formato: Formato = "9:16"): Promise<HTMLCanvasElement> {
+export async function gerarPoster(
+  agenda: Agenda,
+  formato: Formato = "9:16",
+  recorte: Recorte = "semana",
+): Promise<HTMLCanvasElement> {
   await fontesProntas();
 
   const H_MIN = (FORMATOS[formato] ?? FORMATOS["9:16"]).altura;
@@ -126,13 +130,15 @@ export async function gerarPoster(agenda: Agenda, formato: Formato = "9:16"): Pr
   const ELITE = familia("--font-elite", "monospace");
   const BITTER = familia("--font-bitter", "serif");
 
-  /* O mesmo corte da página: o cartaz é para circular no grupo hoje, e um PNG
-     com o encontro da semana passada dentro é o jeito mais rápido de a agenda
-     parecer desatualizada — ele viaja e não se corrige depois. */
-  const itens = soFuturos(agenda.programacao ?? []);
-  /* O mesmo período que a página mostra: o cartaz é o que circula no grupo, e
-     é justamente nele que uma semana vencida fica sem conserto. */
-  const periodo = periodoVigente(agenda);
+  /* O MESMO RECORTE DA PÁGINA — hoje, esta semana, próxima semana ou tudo —
+     e, dentro dele, só o que ainda vem. O cartaz é para circular no grupo
+     hoje: um PNG com o encontro da semana passada, ou com o mês inteiro
+     quando a pessoa estava olhando só esta semana, é o jeito mais rápido de a
+     agenda parecer desatualizada — ele viaja e não se corrige depois. */
+  const itens = itensDoRecorte(agenda, recorte);
+  /* E o mesmo período que a página mostra para esse recorte: a data do
+     cartaz tem de bater com a lista que está dentro dele. */
+  const periodo = periodoDoRecorte(agenda, recorte);
   const imagens = await Promise.all(
     itens.map((i) => (i.imagem ? carregarImagem(i.imagem) : Promise.resolve(null))),
   );

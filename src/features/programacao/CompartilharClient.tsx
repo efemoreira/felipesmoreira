@@ -6,7 +6,7 @@ import { bordaFina } from "@/lib/theme";
 import { sinal } from "@/lib/api/sinal";
 import { Icon } from "@/components/icons";
 import { C, BORDA, type Agenda, sombra, sombraErguida, sombraAfundada } from "./tipos";
-import { periodoVigente } from "./tempo";
+import { periodoDoRecorte, type Recorte } from "./tempo";
 import { FORMATOS, canvasParaBlob, gerarPoster, nomeArquivo, type Formato } from "./poster";
 
 const FONT_ALFA = "var(--font-alfa), serif";
@@ -14,7 +14,12 @@ const FONT_ELITE = "var(--font-elite), monospace";
 
 type Estado = "parado" | "gerando" | "pronto" | "erro";
 
-const CompartilharClient: React.FC<{ agenda: Agenda }> = ({ agenda }) => {
+/**
+ * `recorte` é o botão que está apertado na página (hoje, esta semana, próxima
+ * semana, tudo): a imagem sai com os mesmos itens e a mesma data que a pessoa
+ * está vendo, e não com a agenda inteira.
+ */
+const CompartilharClient: React.FC<{ agenda: Agenda; recorte?: Recorte }> = ({ agenda, recorte = "semana" }) => {
   const [estado, setEstado] = useState<Estado>("parado");
   const [formato, setFormato] = useState<Formato>("9:16");
   const [preview, setPreview] = useState<string | null>(null);
@@ -29,7 +34,7 @@ const CompartilharClient: React.FC<{ agenda: Agenda }> = ({ agenda }) => {
     setEstado("gerando");
     setAviso(null);
     try {
-      const canvas = await gerarPoster(agenda, fmt);
+      const canvas = await gerarPoster(agenda, fmt, recorte);
       const blob = await canvasParaBlob(canvas);
       if (!blob) throw new Error("sem blob");
       blobRef.current = blob;
@@ -41,7 +46,7 @@ const CompartilharClient: React.FC<{ agenda: Agenda }> = ({ agenda }) => {
     } catch {
       setEstado("erro");
     }
-  }, [agenda]);
+  }, [agenda, recorte]);
 
   const fechar = useCallback(() => {
     setEstado("parado");
@@ -90,12 +95,13 @@ const CompartilharClient: React.FC<{ agenda: Agenda }> = ({ agenda }) => {
   const compartilhar = async () => {
     const blob = blobRef.current;
     if (!blob) return;
-    /* O mesmo período do cartaz e da página — a legenda viaja junto com a
-       imagem, e uma semana vencida escrita ali não tem mais conserto. */
+    /* O mesmo período do cartaz e da página, no mesmo recorte — a legenda
+       viaja junto com a imagem, e uma data errada escrita ali não tem mais
+       conserto. */
     const feito = await entregarArte(
       blob,
       nomeArquivo(formato),
-      `${agenda.titulo} — ${periodoVigente(agenda)} · @moreiramissao`,
+      `${agenda.titulo} — ${periodoDoRecorte(agenda, recorte)} · @moreiramissao`,
       agenda.titulo,
     );
     if (feito === "baixou") setAviso("Imagem baixada.");
