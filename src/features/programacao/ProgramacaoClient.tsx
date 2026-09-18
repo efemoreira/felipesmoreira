@@ -5,7 +5,19 @@ import { bordaFina } from "@/lib/theme";
 import Link from "next/link";
 import { Icon, IconName } from "@/components/icons";
 import CompartilharClient from "./CompartilharClient";
-import { C, BORDA, sigla, temaDe, type Agenda, type ItemAgenda, sombra, sombraErguida, sombraAfundada } from "./tipos";
+import {
+  C,
+  BORDA,
+  sigla,
+  temaDe,
+  NOMES_FAMILIA,
+  type Agenda,
+  type Familia,
+  type ItemAgenda,
+  sombra,
+  sombraErguida,
+  sombraAfundada,
+} from "./tipos";
 import { CAMINHO_AGENDA_AO_VIVO, normalizarAgenda } from "./dados";
 import {
   comecoDaSemana,
@@ -134,9 +146,32 @@ const ProgramacaoClient: React.FC<{ semente: Agenda }> = ({ semente }) => {
      (É o mesmo par janela + `soFuturos()` de `itensDoRecorte()`, que o pôster
      usa; aqui fica em dois passos porque o rodapé conta os `passados` do
      recorte, e para isso precisa ver a lista antes do corte.) */
-  const itens = useMemo(
+  const futuros = useMemo(
     () => (agora ? soFuturos(noRecorte, agora) : noRecorte),
     [noRecorte, agora],
+  );
+
+  /**
+   * O FILTRO DE CATEGORIA — militância, público, ato de campanha, relacional...
+   *
+   * Só aparece quando o recorte atual tem mais de uma família: numa semana só
+   * de militância, oferecer o filtro seria oferecer cinco botões vazios ao
+   * lado do único que faz algo.
+   */
+  const familiasPresentes = useMemo(
+    () =>
+      (Object.keys(NOMES_FAMILIA) as Familia[]).filter((f) => futuros.some((i) => i.familia === f)),
+    [futuros],
+  );
+  const [familia, setFamilia] = useState<Familia | "todas">("todas");
+  useEffect(() => {
+    if (familia !== "todas" && !familiasPresentes.includes(familia)) {
+      setFamilia("todas");
+    }
+  }, [familiasPresentes, familia]);
+  const itens = useMemo(
+    () => (familia === "todas" ? futuros : futuros.filter((i) => i.familia === familia)),
+    [futuros, familia],
   );
 
   /**
@@ -325,6 +360,33 @@ const ProgramacaoClient: React.FC<{ semente: Agenda }> = ({ semente }) => {
           </div>
         )}
 
+        {/* ===== O filtro de categoria =====
+            Só quando o recorte atual tem mais de uma família — um só botão
+            marcado sozinho não é filtro, é decoração. */}
+        {agora && familiasPresentes.length > 1 && (
+          <div className="ag-recorte" role="group" aria-label="Categoria">
+            <button
+              type="button"
+              className={familia === "todas" ? "ag-recorte-on" : undefined}
+              aria-pressed={familia === "todas"}
+              onClick={() => setFamilia("todas")}
+            >
+              Todas
+            </button>
+            {familiasPresentes.map((f) => (
+              <button
+                key={f}
+                type="button"
+                className={familia === f ? "ag-recorte-on" : undefined}
+                aria-pressed={familia === f}
+                onClick={() => setFamilia(f)}
+              >
+                {NOMES_FAMILIA[f]}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* ===== Lista da programação ===== */}
         {itens.length === 0 ? (
           <div className="ag-vazio">
@@ -368,6 +430,16 @@ const ProgramacaoClient: React.FC<{ semente: Agenda }> = ({ semente }) => {
                         o convite de qualquer evento usa: quem toca aqui sabe o
                         que vai acontecer antes de a página abrir. */}
                     <span>Confirmar presença</span>
+                  </a>
+                )}
+                {/* O grupo DESTE encontro — diferente do convite geral da capa
+                    (`agenda.grupo`, mostrado uma vez só no fim da lista). Fica
+                    fora do cartão pelo mesmo motivo do "Confirmar presença":
+                    o cartão já é um link quando o item tem `link`. */}
+                {item.grupo && (
+                  <a className="ag-vou ag-ajudar" href={item.grupo} target="_blank" rel="noopener noreferrer">
+                    <Icon name="whatsapp" size={15} />
+                    <span>Quero ajudar</span>
                   </a>
                 )}
               </li>
@@ -527,10 +599,11 @@ const restoDoTitulo = (t: string) => t.split(" ").slice(1).join(" ");
 
 /* ===== estilos ===== */
 const css = `
-  /* o botão de confirmar presença, abaixo do cartão */
+  /* o botão de confirmar presença, abaixo do cartão — e o de "quero ajudar"
+     do grupo do encontro, ao lado dele quando os dois aparecem juntos */
   .ag-vou {
     display: inline-flex; align-items: center; gap: 7px;
-    min-height: 44px; margin: 8px 0 0; padding: 0 16px;
+    min-height: 44px; margin: 8px 8px 0 0; padding: 0 16px;
     font-family: ${FONT_ELITE}; font-size: 12px; letter-spacing: 1.6px; text-transform: uppercase;
     color: ${C.ink}; background: ${C.gold2};
     border: ${BORDA}px solid ${C.ink}; box-shadow: ${sombra("rente", C.ink)};
@@ -538,6 +611,10 @@ const css = `
   }
   .ag-vou:hover { background: ${C.gold}; }
   .ag-vou:active { transform: translate(2px, 2px); box-shadow: ${sombraAfundada("rente", C.ink)}; }
+  /* O "quero ajudar" é vazado, não sólido: os dois convidam a agir, mas são
+     ações diferentes — confirmar presença é o padrão, ajudar é a exceção. */
+  .ag-ajudar { color: ${C.cream}; background: transparent; box-shadow: ${sombra("rente", C.sombraNoite)}; }
+  .ag-ajudar:hover { background: rgba(212,175,55,.18); }
 
   .ag-topo {
     display: flex; align-items: center; justify-content: space-between;

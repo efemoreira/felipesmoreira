@@ -5,6 +5,25 @@ export { C, BORDA, sombra, sombraErguida, sombraAfundada };
 
 export type CorCartao = "ouro" | "milho" | "azul" | "escuro" | "papel";
 
+/** As seis famílias de encontro do painel — par com a chave de `FAMILIAS` em eventos-comum.php. */
+export type Familia = "publico" | "campanha" | "militancia" | "relacional" | "digital" | "pautado";
+
+/**
+ * O nome de cada família, para o filtro da /programacao.
+ *
+ * Par com `nomes_das_familias()` em eventos-comum.php — `testes/contrato/familia.test.ts`
+ * prende os dois. A ORDEM importa: é a ordem dos botões do filtro, e segue a
+ * mesma do painel (rua antes de sala).
+ */
+export const NOMES_FAMILIA: Record<Familia, string> = {
+  publico: "Público",
+  campanha: "Ato de campanha",
+  militancia: "Militância",
+  relacional: "Relacional",
+  digital: "Digital",
+  pautado: "Pautado",
+};
+
 export interface ItemAgenda {
   id: string;
   titulo: string;
@@ -44,6 +63,17 @@ export interface ItemAgenda {
    * sair de casa.
    */
   confirmar?: string;
+  /** A categoria do encontro. Ausente em item gravado antes deste campo existir. */
+  familia?: Familia;
+  /**
+   * O grupo de WhatsApp DESTE encontro — quem topa ajudar a montá-lo entra
+   * por aqui. Ausente quando a coordenação não colocou um, e é o que faz o
+   * botão "Quero ajudar" sumir do cartão.
+   *
+   * Diferente de `Agenda.grupo`, que é o convite geral de quem ajuda na
+   * organização e aparece uma vez só, embaixo da lista inteira.
+   */
+  grupo?: string;
 }
 
 export interface Canal {

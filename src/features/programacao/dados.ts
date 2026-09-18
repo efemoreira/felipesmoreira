@@ -5,11 +5,12 @@
  * em /painel. Por isso ele fica fora da pasta do build — um novo deploy pelo
  * hPanel nunca sobrescreve o que foi editado pelo site.
  */
-import type { Agenda, CorCartao, ItemAgenda } from "./tipos";
+import { NOMES_FAMILIA, type Agenda, type CorCartao, type Familia, type ItemAgenda } from "./tipos";
 
 export const CAMINHO_AGENDA_AO_VIVO = "/dados/agenda.json";
 
 const CORES: CorCartao[] = ["ouro", "milho", "azul", "escuro", "papel"];
+const FAMILIAS = Object.keys(NOMES_FAMILIA) as Familia[];
 
 const texto = (v: unknown, max = 300): string =>
   typeof v === "string" ? v.trim().slice(0, max) : "";
@@ -53,6 +54,10 @@ export function normalizarAgenda(bruto: unknown): Agenda | null {
         confirmar: /^[a-f0-9]{8,64}$/.test(texto(i.confirmar, 64))
           ? texto(i.confirmar, 64)
           : undefined,
+        familia: FAMILIAS.includes(texto(i.familia, 20) as Familia)
+          ? (texto(i.familia, 20) as Familia)
+          : undefined,
+        grupo: caminhoSeguro(texto(i.grupo, 300)),
       };
     })
     .filter((i) => i.titulo && i.dia);

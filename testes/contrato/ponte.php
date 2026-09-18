@@ -59,6 +59,7 @@ const PONTES = [
     'periodo_em_cartaz',
     'token_de_escala',
     'url_do_convite',
+    'nomes_das_familias',
 ];
 
 $entrada = json_decode((string) file_get_contents('php://stdin'), true);

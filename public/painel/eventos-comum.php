@@ -24,7 +24,7 @@ require_once __DIR__ . '/presencas-comum.php'; // quem esteve, e o funil de depo
 
 const ARQ_EVENTOS = PASTA_DADOS . '/eventos.php';
 /**
- * As cinco famílias da Parte 5 do manual. O que muda entre elas é o objetivo, a
+ * As seis famílias da Parte 5 do manual. O que muda entre elas é o objetivo, a
  * trava e o material — a execução (som, convite, gravação, recepção) é sempre a
  * mesma das cinco peças.
  */
@@ -32,24 +32,43 @@ const FAMILIAS = [
     'publico' => [
         'nome'    => 'Público',
         'serve'   => 'Aparecer, dar volume, ocupar a rua',
-        'exemplos' => 'Carreata, adesivaço, bandeiraço, caminhada, ato em praça',
+        'exemplos' => 'Carreata, adesivaço, caminhada, ato em praça',
         'travas'  => [
             'Segurança de trânsito, principalmente em carreata.',
             'Autorização ou aviso às autoridades quando exigido.',
             'Nada de bloqueio agressivo de via.',
             'Crítica à gestão em faixa e cartaz — nunca ofensa pessoal.',
-            'Durante a campanha, nome e número estão liberados no material — respeitando horário, local e o que a lei permite distribuir.',
             'Antes da campanha, este formato só existe na versão encontro: sem pedir voto, sem número de urna, sem adesivo ou bandeira com número.',
         ],
         'material' => ['Som móvel ou carro de som', 'Coletes de identificação', 'Bandeiras', 'Água e kit de primeiros socorros', 'Ponto de apoio'],
         'metrica'  => 'Pessoas na rua · alcance do vídeo-resumo · contatos novos',
         /* A rua é a família com mais peças porque é onde mais gente trabalha ao
            mesmo tempo. Adesivagem e Fila & trânsito ficam FORA das essenciais:
-           um bandeiraço não adesiva carro, e cobrar as duas em toda caminhada
+           um ato em praça não adesiva carro, e cobrar as duas em toda caminhada
            faria a lista de pendências apitar à toa — e lista que apita à toa é
            lista que se ignora. Elas continuam oferecidas, para o adesivaço. */
         'pecas'      => ['local-hora', 'logistica', 'divulgacao', 'material-rua', 'adesivagem', 'fila-transito', 'gravacao', 'captacao'],
         'essenciais' => ['local-hora', 'logistica', 'divulgacao', 'gravacao', 'captacao'],
+    ],
+    'campanha' => [
+        'nome'    => 'Ato de campanha',
+        'serve'   => 'Pedir o voto na rua — número, adesivo, bandeira, panfleto',
+        'exemplos' => 'Bandeiraço, panfletagem, corpo a corpo, distribuição de santinho',
+        /* Existe como família separada de Público porque a trava é outra: aqui
+           SE PEDE VOTO E SE MOSTRA NÚMERO, o que só é lícito dentro da janela
+           oficial de campanha. Fora dela, o mesmo ato de rua é Público, sem
+           número, sem adesivo e sem bandeira numerada. */
+        'travas'  => [
+            'Só existe dentro da janela oficial de campanha — fora dela é o formato Público, sem pedir voto, sem número de urna, sem adesivo ou bandeira numerada.',
+            'Segurança de trânsito, principalmente com carro de som ou bandeiraço.',
+            'Autorização ou aviso às autoridades quando exigido.',
+            'Nada de bloqueio agressivo de via.',
+            'Material de campanha (santinho, adesivo) só nos horários e locais que a lei permite.',
+        ],
+        'material' => ['Som móvel ou carro de som', 'Coletes de identificação', 'Bandeiras e adesivos numerados', 'Santinho ou panfleto', 'Água e kit de primeiros socorros'],
+        'metrica'  => 'Material distribuído · pessoas abordadas · contatos novos',
+        'pecas'      => ['local-hora', 'logistica', 'divulgacao', 'material-rua', 'adesivagem', 'fila-transito', 'gravacao', 'captacao'],
+        'essenciais' => ['local-hora', 'logistica', 'divulgacao', 'material-rua', 'gravacao'],
     ],
     'militancia' => [
         'nome'    => 'Militância',
@@ -130,6 +149,12 @@ const STATUS_EVENTO = [
     'realizado'  => 'Realizado',
     'cancelado'  => 'Cancelado',
 ];
+
+/** O nome de cada família, para o filtro da /programacao (par com NOMES_FAMILIA em tipos.ts). */
+function nomes_das_familias(): array
+{
+    return array_map(fn ($f) => $f['nome'], FAMILIAS);
+}
 
 /* ===================== eventos ===================== */
 
@@ -279,6 +304,11 @@ function normalizar_evento($e): ?array
         'plataforma' => $plataforma,
         'aoVivo'     => !empty($e['aoVivo']),
         'link'       => limpar_link($e['link'] ?? ''),
+        /* O grupo de WhatsApp DESTE encontro — diferente do `grupo` da capa da
+           agenda (agenda.php), que é o grupo de quem ajuda na organização em
+           geral. Cada encontro pode ter o seu, para quem topa ajudar a montá-lo
+           especificamente. Vazio, o botão "Quero ajudar" some da /programacao. */
+        'grupo'      => limpar_link($e['grupo'] ?? ''),
         'imagem'     => limpar_texto($e['imagem'] ?? '', 300),
         'filtro'     => $filtro,
         'local'   => limpar_texto($e['local'] ?? '', 120),
@@ -602,6 +632,15 @@ function item_publico(array $e): array
         'imagem'     => $e['imagem'],
         'link'       => $e['link'],
         'interno'    => $e['link'] !== '' && $e['link'][0] === '/',
+        /* O grupo de WhatsApp deste encontro. É o que liga o botão "Quero
+           ajudar" no cartão da /programacao — diferente de `agenda.grupo`
+           (capa), que é o convite geral de quem ajuda na organização. */
+        'grupo'      => $e['grupo'],
+        /* A categoria do encontro — militância, público, ato de campanha,
+           relacional, digital, pautado. Vai para o público porque é o que
+           alimenta o filtro da /programacao; nome só, sem trava nem material,
+           que são informação de trabalho da coordenação. */
+        'familia'    => $e['familia'],
     ];
     if ($e['inicio'] !== '') {
         $item['dia'] = partes_de_exibicao($e['inicio'])['dia'];

@@ -271,6 +271,51 @@ describe("ação: a imagem do encontro", () => {
     await painel.postar("eventos", dadosDoEncontro(e, { filtro: "escurecer-tudo" }));
     assert.equal(painel.ler("eventos").find((x) => x.id === e.id).filtro, "medio");
   });
+
+  test("o grupo de WhatsApp do encontro grava, passa por limpar_link() e some quando apagado", async () => {
+    const e = painel.ler("eventos")[0];
+
+    await painel.postar("eventos", dadosDoEncontro(e, { grupo: "chat.whatsapp.com/abc123" }));
+    assert.equal(
+      painel.ler("eventos").find((x) => x.id === e.id).grupo,
+      "https://chat.whatsapp.com/abc123",
+      "sem esquema, limpar_link() tinha de completar o https",
+    );
+
+    /* javascript: é o esquema que limpar_link() existe para barrar. */
+    await painel.postar("eventos", dadosDoEncontro(e, { grupo: "javascript:alert(1)" }));
+    assert.equal(painel.ler("eventos").find((x) => x.id === e.id).grupo, "");
+
+    await painel.postar("eventos", dadosDoEncontro(e, { grupo: "https://chat.whatsapp.com/abc123" }));
+    await painel.postar("eventos", dadosDoEncontro(e, { grupo: "" }));
+    assert.equal(
+      painel.ler("eventos").find((x) => x.id === e.id).grupo,
+      "",
+      "apagar o campo tem de tirar o grupo do encontro",
+    );
+  });
+
+  test("a família pode ser trocada ao salvar, sem apagar o que já foi feito na anterior", async () => {
+    const e = painel.ler("eventos")[0];
+    assert.equal(e.familia, "publico");
+    assert.deepEqual(e.feitos["local-hora"], [0]);
+
+    await painel.postar("eventos", dadosDoEncontro(e, { familia: "militancia" }));
+    const depois = painel.ler("eventos").find((x) => x.id === e.id);
+    assert.equal(depois.familia, "militancia", "a família não mudou ao salvar");
+    /* Local & Hora existe nas duas famílias — o que já foi marcado nela não
+       some só porque a família mudou. `normalizar_evento()` guarda `feitos`
+       de TODAS as peças, não só das da família atual, de propósito. */
+    assert.deepEqual(depois.feitos["local-hora"], [0], "marcação de peça comum às duas famílias sumiu");
+
+    /* Chave inventada não é família nenhuma: a régua é a mesma do `criar`. */
+    await painel.postar("eventos", dadosDoEncontro(depois, { familia: "inventada" }));
+    assert.equal(
+      painel.ler("eventos").find((x) => x.id === e.id).familia,
+      "militancia",
+      "chave de família inventada não pode substituir a família válida",
+    );
+  });
 });
 
 describe("ação: apagar encontro", () => {
