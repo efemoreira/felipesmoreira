@@ -96,6 +96,11 @@ if ($metodo === 'GET') {
            chave, e não o CSS: quem desenha é o site, e o catálogo dos dois lados
            é o mesmo (FILTROS / src/features/presenca/filtro.ts). */
         'filtro' => $evento['filtro'],
+        /* O grupo de WhatsApp DESTE encontro (ver eventos-comum.php). Só faz
+           sentido em modo confirmação: quem já está na porta não precisa de
+           convite para grupo nenhum. Vazio quando o encontro não tem um — a
+           tela então não oferece nada, em vez de empurrar o grupo geral. */
+        'grupo'  => $modo === 'confirmacao' ? $evento['grupo'] : '',
     ]);
 }
 
