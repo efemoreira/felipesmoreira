@@ -25,6 +25,9 @@ export type Encontro =
       imagem: string;
       /** A chave do véu sobre a imagem, escolhida no painel (ver `filtro.ts`). */
       filtro: string;
+      /** O grupo de WhatsApp DESTE encontro. Vazio quando não tem um — a tela
+       *  de "pronto" só oferece entrar no grupo quando este vier preenchido. */
+      grupo: string;
     };
 
 /** O que identifica o encontro: um token OU o outro, nunca os dois. */

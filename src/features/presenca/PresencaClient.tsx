@@ -287,6 +287,7 @@ export default function PresencaClient() {
         ofereceAjudar={ofereceAjudar}
         aoQuererAjudar={levarParaAjudar}
         detalhes={detalhes}
+        grupo={detalhes?.grupo ?? ""}
       />
     );
   }

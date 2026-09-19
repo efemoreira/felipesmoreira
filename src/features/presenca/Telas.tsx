@@ -1,5 +1,6 @@
 "use client";
 import React from "react";
+import { Icon } from "@/components/icons";
 import { Casca, Voltar, textoP, botaoOuro, HeroDoEncontro, Painel } from "./Pecas";
 
 /**
@@ -51,7 +52,9 @@ export const Pronto: React.FC<{
     imagem?: string;
     filtro?: string;
   } | null;
-}> = ({ confirmando, reconhecido, jaEstava, ofereceAjudar, aoQuererAjudar, detalhes }) => (
+  /** O grupo de WhatsApp DESTE encontro. Vazio quando o encontro não tem um. */
+  grupo?: string;
+}> = ({ confirmando, reconhecido, jaEstava, ofereceAjudar, aoQuererAjudar, detalhes, grupo = "" }) => (
   <Casca
     titulo={
       reconhecido
@@ -91,6 +94,28 @@ export const Pronto: React.FC<{
         )}
       </p>
     </Painel>
+
+    {/* Reta final: quem confirma presença e o encontro tem grupo próprio entra
+        direto nele, em vez de só ficar anotado que pretende ir. Só aparece com
+        `grupo` preenchido — sem isso a tela fica como sempre foi, sem convite
+        nenhum (ver o `grupo` de cada encontro em eventos-comum.php). */}
+    {confirmando && grupo !== "" && (
+      <Painel>
+        <p style={{ ...textoP, margin: "0 0 14px", maxWidth: "none" }}>
+          <strong>Entra no grupo do WhatsApp</strong> — é lá que a gente confirma o
+          horário, o local e qualquer mudança de última hora.
+        </p>
+        <a
+          href={grupo}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ ...botaoOuro, display: "flex", alignItems: "center", justifyContent: "center", gap: 10, textDecoration: "none" }}
+        >
+          <Icon name="whatsapp" size={18} />
+          Entrar no grupo agora
+        </a>
+      </Painel>
+    )}
 
     {/* A pessoa apareceu num encontro por vontade própria e ainda não é do
         movimento: é o melhor momento que vai existir para perguntar. Os
