@@ -421,25 +421,24 @@ const ProgramacaoClient: React.FC<{ semente: Agenda }> = ({ semente }) => {
                     interativo aninhado — HTML inválido, e no leitor de tela os
                     dois viram um alvo só.
 
-                    Só aparece em encontro presencial futuro; quem decide é o
-                    painel, ao gerar o agenda.json. */}
-                {item.confirmar && (
-                  <a className="ag-vou" href={`/presenca?c=${item.confirmar}`}>
-                    <Icon name="flag" size={15} />
+                    Reta final da eleição: UM botão só, não dois — "Confirmar
+                    presença" e "Quero ajudar" competindo no mesmo cartão custava
+                    mais decisão do que o momento permite. Com grupo de WhatsApp
+                    deste encontro, o botão entra direto nele — é o convite mais
+                    rápido para quem vai vir. Sem grupo, cai no formulário de
+                    sempre. Só aparece em encontro presencial futuro; quem decide
+                    é o painel, ao gerar o agenda.json. */}
+                {(item.grupo || item.confirmar) && (
+                  <a
+                    className="ag-vou"
+                    href={item.grupo || `/presenca?c=${item.confirmar}`}
+                    {...(item.grupo ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                  >
+                    <Icon name={item.grupo ? "whatsapp" : "flag"} size={15} />
                     {/* A mesma palavra da tela para onde ele leva, e a mesma que
                         o convite de qualquer evento usa: quem toca aqui sabe o
                         que vai acontecer antes de a página abrir. */}
                     <span>Confirmar presença</span>
-                  </a>
-                )}
-                {/* O grupo DESTE encontro — diferente do convite geral da capa
-                    (`agenda.grupo`, mostrado uma vez só no fim da lista). Fica
-                    fora do cartão pelo mesmo motivo do "Confirmar presença":
-                    o cartão já é um link quando o item tem `link`. */}
-                {item.grupo && (
-                  <a className="ag-vou ag-ajudar" href={item.grupo} target="_blank" rel="noopener noreferrer">
-                    <Icon name="whatsapp" size={15} />
-                    <span>Quero ajudar</span>
                   </a>
                 )}
               </li>
@@ -599,8 +598,7 @@ const restoDoTitulo = (t: string) => t.split(" ").slice(1).join(" ");
 
 /* ===== estilos ===== */
 const css = `
-  /* o botão de confirmar presença, abaixo do cartão — e o de "quero ajudar"
-     do grupo do encontro, ao lado dele quando os dois aparecem juntos */
+  /* o único botão de confirmar presença, abaixo do cartão */
   .ag-vou {
     display: inline-flex; align-items: center; gap: 7px;
     min-height: 44px; margin: 8px 8px 0 0; padding: 0 16px;
@@ -611,10 +609,6 @@ const css = `
   }
   .ag-vou:hover { background: ${C.gold}; }
   .ag-vou:active { transform: translate(2px, 2px); box-shadow: ${sombraAfundada("rente", C.ink)}; }
-  /* O "quero ajudar" é vazado, não sólido: os dois convidam a agir, mas são
-     ações diferentes — confirmar presença é o padrão, ajudar é a exceção. */
-  .ag-ajudar { color: ${C.cream}; background: transparent; box-shadow: ${sombra("rente", C.sombraNoite)}; }
-  .ag-ajudar:hover { background: rgba(212,175,55,.18); }
 
   .ag-topo {
     display: flex; align-items: center; justify-content: space-between;
