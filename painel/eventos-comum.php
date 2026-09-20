@@ -627,6 +627,13 @@ function item_publico(array $e): array
            /programacao) precisa dele mesmo quando o subtítulo está preenchido.
            `endereco` continua NÃO saindo — pode ser a casa de alguém. */
         'local'      => $e['local'],
+        /* O endereço e quem responde por cada peça também vão: a ficha do
+           encontro na /programacao é onde quem vai chegar procura o lugar e
+           sabe com quem falar. Os nomes saem encobertos ("Ana S.") — é o
+           bastante para achar a pessoa na porta sem pôr o nome inteiro de um
+           voluntário na internet aberta. */
+        'endereco'   => $e['endereco'],
+        'responsaveis' => responsaveis_publicos($e),
         'inicio'     => $e['inicio'],
         'dia'        => '',
         'data'       => $e['data'],
@@ -660,6 +667,36 @@ function item_publico(array $e): array
         $item['confirmar'] = $e['tokenConfirmacao'];
     }
     return $item;
+}
+
+/**
+ * Quem responde por cada peça, do jeito que a /programacao mostra:
+ * `[['peca' => 'Divulgação', 'nomes' => ['Ana S.', 'João P.']], ...]`.
+ * Só entram as peças que têm alguém, na ordem de `PECAS`; pessoa que sumiu da
+ * base não deixa buraco.
+ */
+function responsaveis_publicos(array $e): array
+{
+    static $porId = null;
+    if ($porId === null) {
+        $porId = [];
+        foreach (ler_pessoas() as $p) {
+            $porId[$p['id']] = $p['nome'];
+        }
+    }
+    $saida = [];
+    foreach (PECAS as $chave => $peca) {
+        $nomes = [];
+        foreach ($e['responsaveis'][$chave] ?? [] as $id) {
+            if (isset($porId[$id]) && $porId[$id] !== '') {
+                $nomes[] = nome_encoberto($porId[$id]);
+            }
+        }
+        if ($nomes !== []) {
+            $saida[] = ['peca' => $peca['nome'], 'nomes' => $nomes];
+        }
+    }
+    return $saida;
 }
 
 /** Os encontros que a /programacao mostra, na ordem. */
