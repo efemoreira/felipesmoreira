@@ -622,6 +622,11 @@ function item_publico(array $e): array
         'id'         => $e['id'],
         'titulo'     => $e['titulo'],
         'subtitulo'  => $e['subtitulo'] !== '' ? $e['subtitulo'] : $e['local'],
+        /* O nome público do lugar, em campo próprio: no cartão ele é o
+           subtítulo quando não há outro, mas a ficha do encontro (o modal da
+           /programacao) precisa dele mesmo quando o subtítulo está preenchido.
+           `endereco` continua NÃO saindo — pode ser a casa de alguém. */
+        'local'      => $e['local'],
         'inicio'     => $e['inicio'],
         'dia'        => '',
         'data'       => $e['data'],
