@@ -110,8 +110,9 @@ function desenhar_dados(array $aberto, array $time, int $naLista): void
             <label for="e-end">Endereço</label>
             <input id="e-end" type="text" name="endereco" maxlength="200" value="<?= h($aberto['endereco']) ?>">
             <p class="dica">
-              Este <strong>não</strong> vai para o site — pode ser a casa de alguém.
-              Serve para quem está escalado achar o lugar.
+              Vai para o site, na ficha do encontro em <a href="/programacao" target="_blank">/programacao</a>
+              — é como quem vai chegar acha o lugar. Se for a casa de alguém, deixe em branco
+              e combine o endereço no grupo.
             </p>
           </div>
         <?php else: ?>

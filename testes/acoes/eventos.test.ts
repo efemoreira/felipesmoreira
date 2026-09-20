@@ -1,6 +1,6 @@
 import { test, describe, before, beforeEach, after } from "node:test";
 import assert from "node:assert/strict";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { montarSandbox, ADMIN, type Sandbox } from "../sandbox.ts";
 
@@ -442,6 +442,62 @@ describe("ação: o follow-up depois do encontro", () => {
  * sido avisado — o defeito exato que a escala existe para acabar, de volta e
  * em silêncio.
  */
+/**
+ * A FICHA PÚBLICA DO ENCONTRO — o que o modal da /programacao mostra.
+ *
+ * `item_publico()` é lista de permissão: só sai o que está enumerado. Este
+ * teste prende os dois lados dela — o que TEM de sair (local, endereço, quem
+ * responde por cada peça, com o nome encoberto) e o que NUNCA pode sair
+ * (orçamento, observações, público esperado, id de pessoa).
+ */
+describe("ação: gravar o encontro publica a ficha na agenda", () => {
+  const lerAgenda = () =>
+    JSON.parse(readFileSync(path.join(painel.dir, "dados/agenda.json"), "utf8"));
+
+  test("local, endereço e responsáveis saem; orçamento e observações não", async () => {
+    const e = painel.ler("eventos")[0];
+    await painel.postar(
+      "eventos",
+      dadosDoEncontro(e, {
+        local: "Praça do Ferreira",
+        endereco: "Rua Floriano Peixoto, s/n — Centro",
+        orcamento: "R$ 300",
+        observacoes: "levar o dinheiro do som",
+        publicoEsperado: "80",
+        naAgenda: "1",
+        "resp[divulgacao][]": ADMIN,
+      }),
+    );
+
+    const item = lerAgenda().programacao.find((i: { id: string }) => i.id === e.id);
+    assert.ok(item, "o encontro não foi publicado");
+    assert.equal(item.local, "Praça do Ferreira");
+    assert.equal(item.endereco, "Rua Floriano Peixoto, s/n — Centro");
+    /* Só as peças com alguém, já com o nome da peça e o nome encoberto: o
+       site não recebe id de pessoa nem nome inteiro de voluntário. */
+    assert.deepEqual(item.responsaveis, [{ peca: "Divulgação", nomes: ["Coordenação T."] }]);
+
+    const bruto = JSON.stringify(item);
+    for (const proibido of ["R$ 300", "levar o dinheiro", "publicoEsperado", "orcamento", "observacoes", ADMIN]) {
+      assert.ok(!bruto.includes(proibido), `"${proibido}" vazou para o agenda.json`);
+    }
+  });
+
+  test("peça sem ninguém não deixa linha, e responsável que sumiu da base também não", async () => {
+    const e = painel.ler("eventos")[0];
+    painel.gravar("eventos", [{
+      ...e,
+      naAgenda: true,
+      responsaveis: { ...e.responsaveis, divulgacao: ["pes-que-nao-existe"], logistica: [] },
+    }]);
+    await painel.postar("eventos", dadosDoEncontro(e, { naAgenda: "1" }));
+
+    const item = lerAgenda().programacao.find((i: { id: string }) => i.id === e.id);
+    assert.ok(item);
+    assert.deepEqual(item.responsaveis, []);
+  });
+});
+
 describe("ação: a escala das cinco peças", () => {
   /* O seed é de família `publico`, e ali a peça da porta é a CAPTAÇÃO: na rua
      não há mesa de recepção, há gente com celular nas pontas. */

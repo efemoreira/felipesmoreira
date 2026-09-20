@@ -32,9 +32,17 @@ export interface ItemAgenda {
    * O nome público do lugar — "Praça do Ferreira", "Sede do Missão". No cartão
    * ele vira o subtítulo quando não há outro; na ficha do encontro (o modal
    * da /programacao) aparece como "Onde", com o subtítulo por cima quando os
-   * dois existem. Endereço nunca vem: pode ser a casa de alguém.
+   * dois existem.
    */
   local?: string;
+  /** O endereço, quando a coordenação preencheu. Só a ficha mostra. */
+  endereco?: string;
+  /**
+   * Quem responde por cada peça do encontro, já com o nome da peça e os nomes
+   * encobertos ("Ana S."), na ordem do painel. Só peças com alguém — quem
+   * monta a lista é `responsaveis_publicos()` (eventos-comum.php).
+   */
+  responsaveis?: { peca: string; nomes: string[] }[];
   /**
    * Quando começa, com o fuso junto: "2026-10-04T19:00:00-03:00".
    *

@@ -434,9 +434,11 @@ para a mesma coisa é duas datas que divergem na terceira alteração.
 - **`item_publico()` é lista de permissão, não de bloqueio.** O `agenda.json` é
   o único arquivo de `/dados` liberado à web: campo que caia nele fica aberto na
   internet. Enumerar o que SAI garante que um campo novo no encontro nunca vaze
-  por esquecimento. Por isso `local` sai (é o nome público do lugar) e `endereco`
-  não (pode ser a casa de alguém), junto com `orcamento`, `observacoes`,
-  `responsaveis` e `publicoEsperado`.
+  por esquecimento. Saem `local`, `endereco` e `responsaveis` (nome encoberto,
+  "Ana S.", por peça — `responsaveis_publicos()`), porque a ficha do encontro na
+  /programacao é onde quem vai chegar acha o lugar e sabe com quem falar; o
+  formulário avisa que endereço de casa de alguém fica em branco. Não saem
+  `orcamento`, `observacoes` e `publicoEsperado`.
 - **Publica ao gravar, não por botão.** Editar o encontro já exige coordenação —
   não há revisão a mais para fazer, e "esqueci de publicar" deixa de existir.
 

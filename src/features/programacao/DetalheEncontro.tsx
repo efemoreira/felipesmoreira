@@ -29,7 +29,7 @@ const NOME_PLATAFORMA: Partial<Record<IconName, string>> = {
  * preencheu (o lugar, a categoria, a imagem inteira, o link, o grupo) ficava
  * sem onde aparecer. Aqui entra TUDO o que veio no `agenda.json` — e só isso:
  * campo vazio não desenha linha nenhuma, nem "a definir". O que não sai no
- * arquivo (endereço, orçamento, observações, escala) é assunto do painel, e
+ * arquivo (orçamento, observações, público esperado) é assunto do painel, e
  * `item_publico()` (eventos-comum.php) é quem decide o que sai.
  */
 const DetalheEncontro: React.FC<{
@@ -73,7 +73,8 @@ const DetalheEncontro: React.FC<{
       : "Abrir link";
 
   const temQuando = item.dia || item.data || item.hora;
-  const temOnde = item.local || nomePlataforma;
+  const temOnde = item.local || item.endereco || nomePlataforma;
+  const temQuem = !!item.responsaveis?.length;
   const temAcao = item.link || item.grupo || item.confirmar;
 
   return (
@@ -109,7 +110,7 @@ const DetalheEncontro: React.FC<{
         <h2 id="dt-titulo" className="dt-titulo">{item.titulo}</h2>
         {subtitulo && <p className="dt-sub">{subtitulo}</p>}
 
-        {(temQuando || temOnde) && (
+        {(temQuando || temOnde || temQuem) && (
           <dl className="dt-lista">
             {temQuando && (
               <div className="dt-linha">
@@ -123,16 +124,34 @@ const DetalheEncontro: React.FC<{
                 </dd>
               </div>
             )}
-            {item.local && (
+            {(item.local || item.endereco) && (
               <div className="dt-linha">
                 <dt><Icon name="pin" size={16} /><span>Onde</span></dt>
-                <dd>{item.local}</dd>
+                <dd>
+                  {item.local && <strong>{item.local}</strong>}
+                  {item.local && item.endereco && <br />}
+                  {item.endereco}
+                </dd>
               </div>
             )}
-            {!item.local && nomePlataforma && (
+            {!item.local && !item.endereco && nomePlataforma && (
               <div className="dt-linha">
                 <dt><Icon name="broadcast" size={16} /><span>Onde</span></dt>
                 <dd>{nomePlataforma}</dd>
+              </div>
+            )}
+            {temQuem && (
+              <div className="dt-linha">
+                <dt><Icon name="users" size={16} /><span>Quem</span></dt>
+                <dd>
+                  <ul className="dt-quem">
+                    {item.responsaveis!.map((r) => (
+                      <li key={r.peca}>
+                        <span className="dt-peca">{r.peca}</span> {r.nomes.join(", ")}
+                      </li>
+                    ))}
+                  </ul>
+                </dd>
               </div>
             )}
           </dl>
@@ -233,6 +252,11 @@ const css = `
   .dt-linha dt svg { flex: 0 0 auto; }
   .dt-linha dd { margin: 0; font-size: 15px; line-height: 1.5; overflow-wrap: anywhere; }
   .dt-linha dd strong { font-family: ${FONT_ALFA}; font-weight: 400; letter-spacing: .8px; text-transform: uppercase; }
+  .dt-quem { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+  .dt-peca {
+    font-family: ${FONT_ELITE}; font-size: 11px; letter-spacing: 1.4px; text-transform: uppercase;
+    color: ${C.gold}; margin-right: 4px;
+  }
 
   .dt-acoes { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
   .dt-btn {

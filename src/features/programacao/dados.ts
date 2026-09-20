@@ -35,6 +35,20 @@ export function normalizarAgenda(bruto: unknown): Agenda | null {
         titulo: texto(i.titulo, 120),
         subtitulo: texto(i.subtitulo, 160) || undefined,
         local: texto(i.local, 120) || undefined,
+        endereco: texto(i.endereco, 200) || undefined,
+        responsaveis: (() => {
+          if (!Array.isArray(i.responsaveis)) return undefined;
+          const lista = i.responsaveis
+            .filter((r): r is Record<string, unknown> => !!r && typeof r === "object")
+            .map((r) => ({
+              peca: texto(r.peca, 40),
+              nomes: Array.isArray(r.nomes)
+                ? r.nomes.map((n) => texto(n, 80)).filter(Boolean).slice(0, 12)
+                : [],
+            }))
+            .filter((r) => r.peca && r.nomes.length > 0);
+          return lista.length > 0 ? lista : undefined;
+        })(),
         // só entra se o navegador conseguir ler como instante
         inicio: (() => {
           const v = texto(i.inicio, 30);
