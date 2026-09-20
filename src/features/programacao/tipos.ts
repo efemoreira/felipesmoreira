@@ -29,6 +29,13 @@ export interface ItemAgenda {
   titulo: string;
   subtitulo?: string;
   /**
+   * O nome público do lugar — "Praça do Ferreira", "Sede do Missão". No cartão
+   * ele vira o subtítulo quando não há outro; na ficha do encontro (o modal
+   * da /programacao) aparece como "Onde", com o subtítulo por cima quando os
+   * dois existem. Endereço nunca vem: pode ser a casa de alguém.
+   */
+  local?: string;
+  /**
    * Quando começa, com o fuso junto: "2026-10-04T19:00:00-03:00".
    *
    * É o que permite ordenar, saber o que já passou e mostrar "ao vivo" só na

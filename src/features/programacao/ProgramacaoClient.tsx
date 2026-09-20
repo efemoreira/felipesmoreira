@@ -1,10 +1,11 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { bordaFina } from "@/lib/theme";
 import Link from "next/link";
 import { Icon, IconName } from "@/components/icons";
 import CompartilharClient from "./CompartilharClient";
+import DetalheEncontro from "./DetalheEncontro";
 import {
   C,
   BORDA,
@@ -207,11 +208,16 @@ const ProgramacaoClient: React.FC<{ semente: Agenda }> = ({ semente }) => {
           description: i.subtitulo || undefined,
           startDate: i.inicio,
           eventStatus: "https://schema.org/EventScheduled",
-          eventAttendanceMode: "https://schema.org/OnlineEventAttendanceMode",
-          location: {
-            "@type": "VirtualLocation",
-            url: i.link || "https://felipesmoreira.com/programacao",
-          },
+          /* Com lugar é encontro de rua; sem, é transmissão. */
+          eventAttendanceMode: i.local
+            ? "https://schema.org/OfflineEventAttendanceMode"
+            : "https://schema.org/OnlineEventAttendanceMode",
+          location: i.local
+            ? { "@type": "Place", name: i.local }
+            : {
+                "@type": "VirtualLocation",
+                url: i.link || "https://felipesmoreira.com/programacao",
+              },
           performer: { "@type": "Person", name: "Felipe Moreira" },
           organizer: { "@type": "Organization", name: "Missão Ceará" },
         },
@@ -223,6 +229,27 @@ const ProgramacaoClient: React.FC<{ semente: Agenda }> = ({ semente }) => {
   /* Quantos o recorte tinha e a lista deixou de fora por já terem acontecido —
      contados na mesma janela que a lista, para o rodapé não falar de outra. */
   const passados = agora ? quantosPassaram(noRecorte, agora) : 0;
+
+  /**
+   * A FICHA ABERTA — o encontro cujo cartão foi tocado.
+   *
+   * Guarda o id, e não o item: a agenda ao vivo pode chegar com o cartão já
+   * aberto, e a ficha tem de mostrar o que está publicado agora. Se o encontro
+   * sair da lista (passou, o recorte mudou), a ficha fecha sozinha. O foco
+   * volta para o cartão que a abriu, como no modal de compartilhar.
+   */
+  const [abertoId, setAbertoId] = useState<string | null>(null);
+  const origemRef = useRef<HTMLElement | null>(null);
+  const abrir = useCallback((item: ItemAgenda, origem: HTMLElement) => {
+    origemRef.current = origem;
+    setAbertoId(item.id);
+  }, []);
+  const fechar = useCallback(() => {
+    setAbertoId(null);
+    origemRef.current?.focus();
+    origemRef.current = null;
+  }, []);
+  const aberto = abertoId ? ordenados.find((i) => i.id === abertoId) ?? null : null;
 
   return (
     <div style={{ position: "relative", minHeight: "100dvh", background: C.night }}>
@@ -415,9 +442,10 @@ const ProgramacaoClient: React.FC<{ semente: Agenda }> = ({ semente }) => {
                   estado={agora ? estadoDe(item, agora) : "sem-horario"}
                   destaque={item.id === destaque}
                   aoVivoAgora={agora ? estaAoVivo(item, agora) : false}
+                  onAbrir={abrir}
                 />
-                {/* O botão de confirmar fica FORA do cartão, e não dentro: o cartão inteiro já
-                    é um link quando o item tem link, e botão dentro de link é
+                {/* O botão de confirmar fica FORA do cartão, e não dentro: o cartão inteiro
+                    é o botão que abre a ficha, e botão dentro de botão é
                     interativo aninhado — HTML inválido, e no leitor de tela os
                     dois viram um alvo só.
 
@@ -478,6 +506,15 @@ const ProgramacaoClient: React.FC<{ semente: Agenda }> = ({ semente }) => {
         </footer>
       </main>
 
+      {aberto && (
+        <DetalheEncontro
+          item={aberto}
+          estado={agora ? estadoDe(aberto, agora) : "sem-horario"}
+          aoVivoAgora={agora ? estaAoVivo(aberto, agora) : false}
+          onFechar={fechar}
+        />
+      )}
+
       <style>{css}</style>
     </div>
   );
@@ -489,7 +526,8 @@ const Cartao: React.FC<{
   estado: Estado;
   destaque: boolean;
   aoVivoAgora: boolean;
-}> = ({ item, estado, destaque, aoVivoAgora }) => {
+  onAbrir: (item: ItemAgenda, origem: HTMLElement) => void;
+}> = ({ item, estado, destaque, aoVivoAgora, onAbrir }) => {
   const tema = temaDe(item.cor);
 
   /* A etiqueta obedece o relógio: "Ao vivo" só enquanto está acontecendo, e o
@@ -512,12 +550,29 @@ const Cartao: React.FC<{
   } as React.CSSProperties;
 
   const classe =
-    `ag-cartao${tema.claro ? " ag-cartao-claro" : ""}` +
+    `ag-cartao ag-clicavel${tema.claro ? " ag-cartao-claro" : ""}` +
     `${estado === "passado" ? " ag-passou" : ""}` +
     `${destaque ? " ag-destaque" : ""}`;
 
-  const conteudo = (
-    <>
+  const rotulo = `${item.dia}, ${item.data}${item.hora ? ` às ${item.hora}` : ""} — ${item.titulo}`;
+
+  /* O CARTÃO INTEIRO ABRE A FICHA. Antes ele era um link para o `link` do
+     encontro quando havia um, e não fazia nada quando não havia — o lugar, a
+     categoria e a imagem inteira ficavam sem onde aparecer. Agora tudo o que a
+     coordenação preencheu abre no modal, e o link vira um botão lá dentro.
+
+     O botão é um filho esticado por cima do cartão, e não o cartão virado
+     `<button>`: botão só aceita conteúdo de frase, e aqui há `<h2>`. O rótulo
+     dele é a linha inteira — dia, data, hora e título — para o leitor de tela
+     dizer o que vai abrir. */
+  return (
+    <article className={classe} style={vars}>
+      <button
+        type="button"
+        className="ag-abrir"
+        aria-label={`Ver detalhes: ${rotulo}`}
+        onClick={(e) => onAbrir(item, e.currentTarget)}
+      />
       {/* Miniatura — a primeira coluna do grid é dela, sempre.
           O cartão é `176px | 1fr | auto | auto` e a maioria dos eventos não tem
           imagem. Quando este bloco deixava de ser desenhado, os outros filhos
@@ -561,34 +616,7 @@ const Cartao: React.FC<{
       <span className="ag-selo" aria-hidden="true">
         <Icon name={iconeSeguro(item.plataforma, "play")} size={20} />
       </span>
-    </>
-  );
-
-  const rotulo = `${item.dia}, ${item.data}${item.hora ? ` às ${item.hora}` : ""} — ${item.titulo}`;
-
-  if (!item.link) {
-    return (
-      <article className={classe} style={vars} aria-label={rotulo}>
-        {conteudo}
-      </article>
-    );
-  }
-
-  return item.interno ? (
-    <Link href={item.link} className={`${classe} ag-clicavel`} style={vars} title={rotulo}>
-      {conteudo}
-    </Link>
-  ) : (
-    <a
-      href={item.link}
-      target="_blank"
-      rel="noopener noreferrer"
-      className={`${classe} ag-clicavel`}
-      style={vars}
-      title={rotulo}
-    >
-      {conteudo}
-    </a>
+    </article>
   );
 };
 
@@ -693,6 +721,7 @@ const css = `
   .ag-item { animation: agIn .5s ease-out backwards; animation-delay: calc(.06s * var(--i, 0)); }
 
   .ag-cartao {
+    position: relative;
     display: grid;
     grid-template-columns: 176px minmax(0, 1fr) auto auto;
     align-items: center;
@@ -705,9 +734,18 @@ const css = `
     text-decoration: none;
     transition: transform .14s ease, box-shadow .14s ease;
   }
+  .ag-clicavel { cursor: pointer; }
   .ag-clicavel:hover { transform: translate(-2px,-2px); box-shadow: ${sombraErguida("alto")}; }
   .ag-clicavel:active { transform: translate(2px,2px); box-shadow: ${sombraAfundada("alto")}; }
-  .ag-clicavel:focus-visible { outline: ${BORDA}px solid ${C.gold}; outline-offset: 4px; }
+  /* O botão que abre a ficha cobre o cartão inteiro, invisível; quem desenha
+     o foco é o cartão, porque é ele que a pessoa vê. */
+  .ag-abrir {
+    position: absolute; inset: 0; z-index: 1;
+    background: transparent; border: 0; padding: 0; margin: 0; cursor: pointer;
+    -webkit-appearance: none; appearance: none;
+  }
+  .ag-abrir:focus { outline: none; }
+  .ag-cartao:has(.ag-abrir:focus-visible) { outline: ${BORDA}px solid ${C.gold}; outline-offset: 4px; }
 
   .ag-thumb {
     position: relative;

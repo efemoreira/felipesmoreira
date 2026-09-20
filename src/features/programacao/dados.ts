@@ -34,6 +34,7 @@ export function normalizarAgenda(bruto: unknown): Agenda | null {
         id: texto(i.id) || `item-${indice}`,
         titulo: texto(i.titulo, 120),
         subtitulo: texto(i.subtitulo, 160) || undefined,
+        local: texto(i.local, 120) || undefined,
         // só entra se o navegador conseguir ler como instante
         inicio: (() => {
           const v = texto(i.inicio, 30);
