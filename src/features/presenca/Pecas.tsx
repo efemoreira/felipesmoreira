@@ -153,6 +153,48 @@ export const Armadilha: React.FC<{ honeypot: React.RefObject<HTMLInputElement | 
   />
 );
 
+/**
+ * A CAIXINHA DO "EU VOU" — só no link de confirmação, nunca no QR da porta.
+ *
+ * O botão já diz "Confirmar presença", mas botão é o que a pessoa aperta para
+ * seguir: em pé, na pressa, apertar é reflexo. A caixinha é o ato de vontade, e
+ * é dela que sai a lista que dimensiona a sala — uma lista inflada por quem só
+ * queria ver a página é pior que uma lista curta. Na porta ela não existe: quem
+ * leu o QR já está lá, e pedir para ele confirmar que vem é absurdo.
+ */
+export const CaixaEuVou: React.FC<{
+  marcado: boolean;
+  aoMudar: (v: boolean) => void;
+  /** Um id por tela — duas caixinhas com o mesmo id quebrariam o `htmlFor`. */
+  id?: string;
+}> = ({ marcado, aoMudar, id = "p-euvou" }) => (
+  <label
+    htmlFor={id}
+    style={{
+      display: "flex",
+      gap: 10,
+      alignItems: "flex-start",
+      minHeight: 44,
+      cursor: "pointer",
+      border: borda(C.gold),
+      background: "rgba(255,203,5,.08)",
+      padding: "12px 14px",
+      margin: "0 0 18px",
+    }}
+  >
+    <input
+      id={id}
+      type="checkbox"
+      checked={marcado}
+      onChange={(e) => aoMudar(e.target.checked)}
+      style={{ width: 22, height: 22, flex: "0 0 auto", marginTop: 2, accentColor: C.gold }}
+    />
+    <span style={{ fontSize: 15, lineHeight: 1.6 }}>
+      <strong>Confirmo que vou a este encontro.</strong>
+    </span>
+  </label>
+);
+
 export const Erro: React.FC<{ texto: string }> = ({ texto }) => (
   <p
     role="alert"

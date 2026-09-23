@@ -22,6 +22,7 @@ import {
   textoP,
   ModoExplica,
   Armadilha,
+  CaixaEuVou,
   Erro,
   Casca,
   Campo,
@@ -88,6 +89,9 @@ export default function PresencaClient() {
      envio: quem preenche em pé precisa consertar onde está olhando. */
   const [tocado, setTocado] = useState<Record<string, boolean>>({});
   const [consentimento, setConsentimento] = useState(false);
+  /* "Eu vou" — só o link de confirmação pede, e é o que autoriza gravar. Ver
+     `CaixaEuVou`. No QR da porta ela não existe e fica sempre `false`. */
+  const [euVou, setEuVou] = useState(false);
   const honeypot = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -145,6 +149,12 @@ export default function PresencaClient() {
   const procurar = async (ev: React.FormEvent) => {
     ev.preventDefault();
     setErro(null);
+    /* No modo confirmação a caixinha é a confirmação. Conferida ANTES do
+       telefone: quem não marcou não tem por que ver o número dele criticado. */
+    if (pedeEuVou && !euVou) {
+      setErro("Falta marcar a caixinha confirmando que você vai.");
+      return;
+    }
     if (erros.telefone !== "") {
       setTocado((t) => ({ ...t, telefone: true }));
       setErro(erros.telefone);
@@ -207,6 +217,10 @@ export default function PresencaClient() {
          senão a pessoa conserta um, envia, e descobre o próximo. */
       setTocado({ nome: true, telefone: true, bairro: true, cidade: true });
       setErro(erros[primeiro]);
+      return;
+    }
+    if (pedeEuVou && !euVou) {
+      setErro("Falta marcar a caixinha confirmando que você vai.");
       return;
     }
     if (!consentimento) {
@@ -277,6 +291,9 @@ export default function PresencaClient() {
 
   const detalhes = encontro?.existe ? encontro : null;
   const confirmando = detalhes?.modo === "confirmacao";
+  /* A caixinha do "eu vou" existe só no link de confirmação: no QR da porta a
+     pessoa já chegou. */
+  const pedeEuVou = confirmando;
 
   if (fase === "pronto") {
     return (
@@ -330,6 +347,16 @@ export default function PresencaClient() {
               required
             />
             <Armadilha honeypot={honeypot} />
+            {pedeEuVou && (
+              <CaixaEuVou
+                id="p-euvou-tel"
+                marcado={euVou}
+                aoMudar={(v) => {
+                  setEuVou(v);
+                  if (v) setErro(null);
+                }}
+              />
+            )}
             {erro && <Erro texto={erro} />}
             {/* O botão nomeia o RESULTADO, e não o passo: para quem já é
                 conhecido pelo número este toque é o último, e "continuar" não
@@ -518,6 +545,17 @@ export default function PresencaClient() {
               </span>
             </label>
           </section>
+
+          {pedeEuVou && (
+            <CaixaEuVou
+              id="p-euvou-form"
+              marcado={euVou}
+              aoMudar={(v) => {
+                setEuVou(v);
+                if (v) setErro(null);
+              }}
+            />
+          )}
 
           <Armadilha honeypot={honeypot} />
 

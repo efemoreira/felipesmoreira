@@ -4,7 +4,7 @@ import React, { useEffect, useRef } from "react";
 import Link from "next/link";
 import { bordaFina, FONT_ALFA, FONT_ELITE } from "@/lib/theme";
 import { Icon, type IconName } from "@/components/icons";
-import { C, BORDA, NOMES_FAMILIA, sombra, type ItemAgenda } from "./tipos";
+import { C, BORDA, NOMES_FAMILIA, sombra, vouDoItem, type ItemAgenda } from "./tipos";
 import type { Estado } from "./tempo";
 
 /**
@@ -75,7 +75,10 @@ const DetalheEncontro: React.FC<{
   const temQuando = item.dia || item.data || item.hora;
   const temOnde = item.local || item.endereco || nomePlataforma;
   const temQuem = !!item.responsaveis?.length;
-  const temAcao = item.link || item.grupo || item.confirmar;
+  /* O mesmo destino do botão do cartão, do mesmo lugar: a ficha não pode levar
+     a um lugar diferente do cartão que a abriu. */
+  const vou = vouDoItem(item);
+  const temAcao = item.link || vou;
 
   return (
     <div className="dt-overlay" role="presentation" onClick={onFechar}>
@@ -159,16 +162,17 @@ const DetalheEncontro: React.FC<{
 
         {temAcao && (
           <div className="dt-acoes">
-            {/* O mesmo botão único do cartão: com grupo, entra no grupo; sem, o
-                formulário de sempre. Quem decide se ele existe é o painel. */}
-            {(item.grupo || item.confirmar) && (
+            {/* O mesmo botão único do cartão — ato de campanha entra direto no
+                grupo, o resto passa pelo formulário de confirmação, que oferece
+                o grupo no fim. Ver `vouDoItem()`. */}
+            {vou && (
               <a
                 className="dt-btn dt-btn-principal"
-                href={item.grupo || `/presenca?c=${item.confirmar}`}
-                {...(item.grupo ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                href={vou.href}
+                {...(vou.grupo ? { target: "_blank", rel: "noopener noreferrer" } : {})}
               >
-                <Icon name={item.grupo ? "whatsapp" : "flag"} size={15} />
-                <span>Confirmar presença</span>
+                <Icon name={vou.grupo ? "whatsapp" : "flag"} size={15} />
+                <span>{vou.rotulo}</span>
               </a>
             )}
             {item.link && (item.interno ? (

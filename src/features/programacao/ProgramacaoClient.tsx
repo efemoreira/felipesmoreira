@@ -18,6 +18,7 @@ import {
   sombra,
   sombraErguida,
   sombraAfundada,
+  vouDoItem,
 } from "./tipos";
 import { CAMINHO_AGENDA_AO_VIVO, normalizarAgenda } from "./dados";
 import {
@@ -451,24 +452,28 @@ const ProgramacaoClient: React.FC<{ semente: Agenda }> = ({ semente }) => {
 
                     Reta final da eleição: UM botão só, não dois — "Confirmar
                     presença" e "Quero ajudar" competindo no mesmo cartão custava
-                    mais decisão do que o momento permite. Com grupo de WhatsApp
-                    deste encontro, o botão entra direto nele — é o convite mais
-                    rápido para quem vai vir. Sem grupo, cai no formulário de
-                    sempre. Só aparece em encontro presencial futuro; quem decide
-                    é o painel, ao gerar o agenda.json. */}
-                {(item.grupo || item.confirmar) && (
-                  <a
-                    className="ag-vou"
-                    href={item.grupo || `/presenca?c=${item.confirmar}`}
-                    {...(item.grupo ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-                  >
-                    <Icon name={item.grupo ? "whatsapp" : "flag"} size={15} />
-                    {/* A mesma palavra da tela para onde ele leva, e a mesma que
-                        o convite de qualquer evento usa: quem toca aqui sabe o
-                        que vai acontecer antes de a página abrir. */}
-                    <span>Confirmar presença</span>
-                  </a>
-                )}
+                    mais decisão do que o momento permite. Para onde ele vai é
+                    decisão da família do encontro, e quem decide é `vouDoItem()`
+                    — ato de campanha entra direto no grupo, o resto passa pelo
+                    formulário de confirmação (que oferece o grupo no fim). Só
+                    aparece em encontro presencial futuro; quem decide é o
+                    painel, ao gerar o agenda.json. */}
+                {(() => {
+                  const vou = vouDoItem(item);
+                  if (!vou) return null;
+                  return (
+                    <a
+                      className="ag-vou"
+                      href={vou.href}
+                      {...(vou.grupo ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                    >
+                      <Icon name={vou.grupo ? "whatsapp" : "flag"} size={15} />
+                      {/* A mesma palavra da tela para onde ele leva: quem toca
+                          aqui sabe o que vai acontecer antes de a página abrir. */}
+                      <span>{vou.rotulo}</span>
+                    </a>
+                  );
+                })()}
               </li>
             ))}
           </ol>

@@ -91,6 +91,39 @@ export interface ItemAgenda {
   grupo?: string;
 }
 
+/**
+ * AS FAMÍLIAS QUE VÃO DIRETO AO GRUPO DE WHATSAPP.
+ *
+ * Num ato de campanha o que falta é gente para montar — som, faixa, fila,
+ * adesivagem —, e quem toca no botão está se oferecendo para ajudar: mandá-lo
+ * para um formulário de "pretendo ir" custa três telas antes de ele falar com
+ * alguém. Num encontro de militância (e nos outros) a pergunta é outra: quem
+ * confirma entra na lista que dimensiona a sala e alimenta o funil de depois,
+ * então o caminho é o formulário — e o grupo aparece no fim dele, na tela de
+ * "presença confirmada" (`Pronto`, em presenca/Telas.tsx).
+ */
+export const FAMILIAS_DIRETO_AO_GRUPO: Familia[] = ["campanha"];
+
+/**
+ * Para onde vai o botão único do cartão e da ficha — e o que ele diz.
+ *
+ * `null` quando o encontro não oferece nem grupo nem confirmação. Um só lugar
+ * decide, porque o cartão e o modal têm de levar ao mesmo lugar: dois `if`
+ * iguais em dois arquivos divergem na terceira alteração.
+ */
+export const vouDoItem = (
+  item: ItemAgenda,
+): { href: string; grupo: boolean; rotulo: string } | null => {
+  const direto = !!item.familia && FAMILIAS_DIRETO_AO_GRUPO.includes(item.familia);
+  if (item.grupo && (direto || !item.confirmar)) {
+    return { href: item.grupo, grupo: true, rotulo: direto ? "Quero ajudar" : "Entrar no grupo" };
+  }
+  if (item.confirmar) {
+    return { href: `/presenca?c=${item.confirmar}`, grupo: false, rotulo: "Confirmar presença" };
+  }
+  return null;
+};
+
 export interface Canal {
   nome: string;
   icone: string;
