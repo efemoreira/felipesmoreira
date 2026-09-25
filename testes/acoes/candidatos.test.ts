@@ -205,3 +205,73 @@ describe("ação: as listas são a curadoria", () => {
     assert.ok(painel.ler("pessoas").some((p) => p.id === ana.id), "apagar a lista apagou o candidato");
   });
 });
+
+describe("ação: publicar ao salvar", () => {
+  /* Publicar era um passo à parte, escondido no menu da linha — e o governador
+     ficou em rascunho enquanto o site mostrava o vice. Agora o formulário traz
+     "Publicar no site" marcado, e as travas do número continuam na frente. */
+  test("salvo com a caixa marcada e número certo, vai direto ao ar", async () => {
+    const ana = await cadastrar({ publicado: "1" });
+    assert.equal(ana.publicado, true);
+  });
+
+  test("número errado para o cargo não grava — muito menos publica", async () => {
+    const antes = painel.ler("pessoas").length;
+    await painel.postar("candidatos", {
+      acao: "cand-novo",
+      nome: "Federal Errado",
+      cargo: "deputado-federal",
+      numero: "141", // federal tem 4 dígitos
+      publicado: "1",
+    });
+    assert.equal(painel.ler("pessoas").length, antes);
+  });
+
+  test("editar sem a caixa marcada recolhe para rascunho", async () => {
+    const ana = await cadastrar({ publicado: "1" });
+    await painel.postar("candidatos", {
+      acao: "cand-salvar",
+      id: ana.id,
+      nome: ana.nome,
+      cargo: "deputado-federal",
+      numero: "1414",
+    });
+    assert.equal(painel.ler("pessoas").find((p) => p.id === ana.id).publicado, false);
+  });
+});
+
+describe("ação: o link das redes", () => {
+  test("completa o https de quem digitou sem ele", async () => {
+    const ana = await cadastrar({ linkRedes: "linktr.ee/ana" });
+    assert.equal(ana.linkRedes, "https://linktr.ee/ana");
+  });
+
+  test("esquema que não é https não vira botão no site", async () => {
+    const ana = await cadastrar({ linkRedes: "javascript:alert(1)" });
+    assert.equal(ana.linkRedes, "");
+  });
+});
+
+describe("api: o que o site recebe para montar a colinha por cargo", () => {
+  test("o vice vai com o titular do mesmo número, e fica sem ele quando o titular não está no ar", async () => {
+    const gov = await cadastrar({ nome: "Huggo", urna: "Huggo", cargo: "governador", numero: "14", publicado: "1" });
+    await cadastrar({ nome: "Felipe", urna: "Felipe", cargo: "vice-governador", numero: "14", publicado: "1" });
+    await cadastrar({ nome: "Renan", urna: "Renan", cargo: "presidente", numero: "14", publicado: "1" });
+    await cadastrar({ nome: "Suplente Solto", urna: "Suplente Solto", cargo: "suplente-1", numero: "141", publicado: "1" });
+    await cadastrar({ nome: "Rascunho", urna: "Rascunho", cargo: "senador", numero: "142" });
+
+    /* `urna` junto: a API manda o nome de urna, e o `cadastrar()` põe o da Ana por padrão. */
+    const r = await painel.buscar("api/candidatos");
+    const { candidatos } = JSON.parse(r.html) as { candidatos: Record<string, unknown>[] };
+    const por = (nome: string) => candidatos.find((c) => c.nome === nome)!;
+
+    assert.equal(por("Felipe").vice, true);
+    assert.equal(por("Felipe").titular, gov.id, "vice de governador não achou o governador de mesmo número");
+    assert.equal(por("Felipe").secao, "governador");
+    assert.equal(por("Renan").titular, "", "o presidente não é vice do governador só por dividir o 14");
+    assert.equal(por("Renan").vice, false);
+    assert.equal(por("Suplente Solto").titular, "", "suplente de senador que não está no ar");
+    assert.equal(por("Suplente Solto").secao, "senador");
+    assert.equal(candidatos.find((c) => c.nome === "Rascunho"), undefined, "rascunho desceu para o site");
+  });
+});

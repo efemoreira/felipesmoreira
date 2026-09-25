@@ -22,6 +22,16 @@ export interface Candidato {
   instagram: string;
   /** caminho da foto, ou vazio — candidato sem foto é candidato válido */
   imagem: string;
+  /** a chave do cargo em `CARGOS` (dominio.php), ou vazio */
+  chave: string;
+  /** a seção onde aparece: o cargo de quem encabeça (`cargo_titular()`) */
+  secao: string;
+  /** vice ou suplente — aparece no site, nunca na colinha */
+  vice: boolean;
+  /** id do titular no ar, quando é vice; vazio se o titular ainda não está no ar */
+  titular: string;
+  /** o link do botão "Ver redes"; vazio quando só há o Instagram */
+  linkRedes: string;
 }
 
 /**
@@ -47,12 +57,36 @@ export interface Chapa {
   listas: Lista[];
 }
 
-export async function obterChapa(): Promise<Chapa> {
-  const r = await apiFetch<Partial<Chapa>>("/candidatos.php");
+/** Completa o que um painel mais velho ainda não manda, em vez de quebrar a página. */
+function completar(c: Partial<Candidato>): Candidato {
   return {
-    candidatos: Array.isArray(r.candidatos) ? r.candidatos : [],
+    id: c.id ?? "",
+    nome: c.nome ?? "",
+    cargo: c.cargo ?? "",
+    numero: c.numero ?? "",
+    partido: c.partido ?? "",
+    instagram: c.instagram ?? "",
+    imagem: c.imagem ?? "",
+    chave: c.chave ?? "",
+    secao: c.secao ?? c.chave ?? "",
+    vice: c.vice === true,
+    titular: c.titular ?? "",
+    linkRedes: c.linkRedes ?? "",
+  };
+}
+
+export async function obterChapa(): Promise<Chapa> {
+  const r = await apiFetch<{ candidatos?: Partial<Candidato>[]; listas?: Lista[] }>("/candidatos.php");
+  return {
+    candidatos: Array.isArray(r.candidatos) ? r.candidatos.map(completar) : [],
     listas: Array.isArray(r.listas) ? r.listas : [],
   };
+}
+
+/** Para onde vai o botão "Ver redes": o link que a coordenação pôs, ou o Instagram. */
+export function linkDasRedes(c: Candidato): string {
+  if (c.linkRedes) return c.linkRedes;
+  return c.instagram ? `https://instagram.com/${c.instagram}` : "";
 }
 
 /** Resolve os ids de uma lista nas fichas, na ordem em que ela os guardou. */

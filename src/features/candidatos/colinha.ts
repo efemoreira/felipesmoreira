@@ -251,7 +251,9 @@ export async function gerarColinha(
     const [nome] = quebrar(ctx, c.nome, largura, `40px ${ALFA}`, 1);
     escrever(ctx, nome, xNome, y + 30, { font: `40px ${ALFA}`, cor: C.cream });
 
-    const abaixo = [c.cargo, c.instagram ? `@${c.instagram}` : ""].filter(Boolean).join("  ·  ");
+    /* O cargo, e não o @: a colinha é lida de cima para baixo como a cédula,
+       e é o cargo que diz em que tela da urna aquele número entra. */
+    const abaixo = [c.cargo, c.partido].filter(Boolean).join("  ·  ");
     if (abaixo) {
       escrever(ctx, abaixo, xNome, y + 80, { font: `28px ${BITTER}`, cor: "rgba(246,245,239,.72)" });
     }

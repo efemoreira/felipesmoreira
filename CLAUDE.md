@@ -95,9 +95,11 @@ Regras:
 
 - Candidato e lista são perguntas diferentes.
 - `CARGOS` em `dominio.php` é a fonte dos cargos e dos dígitos do número.
-- Sem número válido não publica.
-- A ordem da lista é a ordem da colinha.
-- Vice e suplente usam os dígitos do titular.
+- Sem número válido não publica. O formulário publica ao salvar (caixa marcada); a tela lista quem está em rascunho.
+- A colinha de `/candidatos` é por cargo, na ordem `ORDEM_COLINHA` (`src/features/candidatos/cargos.ts`): Presidente, Governador, Senado (2 vagas), Dep. Federal, Dep. Estadual — só o que tem alguém no ar. Presidente e Governador entram fixos; nos outros o eleitor escolhe. Imprime em A4 (`ColinhaImpressa.tsx`).
+- Vice e suplente usam os dígitos do titular, aparecem no site embaixo dele (`cargo_titular()` + mesmo número, calculado no `api/candidatos.php`) e **nunca** entram na colinha.
+- As listas do painel alimentam só o bloco da home (`naHome`); a ordem da lista é a ordem desse bloco.
+- "Ver redes" abre o campo `linkRedes` (só https; `redes` é a rede profissional) ou, vazio, o Instagram.
 
 ### Munição e atribuição
 

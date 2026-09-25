@@ -229,6 +229,22 @@ function cargo_de_vice(string $chave): bool
     return str_starts_with($chave, 'vice-') || str_starts_with($chave, 'suplente-');
 }
 
+/**
+ * O cargo de quem encabeça: `vice-governador` → `governador`,
+ * `suplente-1` → `senador`. Cargo que não é de vice devolve ele mesmo.
+ *
+ * É com isto, e com o número (que o vice divide com o titular), que o site põe
+ * o vice embaixo de quem ele acompanha — sem um campo "titular" na ficha que
+ * alguém teria de lembrar de preencher.
+ */
+function cargo_titular(string $chave): string
+{
+    if (str_starts_with($chave, 'suplente-')) {
+        return 'senador';
+    }
+    return str_starts_with($chave, 'vice-') ? substr($chave, 5) : $chave;
+}
+
 /** O nome do cargo como se escreve. Cargo em branco devolve string vazia. */
 function rotulo_cargo(string $chave): string
 {

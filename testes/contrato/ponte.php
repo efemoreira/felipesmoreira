@@ -60,6 +60,9 @@ const PONTES = [
     'token_de_escala',
     'url_do_convite',
     'nomes_das_familias',
+    'rotulo_cargo',
+    'cargo_de_vice',
+    'cargo_titular',
 ];
 
 $entrada = json_decode((string) file_get_contents('php://stdin'), true);

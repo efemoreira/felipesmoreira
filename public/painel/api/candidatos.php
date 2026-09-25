@@ -26,17 +26,40 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') {
     exit;
 }
 
+$publicados = candidatos_publicados();
+
+/* Quem encabeça cada chapa, por cargo e número — é assim que o vice acha o
+   titular: os dois dividem o número, e o cargo de um sai do cargo do outro. */
+$titulares = [];
+foreach ($publicados as $c) {
+    if ($c['cargo'] !== '' && !cargo_de_vice($c['cargo'])) {
+        $titulares[$c['cargo'] . '|' . $c['numero']] ??= $c['id'];
+    }
+}
+
 $candidatos = [];
-foreach (candidatos_publicados() as $c) {
+foreach ($publicados as $c) {
+    $vice = $c['cargo'] !== '' && cargo_de_vice($c['cargo']);
     $candidatos[] = [
         'id'     => $c['id'],
         'nome'   => $c['urna'] !== '' ? $c['urna'] : $c['nome'],
-        /* O RÓTULO, e não a chave: o site desenha o que recebe, e uma tabela
-           de cargos repetida em TypeScript divergiria na primeira eleição. */
+        /* O RÓTULO para desenhar, e a CHAVE para agrupar: o site põe cada um na
+           seção do cargo, mas o nome do cargo continua escrito só aqui. */
         'cargo'  => rotulo_cargo($c['cargo']),
+        'chave'  => $c['cargo'],
+        /* A seção onde ele aparece no site: a do cargo que encabeça. O vice
+           de governador mora em "Governador", mesmo antes de o titular estar
+           no ar — e a regra fica aqui, sem cópia em TypeScript. */
+        'secao'  => cargo_titular($c['cargo']),
+        /* Vice e suplente aparecem no site, embaixo de quem acompanham, mas
+           nunca na colinha: o voto vai no número do titular. `titular` fica
+           vazio quando quem encabeça ainda não está no ar. */
+        'vice'    => $vice,
+        'titular' => $vice ? ($titulares[cargo_titular($c['cargo']) . '|' . $c['numero']] ?? '') : '',
         'numero' => $c['numero'],
         'partido' => $c['partido'],
         'instagram' => $c['instagram'],
+        'linkRedes' => $c['linkRedes'],
         'imagem' => $c['imagem'],
     ];
 }

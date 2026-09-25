@@ -184,6 +184,30 @@ abrir_pagina('Candidatos');
     <fieldset id="cadastro">
       <legend>Candidatos (<?= $noAr ?> no ar de <?= count($todos) ?>)</legend>
 
+      <?php /* QUEM ESTÁ FORA DO AR, pelo nome. O selo "rascunho" na linha não
+               bastou: o governador ficou fora do site enquanto o vice aparecia,
+               e ninguém notou porque o selo cinza não chama ninguém. */ ?>
+      <?php $rascunhos = array_values(array_filter($todos, fn ($c) => !$c['publicado'])); ?>
+      <?php if ($rascunhos !== []): ?>
+        <div class="fora-do-ar" role="status">
+          <p>
+            <strong><?= count($rascunhos) === 1 ? '1 candidato está' : count($rascunhos) . ' candidatos estão' ?> em rascunho</strong>
+            e não aparece<?= count($rascunhos) === 1 ? '' : 'm' ?> em /candidatos. Abra, confira o número e salve com
+            <em>Publicar no site</em> marcado:
+          </p>
+          <ul>
+            <?php foreach ($rascunhos as $r): ?>
+              <li>
+                <a href="?aba=candidatos&amp;c=<?= h(urlencode($r['id'])) ?>">
+                  <?= h($r['urna'] !== '' ? $r['urna'] : $r['nome']) ?>
+                </a>
+                <span class="dica"><?= h(rotulo_cargo($r['cargo']) ?: 'sem cargo') ?><?= $r['numero'] === '' ? ' · sem número' : '' ?></span>
+              </li>
+            <?php endforeach; ?>
+          </ul>
+        </div>
+      <?php endif; ?>
+
       <div class="acoes" style="margin:0 0 18px">
         <?php botao_modal('novo-candidato', 'Novo candidato', 'aba=candidatos&novo=1'); ?>
         <?php if ($fora !== []): ?>

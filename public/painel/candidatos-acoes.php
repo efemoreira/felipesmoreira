@@ -76,6 +76,9 @@ function tratar_acoes_de_candidato(): void
                 $ficha['numero'] = $_POST['numero'] ?? '';
                 $ficha['partido'] = $_POST['partido'] ?? '';
                 $ficha['instagram'] = normalizar_arroba($_POST['instagram'] ?? '');
+                /* `limpar_link()` completa o https de quem digitou "linktr.ee/x";
+                   o `normalizar_pessoa()` depois descarta o que não for https. */
+                $ficha['linkRedes'] = limpar_link($_POST['linkRedes'] ?? '');
                 $ficha['imagem'] = $imagem;
                 $ficha['ordem']  = $_POST['ordem'] ?? 0;
 
@@ -103,6 +106,13 @@ function tratar_acoes_de_candidato(): void
                     voltar('candidatos');
                 }
 
+                /* PUBLICA AO SALVAR, e só aqui embaixo: as duas travas acima já
+                   voltaram se faltava número ou se os dígitos não batiam com o
+                   cargo, então o que chega até esta linha é número conferido.
+                   Publicar era um passo à parte, escondido no menu da linha — e
+                   o governador ficou em rascunho enquanto o site mostrava o vice. */
+                $ficha['publicado'] = !empty($_POST['publicado']);
+
                 $achou = false;
                 foreach ($pessoas as $i => $c) {
                     if ($c['id'] === $id) {
@@ -113,7 +123,9 @@ function tratar_acoes_de_candidato(): void
                 if (!$achou) {
                     $pessoas[] = $ficha;
                 }
-                avisar('ok', $atual === null ? 'Cadastrado. Publique quando o número estiver conferido.' : 'Alterado.');
+                avisar('ok', $ficha['publicado']
+                    ? 'Salvo e no ar em /candidatos.'
+                    : 'Salvo como rascunho — não aparece no site até marcar "Publicar no site".');
             } else {
                 $id = limpar_texto($_POST['id'] ?? '', 40);
                 $achou = false;
