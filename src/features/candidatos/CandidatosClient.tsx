@@ -392,14 +392,14 @@ const SecaoCargo: React.FC<{
   );
 };
 
-/** Botão "Ver redes" — o link da coordenação, ou o Instagram. */
+/** Botão "Conheça mais" — o link da coordenação, ou o Instagram. */
 const VerRedes: React.FC<{ c: Candidato }> = ({ c }) => {
   const href = linkDasRedes(c);
   if (!href) return null;
   return (
     <a className="cd-btn cd-btn-redes" href={href} target="_blank" rel="noopener noreferrer">
       <Icon name={c.linkRedes ? "world" : "instagram"} size={16} />
-      <span>Ver redes</span>
+      <span>Conheça mais</span>
     </a>
   );
 };
@@ -473,7 +473,7 @@ const Vice: React.FC<{ c: Candidato }> = ({ c }) => {
       </div>
       {href && (
         <span className="cd-vice-redes">
-          Ver redes <Icon name="chevronRight" size={14} />
+          Conheça mais <Icon name="chevronRight" size={14} />
         </span>
       )}
     </>
