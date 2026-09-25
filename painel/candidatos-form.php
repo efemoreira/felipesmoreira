@@ -103,6 +103,15 @@ function formulario_candidato(?array $editando, string $rotulo = ''): void
         </div>
       </div>
       <div class="campo">
+        <label for="c-redes<?= $editando ? '-e' : '' ?>">Link das redes <span class="dica">— opcional</span></label>
+        <input id="c-redes<?= $editando ? '-e' : '' ?>" name="linkRedes" type="url" maxlength="200"
+               value="<?= h($editando['linkRedes'] ?? '') ?>" placeholder="https://linktr.ee/perfil">
+        <p class="dica">
+          Para onde vai o botão <strong>Ver redes</strong> no site — linktree, site, o perfil
+          que a pessoa preferir. Em branco, o botão abre o Instagram.
+        </p>
+      </div>
+      <div class="campo">
         <label for="c-img<?= $editando ? '-e' : '' ?>">Foto <span class="dica">— opcional</span></label>
         <?php if ($editando && $editando['imagem'] !== ''): ?>
           <p><img src="<?= h($editando['imagem']) ?>" alt="" style="max-width:180px;border:3px solid var(--linha-2)"></p>
@@ -116,6 +125,16 @@ function formulario_candidato(?array $editando, string $rotulo = ''): void
           que o eleitor precisa mesmo levar.
         </p>
       </div>
+
+      <?php /* Marcada sempre, de propósito: o que se cadastra aqui é para ir ao
+               ar, e o passo à parte de publicar deixou o governador em rascunho.
+               Quem quer guardar sem publicar desmarca. O número é conferido pelo
+               cargo antes — com dígito errado nada é salvo, muito menos publicado. */ ?>
+      <label class="check">
+        <input type="checkbox" name="publicado" value="1" checked>
+        Publicar no site ao salvar
+      </label>
+      <p class="dica">Só vai ao ar se o número bater com o cargo. Desmarque para guardar como rascunho.</p>
 
       <div class="acoes">
         <button class="btn btn-ouro" name="acao" value="<?= $editando ? 'cand-salvar' : 'cand-novo' ?>" type="submit">

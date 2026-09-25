@@ -167,6 +167,11 @@ function normalizar_pessoa($p): ?array
         'partido'   => limpar_texto($p['partido'] ?? '', 40),
         'instagram' => limpar_texto($p['instagram'] ?? '', 40),
         'imagem'    => limpar_texto($p['imagem'] ?? '', 300),
+        /* O botão "Ver redes" do site — linktree, site, o perfil que ela
+           preferir. NÃO É `redes`, que é a rede profissional lá em cima. Só https, pela mesma régua do `grupo` logo acima: é um link
+           que o site público desenha, e `javascript:` ali seria nosso. */
+        'linkRedes' => str_starts_with(mb_strtolower(trim((string) ($p['linkRedes'] ?? ''))), 'https://')
+            ? limpar_texto($p['linkRedes'], 200) : '',
         /* Só o que está publicado desce para o site. */
         'publicado' => !empty($p['publicado']),
         /* Onde ela aparece na lista de candidatos. Menor primeiro; empate

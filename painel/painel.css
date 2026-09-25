@@ -1529,6 +1529,16 @@ fieldset[id], .item[id], .ficha[id] { scroll-margin-top:18px; }
 }
 .rascunho-aviso .acoes { flex:0 0 auto; gap:8px; margin:0; }
 
+/* Candidatos em rascunho, pelo nome — cada um é um link para abrir e publicar. */
+.fora-do-ar {
+  border:3px solid var(--atencao-borda); background:var(--atencao-fundo);
+  padding:12px 14px; margin:0 0 16px;
+}
+.fora-do-ar p { margin:0 0 8px; font-size:14.5px; line-height:1.5; color:var(--texto); }
+.fora-do-ar ul { list-style:none; margin:0; padding:0; }
+.fora-do-ar li { display:flex; flex-wrap:wrap; align-items:center; gap:4px 10px; min-height:44px; }
+.fora-do-ar li a { font-weight:700; color:var(--texto); }
+
 /* Na hora de imprimir, só o papel do QR interessa. */
 @media print {
   .lateral, .barra-baixo, .acoes, .painel-op, .resumo-encontro, .rascunho-aviso,
