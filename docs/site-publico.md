@@ -58,6 +58,13 @@ Regras:
 - Atribuição usa `?de=<slug>`.
 - Os nomes internos `kit-*` continuam por compatibilidade.
 
+### Resultados 2026
+
+- `/resultados` é estudo interno do 1º turno (votos, cadeiras, quociente, legenda, conversão do Renan, candidatos e ideias), sem indexação e fora do sitemap, como a Munição.
+- Os dados são JSON estático em `public/resultados-2026/` (`resumo.json`, `uf/<uf>.json`, `mapa/<uf>.json`), gerados fora deste repositório pelo projeto de análise do TSE: `python -m src.cli export-site --dest <este repositório>/public/resultados-2026`. Não edite esses arquivos à mão; gere de novo.
+- Gráficos e mapas são HTML/SVG próprios (sem biblioteca); as cores de dado saem de `DADO` em `src/lib/theme.ts`.
+- A UI mora em `src/features/resultados/`; a rota é `src/app/resultados/page.tsx`.
+
 ### Programação
 
 - A agenda pública é derivada dos encontros do painel.

@@ -157,3 +157,31 @@ export function bordaFina(cor: string = C.ink): string {
 export const HATCH =
   "repeating-linear-gradient(88deg, rgba(24,18,3,.045) 0 2px, transparent 2px 15px)," +
   "repeating-linear-gradient(-91deg, rgba(24,18,3,.03) 0 2px, transparent 2px 21px)";
+
+/**
+ * AS CORES DE DADO — os gráficos de /resultados.
+ *
+ * Gráfico pede cor por *papel* (quem é quem), e a paleta do cordel não tem
+ * quatro tons distinguíveis entre si. Estas foram validadas sobre o papel
+ * (`C.paper`): faixa de luminosidade, separação para daltonismo e distância
+ * para visão normal. O Missão é o ouro queimado (`goldDim`) e não o ouro: o
+ * ouro puro dá 1,29:1 sobre o papel e some no gráfico.
+ *
+ * Duas famílias, que não se misturam no mesmo gráfico:
+ *  - grupos políticos: missao · direita · centro · esquerda (· outros);
+ *  - composição do voto do Missão: nominal · legenda · renan.
+ * O amarelo do centro tem pouco contraste com o papel: todo gráfico que o usa
+ * leva rótulo escrito ou tabela ao lado.
+ */
+export const DADO = {
+  missao: C.goldDim,
+  direita: "#2A78D6",
+  centro: "#EDA100",
+  esquerda: "#E34948",
+  outros: "#9A9893",
+  nominal: C.goldDim,
+  legenda: "#EB6834",
+  renan: "#4A3AA7",
+  /* sequencial (mapas): um tom só, do claro ao escuro */
+  rampa: ["#CDE2FB", "#9EC5F4", "#6DA7EC", "#3987E5", "#256ABF", "#184F95", "#0D366B"],
+} as const;
