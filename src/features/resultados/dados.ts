@@ -6,9 +6,12 @@ import { useEffect, useState } from "react";
  * pelo projeto de análise (`python -m src.cli export-site`). Nada passa pelo
  * painel PHP — é resultado público do TSE, já processado.
  *
- * - `resumo.json` chega uma vez (UFs, Brasil, candidatos, ideias…);
+ * - `resumo.json` chega uma vez (UFs, Brasil, candidatos, fontes…);
  * - `uf/<uf>.json` (cidades) e `mapa/<nome>.json` só quando o estado é aberto,
- *   e ficam guardados na memória da aba: trocar de aba não baixa de novo.
+ *   e ficam guardados na memória da aba: trocar de aba não baixa de novo;
+ * - `bairros/<uf>/<município>.json` e `mapa-bairros/…` só quando a cidade é
+ *   aberta na aba Bairros; `adversarios/<uf>.json` na aba Adversários.
+ *   O município é o código do TSE (o mesmo de `uf/<uf>.json`).
  */
 
 const BASE = "/resultados-2026";
@@ -16,14 +19,19 @@ const BASE = "/resultados-2026";
 /** Linha de painel: os nomes de coluna seguem o padrão `<grupo>_<cargo>` do projeto de análise. */
 export type Linha = Record<string, number | string | boolean | undefined>;
 
+/** Uma base usada, com a data em que o TSE/IBGE publicou o arquivo baixado. */
+export type Fonte = { nome: string; url: string; publicado: string; baixado?: string };
+
 export type Resumo = {
   geradoEm: string;
   fonte: string;
+  fontes?: Fonte[];
+  /** UFs que têm o recorte por bairro gerado */
+  bairrosUfs?: string[];
   brasil: Linha;
   ufs: Linha[];
   legendaPartidos: Linha[];
   numeros: Linha[];
-  ideias: Linha[];
   porte: Linha[];
   candidatos: Linha[];
 };
@@ -73,6 +81,63 @@ export const carregarUf = (uf: string) =>
   });
 
 export const carregarMapa = (nome: string) => buscar<Mapa>(`mapa/${nome}.json`);
+
+/* ---------- bairros ---------- */
+
+/** Candidato num bairro: `b` = índice em `bairros`, `p` = índice em `pessoas`. */
+export type VotoNoBairro = { b: number; cargo_key: string; p: number; votos: number };
+export type QuedaNoBairro = { b: number; p: number; votos: number; votos_22: number; perda: number };
+/** Nome forte da direita no estado que vai mal num bairro mais à direita que o estado (calculado no export). */
+export type FracoNoBairro = { b: number; p: number; votos: number; forca: number };
+export type DadosBairros = { bairros: Linha[]; locais: Linha[]; candidatos: VotoNoBairro[]; quedas: QuedaNoBairro[]; fracos: FracoNoBairro[]; pessoas: Linha[] };
+/** Bairros oficiais e distritos (`areas`, pela chave do bairro) sobre o fundo da sede; locais em x/y no mesmo desenho. */
+export type MapaBairros = { largura: number; altura: number; fundo: Record<string, string>; areas: Record<string, string> };
+
+const lista = <T,>(t: Tabela | null | undefined): T[] => (t ? deTabela<T>(t) : []);
+
+/** `chave` = `<uf>/<município>` */
+export const carregarBairros = (chave: string) =>
+  buscar<DadosBairros>(`bairros/${chave}.json`, (bruto) => {
+    const b = bruto as Record<string, Tabela | null>;
+    return {
+      bairros: lista<Linha>(b.bairros),
+      locais: lista<Linha>(b.locais),
+      candidatos: lista<VotoNoBairro>(b.candidatos),
+      quedas: lista<QuedaNoBairro>(b.quedas),
+      fracos: lista<FracoNoBairro>(b.fracos),
+      pessoas: lista<Linha>(b.pessoas),
+    };
+  });
+
+export const carregarMapaBairros = (chave: string) => buscar<MapaBairros>(`mapa-bairros/${chave}.json`);
+
+/* ---------- adversários ---------- */
+
+export type DadosAdversarios = {
+  pessoas: Linha[];
+  quedasCidade: Linha[];
+  /** as 6 cidades com mais voto de cada pessoa (2026 e 2022) */
+  cidadesPessoa: Linha[];
+  /** pautas (Câmara): temas e projetos de quem foi deputado federal em 2023-2026 */
+  temas: Linha[];
+  projetos: Linha[];
+  partidos: Linha[];
+  cidades: Linha[];
+};
+
+export const carregarAdversarios = (uf: string) =>
+  buscar<DadosAdversarios>(`adversarios/${uf}.json`, (bruto) => {
+    const b = bruto as Record<string, Tabela | null>;
+    return {
+      pessoas: lista<Linha>(b.pessoas),
+      quedasCidade: lista<Linha>(b.quedasCidade),
+      cidadesPessoa: lista<Linha>(b.cidadesPessoa),
+      temas: lista<Linha>(b.temas),
+      projetos: lista<Linha>(b.projetos),
+      partidos: lista<Linha>(b.partidos),
+      cidades: lista<Linha>(b.cidades),
+    };
+  });
 
 type Estado<T> = { dado: T | null; erro: string | null };
 

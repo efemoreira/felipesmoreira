@@ -2,7 +2,7 @@
 import React, { useMemo, useState } from "react";
 import { C, DADO, FONT_ELITE, borda, bordaFina } from "@/lib/theme";
 import { num, pct, qe as fmtQe } from "./formato";
-import type { Mapa } from "./dados";
+import type { Mapa, MapaBairros as DadosMapaBairros } from "./dados";
 
 /**
  * Gráficos de /resultados — HTML e SVG puros, sem biblioteca: o site é estático
@@ -294,6 +294,124 @@ export function Dispersao({ pontos, rotuloX, rotuloY }: { pontos: Ponto[]; rotul
         <text x={12} y={A / 2} fontSize={12} textAnchor="middle" fill={C.ink} transform={`rotate(-90 12 ${A / 2})`}>{rotuloY}</text>
       </svg>
       <p style={{ fontSize: 14, minHeight: 22, margin: "6px 0 0", fontWeight: 600 }}>{ativo ? ativo.texto : "Toque ou passe o mouse num ponto para ver a cidade."}</p>
+    </div>
+  );
+}
+
+/* ===== Mapa da cidade: bairros (IBGE) e distritos, com os locais de votação ===== */
+
+export type PontoLocal = { id: string; x: number; y: number; eleitores: number; texto: string; area: string };
+
+/**
+ * Pinta cada bairro pelo indicador e põe os locais de votação por cima, do
+ * tamanho do eleitorado. `divergente` usa a escala esquerda ↔ direita com o
+ * zero no meio (pende para); senão, a rampa de um tom só.
+ */
+export function MapaBairros({
+  mapa,
+  valores,
+  rotulos,
+  pontos,
+  ativo,
+  aoEscolher,
+  divergente = false,
+  formato = pct,
+}: {
+  mapa: DadosMapaBairros | null;
+  /** valor por chave do bairro */
+  valores: Record<string, number>;
+  rotulos: Record<string, string>;
+  pontos: PontoLocal[];
+  ativo: string | null;
+  aoEscolher: (chave: string) => void;
+  divergente?: boolean;
+  formato?: (x: number) => string;
+}) {
+  const [sobre, setSobre] = useState<string | null>(null);
+  const escala = useMemo(() => {
+    const v = Object.values(valores).filter(Number.isFinite).sort((a, b) => a - b);
+    if (!v.length) return { min: 0, max: 1 };
+    if (divergente) {
+      const abs = v.map(Math.abs).sort((a, b) => a - b);
+      const m = abs[Math.floor((abs.length - 1) * 0.95)] || abs[abs.length - 1] || 1;
+      return { min: -m, max: m };
+    }
+    return { min: v[0], max: v[Math.floor((v.length - 1) * 0.98)] || v[v.length - 1] };
+  }, [valores, divergente]);
+
+  if (!mapa) return <p style={{ opacity: 0.7 }}>Esta cidade não tem mapa.</p>;
+  const tons = divergente ? DADO.lado : DADO.rampa;
+  const corDe = (x: number) => {
+    if (!Number.isFinite(x)) return C.cream;
+    const p = escala.max > escala.min ? Math.min(1, Math.max(0, (x - escala.min) / (escala.max - escala.min))) : 0.5;
+    return tons[Math.min(tons.length - 1, Math.floor(p * tons.length))];
+  };
+  const maior = Math.max(...pontos.map((p) => p.eleitores), 1);
+  const raio = (e: number) => (2.5 + Math.sqrt(e / maior) * 13) * (mapa.largura / 1000);
+  const mostrado = sobre ?? ativo;
+
+  return (
+    <div>
+      <svg
+        viewBox={`0 0 ${mapa.largura} ${mapa.altura}`}
+        style={{ width: "100%", height: "auto", maxHeight: 620, display: "block", background: C.paper, border: borda(C.ink) }}
+        role="img"
+        aria-label="Mapa dos bairros"
+      >
+        {Object.entries(mapa.fundo).map(([nome, d]) => (
+          <path key={`f-${nome}`} d={d} fill={C.cream} stroke={C.ink} strokeOpacity={0.35} strokeWidth={1} />
+        ))}
+        {Object.entries(mapa.areas).map(([chave, d]) => {
+          const tem = chave in valores;
+          return (
+            <path
+              key={chave}
+              d={d}
+              fill={tem ? corDe(valores[chave]) : C.cream}
+              stroke={ativo === chave ? C.ink : C.paper}
+              strokeWidth={ativo === chave ? 3 : 0.8}
+              onMouseEnter={() => tem && setSobre(chave)}
+              onMouseLeave={() => setSobre(null)}
+              onClick={() => tem && aoEscolher(chave)}
+              style={{ cursor: tem ? "pointer" : "default" }}
+            >
+              <title>{rotulos[chave] ?? "Sem local de votação"}</title>
+            </path>
+          );
+        })}
+        {pontos.map((p) => (
+          <circle
+            key={p.id}
+            cx={p.x}
+            cy={p.y}
+            r={raio(p.eleitores)}
+            fill={DADO.missao}
+            fillOpacity={0.55}
+            stroke={p.area === ativo ? C.ink : C.cream}
+            strokeWidth={p.area === ativo ? 2 : 0.8}
+            onClick={() => aoEscolher(p.area)}
+            style={{ cursor: "pointer" }}
+          >
+            <title>{p.texto}</title>
+          </circle>
+        ))}
+      </svg>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, margin: "6px 0", flexWrap: "wrap" }}>
+        <span>{divergente ? `${formato(escala.min)} esquerda` : formato(escala.min)}</span>
+        <span style={{ display: "flex", flex: "0 1 220px", minWidth: 120, height: 10, border: bordaFina(C.ink) }}>
+          {tons.map((c) => (
+            <span key={c} style={{ flex: 1, background: c }} />
+          ))}
+        </span>
+        <span>{divergente ? `direita ${formato(escala.max)}` : `${formato(escala.max)}+`}</span>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 5, marginLeft: 8 }}>
+          <span aria-hidden="true" style={{ width: 11, height: 11, borderRadius: "50%", background: DADO.missao, opacity: 0.7 }} />
+          local de votação (tamanho = eleitores)
+        </span>
+      </div>
+      <p style={{ fontSize: 14, minHeight: 22, margin: "4px 0 0", fontWeight: 600 }}>
+        {mostrado ? rotulos[mostrado] : "Toque num bairro ou num ponto para abrir o detalhe."}
+      </p>
     </div>
   );
 }

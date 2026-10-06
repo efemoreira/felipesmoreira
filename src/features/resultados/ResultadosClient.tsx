@@ -12,41 +12,50 @@ import Conversao from "./abas/Conversao";
 import Legenda from "./abas/Legenda";
 import Cadeiras from "./abas/Cadeiras";
 import Candidatos from "./abas/Candidatos";
-import Ideias from "./abas/Ideias";
+import Bairros from "./abas/Bairros";
+import Adversarios from "./abas/Adversarios";
+import Sobre from "./abas/Sobre";
 
 /**
  * /resultados — o estudo do resultado de 2026 para o Missão.
  *
  * Ferramenta interna (sem indexação, como a Munição): os números vêm do TSE e
  * estão processados em `public/resultados-2026/`, gerados pelo projeto de
- * análise. As abas ficam no `#` da URL para o link de uma aba poder circular.
+ * análise. As abas ficam no `#` da URL para o link de uma aba poder circular:
+ * `#estado/sp`, e na aba Bairros também a cidade e o bairro (`#bairros/ce/13897/ALDEOTA`).
  */
 
 const ABAS = [
   ["brasil", "Brasil"],
   ["estado", "Estado"],
   ["municipio", "Município"],
+  ["bairros", "Bairros"],
+  ["candidatos", "Candidatos"],
+  ["adversarios", "Adversários"],
   ["conversao", "Renan → Missão"],
   ["legenda", "Legenda"],
   ["cadeiras", "Cadeiras"],
-  ["candidatos", "Candidatos"],
-  ["ideias", "Ideias"],
+  ["sobre", "Sobre os dados"],
 ] as const;
 type Aba = (typeof ABAS)[number][0];
 
 const carregar = () => carregarResumo();
+const endereco = (a: string, u: string, r: string[] = []) => `#${[a, u, ...r].map(encodeURIComponent).join("/")}`;
 
 export default function ResultadosClient() {
   const resumo = useRecurso("resumo", carregar);
   const [aba, setAba] = useState<Aba>("brasil");
   const [uf, setUfEstado] = useState("ce");
+  /* o que vem depois do estado no endereço (aba Bairros: município e bairro) */
+  const [rota, setRotaEstado] = useState<string[]>([]);
 
-  /* aba e estado no endereço: #estado/sp */
+  /* aba, estado e rota no endereço: #estado/sp, #bairros/ce/13897/ALDEOTA */
   useEffect(() => {
     const ler = () => {
-      const [a, u] = location.hash.replace("#", "").split("/");
+      const [a, u, ...resto] = location.hash.replace("#", "").split("/").map(decodeURIComponent);
       if (ABAS.some(([k]) => k === a)) setAba(a as Aba);
       if (u && /^[a-z]{2}$/.test(u)) setUfEstado(u);
+      setRotaEstado(resto.filter(Boolean));
     };
     ler();
     window.addEventListener("hashchange", ler);
@@ -56,16 +65,25 @@ export default function ResultadosClient() {
   const ir = useCallback(
     (a: Aba, u: string = uf) => {
       setAba(a);
-      history.replaceState(null, "", `#${a}/${u}`);
+      setRotaEstado([]);
+      history.replaceState(null, "", endereco(a, u));
     },
     [uf],
   );
   const setUf = useCallback(
     (u: string) => {
       setUfEstado(u);
-      history.replaceState(null, "", `#${aba}/${u}`);
+      setRotaEstado([]);
+      history.replaceState(null, "", endereco(aba, u));
     },
     [aba],
+  );
+  const setRota = useCallback(
+    (r: string[]) => {
+      setRotaEstado(r);
+      history.replaceState(null, "", endereco(aba, uf, r));
+    },
+    [aba, uf],
   );
 
   const r = resumo.dado;
@@ -83,10 +101,18 @@ export default function ResultadosClient() {
             Resultados do Missão
           </h1>
           <p style={{ fontSize: 16, lineHeight: 1.55, margin: 0, maxWidth: "70ch" }}>
-            Votos, cadeiras, quociente, legenda e conversão do Renan — por estado e por cidade. O Missão aparece sempre separado da direita, para mostrar os votos que
-            ainda podem ser disputados.
+            Votos, cadeiras, quociente, legenda e conversão do Renan — por estado, cidade e bairro — e a leitura dos adversários de 2022 para 2026. O Missão
+            aparece sempre separado da direita, para mostrar os votos que ainda podem ser disputados.
           </p>
-          {r && <p style={{ fontSize: 13, margin: "8px 0 0", opacity: 0.75 }}>Fonte: {r.fonte}. Processado em {r.geradoEm}.</p>}
+          {r && (
+            <p style={{ fontSize: 13, margin: "8px 0 0", opacity: 0.75 }}>
+              Fonte: {r.fonte}
+              {r.bairrosUfs?.length ? "; bairros e locais de votação: Dados Abertos do TSE (2022, 2024 e 2026) e IBGE" : ""}. Processado em {r.geradoEm}.{" "}
+              <button type="button" onClick={() => ir("sobre")} style={{ font: "inherit", color: C.ink, textDecoration: "underline", background: "none", border: 0, padding: "10px 0", minHeight: 44, cursor: "pointer" }}>
+                De onde vêm os dados e como ler
+              </button>
+            </p>
+          )}
         </header>
 
         <nav
@@ -131,8 +157,10 @@ export default function ResultadosClient() {
             {aba === "conversao" && <Conversao resumo={r} uf={uf} setUf={setUf} />}
             {aba === "legenda" && <Legenda resumo={r} uf={uf} setUf={setUf} />}
             {aba === "cadeiras" && <Cadeiras resumo={r} uf={uf} setUf={setUf} />}
+            {aba === "bairros" && <Bairros resumo={r} uf={uf} setUf={setUf} rota={rota} setRota={setRota} />}
             {aba === "candidatos" && <Candidatos resumo={r} />}
-            {aba === "ideias" && <Ideias resumo={r} />}
+            {aba === "adversarios" && <Adversarios resumo={r} uf={uf} setUf={setUf} />}
+            {aba === "sobre" && <Sobre resumo={r} />}
           </main>
         )}
       </div>

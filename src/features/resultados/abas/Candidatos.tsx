@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
 import { DADO } from "@/lib/theme";
-import { carregarMapa, carregarUf, n, t, useRecurso, type Linha, type Resumo } from "../dados";
+import { carregarBairros, carregarMapa, carregarUf, n, t, useRecurso, type Linha, type Resumo } from "../dados";
 import { num, pct, titulo, UF_NOMES } from "../formato";
 import { BarrasQuociente, MapaCoropletico, Ranking } from "../graficos";
 import { Busca, Carregando, Chips, Escolha, Filtros, Kpis, Nota, Secao, Tabela, type Coluna } from "../pecas";
@@ -100,6 +100,7 @@ function Detalhe({ candidato: c }: { candidato: Linha }) {
         const cid = cidades.get(v.municipio_codigo);
         return {
           municipio_nome: titulo(t(cid, "municipio_nome")),
+          municipio_codigo: v.municipio_codigo,
           codigo_ibge: t(cid, "codigo_ibge"),
           porte: t(cid, "porte"),
           eleitorado: n(cid, "eleitorado"),
@@ -133,7 +134,7 @@ function Detalhe({ candidato: c }: { candidato: Linha }) {
       </Secao>
 
       {prop && (
-        <Secao titulo="O número do candidato" sub="Voto difuso = votos que aparecem no estado inteiro na mesma proporção dos votos do Renan: sinal de voto pelo número (ou de candidato conhecido no estado todo). O resto é base local.">
+        <Secao explica="numero-candidato" titulo="O número do candidato" sub="Voto difuso = votos que aparecem no estado inteiro na mesma proporção dos votos do Renan: sinal de voto pelo número (ou de candidato conhecido no estado todo). O resto é base local.">
           <Kpis
             itens={[
               { rotulo: "Número", valor: t(c, "candidato_numero"), sub: t(c, "tipo_numero"), missao: true },
@@ -150,7 +151,7 @@ function Detalhe({ candidato: c }: { candidato: Linha }) {
         </Secao>
       )}
 
-      <Secao titulo="Vereador em 2028 com estes votos" sub="Votos do candidato em cada cidade ÷ QE de vereador estimado. Acima de 1,00, os votos dele sozinho já fariam uma cadeira.">
+      <Secao explica="vereador-2028" titulo="Vereador em 2028 com estes votos" sub="Votos do candidato em cada cidade ÷ QE de vereador estimado. Acima de 1,00, os votos dele sozinho já fariam uma cadeira.">
         <Kpis
           itens={[
             { rotulo: "Cidades onde faria vereador", valor: num(n(c, "cidades_faz_vereador") || 0), missao: true },
@@ -171,7 +172,7 @@ function Detalhe({ candidato: c }: { candidato: Linha }) {
         )}
       </Secao>
 
-      <Secao titulo="Onde foi melhor">
+      <Secao explica="onde-melhor" titulo="Onde foi melhor">
         {!dados.dado ? (
           <Carregando erro={dados.erro} />
         ) : (
@@ -220,6 +221,8 @@ function Detalhe({ candidato: c }: { candidato: Linha }) {
           </>
         )}
       </Secao>
+
+      {dados.dado && <PorBairro candidato={c} cidades={porCidade} />}
     </>
   );
 }
@@ -252,7 +255,7 @@ function Numeros({ resumo }: { resumo: Resumo }) {
             </Secao>
           ))}
       </div>
-      <Secao titulo="Duplas de números parecidos" sub="Federal e estadual da mesma UF com números que conversam (1414 ↔ 14014, 1400 ↔ 14000). Correlação perto de 1 = votaram nas mesmas cidades, na mesma proporção.">
+      <Secao explica="duplas" titulo="Duplas de números parecidos" sub="Federal e estadual da mesma UF com números que conversam (1414 ↔ 14014, 1400 ↔ 14000). Correlação perto de 1 = votaram nas mesmas cidades, na mesma proporção.">
         <Tabela
           linhas={duplas}
           ordem="votos"
@@ -269,5 +272,64 @@ function Numeros({ resumo }: { resumo: Resumo }) {
         />
       </Secao>
     </>
+  );
+}
+
+/** A votação do candidato bairro a bairro, numa cidade escolhida (as com mais voto dele primeiro). */
+function PorBairro({ candidato: c, cidades }: { candidato: Linha; cidades: Linha[] }) {
+  const uf = t(c, "uf");
+  const cargo = t(c, "cargo_key");
+  const opcoes = useMemo(() => [...cidades].sort((a, b) => n(b, "votos") - n(a, "votos")).slice(0, 80), [cidades]);
+  const [codigo, setCodigo] = useState("");
+  const cod = codigo || t(opcoes[0], "municipio_codigo");
+  const dados = useRecurso(cod ? `${uf}/${cod}` : null, carregarBairros);
+
+  const linhas = useMemo(() => {
+    const d = dados.dado;
+    if (!d) return [];
+    const ip = d.pessoas.findIndex((p) => String(p.id) === t(c, "candidato_sq"));
+    const pctUf = ip >= 0 ? n(d.pessoas[ip], "pct_uf") : NaN;
+    const votos = new Map(d.candidatos.filter((x) => x.p === ip && x.cargo_key === cargo).map((x) => [x.b, x.votos]));
+    return d.bairros.map((b, i) => {
+      const v = votos.get(i) ?? 0;
+      const p = v / n(b, `validos_${cargo}`);
+      return {
+        bairro: t(b, "bairro"),
+        eleitorado: n(b, "eleitorado"),
+        votos: v,
+        pct: p,
+        forca: p / pctUf,
+        renan: n(b, "missao_pres"),
+        do_renan: v / n(b, "missao_pres"),
+      } as Linha;
+    });
+  }, [dados.dado, c, cargo]);
+
+  if (!opcoes.length) return null;
+  return (
+    <Secao titulo="Por bairro" sub="Os votos do candidato em cada bairro da cidade escolhida. Força acima de 1 = mais forte ali do que no estado." explica="candidato-bairros">
+      <Escolha rotulo="Cidade" valor={cod} opcoes={opcoes.map((x) => t(x, "municipio_codigo"))} aoMudar={setCodigo} nome={(k) => {
+        const x = opcoes.find((o) => t(o, "municipio_codigo") === k);
+        return `${t(x, "municipio_nome")} — ${num(n(x, "votos"))} votos`;
+      }} />
+      {!dados.dado ? (
+        <Carregando erro={dados.erro} />
+      ) : (
+        <Tabela
+          linhas={linhas}
+          ordem="votos"
+          arquivo={`${t(c, "candidato_numero")}-bairros-${cod}`}
+          colunas={[
+            { chave: "bairro", rotulo: "Bairro", tipo: "txt" },
+            { chave: "eleitorado", rotulo: "Eleitores" },
+            { chave: "votos", rotulo: "Votos" },
+            { chave: "pct", rotulo: "% no bairro", tipo: "pct" },
+            { chave: "forca", rotulo: "Força", tipo: "dec", ajuda: "% no bairro ÷ % no estado" },
+            { chave: "renan", rotulo: "Renan" },
+            { chave: "do_renan", rotulo: "Votos ÷ Renan", tipo: "barra", max: 1 },
+          ]}
+        />
+      )}
+    </Secao>
   );
 }

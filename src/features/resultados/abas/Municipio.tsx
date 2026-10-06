@@ -1,4 +1,5 @@
 "use client";
+import { BlocoLegenda, BlocoRenan } from "../blocos";
 import React, { useEffect, useMemo, useState } from "react";
 import { carregarUf, n, t, useRecurso, type Linha, type Resumo } from "../dados";
 import { num, pct, titulo } from "../formato";
@@ -70,6 +71,7 @@ export default function Municipio({ resumo, uf, setUf }: { resumo: Resumo; uf: s
       ) : (
         <>
           <Secao
+            explica="participacao"
             titulo={`${titulo(t(cidade, "municipio_nome"))} — ${uf.toUpperCase()}`}
             sub={`Porte: ${t(cidade, "porte")} · ${pct(n(cidade, "eleitorado") / n(estado, "eleitorado"))} do eleitorado do estado`}
           >
@@ -84,7 +86,7 @@ export default function Municipio({ resumo, uf, setUf }: { resumo: Resumo; uf: s
             />
           </Secao>
 
-          <Secao titulo={`Missão em ${titulo(t(cidade, "municipio_nome"))}`} sub="Números da cidade; embaixo de cada um, o total do estado para comparar.">
+          <Secao explica="missao-total" titulo={`Missão em ${titulo(t(cidade, "municipio_nome"))}`} sub="Números da cidade; embaixo de cada um, o total do estado para comparar.">
             <Kpis
               itens={[
                 { rotulo: "Renan na cidade", valor: num(n(cidade, "missao_pres")), sub: vs("pres"), missao: true },
@@ -96,13 +98,17 @@ export default function Municipio({ resumo, uf, setUf }: { resumo: Resumo; uf: s
             />
           </Secao>
 
+          <BlocoRenan linha={cidade} onde={titulo(t(cidade, "municipio_nome"))} distrital={uf === "df"} />
+          <BlocoLegenda linha={cidade} onde={titulo(t(cidade, "municipio_nome"))} distrital={uf === "df"} />
+
           {n(cidade, "qe_ver_2028_est") > 0 && (
-            <Secao titulo="Vereador" sub="Vagas e quociente da eleição de 2024; o QE de 2028 é estimado pela variação do comparecimento até 2026.">
+            <Secao explica="vereador-2028" titulo="Vereador" sub="Vagas e quociente da eleição de 2024; o QE de 2028 é estimado pela variação do comparecimento até 2026.">
               <Kpis
                 itens={[
                   { rotulo: "Cadeiras de vereador", valor: num(n(cidade, "vagas_ver")) },
                   { rotulo: "Votos por cadeira 2024", valor: num(n(cidade, "qe_ver_2024")) },
                   { rotulo: "QE estimado 2028", valor: num(n(cidade, "qe_ver_2028_est")) },
+                  { rotulo: "Vereadores que já faria", valor: num(n(cidade, "ver28_missao") || 0), sub: `${num(n(cidade, "qe_atingidos_ver"), 2)} QE · faltam ${num(n(cidade, "faltam_proximo_qe_ver"))} p/ a próxima`, missao: true },
                   { rotulo: "Eleitores por vereador", valor: num(n(cidade, "eleitores_por_vereador")) },
                   {
                     rotulo: "Votos do Renan fariam vereador?",
@@ -124,12 +130,12 @@ export default function Municipio({ resumo, uf, setUf }: { resumo: Resumo; uf: s
             </Secao>
           )}
 
-          <Secao titulo="Como os votos válidos se dividiram">
+          <Secao explica="divisao-validos" titulo="Como os votos válidos se dividiram">
             <Legenda itens={GRUPOS.slice(0, 4).map(([, nome, cor]) => [cor, nome])} />
             <BarrasGrupos linhas={linhasGrupos(cidade, cargoDe)} />
           </Secao>
 
-          <Secao titulo="Candidatos do Missão na cidade">
+          <Secao explica="candidatos-missao" titulo="Candidatos do Missão na cidade">
             <Tabela
               linhas={candidatosNaCidade}
               ordem="votos"

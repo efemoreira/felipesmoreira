@@ -1,4 +1,5 @@
 "use client";
+import { BlocoCadeiras, BlocoLegenda, BlocoRenan } from "../blocos";
 import React, { useMemo, useState } from "react";
 import { carregarMapa, n, useRecurso, type Resumo } from "../dados";
 import { compacto, num, pct, UF_IBGE, UF_NOMES } from "../formato";
@@ -23,7 +24,7 @@ export default function Brasil({ resumo }: { resumo: Resumo }) {
 
   return (
     <>
-      <Secao titulo="Participação do eleitorado" sub="Inclui o exterior. Brancos e nulos da eleição para Presidente.">
+      <Secao explica="participacao" titulo="Participação do eleitorado" sub="Inclui o exterior. Brancos e nulos da eleição para Presidente.">
         <Kpis
           itens={[
             { rotulo: "Eleitorado", valor: compacto(n(br, "eleitorado")) },
@@ -35,7 +36,7 @@ export default function Brasil({ resumo }: { resumo: Resumo }) {
         />
       </Secao>
 
-      <Secao titulo="Missão no Brasil">
+      <Secao explica="missao-total" titulo="Missão no Brasil">
         <Kpis
           itens={[
             { rotulo: "Renan Santos", valor: compacto(n(br, "missao_pres")), sub: `${pct(n(br, "pct_missao_pres"), 2)} dos válidos`, missao: true },
@@ -47,12 +48,16 @@ export default function Brasil({ resumo }: { resumo: Resumo }) {
         />
       </Secao>
 
-      <Secao titulo="Como os votos válidos se dividiram" sub="Nominal + legenda. O Missão aparece separado da direita.">
+      <BlocoRenan linha={br} onde="Brasil" />
+      <BlocoLegenda linha={br} onde="Brasil" />
+      <BlocoCadeiras linha={br} onde="Brasil" nivel="brasil" />
+
+      <Secao explica="divisao-validos" titulo="Como os votos válidos se dividiram" sub="Nominal + legenda. O Missão aparece separado da direita.">
         <Legenda itens={GRUPOS.slice(0, 4).map(([, nome, cor]) => [cor, nome])} />
         <BarrasGrupos linhas={linhasGrupos(br)} />
       </Secao>
 
-      <Secao titulo="Por estado">
+      <Secao explica="mapa-estados" titulo="Por estado">
         <Chips valor={indicador} opcoes={Object.keys(INDICADORES)} aoMudar={setIndicador} />
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 22 }}>
           <MapaCoropletico mapa={mapa.dado} valores={valores} rotulos={rotulos} />

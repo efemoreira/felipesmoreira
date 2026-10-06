@@ -1,0 +1,115 @@
+import { test, describe } from "node:test";
+import assert from "node:assert/strict";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { EXPLICACOES } from "../../src/features/resultados/explicacoes.ts";
+
+/**
+ * /resultados lê JSON gerado FORA deste repositório (o projeto de análise do
+ * TSE, `python -m src.cli export-site`). Nada avisa quando o export muda de
+ * forma: a página só mostra travessão no lugar do número. Este teste prende
+ *   1. as colunas que a aba Bairros e a Adversários leem;
+ *   2. os índices de bairro/pessoa dentro de cada arquivo de cidade;
+ *   3. o teto de tamanho da pasta (o deploy empurra tudo para a branch build);
+ *   4. que toda caixa "Sobre este dado" aponta para um texto que existe.
+ */
+
+const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
+const DADOS = path.join(RAIZ, "public/resultados-2026");
+const FEATURE = path.join(RAIZ, "src/features/resultados");
+const TETO_MB = 150;
+
+type Tabela = { colunas: string[]; linhas: unknown[][] } | null;
+const ler = (p: string) => JSON.parse(readFileSync(p, "utf8"));
+
+function arquivos(dir: string): string[] {
+  return readdirSync(dir).flatMap((n) => {
+    const p = path.join(dir, n);
+    return statSync(p).isDirectory() ? arquivos(p) : [p];
+  });
+}
+
+const COLUNAS = {
+  bairros: ["bairro_chave", "bairro", "bairro_origem", "eleitorado", "comparecimento", "validos_pres", "missao_pres", "direita_pres", "esquerda_pres", "lado_pres", "lado_rel_pres", "oportunidade"],
+  locais: ["zona", "local", "nome", "endereco", "b", "eleitorado", "validos_pres", "missao_pres", "oportunidade"],
+  pessoas: ["id", "nome", "partido_sigla", "grupo_atual", "cargo_key", "pct_uf"],
+  candidatos: ["b", "cargo_key", "p", "votos"],
+};
+
+describe("resultados: o export que a página lê", () => {
+  const temDados = existsSync(path.join(DADOS, "resumo.json"));
+  const resumo = temDados ? ler(path.join(DADOS, "resumo.json")) : {};
+  const ufs: string[] = resumo.bairrosUfs ?? [];
+
+  test("a pasta cabe no teto de tamanho", { skip: !temDados }, () => {
+    const total = arquivos(DADOS).reduce((s, p) => s + statSync(p).size, 0);
+    assert.ok(total < TETO_MB * 1e6, `public/resultados-2026 tem ${(total / 1e6).toFixed(0)} MB (teto ${TETO_MB} MB): cada regeração entra de novo no histórico do git`);
+  });
+
+  test("toda UF com bairro tem o arquivo de adversários e as fontes estão no resumo", { skip: !ufs.length }, () => {
+    for (const uf of ufs) assert.ok(existsSync(path.join(DADOS, "adversarios", `${uf}.json`)), `falta adversarios/${uf}.json`);
+    assert.ok(Array.isArray(resumo.fontes) && resumo.fontes.length > 0, "resumo.fontes vazio: a aba Sobre os dados fica sem as bases");
+  });
+
+  test("os arquivos de cidade têm as colunas lidas e índices válidos", { skip: !ufs.length }, () => {
+    for (const uf of ufs) {
+      const pasta = path.join(DADOS, "bairros", uf);
+      const nomes = readdirSync(pasta);
+      // o CE inteiro e as 3 primeiras cidades (pelo código) de cada outra UF
+      const amostra = uf === "ce" ? nomes : nomes.slice(0, 3);
+      for (const n of amostra) {
+        const d: Record<string, Tabela> = ler(path.join(pasta, n));
+        for (const [chave, cols] of Object.entries(COLUNAS)) {
+          const t = d[chave];
+          if (!t) continue; // cidade sem candidato/queda: a tabela vem nula
+          for (const c of cols) assert.ok(t.colunas.includes(c), `bairros/${uf}/${n}: ${chave} sem a coluna ${c}`);
+        }
+        const nb = d.bairros?.linhas.length ?? 0;
+        const np = d.pessoas?.linhas.length ?? 0;
+        for (const tab of ["candidatos", "quedas", "fracos"] as const) {
+          const t = d[tab];
+          if (!t) continue;
+          const ib = t.colunas.indexOf("b");
+          const ip = t.colunas.indexOf("p");
+          for (const l of t.linhas) {
+            assert.ok(typeof l[ib] === "number" && (l[ib] as number) < nb, `bairros/${uf}/${n}: ${tab} aponta para bairro inexistente`);
+            assert.ok(typeof l[ip] === "number" && (l[ip] as number) < np, `bairros/${uf}/${n}: ${tab} aponta para pessoa inexistente`);
+          }
+        }
+      }
+    }
+  });
+
+  test("adversários: as colunas lidas", { skip: !ufs.length }, () => {
+    const d: Record<string, Tabela> = ler(path.join(DADOS, "adversarios", `${ufs.includes("ce") ? "ce" : ufs[0]}.json`));
+    const pessoas = ["id", "nome", "status", "orfao", "votos", "votos_22", "var_votos", "grupo_atual", "cargo_key", "cargo_key_22", "partido_sigla_22",
+      "sinais", "s_queda", "s_base", "s_sem_mandato", "s_partido", "s_concentrado", "s_base_virou"];
+    for (const c of pessoas) assert.ok(d.pessoas?.colunas.includes(c), `adversarios: pessoas sem ${c}`);
+    // toda pauta e toda cidade apontam para uma pessoa da lista
+    const ids = new Set(d.pessoas?.linhas.map((l) => String(l[d.pessoas!.colunas.indexOf("id")])));
+    for (const tab of ["temas", "projetos", "cidadesPessoa"]) {
+      const t = d[tab];
+      if (!t) continue;
+      const i = t.colunas.indexOf("id");
+      for (const l of t.linhas) assert.ok(ids.has(String(l[i])), `adversarios: ${tab} aponta para pessoa fora da lista`);
+    }
+    for (const c of ["municipio_codigo", "lado_pres", "lado_pres_22", "var_lado_pres"]) assert.ok(d.cidades?.colunas.includes(c), `adversarios: cidades sem ${c}`);
+  });
+});
+
+describe("resultados: explicações", () => {
+  const fontes = arquivos(FEATURE).filter((p) => p.endsWith(".tsx"));
+  const usados = new Set(fontes.flatMap((p) => [...readFileSync(p, "utf8").matchAll(/explica="([a-z0-9-]+)"/g)].map((m) => m[1])));
+
+  test("todo explica= usado existe em explicacoes.ts", () => {
+    assert.ok(usados.size >= 10, "não achei os explica= nas abas");
+    for (const id of usados) assert.ok(id in EXPLICACOES, `explica="${id}" não existe em explicacoes.ts`);
+  });
+
+  test("toda explicação tem de onde vem, o que mede e por que importa", () => {
+    for (const [id, e] of Object.entries(EXPLICACOES)) {
+      for (const campo of ["deOnde", "mede", "importa"] as const) assert.ok(e[campo]?.length > 20, `${id}: ${campo} vazio ou curto demais`);
+    }
+  });
+});

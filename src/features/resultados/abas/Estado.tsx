@@ -1,8 +1,9 @@
 "use client";
+import { BlocoCadeiras, BlocoLegenda, BlocoRenan } from "../blocos";
 import React, { useMemo, useState } from "react";
 import { carregarMapa, carregarUf, n, t, useRecurso, type Linha, type Resumo } from "../dados";
-import { num, pct, titulo } from "../formato";
-import { BarrasGrupos, BarrasQuociente, MapaCoropletico, Ranking } from "../graficos";
+import { num, pct, titulo, UF_NOMES } from "../formato";
+import { BarrasGrupos, MapaCoropletico, Ranking } from "../graficos";
 import { Carregando, Chips, Filtros, Kpis, Legenda, Secao, SeletorUf, Tabela, type Coluna } from "../pecas";
 import { GRUPOS, INDICADORES, PORTES, linhasGrupos, pctDe } from "../apoio";
 import { COLUNAS_CANDIDATO } from "./Candidatos";
@@ -57,7 +58,7 @@ export default function Estado({ resumo, uf, setUf }: { resumo: Resumo; uf: stri
         <SeletorUf uf={uf} opcoes={opcoes} aoMudar={setUf} />
       </Filtros>
 
-      <Secao titulo="Participação do eleitorado" sub={`${num(cidades.length)} municípios. Brancos e nulos na eleição para Deputado Federal.`}>
+      <Secao explica="participacao" titulo="Participação do eleitorado" sub={`${num(cidades.length)} municípios. Brancos e nulos na eleição para Deputado Federal.`}>
         <Kpis
           itens={[
             { rotulo: "Eleitorado", valor: num(n(linha, "eleitorado")) },
@@ -69,7 +70,7 @@ export default function Estado({ resumo, uf, setUf }: { resumo: Resumo; uf: stri
         />
       </Secao>
 
-      <Secao titulo="Cadeiras e quociente eleitoral" sub="QE = votos válidos ÷ vagas. O partido precisa de 80% do QE para disputar as sobras; o candidato, de 10% do QE em votos nominais para ser eleito.">
+      <Secao explica="cadeiras-qe" titulo="Quociente eleitoral" sub="QE = votos válidos ÷ vagas. O partido precisa de 80% do QE para disputar as sobras; o candidato, de 10% do QE em votos nominais para ser eleito.">
         {(["df", "de"] as const).map((c) =>
           n(linha, `qe_${c}`) > 0 ? (
             <div key={c} style={{ marginBottom: 14 }}>
@@ -88,37 +89,18 @@ export default function Estado({ resumo, uf, setUf }: { resumo: Resumo; uf: stri
             </div>
           ) : null,
         )}
-        <BarrasQuociente
-          textoRenan="votos do Renan no estado"
-          linhas={(["df", "de"] as const)
-            .filter((c) => n(linha, `qe_${c}`) > 0)
-            .map((c) => ({
-              nome: c === "df" ? "Dep. Federal" : cargoDe("Deputado Estadual").replace("Deputado", "Dep."),
-              qe: n(linha, `qe_${c}`),
-              nominal: n(linha, `missao_nom_${c}`) || 0,
-              legenda: n(linha, `missao_leg_${c}`) || 0,
-              renan: n(linha, "missao_pres"),
-            }))}
-        />
       </Secao>
 
-      <Secao titulo="Renan → Missão" sub="Quanto do voto do Renan para Presidente virou voto do Missão para deputado.">
-        <Kpis
-          itens={[
-            { rotulo: "Renan Santos", valor: num(n(linha, "missao_pres")), sub: `${pct(n(linha, "pct_missao_pres"), 2)} dos válidos`, missao: true },
-            { rotulo: "Aproveitamento DF", valor: pct(n(linha, "aproveitamento_df")), sub: `${num(n(linha, "renan_nao_convertido_df"))} não convertidos`, missao: true },
-            { rotulo: "Aproveitamento DE", valor: pct(n(linha, "aproveitamento_de")), sub: `${num(n(linha, "renan_nao_convertido_de"))} não convertidos`, missao: true },
-            { rotulo: "Renan em cadeiras de DF", valor: num(n(linha, "renan_em_qe_df"), 2), sub: "se 100% virassem voto no partido", missao: true },
-          ]}
-        />
-      </Secao>
+      <BlocoCadeiras linha={linha} onde={UF_NOMES[uf] ?? uf.toUpperCase()} nivel="estado" />
+      <BlocoRenan linha={linha} onde={UF_NOMES[uf] ?? uf.toUpperCase()} distrital={uf === "df"} />
+      <BlocoLegenda linha={linha} onde={UF_NOMES[uf] ?? uf.toUpperCase()} distrital={uf === "df"} />
 
-      <Secao titulo="Como os votos válidos se dividiram">
+      <Secao explica="divisao-validos" titulo="Como os votos válidos se dividiram">
         <Legenda itens={GRUPOS.slice(0, 4).map(([, nome, cor]) => [cor, nome])} />
         <BarrasGrupos linhas={linhasGrupos(linha, cargoDe)} />
       </Secao>
 
-      <Secao titulo="Cidades">
+      <Secao explica="mapa-estados" titulo="Cidades">
         <Chips valor={indicador} opcoes={Object.keys(INDICADORES)} aoMudar={setIndicador} />
         {dados.dado ? (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 22 }}>
@@ -139,12 +121,12 @@ export default function Estado({ resumo, uf, setUf }: { resumo: Resumo; uf: stri
         )}
       </Secao>
 
-      <Secao titulo="Tabela de cidades">
+      <Secao explica="cidades" titulo="Tabela de cidades">
         <Chips valor={porte} opcoes={["Todos", ...PORTES]} aoMudar={setPorte} />
         <Tabela linhas={porte === "Todos" ? cidades : cidades.filter((c) => c.porte === porte)} colunas={COLUNAS_CIDADE} ordem="eleitorado" />
       </Secao>
 
-      <Secao titulo="Candidatos do Missão no estado">
+      <Secao explica="candidatos-missao" titulo="Candidatos do Missão no estado">
         <Tabela linhas={resumo.candidatos.filter((c) => c.uf === uf)} colunas={COLUNAS_CANDIDATO} ordem="votos" />
       </Secao>
     </>

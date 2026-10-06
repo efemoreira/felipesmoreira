@@ -45,7 +45,7 @@ export default function Cadeiras({ resumo, uf, setUf }: { resumo: Resumo; uf: st
               { rotulo: "Estados com ≥ 80% do QE", valor: num(ufs.filter((u) => n(u, `qe_atingidos_${cargo}`) >= 0.8).length), sub: "podem disputar sobras", missao: true },
             ]}
           />
-          <Secao titulo="Quocientes atingidos" sub="Em quocientes eleitorais: 1,00 = uma cadeira. O roxo mostra os votos do Renan no estado, como se tivessem ido todos para o partido.">
+          <Secao explica="cadeiras-qe" titulo="Quocientes atingidos" sub="Em quocientes eleitorais: 1,00 = uma cadeira. O roxo mostra os votos do Renan no estado, como se tivessem ido todos para o partido.">
             <BarrasQuociente
               textoRenan="votos do Renan no estado"
               linhas={[...ufs]
@@ -106,7 +106,7 @@ export default function Cadeiras({ resumo, uf, setUf }: { resumo: Resumo; uf: st
                   },
                 ]}
               />
-              <Secao titulo="Cidades mais perto de 1 vereador" sub="QE de vereador estimado para 2028. Ouro = voto nominal do Missão para deputado; laranja = legenda; roxo = votos do Renan como se fossem para vereador.">
+              <Secao explica="vereador-2028" titulo="Cidades mais perto de 1 vereador" sub="QE de vereador estimado para 2028. Ouro = voto nominal do Missão para deputado; laranja = legenda; roxo = votos do Renan como se fossem para vereador.">
                 <Chips valor={ordemVer} opcoes={["missao", "renan"] as ("missao" | "renan")[]} aoMudar={setOrdemVer} nome={(o) => (o === "missao" ? "Ordenar pelo Missão" : "Ordenar pelo Renan")} />
                 <BarrasQuociente
                   textoRenan="votos do Renan como se fossem para vereador"

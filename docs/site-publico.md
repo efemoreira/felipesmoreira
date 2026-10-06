@@ -60,10 +60,16 @@ Regras:
 
 ### Resultados 2026
 
-- `/resultados` é estudo interno do 1º turno (votos, cadeiras, quociente, legenda, conversão do Renan, candidatos e ideias), sem indexação e fora do sitemap, como a Munição.
+- `/resultados` é estudo interno do 1º turno (votos, cadeiras, quociente, legenda, conversão do Renan, cadeiras, candidatos e adversários — por Brasil, estado, município e bairro), sem indexação e fora do sitemap, como a Munição.
 - Os dados são JSON estático em `public/resultados-2026/` (`resumo.json`, `uf/<uf>.json`, `mapa/<uf>.json`), gerados fora deste repositório pelo projeto de análise do TSE: `python -m src.cli export-site --dest <este repositório>/public/resultados-2026`. Não edite esses arquivos à mão; gere de novo.
 - Gráficos e mapas são HTML/SVG próprios (sem biblioteca); as cores de dado saem de `DADO` em `src/lib/theme.ts`.
 - A UI mora em `src/features/resultados/`; a rota é `src/app/resultados/page.tsx`.
+- **Bairros e adversários** saem dos Dados Abertos do TSE (votação por seção + cadastro dos locais de votação, 2022/2024/2026) cruzados com a malha de bairros e distritos do IBGE (Censo 2022). No projeto de análise: `python -m src.cli bairros --baixar --apagar-zip` (baixa UF por UF e apaga o zip da seção depois de processar; disco curto) e `export-site`. A conferência (`data/reports/conferencia_secoes.csv`) compara a soma das seções com o total oficial; `bairros` falha acima de 0,5% numa UF.
+- Arquivos: `bairros/<uf>/<município TSE>.json` (bairros, locais, candidatos, quedas e fracos por bairro — bairro e pessoa por índice), `mapa-bairros/<uf>/<município>.json` (SVG pré-projetado, locais em x/y no mesmo desenho) e `adversarios/<uf>.json` (pessoas 22→24→26 casadas pelo título de eleitor, que nunca sai do projeto de análise; no site a pessoa é o SQ do candidato).
+- Teto: a pasta inteira fica abaixo de 150 MB (`export-site` falha acima disso, e `testes/contrato/resultados.test.ts` prende). O deploy empurra `public/` para a branch `build`, então cada regeração entra de novo no histórico: regere depois da totalização, não a cada ajuste.
+- **Pautas** dos adversários: Dados Abertos da Câmara (projetos de 2023–2026 em que a pessoa é primeira autora, com o tema da Câmara), casados com a ficha do TSE por nome civil + data de nascimento (módulo `camara` do projeto de análise). Só existe para quem foi deputado federal na legislatura; estadual e senador não têm base pronta.
+- Não há aba de ideias: a página mostra números por nível (Brasil, estado, município, bairro) e a avaliação fica com a coordenação.
+- O que cada número quer dizer fica em `explicacoes.ts` (a caixa "Sobre este dado" de cada `<Secao explica="…">` e a aba "Sobre os dados"). Seção nova com número novo ganha texto lá.
 
 ### Programação
 

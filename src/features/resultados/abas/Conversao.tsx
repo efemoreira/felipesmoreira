@@ -26,7 +26,7 @@ export default function Conversao({ resumo, uf, setUf }: { resumo: Resumo; uf: s
   return (
     <>
       <Chips valor={cargo} opcoes={["df", "de"] as Cargo[]} aoMudar={setCargo} nome={(c) => `Renan → ${NOME[c]}`} />
-      <Secao titulo="No Brasil" sub={`Quanto do voto do Renan para Presidente virou voto do Missão para ${nome}.`}>
+      <Secao explica="conversao" titulo="No Brasil" sub={`Quanto do voto do Renan para Presidente virou voto do Missão para ${nome}.`}>
         <Kpis
           itens={[
             { rotulo: "Votos do Renan", valor: num(n(br, "missao_pres")), missao: true },

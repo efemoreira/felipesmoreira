@@ -184,4 +184,7 @@ export const DADO = {
   renan: "#4A3AA7",
   /* sequencial (mapas): um tom só, do claro ao escuro */
   rampa: ["#CDE2FB", "#9EC5F4", "#6DA7EC", "#3987E5", "#256ABF", "#184F95", "#0D366B"],
+  /* divergente (pende para): esquerda (vermelho) ← neutro → direita (azul), os mesmos
+     tons dos grupos nas pontas; o meio é cinza quente, que se separa do papel pela borda */
+  lado: ["#A8322F", "#E34948", "#F3A8A4", "#DDD6C6", "#9EC5F4", "#2A78D6", "#184F95"],
 } as const;

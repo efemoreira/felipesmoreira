@@ -3,6 +3,7 @@ import React, { useMemo, useState } from "react";
 import { C, FONT_ALFA, FONT_BITTER, FONT_ELITE, TEXTO, borda, bordaFina, sombra } from "@/lib/theme";
 import { compacto, num, pct, UF_NOMES } from "./formato";
 import type { Linha } from "./dados";
+import { EXPLICACOES, type IdExplicacao } from "./explicacoes";
 
 /* ===== Texto e blocos ===== */
 
@@ -15,15 +16,47 @@ export const kicker: React.CSSProperties = {
   color: C.goldDim,
 };
 
-export function Secao({ titulo, sub, children }: { titulo: string; sub?: React.ReactNode; children: React.ReactNode }) {
+export function Secao({ titulo, sub, explica, children }: { titulo: string; sub?: React.ReactNode; explica?: IdExplicacao; children: React.ReactNode }) {
   return (
     <section style={{ margin: "34px 0 0" }}>
       <h2 style={{ fontFamily: FONT_ALFA, fontSize: "clamp(20px, 4.6vw, 26px)", lineHeight: 1.15, margin: "0 0 6px", color: C.ink }}>
         {titulo}
       </h2>
-      {sub && <p style={{ ...TEXTO.nota, margin: "0 0 14px", color: C.ink, opacity: 0.78, maxWidth: "70ch" }}>{sub}</p>}
-      {children}
+      {sub && <p style={{ ...TEXTO.nota, margin: "0 0 8px", color: C.ink, opacity: 0.78, maxWidth: "70ch" }}>{sub}</p>}
+      {explica && <Explica id={explica} />}
+      <div style={{ marginTop: sub || explica ? 6 : 0 }}>{children}</div>
     </section>
+  );
+}
+
+/** "Sobre este dado": de onde vem, o que mede, por que importa e o cuidado — fechado até alguém abrir. */
+export function Explica({ id }: { id: IdExplicacao }) {
+  const e: { deOnde: string; mede: string; importa: string; cuidado?: string } = EXPLICACOES[id];
+  const linhas: [string, string | undefined][] = [
+    ["De onde vem", e.deOnde],
+    ["O que mede", e.mede],
+    ["Por que importa", e.importa],
+    ["Cuidado", e.cuidado],
+  ];
+  return (
+    <details style={{ margin: "0 0 8px", maxWidth: "75ch" }}>
+      <summary style={{ cursor: "pointer", minHeight: 44, display: "inline-flex", alignItems: "center", gap: 6, fontSize: 14, fontWeight: 600, color: C.ink }}>
+        <span aria-hidden="true" style={{ display: "inline-grid", placeItems: "center", width: 20, height: 20, border: bordaFina(C.ink), borderRadius: "50%", fontSize: 12, fontFamily: FONT_ELITE }}>
+          ?
+        </span>
+        Sobre este dado
+      </summary>
+      <dl style={{ ...TEXTO.nota, background: C.cream, border: bordaFina(C.ink), padding: "10px 14px", margin: "4px 0 6px", display: "grid", gap: 8 }}>
+        {linhas
+          .filter(([, v]) => v)
+          .map(([k, v]) => (
+            <div key={k}>
+              <dt style={{ fontFamily: FONT_ELITE, fontSize: 11.5, letterSpacing: 1.2, textTransform: "uppercase" }}>{k}</dt>
+              <dd style={{ margin: "2px 0 0", lineHeight: 1.5 }}>{v}</dd>
+            </div>
+          ))}
+      </dl>
+    </details>
   );
 }
 
@@ -64,7 +97,7 @@ export function Kpis({ itens }: { itens: Kpi[] }) {
           <p style={{ fontFamily: FONT_ELITE, fontSize: 11.5, letterSpacing: 1.2, textTransform: "uppercase", margin: 0, color: C.ink }}>
             {k.rotulo}
           </p>
-          <p style={{ fontFamily: FONT_ALFA, fontSize: "clamp(20px, 5vw, 25px)", lineHeight: 1.2, margin: "4px 0 0", color: C.ink, overflowWrap: "anywhere" }}>
+          <p style={{ fontFamily: FONT_ALFA, fontSize: k.valor.length > 8 ? "clamp(17px, 4.2vw, 21px)" : "clamp(20px, 5vw, 25px)", lineHeight: 1.2, margin: "4px 0 0", color: C.ink, overflowWrap: "anywhere" }}>
             {k.valor}
           </p>
           {k.sub && <p style={{ fontSize: 13, lineHeight: 1.4, margin: "4px 0 0", color: C.ink, opacity: 0.8 }}>{k.sub}</p>}
@@ -189,7 +222,36 @@ export type Coluna = {
   valor?: (l: Linha) => number | string;
 };
 
-export function Tabela({ linhas, colunas, ordem: ordemInicial, teto = 150 }: { linhas: Linha[]; colunas: Coluna[]; ordem?: string; teto?: number }) {
+/** CSV que o Excel em português abre direto: `;` como separador, vírgula decimal e BOM para o acento. */
+function baixarCsv(linhas: Linha[], colunas: Coluna[], nome: string) {
+  const campo = (v: unknown) => {
+    if (v === undefined || v === null || (typeof v === "number" && !Number.isFinite(v))) return "";
+    const s = typeof v === "number" ? String(v).replace(".", ",") : String(v);
+    return /[;"\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const corpo = [colunas.map((c) => campo(c.rotulo)).join(";"), ...linhas.map((l) => colunas.map((c) => campo(c.valor ? c.valor(l) : l[c.chave])).join(";"))];
+  const url = URL.createObjectURL(new Blob(["\ufeff" + corpo.join("\r\n")], { type: "text/csv;charset=utf-8" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${nome}.csv`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+export function Tabela({
+  linhas,
+  colunas,
+  ordem: ordemInicial,
+  teto = 150,
+  arquivo,
+}: {
+  linhas: Linha[];
+  colunas: Coluna[];
+  ordem?: string;
+  teto?: number;
+  /** nome do CSV ("bairros-fortaleza"); sem ele, a tabela não oferece download */
+  arquivo?: string;
+}) {
   const [ordem, setOrdem] = useState<{ chave: string; desc: boolean }>({ chave: ordemInicial ?? colunas[0].chave, desc: true });
   const [mostrar, setMostrar] = useState(teto);
   const valorDe = (l: Linha, c: Coluna) => (c.valor ? c.valor(l) : l[c.chave]);
@@ -298,8 +360,16 @@ export function Tabela({ linhas, colunas, ordem: ordemInicial, teto = 150 }: { l
         {ordenadas.length > mostrar && (
           <>
             {" · "}
-            <button type="button" onClick={() => setMostrar((m) => m + 300)} style={{ font: "inherit", textDecoration: "underline", background: "none", border: 0, cursor: "pointer", color: C.ink, padding: 0 }}>
+            <button type="button" onClick={() => setMostrar((m) => m + 300)} style={linkBotao}>
               mostrar mais
+            </button>
+          </>
+        )}
+        {arquivo && ordenadas.length > 0 && (
+          <>
+            {" · "}
+            <button type="button" onClick={() => baixarCsv(ordenadas, colunas, arquivo)} style={linkBotao}>
+              baixar CSV (Excel)
             </button>
           </>
         )}
@@ -307,6 +377,8 @@ export function Tabela({ linhas, colunas, ordem: ordemInicial, teto = 150 }: { l
     </div>
   );
 }
+
+const linkBotao: React.CSSProperties = { font: "inherit", textDecoration: "underline", background: "none", border: 0, cursor: "pointer", color: C.ink, padding: "10px 0", minHeight: 44 };
 
 /** O estado escolhido vale para todas as abas (o pai guarda). */
 export function SeletorUf({ uf, opcoes, aoMudar }: { uf: string; opcoes: string[]; aoMudar: (u: string) => void }) {

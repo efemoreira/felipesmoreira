@@ -32,7 +32,7 @@ export default function Legenda({ resumo, uf, setUf }: { resumo: Resumo; uf: str
 
   return (
     <>
-      <Secao titulo="Voto de legenda" sub="Quem votou só no 14, sem escolher candidato.">
+      <Secao explica="legenda" titulo="Voto de legenda" sub="Quem votou só no 14, sem escolher candidato.">
         <Kpis
           itens={(["df", "de"] as Cargo[]).flatMap((c) => [
             { rotulo: `Legenda ${c === "df" ? "Dep. Federal" : "Dep. Estadual"}`, valor: num(n(br, `missao_leg_${c}`)), sub: `${pct(legMissao(c))} dos votos do Missão`, missao: true },
@@ -48,7 +48,7 @@ export default function Legenda({ resumo, uf, setUf }: { resumo: Resumo; uf: str
 
       <Chips valor={cargo} opcoes={["df", "de"] as Cargo[]} aoMudar={setCargo} nome={(c) => NOME[c]} />
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 22 }}>
-        <Secao titulo="Partidos" sub="% do voto de cada partido que foi de legenda (top 20). Partidos pequenos e ideológicos têm legenda alta.">
+        <Secao explica="legenda-partidos" titulo="Partidos" sub="% do voto de cada partido que foi de legenda (top 20). Partidos pequenos e ideológicos têm legenda alta.">
           <Ranking
             itens={partidos.map((p) => ({
               nome: t(p, "partido_sigla"),
