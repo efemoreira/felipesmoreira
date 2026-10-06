@@ -416,16 +416,16 @@ export function MapaBairros({
   );
 }
 
-/* ===== Quadrantes: força do partido × espaço ===== */
+/* ===== Quadrantes: dois eixos com corte, um canto por situação ===== */
 
 export type PontoQuadrante = { id: string; x: number; y: number; tamanho: number; texto: string; quadrante: string };
 
-/** Cor e rótulo por quadrante — o nome também vai escrito no canto do gráfico e na tabela. */
+/** Cor e rótulo de cada situação do 14 — o nome também vai escrito no canto do gráfico e na tabela. */
 export const QUADRANTES: Record<string, { cor: string; texto: string }> = {
-  Crescer: { cor: DADO.direita, texto: "Crescer: partido forte, muito espaço" },
-  Nutrir: { cor: DADO.missao, texto: "Nutrir: partido forte, pouco espaço" },
-  Atacar: { cor: DADO.legenda, texto: "Atacar: partido fraco, muito espaço" },
-  Esperar: { cor: DADO.outros, texto: "Esperar: partido fraco, pouco espaço" },
+  Convertido: { cor: DADO.missao, texto: "Convertido: vota 14 e já vota no deputado" },
+  Potencial: { cor: DADO.direita, texto: "Potencial: vota 14, falta o deputado" },
+  "Base de candidato": { cor: DADO.legenda, texto: "Base de candidato: o deputado rende além do 14" },
+  "Fora da base": { cor: DADO.outros, texto: "Fora da base" },
 };
 
 export function Quadrantes({
@@ -436,6 +436,7 @@ export function Quadrantes({
   aoEscolher,
   rotuloX,
   rotuloY,
+  cantos,
 }: {
   pontos: PontoQuadrante[];
   corteX: number;
@@ -444,6 +445,8 @@ export function Quadrantes({
   aoEscolher: (id: string) => void;
   rotuloX: string;
   rotuloY: string;
+  /** [alto-esquerda, alto-direita, baixo-esquerda, baixo-direita] */
+  cantos: [string, string, string, string];
 }) {
   const [sobre, setSobre] = useState<PontoQuadrante | null>(null);
   const L = 640;
@@ -453,34 +456,35 @@ export function Quadrantes({
   const xs = pontos.map((p) => p.x).filter(Number.isFinite).sort((a, b) => a - b);
   const ys = pontos.map((p) => p.y).filter(Number.isFinite).sort((a, b) => a - b);
   const maxX = Math.max(q(xs, 0.97) * 1.08, corteX * 1.6, 0.5);
-  const maxY = Math.max(q(ys, 0.98) * 1.08, corteY * 1.6, 0.05);
+  const maxY = Math.max(q(ys, 0.97) * 1.08, corteY * 1.6, 0.5);
   const maior = Math.max(...pontos.map((p) => p.tamanho), 1);
   const px = (x: number) => M + (Math.min(x, maxX) / maxX) * (L - M - 12);
   const py = (y: number) => A - M - (Math.min(y, maxY) / maxY) * (A - M - 12);
   const mostrado = sobre ?? pontos.find((p) => p.id === ativo) ?? null;
   const canto = (texto: string, x: number, y: number, ancora: "start" | "end") => (
     <text x={x} y={y} fontSize={12} textAnchor={ancora} fill={C.ink} fontFamily={FONT_ELITE} opacity={0.75}>
-      {texto}
+      {texto.toUpperCase()}
     </text>
   );
+  const marcas = (max: number) => [0, 0.5, 1, 1.5, 2, 2.5, 3, 4].filter((v) => v <= max);
 
   return (
     <div>
       <svg viewBox={`0 0 ${L} ${A}`} style={{ width: "100%", height: "auto", display: "block", background: C.cream, border: borda(C.ink) }} role="img" aria-label={`${rotuloY} por ${rotuloX}`}>
         <line x1={px(corteX)} x2={px(corteX)} y1={py(0)} y2={py(maxY)} stroke={C.ink} strokeDasharray="5 5" strokeOpacity={0.6} />
         <line x1={px(0)} x2={px(maxX)} y1={py(corteY)} y2={py(corteY)} stroke={C.ink} strokeDasharray="5 5" strokeOpacity={0.6} />
-        {canto("ATACAR", px(0) + 6, py(maxY) + 14, "start")}
-        {canto("CRESCER", px(maxX) - 4, py(maxY) + 14, "end")}
-        {canto("ESPERAR", px(0) + 6, py(0) - 6, "start")}
-        {canto("NUTRIR", px(maxX) - 4, py(0) - 6, "end")}
-        {[0, 0.5, 1, 1.5, 2, 2.5, 3].filter((v) => v <= maxX).map((v) => (
-          <text key={v} x={px(v)} y={py(0) + 16} fontSize={11} textAnchor="middle" fill={C.ink}>
+        {canto(cantos[0], px(0) + 6, py(maxY) + 14, "start")}
+        {canto(cantos[1], px(maxX) - 4, py(maxY) + 14, "end")}
+        {canto(cantos[2], px(0) + 6, py(0) - 6, "start")}
+        {canto(cantos[3], px(maxX) - 4, py(0) - 6, "end")}
+        {marcas(maxX).map((v) => (
+          <text key={`x${v}`} x={px(v)} y={py(0) + 16} fontSize={11} textAnchor="middle" fill={C.ink}>
             {num(v, 1)}
           </text>
         ))}
-        {[0, 0.25, 0.5, 0.75, 1].map((f) => (
-          <text key={f} x={px(0) - 6} y={py(f * maxY) + 4} fontSize={11} textAnchor="end" fill={C.ink}>
-            {pct(f * maxY, 0)}
+        {marcas(maxY).map((v) => (
+          <text key={`y${v}`} x={px(0) - 6} y={py(v) + 4} fontSize={11} textAnchor="end" fill={C.ink}>
+            {num(v, 1)}
           </text>
         ))}
         {pontos

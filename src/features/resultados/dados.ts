@@ -39,20 +39,25 @@ export type Resumo = {
   candidatos: Linha[];
   /** perfil do voto de cada partido somado no país (Dep. Federal e Estadual) */
   partidosBrasil?: Linha[];
+  /** o número fácil (1414…) contra o melhor dos outros do Missão, por UF e cargo */
+  efeitoNumero?: Linha[];
 };
 
 /** `posicao`: lugar do candidato entre todos os do cargo na cidade; `total_cand`: quantos tiveram voto. */
 export type VotoNaCidade = { candidato_sq: string; municipio_codigo: string; votos: number; posicao?: number; total_cand?: number };
-/** Candidato do Missão numa cidade: votos × o que a força do partido ali explicaria (a mais = votos − esperado). */
+/**
+ * Candidato do Missão numa cidade: votos × o que o 14 da cidade explica para ele.
+ * `puxado` = taxa típica dele (votos por voto do Renan) × votos do Renan ali; próprio = votos − puxado.
+ */
 export type ProprioNaCidade = {
   cand: string;
   municipio_codigo: string;
   votos: number;
-  esperado: number;
-  /** cidade com recorte por bairro: o bairro onde ele mais rendeu acima do esperado (régua = a cidade) */
+  puxado: number;
+  /** cidade com recorte por bairro: o bairro onde ele teve mais voto próprio (régua = a cidade) */
   melhor_bairro?: string;
   mb_votos?: number;
-  mb_esperado?: number;
+  mb_puxado?: number;
 };
 export type DadosUf = { cidades: Linha[]; votos: VotoNaCidade[]; proprio: ProprioNaCidade[] };
 export type Mapa = { largura: number; altura: number; paths: Record<string, string> };
@@ -118,8 +123,8 @@ export type VotoNoBairro = { b: number; cargo_key: string; p: number; votos: num
 export type QuedaNoBairro = { b: number; p: number; votos: number; votos_22: number; perda: number };
 /** Nome forte da direita no estado que vai mal num bairro mais à direita que o estado (calculado no export). */
 export type FracoNoBairro = { b: number; p: number; votos: number; forca: number };
-/** Candidato do Missão num bairro × o esperado pela força do partido ali (régua = a cidade). */
-export type ProprioNoBairro = { b: number; p: number; votos: number; esperado: number };
+/** Candidato do Missão num bairro: votos × o puxado pelo 14 do bairro (régua = a cidade). */
+export type ProprioNoBairro = { b: number; p: number; votos: number; puxado: number };
 export type DadosBairros = {
   bairros: Linha[];
   locais: Linha[];

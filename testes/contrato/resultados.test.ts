@@ -32,7 +32,7 @@ function arquivos(dir: string): string[] {
 
 const COLUNAS = {
   bairros: ["bairro_chave", "bairro", "bairro_origem", "eleitorado", "comparecimento", "validos_pres", "missao_pres", "direita_pres", "esquerda_pres", "lado_pres", "lado_rel_pres", "oportunidade",
-    "forca_partido", "espaco", "quadrante", "melhor_p", "melhor_a_mais", "solto"],
+    "i14", "conversao", "conv_rel", "situacao", "a_converter", "espaco", "melhor_p", "melhor_proprio", "solto"],
   locais: ["zona", "local", "nome", "endereco", "b", "eleitorado", "validos_pres", "missao_pres", "oportunidade"],
   pessoas: ["id", "nome", "partido_sigla", "grupo_atual", "cargo_key", "pct_uf"],
   candidatos: ["b", "cargo_key", "p", "votos"],
@@ -101,15 +101,22 @@ describe("resultados: o export que a página lê", () => {
     }
   });
 
-  test("cidades: força do partido, quadrante e o esperado de cada candidato (aba Decisões)", { skip: !temDados }, () => {
+  test("cidades: situação do 14 e o voto puxado × próprio de cada candidato (Decisões, Candidatos)", { skip: !temDados }, () => {
     const d = ler(path.join(DADOS, "uf", "ce.json"));
-    for (const c of ["forca_partido", "espaco", "quadrante", "melhor_nome", "melhor_a_mais"]) assert.ok(d.cidades.colunas.includes(c), `uf/ce.json: cidades sem ${c}`);
-    assert.ok(d.proprio && ["cand", "municipio_codigo", "votos", "esperado", "melhor_bairro", "mb_votos", "mb_esperado"].every((c: string) => d.proprio.colunas.includes(c)), "uf/ce.json sem a tabela proprio (com o melhor bairro)");
+    for (const c of ["i14", "conversao", "conv_rel", "situacao", "a_converter", "espaco", "melhor_nome", "melhor_proprio"]) assert.ok(d.cidades.colunas.includes(c), `uf/ce.json: cidades sem ${c}`);
+    assert.ok(d.proprio && ["cand", "municipio_codigo", "votos", "puxado", "melhor_bairro", "mb_votos", "mb_puxado"].every((c: string) => d.proprio.colunas.includes(c)), "uf/ce.json sem a tabela proprio (com o melhor bairro)");
     const im = d.proprio.colunas.indexOf("melhor_bairro");
     assert.ok(d.proprio.linhas.some((l: unknown[]) => l[im]), "nenhum candidato com melhor bairro de fato no CE");
-    const iq = d.cidades.colunas.indexOf("quadrante");
-    const quadrantes = new Set(d.cidades.linhas.map((l: unknown[]) => l[iq]).filter(Boolean));
-    for (const q of quadrantes) assert.ok(["Nutrir", "Crescer", "Atacar", "Esperar"].includes(q as string), `quadrante desconhecido: ${q}`);
+    const iq = d.cidades.colunas.indexOf("situacao");
+    const situacoes = new Set(d.cidades.linhas.map((l: unknown[]) => l[iq]).filter(Boolean));
+    for (const q of situacoes) assert.ok(["Convertido", "Potencial", "Base de candidato", "Fora da base"].includes(q as string), `situação desconhecida: ${q} (o site tem cor e texto só para as quatro)`);
+    // o puxado nunca é negativo, e o resumo de cada candidato fecha: puxado + próprio = votos
+    const ip = d.proprio.colunas.indexOf("puxado");
+    for (const l of d.proprio.linhas) assert.ok((l[ip] as number) >= 0, "puxado negativo");
+    for (const c of resumo.candidatos.filter((x: Record<string, number>) => Number.isFinite(x.voto_puxado))) {
+      assert.ok(Math.abs(c.voto_puxado + c.voto_proprio - c.votos) <= 1, `${c.candidato_urna}: puxado + próprio ≠ votos`);
+    }
+    assert.ok((resumo.efeitoNumero ?? []).some((e: Record<string, unknown>) => e.numero === "1414"), "resumo.efeitoNumero sem o 1414");
   });
 
   test("partidos: o perfil do voto por estado e cidade, e a posição dos candidatos do Missão", { skip: !temDados }, () => {

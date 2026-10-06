@@ -238,9 +238,10 @@ function Numeros({ resumo }: { resumo: Resumo }) {
   const duplas = resumo.candidatos.filter((c) => c.cargo_key === "de" && t(c, "numero_parecido")).sort((a, b) => n(b, "votos") - n(a, "votos"));
   return (
     <>
+      <EfeitoNumero linhas={resumo.efeitoNumero ?? []} />
       <Nota>
-        Números fáceis de lembrar (que repetem o 14, redondos como 14000 ou com dígitos repetidos como 14444) recebem voto de quem quer votar no partido mas
-        não conhece um candidato. A comparação usa a <b>mediana</b> de votos (o candidato do meio), para um puxador muito votado não distorcer a média.
+        Votos por tipo de número, em todos os candidatos do Missão. A comparação usa a <b>mediana</b> (o candidato do meio), para um puxador muito votado não
+        distorcer a média. Atenção: “repete o 14” junta o 1414 com 14014, 14141…, e a evidência acima mostra que eles não se comportam igual.
       </Nota>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 22 }}>
         {Array.from(new Set(resumo.numeros.map((x) => t(x, "cargo"))))
@@ -282,13 +283,13 @@ function Numeros({ resumo }: { resumo: Resumo }) {
   );
 }
 
-/** A votação do candidato bairro a bairro, numa cidade escolhida (as com mais voto dele primeiro). */
+/** A votação do candidato bairro a bairro: o que o 14 de cada bairro explica (puxado) e o que é dele (próprio). */
 function PorBairro({ candidato: c, cidades, inicial }: { candidato: Linha; cidades: Linha[]; inicial?: string }) {
   const uf = t(c, "uf");
   const cargo = t(c, "cargo_key");
   const opcoes = useMemo(() => [...cidades].sort((a, b) => n(b, "votos") - n(a, "votos")).slice(0, 80), [cidades]);
   const [codigo, setCodigo] = useState("");
-  // abre na melhor cidade de fato dele que tem bairro; sem ela, na de mais votos
+  // abre na cidade onde ele tem mais voto próprio (e que tem bairro); sem ela, na de mais votos
   const cod = codigo || (inicial && opcoes.some((o) => t(o, "municipio_codigo") === inicial) ? inicial : t(opcoes[0], "municipio_codigo"));
   const dados = useRecurso(cod ? `${uf}/${cod}` : null, carregarBairros);
 
@@ -296,27 +297,27 @@ function PorBairro({ candidato: c, cidades, inicial }: { candidato: Linha; cidad
     const d = dados.dado;
     if (!d) return [];
     const ip = d.pessoas.findIndex((p) => String(p.id) === t(c, "candidato_sq"));
-    const proprio = new Map(d.proprio.filter((x) => x.p === ip).map((x) => [x.b, x]));
+    const decomp = new Map(d.proprio.filter((x) => x.p === ip).map((x) => [x.b, x]));
     const votos = new Map(d.candidatos.filter((x) => x.p === ip && x.cargo_key === cargo).map((x) => [x.b, x.votos]));
     return d.bairros.map((b, i) => {
-      const v = proprio.get(i)?.votos ?? votos.get(i) ?? 0;
-      const e = proprio.get(i)?.esperado ?? NaN;
+      const v = decomp.get(i)?.votos ?? votos.get(i) ?? 0;
+      const pux = decomp.get(i)?.puxado ?? 0;
       return {
         bairro: t(b, "bairro"),
+        situacao: t(b, "situacao"),
         eleitorado: n(b, "eleitorado"),
+        renan: n(b, "missao_pres"),
         votos: v,
-        pct: v / n(b, `validos_${cargo}`),
-        esperado: e,
-        a_mais: v - e,
-        forca: v / e,
-        forca_partido: n(b, "forca_partido"),
+        puxado: pux,
+        proprio: v - pux,
+        pct_proprio: Math.max(0, v - pux) / v,
       } as Linha;
     });
   }, [dados.dado, c, cargo]);
 
   if (!opcoes.length) return null;
   return (
-    <Secao titulo="Por bairro" sub="Os votos do candidato em cada bairro da cidade escolhida, contra o que a força do partido em cada bairro explicaria para ele (a régua é a própria cidade)." explica="melhor-de-fato">
+    <Secao titulo="Por bairro" sub="Em cada bairro da cidade: os votos dele, o que o 14 do bairro explica (puxado) e o que é dele (próprio). A régua é a própria cidade." explica="voto-puxado">
       <Escolha rotulo="Cidade" valor={cod} opcoes={opcoes.map((x) => t(x, "municipio_codigo"))} aoMudar={setCodigo} nome={(k) => {
         const x = opcoes.find((o) => t(o, "municipio_codigo") === k);
         return `${t(x, "municipio_nome")} — ${num(n(x, "votos"))} votos`;
@@ -326,17 +327,16 @@ function PorBairro({ candidato: c, cidades, inicial }: { candidato: Linha; cidad
       ) : (
         <Tabela
           linhas={linhas}
-          ordem="a_mais"
+          ordem="proprio"
           arquivo={`${t(c, "candidato_numero")}-bairros-${cod}`}
           colunas={[
             { chave: "bairro", rotulo: "Bairro", tipo: "txt" },
-            { chave: "eleitorado", rotulo: "Eleitores" },
-            { chave: "votos", rotulo: "Votos" },
-            { chave: "pct", rotulo: "% no bairro", tipo: "pct" },
-            { chave: "esperado", rotulo: "Esperado pelo partido" },
-            { chave: "a_mais", rotulo: "A mais (ou a menos)" },
-            { chave: "forca", rotulo: "Força própria", tipo: "dec", ajuda: "votos ÷ esperado" },
-            { chave: "forca_partido", rotulo: "Força do partido", tipo: "dec", ajuda: "1,00 = média da cidade" },
+            { chave: "situacao", rotulo: "Situação do 14", tipo: "txt" },
+            { chave: "renan", rotulo: "Renan" },
+            { chave: "votos", rotulo: "Votos dele" },
+            { chave: "puxado", rotulo: "Puxado pelo 14" },
+            { chave: "proprio", rotulo: "Próprio (ou a menos)" },
+            { chave: "pct_proprio", rotulo: "% próprio", tipo: "pct" },
           ]}
         />
       )}
@@ -345,9 +345,10 @@ function PorBairro({ candidato: c, cidades, inicial }: { candidato: Linha; cidad
 }
 
 /**
- * Onde o candidato é melhor DE FATO: as cidades onde ele teve mais votos acima do
- * que a força do partido ali explicaria para ele. Mais votos não é o mesmo que
- * melhor lugar — numa cidade onde todo o Missão vai bem, o mérito é do partido.
+ * Onde o candidato é melhor DE FATO: as cidades onde ele teve mais voto PRÓPRIO —
+ * o que sobra depois de tirar o que o 14 daquela cidade daria a ele pela taxa
+ * típica dele. Lugar que já vota 14 dá voto ao número de qualquer candidato do
+ * Missão; contar isso como base dele confundiria o lugar convertido com o dele.
  */
 function MelhorDeFato({ candidato: c, proprio, cidades }: { candidato: Linha; proprio: ProprioNaCidade[]; cidades: Linha[] }) {
   const nomes = useMemo(() => new Map(cidades.map((x) => [String(x.municipio_codigo), x])), [cidades]);
@@ -359,56 +360,62 @@ function MelhorDeFato({ candidato: c, proprio, cidades }: { candidato: Linha; pr
           const cid = nomes.get(String(p.municipio_codigo));
           return {
             cidade: titulo(t(cid, "municipio_nome")),
+            situacao: t(cid, "situacao"),
             eleitorado: n(cid, "eleitorado"),
+            renan: n(cid, "missao_pres"),
             votos: p.votos,
-            esperado: p.esperado,
-            a_mais: p.votos - p.esperado,
-            forca: p.votos / p.esperado,
-            forca_partido: n(cid, "forca_partido"),
-            quadrante: t(cid, "quadrante"),
+            puxado: p.puxado,
+            proprio: p.votos - p.puxado,
+            pct_proprio: Math.max(0, p.votos - p.puxado) / p.votos,
             melhor_bairro: p.melhor_bairro ?? "",
             mb_votos: p.mb_votos,
-            mb_esperado: p.mb_esperado,
-            mb_a_mais: (p.mb_votos ?? NaN) - (p.mb_esperado ?? NaN),
+            mb_puxado: p.mb_puxado,
+            mb_proprio: (p.mb_votos ?? NaN) - (p.mb_puxado ?? NaN),
           } as Linha;
         }),
     [proprio, c, nomes],
   );
   if (!linhas.length) return null;
-  const topo = [...linhas].sort((a, b) => n(b, "a_mais") - n(a, "a_mais"))[0];
+  const topo = [...linhas].sort((a, b) => n(b, "proprio") - n(a, "proprio"))[0];
   const maisVotos = [...linhas].sort((a, b) => n(b, "votos") - n(a, "votos"))[0];
+  const k = n(c, "k_renan");
   return (
-    <Secao titulo="Onde ele é melhor de fato" sub="Votos do candidato em cada cidade contra o que a força do partido ali explicaria para ele. Ordenado pelos votos a mais." explica="melhor-de-fato">
+    <Secao titulo="Onde ele é melhor de fato" sub="Em cada cidade: os votos dele, o que o 14 da cidade explica (puxado) e o que é dele (próprio). Ordenado pelo voto próprio." explica="voto-puxado">
       <Kpis
         itens={[
-          { rotulo: "Melhor de fato", valor: t(topo, "cidade"), sub: `${num(n(topo, "a_mais"))} votos acima do partido (força própria ${num(n(topo, "forca"), 2)})`, missao: true },
+          {
+            rotulo: "Voto próprio no estado",
+            valor: num(n(c, "voto_proprio")),
+            sub: `${pct(n(c, "voto_proprio") / n(c, "votos"))} dos votos dele · o resto (${num(n(c, "voto_puxado"))}) acompanha o 14: ${num(k, 1)} votos para cada 100 do Renan no lugar típico`,
+            missao: true,
+          },
+          { rotulo: "Melhor cidade de fato", valor: t(topo, "cidade"), sub: `${num(n(topo, "proprio"))} votos próprios (${num(n(topo, "votos"))} votos, ${num(n(topo, "puxado"))} puxados pelo 14)`, missao: true },
           bairroDe(topo),
           {
             rotulo: "Onde teve mais votos",
             valor: t(maisVotos, "cidade"),
-            sub: `${num(n(maisVotos, "votos"))} votos · ${n(maisVotos, "a_mais") >= 0 ? `${num(n(maisVotos, "a_mais"))} acima` : `${num(-n(maisVotos, "a_mais"))} abaixo`} do esperado`,
+            sub: `${num(n(maisVotos, "votos"))} votos, dos quais ${num(Math.max(0, n(maisVotos, "proprio")))} próprios`,
           },
         ]}
       />
       <Tabela
         linhas={linhas}
-        ordem="a_mais"
-        arquivo={`${t(c, "candidato_numero")}-melhor-de-fato`}
+        ordem="proprio"
+        arquivo={`${t(c, "candidato_numero")}-voto-proprio`}
         colunas={[
           { chave: "cidade", rotulo: "Cidade", tipo: "txt" },
-          { chave: "eleitorado", rotulo: "Eleitores" },
-          { chave: "votos", rotulo: "Votos" },
-          { chave: "esperado", rotulo: "Esperado pelo partido" },
-          { chave: "a_mais", rotulo: "A mais (ou a menos)" },
-          { chave: "forca", rotulo: "Força própria", tipo: "dec", ajuda: "votos ÷ esperado" },
-          { chave: "forca_partido", rotulo: "Força do partido", tipo: "dec", ajuda: "1,00 = média do estado" },
-          { chave: "melhor_bairro", rotulo: "Melhor bairro de fato", tipo: "txt", valor: (l) => (t(l, "melhor_bairro") ? `${t(l, "melhor_bairro")} (+${num(n(l, "mb_a_mais"))})` : "") },
-          { chave: "quadrante", rotulo: "Quadrante", tipo: "txt" },
+          { chave: "situacao", rotulo: "Situação do 14", tipo: "txt" },
+          { chave: "renan", rotulo: "Renan" },
+          { chave: "votos", rotulo: "Votos dele" },
+          { chave: "puxado", rotulo: "Puxado pelo 14" },
+          { chave: "proprio", rotulo: "Próprio (ou a menos)" },
+          { chave: "pct_proprio", rotulo: "% próprio", tipo: "pct" },
+          { chave: "melhor_bairro", rotulo: "Melhor bairro de fato", tipo: "txt", valor: (l) => (t(l, "melhor_bairro") ? `${t(l, "melhor_bairro")} (+${num(n(l, "mb_proprio"))})` : "") },
         ]}
       />
       <p style={{ fontSize: 13, opacity: 0.75, margin: "6px 0 0" }}>
-        Melhor bairro de fato: dentro da cidade, o bairro onde ele teve mais votos acima do que o partido explica ali (a régua é a própria cidade). Só existe nas
-        cidades com recorte por bairro; o bairro a bairro completo está logo abaixo, em “Por bairro”.
+        Melhor bairro de fato: dentro da cidade, o bairro onde ele teve mais voto próprio (a régua é a própria cidade). Só existe nas cidades com recorte por
+        bairro; o bairro a bairro completo está logo abaixo, em “Por bairro”.
       </p>
     </Secao>
   );
@@ -418,19 +425,95 @@ function MelhorDeFato({ candidato: c, proprio, cidades }: { candidato: Linha; pr
 function bairroDe(l: Linha) {
   const cidade = t(l, "cidade");
   if (!t(l, "melhor_bairro")) {
-    return { rotulo: `Melhor bairro em ${cidade}`, valor: "—", sub: "a cidade não tem recorte por bairro, ou ele não ficou acima do esperado em nenhum" };
+    return { rotulo: `Melhor bairro em ${cidade}`, valor: "—", sub: "a cidade não tem recorte por bairro, ou ele não teve voto próprio em nenhum" };
   }
   return {
     rotulo: `Melhor bairro em ${cidade}`,
     valor: t(l, "melhor_bairro"),
-    sub: `${num(n(l, "mb_a_mais"))} votos acima do partido (${num(n(l, "mb_votos"))} contra ${num(n(l, "mb_esperado"))} esperados)`,
+    sub: `${num(n(l, "mb_proprio"))} votos próprios (${num(n(l, "mb_votos"))} votos, ${num(n(l, "mb_puxado"))} puxados pelo 14)`,
     missao: true,
   };
 }
 
-/** A cidade (com recorte por bairro) onde o candidato teve mais votos acima do esperado. */
+/** A cidade (com recorte por bairro) onde o candidato tem mais voto próprio. */
 function melhorCidadeComBairro(proprio: ProprioNaCidade[], sq: string): string | undefined {
   return proprio
     .filter((p) => String(p.cand) === sq && p.melhor_bairro)
-    .sort((a, b) => b.votos - b.esperado - (a.votos - a.esperado))[0]?.municipio_codigo;
+    .sort((a, b) => b.votos - b.puxado - (a.votos - a.puxado))[0]?.municipio_codigo;
+}
+
+const mediana = (v: number[]) => {
+  const x = v.filter(Number.isFinite).sort((a, b) => a - b);
+  return x.length ? (x.length % 2 ? x[(x.length - 1) / 2] : (x[x.length / 2 - 1] + x[x.length / 2]) / 2) : NaN;
+};
+
+/**
+ * O número fácil puxa voto? Estado a estado, o candidato de número que repete o
+ * 14 contra o melhor dos outros do Missão no mesmo cargo. O teste contra "o
+ * partido deu o número ao mais forte" são os estreantes; o controle é o outro cargo.
+ */
+function EfeitoNumero({ linhas }: { linhas: Linha[] }) {
+  const [cargo, setCargo] = useState<"df" | "de">("df");
+  if (!linhas.length) return null;
+  const resumoDe = (c: string) => {
+    const ls = linhas.filter((l) => l.cargo_key === c);
+    const est = ls.filter((l) => l.estreante === true);
+    return {
+      n: ls.length,
+      primeiro: ls.filter((l) => n(l, "lugar_missao") === 1).length,
+      fatia: mediana(ls.map((l) => n(l, "fatia_missao"))),
+      k: mediana(ls.map((l) => n(l, "k_renan"))),
+      kOutro: mediana(ls.map((l) => n(l, "outro_k_renan"))),
+      puxado: mediana(ls.map((l) => n(l, "pct_puxado"))),
+      estreantes: est.length,
+      fatiaEst: mediana(est.map((l) => n(l, "fatia_missao"))),
+    };
+  };
+  const df = resumoDe("df");
+  const de = resumoDe("de");
+  const r = cargo === "df" ? df : de;
+  const frase = (x: ReturnType<typeof resumoDe>, nome: string) =>
+    `${nome}: em ${num(x.primeiro)} de ${num(x.n)} estados o número fácil foi o mais votado do Missão; ficou com ${pct(x.fatia)} do voto do partido (mediana) e teve ${num(x.k, 1)} votos para cada 100 do Renan no lugar típico, contra ${num(x.kOutro, 1)} do melhor dos outros. ${num(x.estreantes)} eram estreantes, com ${pct(x.fatiaEst)} do voto do partido.`;
+  return (
+    <Secao titulo="O 1414 puxa voto? A evidência" sub="Estado a estado, o candidato de número fácil contra o melhor dos outros do Missão no mesmo cargo." explica="efeito-numero">
+      <Nota>
+        <p style={{ margin: "0 0 6px" }}>{frase(df, "Dep. Federal (1414)")}</p>
+        <p style={{ margin: "0 0 6px" }}>{frase(de, "Dep. Estadual (14014, 14141…)")}</p>
+        <p style={{ margin: 0 }}>
+          Como ler: se o número fácil rende muito mais que os outros do partido — e rende assim também com estreantes, sem fama própria —, o voto é do número.
+          O Dep. Estadual é a comparação: mesmo partido, mesmo Renan, números com 14. Onde ele não repete o resultado, o efeito não é de “ter 14 no número”,
+          é do número específico.
+        </p>
+      </Nota>
+      <Chips valor={cargo} opcoes={["df", "de"] as ("df" | "de")[]} aoMudar={setCargo} nome={(c) => (c === "df" ? "Dep. Federal" : "Dep. Estadual")} />
+      <Kpis
+        itens={[
+          { rotulo: "Foi o 1º do Missão", valor: `${num(r.primeiro)} de ${num(r.n)}`, sub: "estados", missao: true },
+          { rotulo: "Fatia do voto do partido", valor: pct(r.fatia), sub: "mediana dos estados", missao: true },
+          { rotulo: "Votos p/ 100 do Renan", valor: num(r.k, 1), sub: `o melhor dos outros: ${num(r.kOutro, 1)}`, missao: true },
+          { rotulo: "Quanto acompanha o 14", valor: pct(r.puxado), sub: "do voto dele (mediana)" },
+          { rotulo: "Estreantes", valor: num(r.estreantes), sub: `fatia do partido: ${pct(r.fatiaEst)}` },
+        ]}
+      />
+      <Tabela
+        linhas={linhas.filter((l) => l.cargo_key === cargo)}
+        ordem="votos"
+        arquivo={`efeito-numero-${cargo}`}
+        colunas={[
+          { chave: "uf", rotulo: "UF", tipo: "txt", valor: (l) => t(l, "uf").toUpperCase() },
+          { chave: "numero", rotulo: "Número", tipo: "txt" },
+          { chave: "nome", rotulo: "Candidato", tipo: "txt" },
+          { chave: "estreante", rotulo: "Estreante", tipo: "txt", valor: (l) => (l.estreante === true ? "Sim" : l.estreante === false ? "Não" : "—") },
+          { chave: "votos", rotulo: "Votos" },
+          { chave: "fatia_missao", rotulo: "% do Missão", tipo: "pct" },
+          { chave: "lugar_missao", rotulo: "Lugar no Missão" },
+          { chave: "k_renan", rotulo: "Por 100 do Renan", tipo: "dec" },
+          { chave: "pct_puxado", rotulo: "% que acompanha o 14", tipo: "pct" },
+          { chave: "outro_nome", rotulo: "Melhor dos outros", tipo: "txt" },
+          { chave: "outro_votos", rotulo: "Votos dele" },
+          { chave: "outro_k_renan", rotulo: "Por 100 do Renan (ele)", tipo: "dec" },
+        ]}
+      />
+    </Secao>
+  );
 }

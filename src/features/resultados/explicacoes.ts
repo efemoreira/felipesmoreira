@@ -79,18 +79,8 @@ export const EXPLICACOES = {
     importa: "Separa o que o partido conquistou, o que deixou na mesa (o voto do Renan que não veio) e o que já está ao alcance em 2028.",
     cuidado: "Pelas sobras, um partido com 80% do QE ainda pode levar cadeira — por isso 'pelo quociente' é o piso. O QE de 2028 é estimativa.",
   },
-  decisao: {
-    deOnde: "Cruzamento, no projeto de análise, do resultado por cidade (Divulgação do TSE) e por bairro (votação por seção) com a leitura dos adversários.",
-    mede: "Força do partido = mediana de quatro índices no lugar — Renan, legenda DF, legenda DE e o voto nominal somado dos candidatos do Missão —, com 1,00 = a média do estado (cidades) ou da cidade (bairros). Espaço = voto de direita fora do Missão para Dep. Estadual + voto do Renan que não veio para o 14, sobre o eleitorado. Força a partir de 1,15 é forte; espaço acima da mediana do recorte é muito.",
-    importa: "Separa onde defender a base (Nutrir), onde a força já existe e há voto a buscar (Crescer), onde o voto está com os outros (Atacar) e onde não vale o esforço agora (Esperar).",
-    cuidado: "É regra numérica, não recomendação. Lugar com menos de 300 votos válidos fica sem quadrante (o índice oscila demais).",
-  },
-  "melhor-de-fato": {
-    deOnde: "Votos de cada candidato do Missão por cidade (Divulgação do TSE) e por bairro (votação por seção).",
-    mede: "Esperado = a fatia do candidato no estado (ou na cidade, para bairros) × os válidos do cargo no lugar × a força do partido ali calculada sem ele. A mais = votos − esperado. Força própria = votos ÷ esperado.",
-    importa: "Se todo candidato vai bem num lugar, o lugar é do partido, não de um nome. O melhor lugar de um candidato é onde ele rende acima do que o partido rende ali — é onde ele tem base de verdade.",
-    cuidado: "Em lugar pequeno, poucos votos mexem muito na força própria; olhe também o 'a mais', que está em votos.",
-  },
+
+
   "por-dentro": {
     deOnde: "Votos de cada candidato no recorte: Divulgação do TSE (estado e cidade) e votação por seção (bairro).",
     mede: "% do Missão aqui = votos do candidato ÷ voto total do Missão no cargo (nominal + legenda) no recorte. % dos válidos = votos do candidato ÷ válidos do cargo. Lugar entre todos = a posição dele entre todos os candidatos do cargo que tiveram voto ali (1º = o mais votado).",
@@ -101,6 +91,24 @@ export const EXPLICACOES = {
     mede: "% legenda = votos só no número ÷ voto do partido. % puxador = votos do mais votado ÷ voto nominal do partido. Nomes p/ 80% = quantos candidatos, do mais votado para baixo, fazem 80% do nominal. Perfil: Marca (legenda a partir de 15%), Puxador (um nome com metade ou mais), Marca e puxador (os dois), Chapa (5 nomes ou mais para fazer 80%), Poucos nomes (o resto).",
     importa: "Mostra de que é feito o voto de cada adversário — e do Missão. Se quem elege tem chapa distribuída e o Missão depende de marca e de um nome, a ação certa é formar nomes com voto próprio, não só divulgar o 14.",
     cuidado: "Partido em federação disputa a vaga junto com os outros da federação (a coluna Federação diz qual). No bairro só vêm os 8 partidos mais votados de cada cargo, e o Missão.",
+  },
+  decisao: {
+    deOnde: "Votos do Renan (Presidente) e da chapa do Missão para deputado em cada cidade (Divulgação do TSE) e em cada bairro (votação por seção). A régua é o estado para as cidades e a própria cidade para os bairros.",
+    mede: "Propensão ao 14 = fatia do Renan nos válidos do lugar ÷ fatia do Renan na régua. Conversão = melhor chapa do Missão no lugar (Dep. Federal ou Estadual, nominal + legenda) ÷ votos do Renan ali, comparada com a da régua (1,00 = igual). Convertido: propensão a partir de 1,15 e conversão a partir de 1,00. Potencial: propensão a partir de 1,15 e conversão abaixo de 1,00. Base de candidato: propensão abaixo de 1,15 e conversão a partir de 1,15. Fora da base: o resto.",
+    importa: "Um lugar que já vota 14 para Presidente puxa voto para o número de qualquer candidato do Missão. Separar quem já converteu (o deputado já recebe esse voto) de quem tem potencial (o eleitor do 14 está lá e o deputado não) mostra onde o trabalho rende mais: no Potencial, o eleitor já disse sim ao partido uma vez.",
+    cuidado: "Lugar com menos de 300 votos válidos ou menos de 10 votos do Renan fica sem situação. 'Renan sem voto na chapa' é o eleitor do Renan que não votou no Missão para deputado — ele pode ter votado em outro partido ou em branco.",
+  },
+  "voto-puxado": {
+    deOnde: "Votos de cada candidato do Missão e do Renan por cidade (Divulgação do TSE) e por bairro (votação por seção).",
+    mede: "Taxa típica = a mediana, entre os lugares da régua com voto suficiente do Renan, de (votos do candidato ÷ votos do Renan) — quantos votos ele recebe para cada 100 do Renan num lugar onde não tem base própria. Puxado pelo 14 = taxa típica × votos do Renan no lugar. Próprio = votos − puxado. Negativo = ele rendeu ali menos do que o 14 daquele lugar daria.",
+    importa: "É o que separa o voto que veio do partido (de quem já vota 14) do voto que veio do nome. O melhor lugar de um candidato é onde o voto próprio é maior — não onde ele teve mais votos, que costuma ser só onde há mais eleitor do 14.",
+    cuidado: "Mediana e não média: um lugar onde ele tem base forte não infla a taxa dos outros. Para o 1414, o 'puxado' mistura o eleitor do Renan e o efeito do próprio número (ver 'O número faz diferença?'). Na régua da cidade (bairros), a taxa é a dele dentro daquela cidade.",
+  },
+  "efeito-numero": {
+    deOnde: "Votos de todos os candidatos do Missão para Dep. Federal e Estadual nos 27 estados (Divulgação do TSE) e o histórico de candidaturas de 2022 e 2024 (Dados Abertos do TSE, pela mesma pessoa).",
+    mede: "Em cada estado, o candidato com o número que repete o 14 (1414 para federal; 14014, 14141… para estadual) contra o melhor dos outros candidatos do Missão no mesmo cargo: fatia do voto do partido, lugar entre os do Missão, votos para cada 100 do Renan no lugar típico e quanto do voto dele acompanha o 14. Estreante = nunca tinha concorrido (2022 nem 2024).",
+    importa: "Se o mesmo número rende o mesmo resultado com nomes diferentes em estados diferentes — inclusive com estreantes, que não têm fama própria —, o voto é do número e do partido, não da pessoa. Isso muda como se escolhe quem fica com o 1414 e como se mede o desempenho de quem não fica.",
+    cuidado: "É evidência, não prova. O partido pode ter dado o 1414 ao nome em que mais apostava, e o candidato do 1414 pode ter feito campanha do tipo 'é só repetir o 14'. A comparação com o Dep. Estadual (mesmo partido, mesmo Renan, números com 14) é o controle: lá o efeito não aparece.",
   },
   "candidato-bairros": {
     deOnde: "Dados Abertos do TSE: votação por seção somada por bairro.",
