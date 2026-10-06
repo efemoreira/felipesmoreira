@@ -110,6 +110,20 @@ describe("resultados: o export que a página lê", () => {
     for (const q of quadrantes) assert.ok(["Nutrir", "Crescer", "Atacar", "Esperar"].includes(q as string), `quadrante desconhecido: ${q}`);
   });
 
+  test("partidos: o perfil do voto por estado e cidade, e a posição dos candidatos do Missão", { skip: !temDados }, () => {
+    const d = ler(path.join(DADOS, "partidos", "ce.json"));
+    for (const c of ["cargo_key", "partido_sigla", "nominal", "legenda", "top_votos", "n_cand", "n_80", "perfil", "eleitos", "acima_10qe"]) {
+      assert.ok(d.estado.colunas.includes(c), `partidos/ce.json: estado sem ${c}`);
+    }
+    for (const c of ["municipio_codigo", "nominal", "legenda", "top_votos", "n_cand", "perfil"]) assert.ok(d.cidades.colunas.includes(c), `partidos/ce.json: cidades sem ${c}`);
+    const ip = d.estado.colunas.indexOf("perfil");
+    for (const l of d.estado.linhas) assert.ok(["MP", "M", "P", "C", "N"].includes(l[ip]), `perfil desconhecido: ${l[ip]} (o site traduz pelo PERFIL de apoio.ts)`);
+    assert.ok(Object.keys(d.grupos).length > 5, "partidos/ce.json sem o dicionário de grupos");
+    const uf = ler(path.join(DADOS, "uf", "ce.json"));
+    assert.ok(uf.votos.colunas.includes("posicao") && uf.votos.colunas.includes("total_cand"), "uf/ce.json: votos sem posição");
+    assert.ok(resumo.candidatos.some((c: Record<string, unknown>) => typeof c.posicao_uf === "number"), "resumo.candidatos sem posicao_uf");
+  });
+
   test("adversários: as colunas lidas", { skip: !ufs.length }, () => {
     const d: Record<string, Tabela> = ler(path.join(DADOS, "adversarios", `${ufs.includes("ce") ? "ce" : ufs[0]}.json`));
     const pessoas = ["id", "nome", "status", "orfao", "votos", "votos_22", "var_votos", "grupo_atual", "cargo_key", "cargo_key_22", "partido_sigla_22",

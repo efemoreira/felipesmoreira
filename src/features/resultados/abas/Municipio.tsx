@@ -1,5 +1,5 @@
 "use client";
-import { BlocoLegenda, BlocoRenan } from "../blocos";
+import { BlocoLegenda, BlocoPorDentro, BlocoRenan } from "../blocos";
 import React, { useEffect, useMemo, useState } from "react";
 import { carregarUf, n, t, useRecurso, type Linha, type Resumo } from "../dados";
 import { num, pct, titulo } from "../formato";
@@ -100,6 +100,17 @@ export default function Municipio({ resumo, uf, setUf }: { resumo: Resumo; uf: s
 
           <BlocoRenan linha={cidade} onde={titulo(t(cidade, "municipio_nome"))} distrital={uf === "df"} />
           <BlocoLegenda linha={cidade} onde={titulo(t(cidade, "municipio_nome"))} distrital={uf === "df"} />
+          <BlocoPorDentro
+            linha={cidade}
+            onde={titulo(t(cidade, "municipio_nome"))}
+            nomes={(dados.dado?.votos ?? [])
+              .filter((v) => v.municipio_codigo === codigo)
+              .flatMap((v) => {
+                const c = resumo.candidatos.find((x) => String(x.candidato_sq) === v.candidato_sq);
+                const cargo = t(c, "cargo_key");
+                return ["df", "de"].includes(cargo) ? [{ nome: t(c, "candidato_urna"), cargo_key: cargo, votos: v.votos, posicao: v.posicao ?? NaN, total: v.total_cand ?? NaN }] : [];
+              })}
+          />
 
           {n(cidade, "qe_ver_2028_est") > 0 && (
             <Secao explica="vereador-2028" titulo="Vereador" sub="Vagas e quociente da eleição de 2024; o QE de 2028 é estimado pela variação do comparecimento até 2026.">

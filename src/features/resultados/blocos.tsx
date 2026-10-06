@@ -3,7 +3,7 @@ import React from "react";
 import { n, type Linha } from "./dados";
 import { num, pct } from "./formato";
 import { BarrasQuociente } from "./graficos";
-import { Kpis, Secao } from "./pecas";
+import { Kpis, Secao, Tabela } from "./pecas";
 
 /**
  * Os três blocos que se repetem em cada nível (Brasil, estado, município,
@@ -105,6 +105,67 @@ export function BlocoVereadorLocal({ linha, onde }: { linha: Linha; onde: string
         itens={[
           { rotulo: "Missão (melhor chapa)", valor: `${num(n(linha, "missao_em_qe_ver"), 2)} QE`, missao: true },
           { rotulo: "Renan", valor: `${num(n(linha, "renan_em_qe_ver"), 2)} QE`, sub: "se todo voto dele fosse para o 14" },
+        ]}
+      />
+    </Secao>
+  );
+}
+
+/** Um candidato do Missão num recorte, já com o lugar dele entre todos (do export). */
+export type NomePorDentro = { nome: string; cargo_key: string; votos: number; posicao: number; total: number };
+
+/**
+ * Por dentro do voto do Missão no recorte: quanto cada nome pesa no voto do
+ * partido ali, quanto dos válidos ele fez e em que lugar ficou entre TODOS os
+ * candidatos do cargo. Para um partido novo, longe do quociente, é aqui que se
+ * vê quem rendeu e quem ficou para trás.
+ */
+export function BlocoPorDentro({ linha, nomes, onde }: { linha: Linha; nomes: NomePorDentro[]; onde: string }) {
+  const totalMissao = (c: string) => (n(linha, `missao_${c}`) || 0) || (n(linha, `missao_nom_${c}`) || 0) + (n(linha, `missao_leg_${c}`) || 0);
+  const linhas: Linha[] = [
+    ...nomes.map((x) => ({
+      nome: x.nome,
+      cargo: NOME[x.cargo_key as Cargo] ?? x.cargo_key,
+      votos: x.votos,
+      pct_missao: x.votos / totalMissao(x.cargo_key),
+      pct_validos: x.votos / n(linha, `validos_${x.cargo_key}`),
+      posicao: Number.isFinite(x.posicao) && x.posicao > 0 ? `${num(x.posicao)}º de ${num(x.total)}` : "—",
+      ordem: x.posicao,
+    })),
+    ...(["df", "de"] as Cargo[])
+      .filter((c) => (n(linha, `missao_leg_${c}`) || 0) > 0)
+      .map((c) => ({
+        nome: "Só legenda (14)",
+        cargo: NOME[c],
+        votos: n(linha, `missao_leg_${c}`),
+        pct_missao: n(linha, `missao_leg_${c}`) / totalMissao(c),
+        pct_validos: n(linha, `missao_leg_${c}`) / n(linha, `validos_${c}`),
+        posicao: "—",
+        ordem: Infinity,
+      })),
+  ];
+  if (!linhas.length) return null;
+  const melhor = [...nomes].filter((x) => x.posicao > 0).sort((a, b) => a.posicao / a.total - b.posicao / b.total)[0];
+  return (
+    <Secao titulo={`Por dentro do Missão — ${onde}`} sub="Quanto cada nome pesa no voto do partido aqui, quanto dos válidos fez e em que lugar ficou entre todos os candidatos do cargo." explica="por-dentro">
+      {melhor && (
+        <Kpis
+          itens={[
+            { rotulo: "Melhor colocado", valor: melhor.nome, sub: `${num(melhor.posicao)}º de ${num(melhor.total)} em ${NOME[melhor.cargo_key as Cargo] ?? melhor.cargo_key}`, missao: true },
+            { rotulo: "Nomes com voto", valor: num(nomes.length) },
+          ]}
+        />
+      )}
+      <Tabela
+        linhas={linhas}
+        ordem="votos"
+        colunas={[
+          { chave: "nome", rotulo: "Candidato", tipo: "txt" },
+          { chave: "cargo", rotulo: "Cargo", tipo: "txt" },
+          { chave: "votos", rotulo: "Votos" },
+          { chave: "pct_missao", rotulo: "% do Missão aqui", tipo: "barra", max: 1 },
+          { chave: "pct_validos", rotulo: "% dos válidos", tipo: "pct" },
+          { chave: "posicao", rotulo: "Lugar entre todos", tipo: "txt", valor: (l) => String(l.posicao) },
         ]}
       />
     </Secao>

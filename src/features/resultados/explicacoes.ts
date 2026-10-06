@@ -91,6 +91,17 @@ export const EXPLICACOES = {
     importa: "Se todo candidato vai bem num lugar, o lugar é do partido, não de um nome. O melhor lugar de um candidato é onde ele rende acima do que o partido rende ali — é onde ele tem base de verdade.",
     cuidado: "Em lugar pequeno, poucos votos mexem muito na força própria; olhe também o 'a mais', que está em votos.",
   },
+  "por-dentro": {
+    deOnde: "Votos de cada candidato no recorte: Divulgação do TSE (estado e cidade) e votação por seção (bairro).",
+    mede: "% do Missão aqui = votos do candidato ÷ voto total do Missão no cargo (nominal + legenda) no recorte. % dos válidos = votos do candidato ÷ válidos do cargo. Lugar entre todos = a posição dele entre todos os candidatos do cargo que tiveram voto ali (1º = o mais votado).",
+    importa: "Longe do quociente, a cadeira não diz nada; a posição diz. Ficar em 15º entre 300 num bairro é base real; ficar em 200º é ausência. E o peso de cada nome no voto do partido mostra se o Missão depende de um só.",
+  },
+  perfil: {
+    deOnde: "Divulgação do TSE (estado e cidade) e votação por seção (bairro), por partido e por candidato.",
+    mede: "% legenda = votos só no número ÷ voto do partido. % puxador = votos do mais votado ÷ voto nominal do partido. Nomes p/ 80% = quantos candidatos, do mais votado para baixo, fazem 80% do nominal. Perfil: Marca (legenda a partir de 15%), Puxador (um nome com metade ou mais), Marca e puxador (os dois), Chapa (5 nomes ou mais para fazer 80%), Poucos nomes (o resto).",
+    importa: "Mostra de que é feito o voto de cada adversário — e do Missão. Se quem elege tem chapa distribuída e o Missão depende de marca e de um nome, a ação certa é formar nomes com voto próprio, não só divulgar o 14.",
+    cuidado: "Partido em federação disputa a vaga junto com os outros da federação (a coluna Federação diz qual). No bairro só vêm os 8 partidos mais votados de cada cargo, e o Missão.",
+  },
   "candidato-bairros": {
     deOnde: "Dados Abertos do TSE: votação por seção somada por bairro.",
     mede: "Os votos do candidato em cada bairro da cidade escolhida, a fatia dele no bairro e a força (fatia no bairro ÷ fatia no estado).",

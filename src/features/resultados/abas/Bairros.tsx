@@ -7,7 +7,7 @@ import { BarrasGrupos, MapaBairros, type PontoLocal } from "../graficos";
 import { Busca, Carregando, Chips, Escolha, Filtros, Kpis, Legenda, Nota, Secao, SeletorUf, Tabela } from "../pecas";
 import { GRUPOS, NOME_CARGO, NOME_ORIGEM, ladoTexto, linhasTempo, linkMapa, pontos } from "../apoio";
 import { Roteiro } from "../Roteiro";
-import { BlocoLegenda, BlocoRenan, BlocoVereadorLocal } from "../blocos";
+import { BlocoLegenda, BlocoPorDentro, BlocoRenan, BlocoVereadorLocal } from "../blocos";
 
 /**
  * Bairros: a cidade por dentro. O voto de cada seção somado por local de
@@ -314,6 +314,13 @@ function Bairro({ uf, bairro, dados }: { uf: string; bairro: Linha; dados: Dados
 
       <BlocoRenan linha={bairro} onde={t(bairro, "bairro")} distrital={uf === "df"} />
       <BlocoLegenda linha={bairro} onde={t(bairro, "bairro")} distrital={uf === "df"} />
+      <BlocoPorDentro
+        linha={bairro}
+        onde={t(bairro, "bairro")}
+        nomes={dados.candidatos
+          .filter((c) => c.b === idx && ["df", "de"].includes(c.cargo_key) && t(dados.pessoas[c.p], "grupo_atual") === "Missão")
+          .map((c) => ({ nome: t(dados.pessoas[c.p], "nome"), cargo_key: c.cargo_key, votos: c.votos, posicao: c.posicao ?? NaN, total: n(bairro, `total_cand_${c.cargo_key}`) }))}
+      />
       <BlocoVereadorLocal linha={bairro} onde={t(bairro, "bairro")} />
 
       <Secao titulo="Como o bairro votou: 2022, 2024 e 2026" explica="bairro-tempo">

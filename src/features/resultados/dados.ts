@@ -37,9 +37,12 @@ export type Resumo = {
   numeros: Linha[];
   porte: Linha[];
   candidatos: Linha[];
+  /** perfil do voto de cada partido somado no país (Dep. Federal e Estadual) */
+  partidosBrasil?: Linha[];
 };
 
-export type VotoNaCidade = { candidato_sq: string; municipio_codigo: string; votos: number };
+/** `posicao`: lugar do candidato entre todos os do cargo na cidade; `total_cand`: quantos tiveram voto. */
+export type VotoNaCidade = { candidato_sq: string; municipio_codigo: string; votos: number; posicao?: number; total_cand?: number };
 /** Candidato do Missão numa cidade: votos × o que a força do partido ali explicaria (a mais = votos − esperado). */
 export type ProprioNaCidade = { cand: string; municipio_codigo: string; votos: number; esperado: number };
 export type DadosUf = { cidades: Linha[]; votos: VotoNaCidade[]; proprio: ProprioNaCidade[] };
@@ -102,7 +105,7 @@ export function temBairros(resumo: Resumo, uf: string, cidade: Linha | undefined
 }
 
 /** Candidato num bairro: `b` = índice em `bairros`, `p` = índice em `pessoas`. */
-export type VotoNoBairro = { b: number; cargo_key: string; p: number; votos: number };
+export type VotoNoBairro = { b: number; cargo_key: string; p: number; votos: number; posicao?: number };
 export type QuedaNoBairro = { b: number; p: number; votos: number; votos_22: number; perda: number };
 /** Nome forte da direita no estado que vai mal num bairro mais à direita que o estado (calculado no export). */
 export type FracoNoBairro = { b: number; p: number; votos: number; forca: number };
@@ -115,6 +118,8 @@ export type DadosBairros = {
   quedas: QuedaNoBairro[];
   fracos: FracoNoBairro[];
   proprio: ProprioNoBairro[];
+  /** perfil do voto dos partidos no bairro (os 8 maiores e o Missão, por cargo) */
+  partidos: Linha[];
   pessoas: Linha[];
 };
 /** Bairros oficiais e distritos (`areas`, pela chave do bairro) sobre o fundo da sede; locais em x/y no mesmo desenho. */
@@ -133,6 +138,7 @@ export const carregarBairros = (chave: string) =>
       quedas: lista<QuedaNoBairro>(b.quedas),
       fracos: lista<FracoNoBairro>(b.fracos),
       proprio: lista<ProprioNoBairro>(b.proprio),
+      partidos: lista<Linha>(b.partidos),
       pessoas: lista<Linha>(b.pessoas),
     };
   });
@@ -214,3 +220,14 @@ export const carregarGente = () => apiFetch<Gente>("/gente.php");
 /** "Vicente Pinzón" e "VICENTE PINZON" são o mesmo lugar. */
 export const normalizar = (s: string) =>
   s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toUpperCase().replace(/[^A-Z0-9]+/g, " ").replace(/^BAIRRO /, "").trim();
+
+/* ---------- perfil do voto dos partidos ---------- */
+
+/** O estado (com eleitos, puxador e federação) e cada cidade; `grupos`: sigla → grupo. */
+export type DadosPartidos = { estado: Linha[]; cidades: Linha[]; grupos: Record<string, string> };
+
+export const carregarPartidos = (uf: string) =>
+  buscar<DadosPartidos>(`partidos/${uf}.json`, (bruto) => {
+    const b = bruto as { estado: Tabela; cidades: Tabela; grupos: Record<string, string> };
+    return { estado: deTabela<Linha>(b.estado), cidades: deTabela<Linha>(b.cidades), grupos: b.grupos ?? {} };
+  });

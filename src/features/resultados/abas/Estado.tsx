@@ -1,5 +1,5 @@
 "use client";
-import { BlocoCadeiras, BlocoLegenda, BlocoRenan } from "../blocos";
+import { BlocoCadeiras, BlocoLegenda, BlocoPorDentro, BlocoRenan } from "../blocos";
 import React, { useMemo, useState } from "react";
 import { carregarMapa, carregarUf, n, t, useRecurso, type Linha, type Resumo } from "../dados";
 import { num, pct, titulo, UF_NOMES } from "../formato";
@@ -94,6 +94,13 @@ export default function Estado({ resumo, uf, setUf }: { resumo: Resumo; uf: stri
       <BlocoCadeiras linha={linha} onde={UF_NOMES[uf] ?? uf.toUpperCase()} nivel="estado" />
       <BlocoRenan linha={linha} onde={UF_NOMES[uf] ?? uf.toUpperCase()} distrital={uf === "df"} />
       <BlocoLegenda linha={linha} onde={UF_NOMES[uf] ?? uf.toUpperCase()} distrital={uf === "df"} />
+      <BlocoPorDentro
+        linha={linha}
+        onde={UF_NOMES[uf] ?? uf.toUpperCase()}
+        nomes={resumo.candidatos
+          .filter((c) => c.uf === uf && ["df", "de"].includes(t(c, "cargo_key")))
+          .map((c) => ({ nome: t(c, "candidato_urna"), cargo_key: t(c, "cargo_key"), votos: n(c, "votos"), posicao: n(c, "posicao_uf"), total: n(c, "total_uf") }))}
+      />
 
       <Secao explica="divisao-validos" titulo="Como os votos válidos se dividiram">
         <Legenda itens={GRUPOS.slice(0, 4).map(([, nome, cor]) => [cor, nome])} />

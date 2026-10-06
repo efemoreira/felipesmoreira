@@ -122,3 +122,14 @@ export const linkMapa = (l: Linha) => {
   const lon = n(l, "lon5") / 1e5;
   return Number.isFinite(lat) && Number.isFinite(lon) ? `https://www.google.com/maps/search/?api=1&query=${lat},${lon}` : "";
 };
+
+/* ---------- perfil do voto de um partido ---------- */
+
+/** Código do export → nome. A regra está em perfil_partidos.py (projeto de análise) e em explicacoes.ts. */
+export const PERFIL: Record<string, string> = {
+  MP: "Marca e puxador",
+  M: "Marca",
+  P: "Puxador",
+  C: "Chapa",
+  N: "Poucos nomes",
+};
