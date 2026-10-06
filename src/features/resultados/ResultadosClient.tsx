@@ -15,6 +15,7 @@ import Candidatos from "./abas/Candidatos";
 import Bairros from "./abas/Bairros";
 import Adversarios from "./abas/Adversarios";
 import Sobre from "./abas/Sobre";
+import Decisoes from "./abas/Decisoes";
 
 /**
  * /resultados — o estudo do resultado de 2026 para o Missão.
@@ -30,6 +31,7 @@ const ABAS = [
   ["estado", "Estado"],
   ["municipio", "Município"],
   ["bairros", "Bairros"],
+  ["decisoes", "Decisões"],
   ["candidatos", "Candidatos"],
   ["adversarios", "Adversários"],
   ["conversao", "Renan → Missão"],
@@ -158,6 +160,7 @@ export default function ResultadosClient() {
             {aba === "legenda" && <Legenda resumo={r} uf={uf} setUf={setUf} />}
             {aba === "cadeiras" && <Cadeiras resumo={r} uf={uf} setUf={setUf} />}
             {aba === "bairros" && <Bairros resumo={r} uf={uf} setUf={setUf} rota={rota} setRota={setRota} />}
+            {aba === "decisoes" && <Decisoes resumo={r} uf={uf === "zz" ? "ce" : uf} setUf={setUf} />}
             {aba === "candidatos" && <Candidatos resumo={r} />}
             {aba === "adversarios" && <Adversarios resumo={r} uf={uf} setUf={setUf} />}
             {aba === "sobre" && <Sobre resumo={r} />}

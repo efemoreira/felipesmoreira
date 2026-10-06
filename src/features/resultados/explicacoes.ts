@@ -79,6 +79,18 @@ export const EXPLICACOES = {
     importa: "Separa o que o partido conquistou, o que deixou na mesa (o voto do Renan que não veio) e o que já está ao alcance em 2028.",
     cuidado: "Pelas sobras, um partido com 80% do QE ainda pode levar cadeira — por isso 'pelo quociente' é o piso. O QE de 2028 é estimativa.",
   },
+  decisao: {
+    deOnde: "Cruzamento, no projeto de análise, do resultado por cidade (Divulgação do TSE) e por bairro (votação por seção) com a leitura dos adversários.",
+    mede: "Força do partido = mediana de quatro índices no lugar — Renan, legenda DF, legenda DE e o voto nominal somado dos candidatos do Missão —, com 1,00 = a média do estado (cidades) ou da cidade (bairros). Espaço = voto de direita fora do Missão para Dep. Estadual + voto do Renan que não veio para o 14, sobre o eleitorado. Força a partir de 1,15 é forte; espaço acima da mediana do recorte é muito.",
+    importa: "Separa onde defender a base (Nutrir), onde a força já existe e há voto a buscar (Crescer), onde o voto está com os outros (Atacar) e onde não vale o esforço agora (Esperar).",
+    cuidado: "É regra numérica, não recomendação. Lugar com menos de 300 votos válidos fica sem quadrante (o índice oscila demais).",
+  },
+  "melhor-de-fato": {
+    deOnde: "Votos de cada candidato do Missão por cidade (Divulgação do TSE) e por bairro (votação por seção).",
+    mede: "Esperado = a fatia do candidato no estado (ou na cidade, para bairros) × os válidos do cargo no lugar × a força do partido ali calculada sem ele. A mais = votos − esperado. Força própria = votos ÷ esperado.",
+    importa: "Se todo candidato vai bem num lugar, o lugar é do partido, não de um nome. O melhor lugar de um candidato é onde ele rende acima do que o partido rende ali — é onde ele tem base de verdade.",
+    cuidado: "Em lugar pequeno, poucos votos mexem muito na força própria; olhe também o 'a mais', que está em votos.",
+  },
   "candidato-bairros": {
     deOnde: "Dados Abertos do TSE: votação por seção somada por bairro.",
     mede: "Os votos do candidato em cada bairro da cidade escolhida, a fatia dele no bairro e a força (fatia no bairro ÷ fatia no estado).",

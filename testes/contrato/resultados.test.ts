@@ -31,7 +31,8 @@ function arquivos(dir: string): string[] {
 }
 
 const COLUNAS = {
-  bairros: ["bairro_chave", "bairro", "bairro_origem", "eleitorado", "comparecimento", "validos_pres", "missao_pres", "direita_pres", "esquerda_pres", "lado_pres", "lado_rel_pres", "oportunidade"],
+  bairros: ["bairro_chave", "bairro", "bairro_origem", "eleitorado", "comparecimento", "validos_pres", "missao_pres", "direita_pres", "esquerda_pres", "lado_pres", "lado_rel_pres", "oportunidade",
+    "forca_partido", "espaco", "quadrante", "melhor_p", "melhor_a_mais", "solto"],
   locais: ["zona", "local", "nome", "endereco", "b", "eleitorado", "validos_pres", "missao_pres", "oportunidade"],
   pessoas: ["id", "nome", "partido_sigla", "grupo_atual", "cargo_key", "pct_uf"],
   candidatos: ["b", "cargo_key", "p", "votos"],
@@ -86,7 +87,7 @@ describe("resultados: o export que a página lê", () => {
         }
         const nb = d.bairros?.linhas.length ?? 0;
         const np = d.pessoas?.linhas.length ?? 0;
-        for (const tab of ["candidatos", "quedas", "fracos"] as const) {
+        for (const tab of ["candidatos", "quedas", "fracos", "proprio"] as const) {
           const t = d[tab];
           if (!t) continue;
           const ib = t.colunas.indexOf("b");
@@ -98,6 +99,15 @@ describe("resultados: o export que a página lê", () => {
         }
       }
     }
+  });
+
+  test("cidades: força do partido, quadrante e o esperado de cada candidato (aba Decisões)", { skip: !temDados }, () => {
+    const d = ler(path.join(DADOS, "uf", "ce.json"));
+    for (const c of ["forca_partido", "espaco", "quadrante", "melhor_nome", "melhor_a_mais"]) assert.ok(d.cidades.colunas.includes(c), `uf/ce.json: cidades sem ${c}`);
+    assert.ok(d.proprio && ["cand", "municipio_codigo", "votos", "esperado"].every((c: string) => d.proprio.colunas.includes(c)), "uf/ce.json sem a tabela proprio");
+    const iq = d.cidades.colunas.indexOf("quadrante");
+    const quadrantes = new Set(d.cidades.linhas.map((l: unknown[]) => l[iq]).filter(Boolean));
+    for (const q of quadrantes) assert.ok(["Nutrir", "Crescer", "Atacar", "Esperar"].includes(q as string), `quadrante desconhecido: ${q}`);
   });
 
   test("adversários: as colunas lidas", { skip: !ufs.length }, () => {

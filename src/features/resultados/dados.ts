@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { apiFetch } from "@/lib/api/client";
 
 /**
  * Os dados de /resultados: JSON estático em `public/resultados-2026/`, gerado
@@ -39,7 +40,9 @@ export type Resumo = {
 };
 
 export type VotoNaCidade = { candidato_sq: string; municipio_codigo: string; votos: number };
-export type DadosUf = { cidades: Linha[]; votos: VotoNaCidade[] };
+/** Candidato do Missão numa cidade: votos × o que a força do partido ali explicaria (a mais = votos − esperado). */
+export type ProprioNaCidade = { cand: string; municipio_codigo: string; votos: number; esperado: number };
+export type DadosUf = { cidades: Linha[]; votos: VotoNaCidade[]; proprio: ProprioNaCidade[] };
 export type Mapa = { largura: number; altura: number; paths: Record<string, string> };
 
 type Tabela = { colunas: string[]; linhas: (number | string | boolean | null)[][] };
@@ -78,8 +81,12 @@ export const carregarResumo = () => buscar<Resumo>("resumo.json");
 
 export const carregarUf = (uf: string) =>
   buscar<DadosUf>(`uf/${uf}.json`, (bruto) => {
-    const b = bruto as { cidades: Tabela; votos: Tabela };
-    return { cidades: deTabela<Linha>(b.cidades), votos: deTabela<VotoNaCidade>(b.votos) };
+    const b = bruto as { cidades: Tabela; votos: Tabela; proprio?: Tabela | null };
+    return {
+      cidades: deTabela<Linha>(b.cidades),
+      votos: deTabela<VotoNaCidade>(b.votos),
+      proprio: b.proprio ? deTabela<ProprioNaCidade>(b.proprio) : [],
+    };
   });
 
 export const carregarMapa = (nome: string) => buscar<Mapa>(`mapa/${nome}.json`);
@@ -99,7 +106,17 @@ export type VotoNoBairro = { b: number; cargo_key: string; p: number; votos: num
 export type QuedaNoBairro = { b: number; p: number; votos: number; votos_22: number; perda: number };
 /** Nome forte da direita no estado que vai mal num bairro mais à direita que o estado (calculado no export). */
 export type FracoNoBairro = { b: number; p: number; votos: number; forca: number };
-export type DadosBairros = { bairros: Linha[]; locais: Linha[]; candidatos: VotoNoBairro[]; quedas: QuedaNoBairro[]; fracos: FracoNoBairro[]; pessoas: Linha[] };
+/** Candidato do Missão num bairro × o esperado pela força do partido ali (régua = a cidade). */
+export type ProprioNoBairro = { b: number; p: number; votos: number; esperado: number };
+export type DadosBairros = {
+  bairros: Linha[];
+  locais: Linha[];
+  candidatos: VotoNoBairro[];
+  quedas: QuedaNoBairro[];
+  fracos: FracoNoBairro[];
+  proprio: ProprioNoBairro[];
+  pessoas: Linha[];
+};
 /** Bairros oficiais e distritos (`areas`, pela chave do bairro) sobre o fundo da sede; locais em x/y no mesmo desenho. */
 export type MapaBairros = { largura: number; altura: number; fundo: Record<string, string>; areas: Record<string, string> };
 
@@ -115,6 +132,7 @@ export const carregarBairros = (chave: string) =>
       candidatos: lista<VotoNoBairro>(b.candidatos),
       quedas: lista<QuedaNoBairro>(b.quedas),
       fracos: lista<FracoNoBairro>(b.fracos),
+      proprio: lista<ProprioNoBairro>(b.proprio),
       pessoas: lista<Linha>(b.pessoas),
     };
   });
@@ -179,3 +197,20 @@ export const t = (l: Linha | undefined, campo: string): string => {
   const v = l?.[campo];
   return v === undefined || v === null ? "" : String(v);
 };
+
+/* ---------- onde temos gente (painel) ---------- */
+
+/**
+ * Totais da base de pessoas por cidade e bairro (`/painel/api/gente.php`). Só
+ * abre para quem está logado no painel com a área Pessoas — a página é
+ * estática, então pergunta e mostra o estado: sem sessão, sem permissão ou os totais.
+ */
+export type GenteBairro = { bairro: string; total: number; porTipo: Record<string, number> };
+export type GenteCidade = { cidade: string; total: number; porTipo: Record<string, number>; bairros: GenteBairro[] };
+export type Gente = { autenticado: boolean; permitido: boolean; tipos?: Record<string, string>; cidades?: GenteCidade[] };
+
+export const carregarGente = () => apiFetch<Gente>("/gente.php");
+
+/** "Vicente Pinzón" e "VICENTE PINZON" são o mesmo lugar. */
+export const normalizar = (s: string) =>
+  s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toUpperCase().replace(/[^A-Z0-9]+/g, " ").replace(/^BAIRRO /, "").trim();

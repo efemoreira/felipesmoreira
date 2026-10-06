@@ -222,6 +222,7 @@ function Detalhe({ candidato: c, resumo }: { candidato: Linha; resumo: Resumo })
         )}
       </Secao>
 
+      {dados.dado && <MelhorDeFato candidato={c} proprio={dados.dado.proprio} cidades={dados.dado.cidades} />}
       {dados.dado && <PorBairro candidato={c} cidades={porCidade.filter((x) => temBairros(resumo, uf, x))} />}
     </>
   );
@@ -288,26 +289,27 @@ function PorBairro({ candidato: c, cidades }: { candidato: Linha; cidades: Linha
     const d = dados.dado;
     if (!d) return [];
     const ip = d.pessoas.findIndex((p) => String(p.id) === t(c, "candidato_sq"));
-    const pctUf = ip >= 0 ? n(d.pessoas[ip], "pct_uf") : NaN;
+    const proprio = new Map(d.proprio.filter((x) => x.p === ip).map((x) => [x.b, x]));
     const votos = new Map(d.candidatos.filter((x) => x.p === ip && x.cargo_key === cargo).map((x) => [x.b, x.votos]));
     return d.bairros.map((b, i) => {
-      const v = votos.get(i) ?? 0;
-      const p = v / n(b, `validos_${cargo}`);
+      const v = proprio.get(i)?.votos ?? votos.get(i) ?? 0;
+      const e = proprio.get(i)?.esperado ?? NaN;
       return {
         bairro: t(b, "bairro"),
         eleitorado: n(b, "eleitorado"),
         votos: v,
-        pct: p,
-        forca: p / pctUf,
-        renan: n(b, "missao_pres"),
-        do_renan: v / n(b, "missao_pres"),
+        pct: v / n(b, `validos_${cargo}`),
+        esperado: e,
+        a_mais: v - e,
+        forca: v / e,
+        forca_partido: n(b, "forca_partido"),
       } as Linha;
     });
   }, [dados.dado, c, cargo]);
 
   if (!opcoes.length) return null;
   return (
-    <Secao titulo="Por bairro" sub="Os votos do candidato em cada bairro da cidade escolhida. Força acima de 1 = mais forte ali do que no estado." explica="candidato-bairros">
+    <Secao titulo="Por bairro" sub="Os votos do candidato em cada bairro da cidade escolhida, contra o que a força do partido em cada bairro explicaria para ele (a régua é a própria cidade)." explica="melhor-de-fato">
       <Escolha rotulo="Cidade" valor={cod} opcoes={opcoes.map((x) => t(x, "municipio_codigo"))} aoMudar={setCodigo} nome={(k) => {
         const x = opcoes.find((o) => t(o, "municipio_codigo") === k);
         return `${t(x, "municipio_nome")} — ${num(n(x, "votos"))} votos`;
@@ -317,19 +319,80 @@ function PorBairro({ candidato: c, cidades }: { candidato: Linha; cidades: Linha
       ) : (
         <Tabela
           linhas={linhas}
-          ordem="votos"
+          ordem="a_mais"
           arquivo={`${t(c, "candidato_numero")}-bairros-${cod}`}
           colunas={[
             { chave: "bairro", rotulo: "Bairro", tipo: "txt" },
             { chave: "eleitorado", rotulo: "Eleitores" },
             { chave: "votos", rotulo: "Votos" },
             { chave: "pct", rotulo: "% no bairro", tipo: "pct" },
-            { chave: "forca", rotulo: "Força", tipo: "dec", ajuda: "% no bairro ÷ % no estado" },
-            { chave: "renan", rotulo: "Renan" },
-            { chave: "do_renan", rotulo: "Votos ÷ Renan", tipo: "barra", max: 1 },
+            { chave: "esperado", rotulo: "Esperado pelo partido" },
+            { chave: "a_mais", rotulo: "A mais (ou a menos)" },
+            { chave: "forca", rotulo: "Força própria", tipo: "dec", ajuda: "votos ÷ esperado" },
+            { chave: "forca_partido", rotulo: "Força do partido", tipo: "dec", ajuda: "1,00 = média da cidade" },
           ]}
         />
       )}
+    </Secao>
+  );
+}
+
+/**
+ * Onde o candidato é melhor DE FATO: as cidades onde ele teve mais votos acima do
+ * que a força do partido ali explicaria para ele. Mais votos não é o mesmo que
+ * melhor lugar — numa cidade onde todo o Missão vai bem, o mérito é do partido.
+ */
+function MelhorDeFato({ candidato: c, proprio, cidades }: { candidato: Linha; proprio: { cand: string; municipio_codigo: string; votos: number; esperado: number }[]; cidades: Linha[] }) {
+  const nomes = useMemo(() => new Map(cidades.map((x) => [String(x.municipio_codigo), x])), [cidades]);
+  const linhas = useMemo(
+    () =>
+      proprio
+        .filter((p) => String(p.cand) === t(c, "candidato_sq"))
+        .map((p) => {
+          const cid = nomes.get(String(p.municipio_codigo));
+          return {
+            cidade: titulo(t(cid, "municipio_nome")),
+            eleitorado: n(cid, "eleitorado"),
+            votos: p.votos,
+            esperado: p.esperado,
+            a_mais: p.votos - p.esperado,
+            forca: p.votos / p.esperado,
+            forca_partido: n(cid, "forca_partido"),
+            quadrante: t(cid, "quadrante"),
+          } as Linha;
+        }),
+    [proprio, c, nomes],
+  );
+  if (!linhas.length) return null;
+  const topo = [...linhas].sort((a, b) => n(b, "a_mais") - n(a, "a_mais"))[0];
+  const maisVotos = [...linhas].sort((a, b) => n(b, "votos") - n(a, "votos"))[0];
+  return (
+    <Secao titulo="Onde ele é melhor de fato" sub="Votos do candidato em cada cidade contra o que a força do partido ali explicaria para ele. Ordenado pelos votos a mais." explica="melhor-de-fato">
+      <Kpis
+        itens={[
+          { rotulo: "Melhor de fato", valor: t(topo, "cidade"), sub: `${num(n(topo, "a_mais"))} votos acima do partido (força própria ${num(n(topo, "forca"), 2)})`, missao: true },
+          {
+            rotulo: "Onde teve mais votos",
+            valor: t(maisVotos, "cidade"),
+            sub: `${num(n(maisVotos, "votos"))} votos · ${n(maisVotos, "a_mais") >= 0 ? `${num(n(maisVotos, "a_mais"))} acima` : `${num(-n(maisVotos, "a_mais"))} abaixo`} do esperado`,
+          },
+        ]}
+      />
+      <Tabela
+        linhas={linhas}
+        ordem="a_mais"
+        arquivo={`${t(c, "candidato_numero")}-melhor-de-fato`}
+        colunas={[
+          { chave: "cidade", rotulo: "Cidade", tipo: "txt" },
+          { chave: "eleitorado", rotulo: "Eleitores" },
+          { chave: "votos", rotulo: "Votos" },
+          { chave: "esperado", rotulo: "Esperado pelo partido" },
+          { chave: "a_mais", rotulo: "A mais (ou a menos)" },
+          { chave: "forca", rotulo: "Força própria", tipo: "dec", ajuda: "votos ÷ esperado" },
+          { chave: "forca_partido", rotulo: "Força do partido", tipo: "dec", ajuda: "1,00 = média do estado" },
+          { chave: "quadrante", rotulo: "Quadrante", tipo: "txt" },
+        ]}
+      />
     </Secao>
   );
 }
