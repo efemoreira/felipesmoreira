@@ -110,6 +110,12 @@ export const EXPLICACOES = {
     importa: "Se o mesmo número rende o mesmo resultado com nomes diferentes em estados diferentes — inclusive com estreantes, que não têm fama própria —, o voto é do número e do partido, não da pessoa. Isso muda como se escolhe quem fica com o 1414 e como se mede o desempenho de quem não fica.",
     cuidado: "É evidência, não prova. O partido pode ter dado o 1414 ao nome em que mais apostava, e o candidato do 1414 pode ter feito campanha do tipo 'é só repetir o 14'. A comparação com o Dep. Estadual (mesmo partido, mesmo Renan, números com 14) é o controle: lá o efeito não aparece.",
   },
+  movimento: {
+    deOnde: "Dados Abertos do TSE: as candidaturas de 2022 e 2024 (por outra legenda, antes de o Missão existir) e as de 2026, pela mesma pessoa; votos por seção somados por bairro e por cidade.",
+    mede: "Herança = correlação (de postos, entre os lugares) entre a fatia dele antes e a fatia da chapa do Missão em 2026 SEM os votos dele. Percentil = em quantos dos outros candidatos de Direita e Centro do mesmo cargo e ano a correlação foi menor (100% = nenhum teve a base tão alinhada ao Missão). Lift = fatia da chapa nos 10 lugares mais fortes dele ÷ no resto. Retenção = votos 2026 ÷ votos de antes. Canibalização = correlação, entre as cidades, da fatia dele com a dos outros candidatos do Missão no mesmo cargo.",
+    importa: "Mostra se a base que o movimento construiu antes do partido virou voto do Missão — e quem é peça para 2028. O controle com os outros candidatos da direita separa 'o bairro é de direita' de 'o bairro é dele'.",
+    cuidado: "Correlação não é causa: a base dele e o voto no Missão podem ter a mesma origem (o mesmo perfil de eleitor). Voto anulado sub judice conta aqui (é eleitor real que digitou o número), embora não tenha contado para o partido. Canibalização positiva quer dizer que ele e os outros do Missão sobem juntos nos mesmos lugares — não que disputaram o eleitor.",
+  },
   "candidato-bairros": {
     deOnde: "Dados Abertos do TSE: votação por seção somada por bairro.",
     mede: "Os votos do candidato em cada bairro da cidade escolhida, a fatia dele no bairro e a força (fatia no bairro ÷ fatia no estado).",

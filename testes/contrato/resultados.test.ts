@@ -133,6 +133,17 @@ describe("resultados: o export que a página lê", () => {
     assert.ok(resumo.candidatos.some((c: Record<string, unknown>) => typeof c.posicao_uf === "number"), "resumo.candidatos sem posicao_uf");
   });
 
+  test("movimento: trajetória, herança e futuro de quem era do movimento antes do partido", { skip: !temDados }, () => {
+    const m = resumo.movimento ?? [];
+    assert.ok(m.length >= 1, "resumo.movimento vazio");
+    for (const p of m) {
+      assert.ok(p.trajetoria.length >= 1 && p.herancaBairros && p.futuro && Array.isArray(p.bairros), `${p.nome}: bloco incompleto`);
+      for (const c of ["corr_chapa", "percentil_chapa", "ctrl_n"]) assert.ok(c in p.herancaBairros, `${p.nome}: herança sem ${c}`);
+      for (const c of ["qe_2028", "votos_na_cidade_antes"]) assert.ok(c in p.futuro, `${p.nome}: futuro sem ${c}`);
+      assert.ok(p.trajetoria.every((l: Record<string, number>) => l.votos > 0), `${p.nome}: candidatura com zero voto (anulado sub judice tem de contar)`);
+    }
+  });
+
   test("adversários: as colunas lidas", { skip: !ufs.length }, () => {
     const d: Record<string, Tabela> = ler(path.join(DADOS, "adversarios", `${ufs.includes("ce") ? "ce" : ufs[0]}.json`));
     const pessoas = ["id", "nome", "status", "orfao", "votos", "votos_22", "var_votos", "grupo_atual", "cargo_key", "cargo_key_22", "partido_sigla_22",

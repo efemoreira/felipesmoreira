@@ -41,6 +41,24 @@ export type Resumo = {
   partidosBrasil?: Linha[];
   /** o número fácil (1414…) contra o melhor dos outros do Missão, por UF e cargo */
   efeitoNumero?: Linha[];
+  /** candidatos do movimento antes do partido existir (2022, 2024): trajetória, herança e futuro */
+  movimento?: Movimento[];
+};
+
+export type Movimento = {
+  nome: string;
+  papel: string;
+  uf: string;
+  base: string;
+  sq_2026?: string;
+  ano_antes: number;
+  cargo_antes: string;
+  trajetoria: Linha[];
+  herancaBairros: Linha;
+  herancaCidades: Linha | null;
+  extra: Linha;
+  futuro: Linha;
+  bairros: Linha[];
 };
 
 /** `posicao`: lugar do candidato entre todos os do cargo na cidade; `total_cand`: quantos tiveram voto. */

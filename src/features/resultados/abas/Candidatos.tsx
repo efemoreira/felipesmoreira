@@ -28,7 +28,7 @@ export const COLUNAS_CANDIDATO: Coluna[] = [
 const CARGOS = ["Deputado Federal", "Deputado Estadual", "Deputado Distrital", "Senador", "Governador", "Presidente"];
 
 export default function Candidatos({ resumo }: { resumo: Resumo }) {
-  const [vista, setVista] = useState<"lista" | "numeros">("lista");
+  const [vista, setVista] = useState<"lista" | "numeros" | "movimento">("lista");
   const [cargo, setCargo] = useState("Deputado Federal");
   const [uf, setUf] = useState("todos");
   const [busca, setBusca] = useState("");
@@ -51,9 +51,16 @@ export default function Candidatos({ resumo }: { resumo: Resumo }) {
 
   return (
     <>
-      <Chips valor={vista} opcoes={["lista", "numeros"] as ("lista" | "numeros")[]} aoMudar={setVista} nome={(v) => (v === "lista" ? "Candidatos" : "O número faz diferença?")} />
+      <Chips
+        valor={vista}
+        opcoes={["lista", "movimento", "numeros"] as ("lista" | "numeros" | "movimento")[]}
+        aoMudar={setVista}
+        nome={(v) => (v === "lista" ? "Candidatos" : v === "movimento" ? "Movimento (antes do partido)" : "O número faz diferença?")}
+      />
       {vista === "numeros" ? (
         <Numeros resumo={resumo} />
+      ) : vista === "movimento" ? (
+        <MovimentoVista resumo={resumo} />
       ) : (
         <>
           <Filtros>
@@ -61,7 +68,7 @@ export default function Candidatos({ resumo }: { resumo: Resumo }) {
             <Escolha rotulo="Estado" valor={ufsDoCargo.includes(uf) ? uf : "todos"} opcoes={ufsDoCargo} aoMudar={setUf} nome={(u) => (u === "todos" ? "Todos os estados" : UF_NOMES[u])} />
             <Busca rotulo="Nome ou número" valor={busca} aoMudar={setBusca} dica="ex.: 1414 ou Kim" />
           </Filtros>
-          <Tabela linhas={lista} colunas={COLUNAS_CANDIDATO} ordem="votos" />
+          <Tabela linhas={lista} colunas={[...COLUNAS_CANDIDATO.slice(0, 5), colunaAntes(resumo), ...COLUNAS_CANDIDATO.slice(5)]} ordem="votos" />
           {escolhido && (
             <>
               <Filtros>
@@ -515,5 +522,180 @@ function EfeitoNumero({ linhas }: { linhas: Linha[] }) {
         ]}
       />
     </Secao>
+  );
+}
+
+/* ===== O movimento antes do partido ===== */
+
+const CARGO_TXT: Record<string, string> = { df: "Dep. Federal", de: "Dep. Estadual", ver: "Vereador", pref: "Prefeito", gov: "Governador", sen: "Senador" };
+
+/** Coluna da tabela principal: a candidatura de antes do Missão, para quem é do movimento. */
+function colunaAntes(resumo: Resumo): Coluna {
+  const porSq = new Map((resumo.movimento ?? []).filter((m) => m.sq_2026).map((m) => [String(m.sq_2026), m]));
+  return {
+    chave: "antes",
+    rotulo: "Antes do Missão",
+    tipo: "txt",
+    valor: (l) => {
+      const m = porSq.get(t(l, "candidato_sq"));
+      const a = m?.trajetoria.find((x) => n(x, "ano") === m.ano_antes);
+      return a ? `${CARGO_TXT[t(a, "cargo")] ?? t(a, "cargo")} ${t(a, "ano")} (${t(a, "partido")}): ${num(n(a, "votos"))}` : "";
+    },
+  };
+}
+
+const leCorr = (r: number) =>
+  !Number.isFinite(r) ? "—" : r >= 0.6 ? "forte" : r >= 0.3 ? "moderada" : r > -0.3 ? "fraca" : "inversa";
+
+function MovimentoVista({ resumo }: { resumo: Resumo }) {
+  const pessoas = resumo.movimento ?? [];
+  const [quem, setQuem] = useState(0);
+  if (!pessoas.length) return <Nota>O estudo do movimento sai junto com o recorte por bairro, que ainda não foi gerado.</Nota>;
+  const porSq = new Map(resumo.candidatos.map((c) => [String(c.candidato_sq), c]));
+  const resumoLinhas: Linha[] = pessoas.map((m) => {
+    const antes = m.trajetoria.find((x) => n(x, "ano") === m.ano_antes);
+    const c26 = m.sq_2026 ? porSq.get(String(m.sq_2026)) : undefined;
+    return {
+      nome: m.nome,
+      antes: antes ? `${CARGO_TXT[t(antes, "cargo")]} ${t(antes, "ano")} · ${t(antes, "partido")} · ${t(antes, "numero")}` : "",
+      votos_antes: n(antes, "votos"),
+      em2026: c26 ? `${t(c26, "cargo_nome")} · ${t(c26, "candidato_numero")} · ${t(c26, "situacao")}` : "Não concorreu",
+      votos_26: n(c26, "votos"),
+      proprio_26: n(c26, "voto_proprio"),
+      heranca: n(m.herancaBairros, "corr_chapa"),
+      percentil: n(m.herancaBairros, "percentil_chapa"),
+      futuro: n(m.futuro, "votos_na_cidade_antes") / n(m.futuro, "qe_2028"),
+    } as Linha;
+  });
+  const m = pessoas[quem] ?? pessoas[0];
+  const h = m.herancaBairros;
+  const hc = m.herancaCidades;
+  const f = m.futuro;
+  const x = m.extra;
+  const c26 = m.sq_2026 ? porSq.get(String(m.sq_2026)) : undefined;
+  const anulados = m.trajetoria.reduce((s2, l) => s2 + (n(l, "anulados") || 0), 0);
+  return (
+    <>
+      <Nota>
+        O Missão não existia em 2022 nem em 2024. Quem já era do movimento concorreu por outra legenda — e pode ter deixado base para o partido em 2026. Aqui
+        está, para cada um, a trajetória, se os lugares onde ele era forte antes votaram mais no Missão em 2026 (comparado com <b>todos os outros candidatos
+        de direita e centro</b> da mesma eleição, para separar “o bairro é de direita” de “o bairro é dele”) e o que os votos dele dizem para 2028.
+      </Nota>
+      <Secao titulo="O movimento: presente e futuro" sub="Antes do partido, em 2026 e para a próxima eleição na cidade-base." explica="movimento">
+        <Tabela
+          linhas={resumoLinhas}
+          ordem="votos_antes"
+          colunas={[
+            { chave: "nome", rotulo: "Nome", tipo: "txt" },
+            { chave: "antes", rotulo: "Antes do Missão", tipo: "txt" },
+            { chave: "votos_antes", rotulo: "Votos antes" },
+            { chave: "em2026", rotulo: "Em 2026", tipo: "txt" },
+            { chave: "votos_26", rotulo: "Votos 2026" },
+            { chave: "proprio_26", rotulo: "Próprios 2026", ajuda: "o que sobra depois de tirar o que o 14 explica" },
+            { chave: "heranca", rotulo: "Herança (bairros)", tipo: "dec", ajuda: "correlação da base de antes com a chapa do Missão 2026 sem ele" },
+            { chave: "percentil", rotulo: "Acima da direita", tipo: "pct", ajuda: "em quantos dos outros candidatos de direita e centro a herança foi menor" },
+            { chave: "futuro", rotulo: "Votos ÷ QE vereador 2028", tipo: "pct", ajuda: "os votos dele na cidade-base contra o quociente estimado" },
+          ]}
+        />
+      </Secao>
+
+      <Filtros>
+        <Escolha rotulo="Pessoa" valor={String(quem)} opcoes={pessoas.map((_, i) => String(i))} aoMudar={(v) => setQuem(Number(v))} nome={(i) => `${pessoas[Number(i)].nome} — ${pessoas[Number(i)].papel}`} />
+      </Filtros>
+
+      <Secao titulo={`${m.nome}: a trajetória`} sub={m.papel}>
+        <Tabela
+          linhas={m.trajetoria}
+          ordem="ano"
+          colunas={[
+            { chave: "ano", rotulo: "Ano", tipo: "txt", valor: (l) => String(l.ano ?? "") },
+            { chave: "cargo", rotulo: "Cargo", tipo: "txt", valor: (l) => CARGO_TXT[t(l, "cargo")] ?? t(l, "cargo") },
+            { chave: "numero", rotulo: "Número", tipo: "txt" },
+            { chave: "partido", rotulo: "Partido", tipo: "txt" },
+            { chave: "votos", rotulo: "Votos" },
+            { chave: "situacao", rotulo: "Situação", tipo: "txt" },
+          ]}
+        />
+        {anulados > 0 && (
+          <p style={{ fontSize: 14, margin: "8px 0 0" }}>
+            Os {num(anulados)} votos de {t(m.trajetoria[0], "ano")} foram <b>anulados sub judice</b> — a candidatura estava em julgamento no dia da eleição.
+            Não contaram para o partido, mas são eleitores reais que digitaram o número; para estudar a base, eles contam.
+          </p>
+        )}
+      </Secao>
+
+      <Secao titulo="Ajudou ou atrapalhou o Missão em 2026?" sub={`Nos bairros de ${t(f, "cidade")}${hc ? " e nas cidades do estado" : ""}: a base de antes contra a chapa do Missão em 2026 sem os votos dele.`} explica="movimento">
+        <Kpis
+          itens={[
+            {
+              rotulo: `Herança nos bairros de ${t(f, "cidade")}`,
+              valor: num(n(h, "corr_chapa"), 2),
+              sub: `${leCorr(n(h, "corr_chapa"))} · a direita em geral: ${num(n(h, "ctrl_chapa_mediana"), 2)} (${num(n(h, "ctrl_n"))} candidatos)`,
+              missao: true,
+            },
+            { rotulo: "Mais alinhado que", valor: pct(n(h, "percentil_chapa")), sub: "dos outros candidatos de direita e centro", missao: true },
+            { rotulo: "Chapa nos 10 bairros dele", valor: `${num(n(h, "lift_chapa"), 2)}×`, sub: "a fatia da chapa no resto da cidade" },
+            { rotulo: "Herança com o Renan", valor: num(n(h, "corr_renan"), 2), sub: `mais alinhado que ${pct(n(h, "percentil_renan"))} da direita` },
+            ...(hc
+              ? [{ rotulo: "Herança nas cidades do estado", valor: num(n(hc, "corr_chapa"), 2), sub: `mais alinhado que ${pct(n(hc, "percentil_chapa"))} da direita (${num(n(hc, "ctrl_n"))})`, missao: true }]
+              : []),
+          ]}
+        />
+        {c26 && (
+          <Kpis
+            itens={[
+              { rotulo: "Retenção", valor: pct(n(x, "retencao")), sub: `votos 2026 ÷ votos ${m.ano_antes} · base nos mesmos lugares: ${num(n(x, "corr_base"), 2)}` },
+              { rotulo: "Fatia do Missão 2026", valor: pct(n(x, "fatia_missao_2026")), sub: "do voto do partido no cargo, no estado" },
+              { rotulo: "Voto próprio 2026", valor: num(n(c26, "voto_proprio")), sub: `${pct(n(c26, "voto_proprio") / n(c26, "votos"))} dos votos dele; o resto acompanha o 14` },
+              {
+                rotulo: "Com os outros do Missão",
+                valor: num(n(x, "canibalizacao"), 2),
+                sub: n(x, "canibalizacao") >= 0.3 ? "sobem juntos nos mesmos lugares (não disputaram o eleitor)" : n(x, "canibalizacao") <= -0.3 ? "um sobe onde o outro cai: disputaram o eleitor" : "sem relação clara",
+              },
+            ]}
+          />
+        )}
+      </Secao>
+
+      <Secao titulo={`O futuro: vereador em ${t(f, "cidade")} em 2028`} sub="Os votos dele e os do Missão na cidade contra o quociente de vereador estimado para 2028." explica="vereador-2028">
+        <Kpis
+          itens={[
+            { rotulo: "QE vereador 2028 (estimado)", valor: num(n(f, "qe_2028")), sub: `2024: ${num(n(f, "qe_2024"))} · mínimo individual (10%): ${num(n(f, "qe_2028") * 0.1)}` },
+            {
+              rotulo: `Votos dele em ${t(f, "cidade")}`,
+              valor: num(n(f, "votos_na_cidade_antes")),
+              sub: `${pct(n(f, "votos_na_cidade_antes") / n(f, "qe_2028"))} do QE · ${pct(n(f, "votos_na_cidade_antes") / (n(f, "qe_2028") * 0.1))} do mínimo individual (em ${m.ano_antes})`,
+              missao: true,
+            },
+            { rotulo: "Renan na cidade em 2026", valor: num(n(f, "renan_cidade_2026")), sub: `${num(n(f, "renan_cidade_2026") / n(f, "qe_2028"), 2)} QE se fosse voto de chapa` },
+            { rotulo: "Chapa DF do Missão na cidade", valor: num(n(f, "chapa_df_cidade_2026")), sub: `${num(n(f, "chapa_df_cidade_2026") / n(f, "qe_2028"), 2)} QE · legenda ${num(n(f, "legenda_df_cidade_2026"))}` },
+            { rotulo: "Renan nos 10 bairros dele", valor: num(n(f, "renan_na_base")), sub: `${num(n(f, "a_converter_na_base"))} deles não votaram na chapa em 2026`, missao: true },
+          ]}
+        />
+      </Secao>
+
+      <Secao titulo={`A base dele em ${t(f, "cidade")}, bairro a bairro`} sub={`Votos de ${m.ano_antes} e o que o Missão fez em cada bairro em 2026 (situação do 14 com a régua da cidade).`} explica="decisao">
+        <Tabela
+          linhas={m.bairros}
+          ordem="votos_antes"
+          arquivo={`movimento-${m.nome.toLowerCase().replace(/\s+/g, "-")}`}
+          colunas={[
+            { chave: "bairro", rotulo: "Bairro", tipo: "txt" },
+            { chave: "eleitorado", rotulo: "Eleitores" },
+            { chave: "votos_antes", rotulo: `Votos dele ${m.ano_antes}` },
+            { chave: "fatia_antes", rotulo: "Fatia dele", tipo: "pct" },
+            { chave: "situacao", rotulo: "Situação do 14 (2026)", tipo: "txt" },
+            { chave: "missao_pres", rotulo: "Renan 2026" },
+            { chave: "a_converter", rotulo: "Renan sem voto na chapa" },
+            ...(c26
+              ? [
+                  { chave: "votos_26", rotulo: "Votos dele 2026" },
+                  { chave: "proprio", rotulo: "Próprios 2026", valor: (l: Linha) => n(l, "votos_26") - n(l, "puxado_26") },
+                ]
+              : []),
+          ]}
+        />
+      </Secao>
+    </>
   );
 }
