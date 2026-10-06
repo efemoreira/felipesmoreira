@@ -5,6 +5,8 @@ import { carregarBairros, carregarMapa, carregarUf, n, t, temBairros, useRecurso
 import { num, pct, titulo, UF_NOMES } from "../formato";
 import { BarrasQuociente, MapaCoropletico, Ranking } from "../graficos";
 import { Busca, Carregando, Chips, Escolha, Filtros, Kpis, Nota, Secao, Tabela, type Coluna } from "../pecas";
+import { NOMES_DO_MOVIMENTO } from "../movimento";
+import Movimento from "./Movimento";
 
 export const COLUNAS_CANDIDATO: Coluna[] = [
   { chave: "candidato_urna", rotulo: "Candidato", tipo: "txt" },
@@ -25,10 +27,13 @@ export const COLUNAS_CANDIDATO: Coluna[] = [
   { chave: "melhor_cidade", rotulo: "Mais votos em", tipo: "txt" },
 ];
 
+const VISTAS = { lista: "Candidatos", numeros: "O número faz diferença?", movimento: "Movimento: 2024 → 2028" } as const;
+type Vista = keyof typeof VISTAS;
+
 const CARGOS = ["Deputado Federal", "Deputado Estadual", "Deputado Distrital", "Senador", "Governador", "Presidente"];
 
 export default function Candidatos({ resumo }: { resumo: Resumo }) {
-  const [vista, setVista] = useState<"lista" | "numeros">("lista");
+  const [vista, setVista] = useState<Vista>("lista");
   const [cargo, setCargo] = useState("Deputado Federal");
   const [uf, setUf] = useState("todos");
   const [busca, setBusca] = useState("");
@@ -51,9 +56,11 @@ export default function Candidatos({ resumo }: { resumo: Resumo }) {
 
   return (
     <>
-      <Chips valor={vista} opcoes={["lista", "numeros"] as ("lista" | "numeros")[]} aoMudar={setVista} nome={(v) => (v === "lista" ? "Candidatos" : "O número faz diferença?")} />
+      <Chips valor={vista} opcoes={Object.keys(VISTAS) as Vista[]} aoMudar={setVista} nome={(v) => VISTAS[v]} />
       {vista === "numeros" ? (
         <Numeros resumo={resumo} />
+      ) : vista === "movimento" ? (
+        <Movimento resumo={resumo} />
       ) : (
         <>
           <Filtros>
@@ -76,6 +83,14 @@ export default function Candidatos({ resumo }: { resumo: Resumo }) {
                   }}
                 />
               </Filtros>
+              {NOMES_DO_MOVIMENTO.some((m) => m.sq2026 === t(escolhido, "candidato_sq")) && (
+                <Nota>
+                  Já disputava pelo movimento antes do Missão existir.{" "}
+                  <button type="button" onClick={() => setVista("movimento")} style={{ font: "inherit", fontWeight: 600, textDecoration: "underline", background: "none", border: 0, padding: "10px 0", minHeight: 44, cursor: "pointer", color: "inherit" }}>
+                    Ver a trajetória 2022 → 2028
+                  </button>
+                </Nota>
+              )}
               <Detalhe candidato={escolhido} resumo={resumo} />
             </>
           )}

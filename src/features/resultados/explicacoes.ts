@@ -241,6 +241,28 @@ export const EXPLICACOES = {
     mede: "Para que lado cada cidade pendia em 2022 e em 2026 (Presidente), e quanto andou.",
     importa: "Cidade que andou para a direita é cidade em disputa: é onde a mensagem do Missão encontra mais gente disposta a ouvir.",
   },
+
+  /* ===== movimento (antes do partido) ===== */
+  movimento: {
+    deOnde:
+      "2022 e 2026: Dados Abertos e Divulgação do TSE, a mesma pessoa pelo título de eleitor (o arquivo de adversários). 2024 de quem não concorreu em 2022 nem em 2026: o resultado do TSE daquela eleição, guardado em movimento.ts com a fonte.",
+    mede: "A trajetória de quem já disputava pelo movimento antes de o Missão existir: votos por ano e cargo, o peso de cada um no Missão de 2026 e quantas cadeiras o partido teria com e sem ele.",
+    importa: "Separa o voto que é da pessoa (e vai com ela para 2028) do voto que é do 14 (e fica com quem estiver no número).",
+    cuidado:
+      "“Com e sem ele” é conta de quociente, não previsão: o eleitor dele não iria inteiro para outro nome do Missão. Comparar estadual de 2022 com federal de 2026 mostra a mudança de cargo, não queda de mesmo cargo.",
+  },
+  "movimento-2028": {
+    deOnde: "Quociente de vereador de 2024 e estimativa de 2028 (o QE de 2024 corrigido pelo comparecimento de 2026), o mesmo da aba Município.",
+    mede: "Quanto o último resultado do nome cobre do mínimo individual (10% do QE) e quanto a chapa do Missão na cidade já cobre do quociente e da barreira das sobras (80%).",
+    importa: "Vereador só assume se a chapa fizer o quociente (ou 80% para as sobras) E ele tiver 10% do QE em voto próprio. As duas contas precisam fechar.",
+    cuidado: "O voto de deputado de 2026 dá a ordem de grandeza da chapa, não o resultado de vereador: em eleição municipal o voto é mais pessoal e mais disputado.",
+  },
+  "movimento-bairro": {
+    deOnde: `${SECAO} O voto do nome em 2022 ou 2024 é somado pelo mesmo bairro com o script scripts/votos-por-bairro.mjs (o local de votação casa pelo número da zona e do local).`,
+    mede: "Em cada bairro: o voto dele no ano anterior e o Missão de 2026 no mesmo bairro. A correlação diz se o Missão foi melhor justamente onde ele tinha voto.",
+    importa: "É o teste de “ele puxou voto para o Missão”: se a correlação se mantém mesmo descontando o Renan, o voto dele foi junto para o 14.",
+    cuidado: `Correlação não é causa: bairro de classe média vota no movimento e no Missão pelos mesmos motivos. ${MORA}`,
+  },
 } satisfies Record<string, Explicacao>;
 
 export type IdExplicacao = keyof typeof EXPLICACOES;

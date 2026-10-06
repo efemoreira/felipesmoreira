@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api/client";
+import type { VotosPorBairro } from "./movimento";
 
 /**
  * Os dados de /resultados: JSON estático em `public/resultados-2026/`, gerado
@@ -186,6 +187,11 @@ export const carregarAdversarios = (uf: string) =>
       cidades: lista<Linha>(b.cidades),
     };
   });
+
+/* ---------- movimento (antes do partido) ---------- */
+
+/** `movimento/<arquivo>.json`, saída de `scripts/votos-por-bairro.mjs`. Pode não existir: quem chama trata o erro como "ainda não gerado". */
+export const carregarVotosPorBairro = (arquivo: string) => buscar<VotosPorBairro>(`movimento/${arquivo}.json`);
 
 type Estado<T> = { dado: T | null; erro: string | null };
 
