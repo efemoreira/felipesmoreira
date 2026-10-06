@@ -1,6 +1,6 @@
 "use client";
 import React, { useMemo, useState } from "react";
-import { carregarAdversarios, carregarBairros, carregarMapa, carregarUf, n, t, useRecurso, type Linha, type Resumo } from "../dados";
+import { carregarAdversarios, carregarBairros, carregarMapa, carregarUf, n, t, temBairros, useRecurso, type Linha, type Resumo } from "../dados";
 import { num, pct, titulo, UF_IBGE } from "../formato";
 import { MapaCoropletico } from "../graficos";
 import { Carregando, Chips, Escolha, Filtros, Kpis, Nota, Secao, SeletorUf, Tabela } from "../pecas";
@@ -158,7 +158,7 @@ export default function Adversarios({ resumo, uf, setUf }: { resumo: Resumo; uf:
         />
       </Secao>
 
-      <Fracos uf={ufOk} cidades={cidades} />
+      <Fracos uf={ufOk} cidades={cidades.filter((c) => temBairros(resumo, ufOk, c))} />
 
       <Secao titulo="Partidos: 2022 → 2026" sub="Votos nominais no estado. Vereador 2024 = soma das cidades." explica="partidos-tempo">
         <Tabela

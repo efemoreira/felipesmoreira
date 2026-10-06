@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
 import { C } from "@/lib/theme";
-import { carregarBairros, carregarMapaBairros, carregarUf, n, t, useRecurso, type DadosBairros, type Linha, type MapaBairros as DadosMapa, type Resumo } from "../dados";
+import { carregarBairros, carregarMapaBairros, carregarUf, n, t, temBairros, useRecurso, type DadosBairros, type Linha, type MapaBairros as DadosMapa, type Resumo } from "../dados";
 import { compacto, num, pct, titulo } from "../formato";
 import { BarrasGrupos, MapaBairros, type PontoLocal } from "../graficos";
 import { Busca, Carregando, Chips, Escolha, Filtros, Kpis, Legenda, Nota, Secao, SeletorUf, Tabela } from "../pecas";
@@ -43,7 +43,9 @@ export default function Bairros({
   const disponiveis = resumo.bairrosUfs ?? [];
   const ufOk = disponiveis.includes(uf) ? uf : disponiveis[0] ?? uf;
   const dadosUf = useRecurso(ufOk, carregarUf);
-  const cidades = useMemo(() => dadosUf.dado?.cidades ?? [], [dadosUf.dado]);
+  /* só as cidades com recorte por bairro (todas no CE; nas outras UFs, as grandes) */
+  const cidades = useMemo(() => (dadosUf.dado?.cidades ?? []).filter((c) => temBairros(resumo, ufOk, c)), [dadosUf.dado, resumo, ufOk]);
+  const corte = resumo.bairrosCorte;
   const [busca, setBusca] = useState("");
   const [indicador, setIndicador] = useState<keyof typeof INDICADORES>("lado");
   const [codigo, chaveBairro] = rota;
@@ -85,6 +87,11 @@ export default function Bairros({
           <Escolha rotulo="Município" valor={codigo ?? ""} opcoes={Object.keys(nomes)} aoMudar={(c) => setRota([c])} nome={(c) => nomes[c] ?? c} />
         )}
       </Filtros>
+      {corte && !corte.ufsCompletas.includes(ufOk) && (
+        <p style={{ fontSize: 13.5, opacity: 0.8, margin: "0 0 8px" }}>
+          Neste estado, o recorte por bairro cobre as cidades a partir de {num(corte.minEleitores)} eleitores. As menores estão na aba Município.
+        </p>
+      )}
 
       {!cidade || !dados.dado ? (
         <Carregando erro={dadosUf.erro ?? dados.erro} />
@@ -159,7 +166,7 @@ function Cidade({
 
   const total = (c: string) => bairros.reduce((s, b) => s + (n(b, c) || 0), 0);
   const eleitores = total("eleitorado");
-  const deIbge = bairros.filter((b) => String(b.bairro_origem).startsWith("ibge")).reduce((s, b) => s + (n(b, "eleitorado") || 0), 0);
+  const deIbge = bairros.filter((b) => ["ibge", "ibge-nome", "distrito"].includes(String(b.bairro_origem))).reduce((s, b) => s + (n(b, "eleitorado") || 0), 0);
   const maisDireita = [...bairros].filter((b) => n(b, "eleitorado") >= 1000).sort((a, b) => n(b, "lado_pres") - n(a, "lado_pres"))[0];
   const maiorOport = [...bairros].sort((a, b) => n(b, "oportunidade") - n(a, "oportunidade"))[0];
 
@@ -182,7 +189,7 @@ function Cidade({
       <Secao titulo={`${nomeCidade} por bairro`} sub={`${num(bairros.length)} bairros e distritos · ${num(locais.length)} locais de votação`} explica="bairro-origem">
         <Kpis
           itens={[
-            { rotulo: "Eleitores", valor: num(eleitores), sub: `${pct(deIbge / eleitores)} em bairro oficial do IBGE` },
+            { rotulo: "Eleitores", valor: num(eleitores), sub: `${pct(deIbge / eleitores)} em bairro ou distrito oficial do IBGE` },
             { rotulo: "Pende para (cidade)", valor: ladoTexto(cidadeLado(bairros)), sub: `${pontos(cidadeLado(bairros))} · 2022: ${pontos(cidadeLado(bairros, "_22"))}` },
             maisDireita && { rotulo: "Mais à direita", valor: t(maisDireita, "bairro"), sub: `${pontos(n(maisDireita, "lado_rel_pres"))} em relação ao estado` },
             maiorOport && { rotulo: "Maior oportunidade", valor: t(maiorOport, "bairro"), sub: `${num(n(maiorOport, "oportunidade"))} votos`, missao: true },

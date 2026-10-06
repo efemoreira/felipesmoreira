@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
 import { DADO } from "@/lib/theme";
-import { carregarBairros, carregarMapa, carregarUf, n, t, useRecurso, type Linha, type Resumo } from "../dados";
+import { carregarBairros, carregarMapa, carregarUf, n, t, temBairros, useRecurso, type Linha, type Resumo } from "../dados";
 import { num, pct, titulo, UF_NOMES } from "../formato";
 import { BarrasQuociente, MapaCoropletico, Ranking } from "../graficos";
 import { Busca, Carregando, Chips, Escolha, Filtros, Kpis, Nota, Secao, Tabela, type Coluna } from "../pecas";
@@ -76,7 +76,7 @@ export default function Candidatos({ resumo }: { resumo: Resumo }) {
                   }}
                 />
               </Filtros>
-              <Detalhe candidato={escolhido} />
+              <Detalhe candidato={escolhido} resumo={resumo} />
             </>
           )}
         </>
@@ -85,7 +85,7 @@ export default function Candidatos({ resumo }: { resumo: Resumo }) {
   );
 }
 
-function Detalhe({ candidato: c }: { candidato: Linha }) {
+function Detalhe({ candidato: c, resumo }: { candidato: Linha; resumo: Resumo }) {
   const uf = t(c, "uf");
   const dados = useRecurso(uf, carregarUf);
   const mapa = useRecurso(uf, carregarMapa);
@@ -222,7 +222,7 @@ function Detalhe({ candidato: c }: { candidato: Linha }) {
         )}
       </Secao>
 
-      {dados.dado && <PorBairro candidato={c} cidades={porCidade} />}
+      {dados.dado && <PorBairro candidato={c} cidades={porCidade.filter((x) => temBairros(resumo, uf, x))} />}
     </>
   );
 }

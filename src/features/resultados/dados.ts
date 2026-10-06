@@ -28,6 +28,8 @@ export type Resumo = {
   fontes?: Fonte[];
   /** UFs que têm o recorte por bairro gerado */
   bairrosUfs?: string[];
+  /** quais cidades têm bairro: todas nas UFs completas; nas outras, só a partir de `minEleitores` */
+  bairrosCorte?: { ufsCompletas: string[]; minEleitores: number };
   brasil: Linha;
   ufs: Linha[];
   legendaPartidos: Linha[];
@@ -83,6 +85,14 @@ export const carregarUf = (uf: string) =>
 export const carregarMapa = (nome: string) => buscar<Mapa>(`mapa/${nome}.json`);
 
 /* ---------- bairros ---------- */
+
+/** A cidade tem `bairros/<uf>/<município>.json`? A mesma regra do export (`tem_bairros`). */
+export function temBairros(resumo: Resumo, uf: string, cidade: Linha | undefined): boolean {
+  if (!cidade || !resumo.bairrosUfs?.includes(uf)) return false;
+  const corte = resumo.bairrosCorte;
+  if (!corte) return true;
+  return corte.ufsCompletas.includes(uf) || n(cidade, "eleitorado") >= corte.minEleitores;
+}
 
 /** Candidato num bairro: `b` = índice em `bairros`, `p` = índice em `pessoas`. */
 export type VotoNoBairro = { b: number; cargo_key: string; p: number; votos: number };

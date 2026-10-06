@@ -18,7 +18,7 @@ import { EXPLICACOES } from "../../src/features/resultados/explicacoes.ts";
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const DADOS = path.join(RAIZ, "public/resultados-2026");
 const FEATURE = path.join(RAIZ, "src/features/resultados");
-const TETO_MB = 150;
+const TETO_MB = 80;
 
 type Tabela = { colunas: string[]; linhas: unknown[][] } | null;
 const ler = (p: string) => JSON.parse(readFileSync(p, "utf8"));
@@ -50,6 +50,25 @@ describe("resultados: o export que a página lê", () => {
   test("toda UF com bairro tem o arquivo de adversários e as fontes estão no resumo", { skip: !ufs.length }, () => {
     for (const uf of ufs) assert.ok(existsSync(path.join(DADOS, "adversarios", `${uf}.json`)), `falta adversarios/${uf}.json`);
     assert.ok(Array.isArray(resumo.fontes) && resumo.fontes.length > 0, "resumo.fontes vazio: a aba Sobre os dados fica sem as bases");
+  });
+
+  test("o recorte por bairro segue a regra do resumo (o site lista as cidades por ela)", { skip: !ufs.length }, () => {
+    const corte = resumo.bairrosCorte;
+    assert.ok(corte && Array.isArray(corte.ufsCompletas) && corte.minEleitores > 0, "resumo.bairrosCorte ausente");
+    for (const uf of ufs) {
+      const uff = ler(path.join(DADOS, "uf", `${uf}.json`)).cidades as { colunas: string[]; linhas: unknown[][] };
+      const ic = uff.colunas.indexOf("municipio_codigo");
+      const ie = uff.colunas.indexOf("eleitorado");
+      const pasta = path.join(DADOS, "bairros", uf);
+      const tem = new Set(existsSync(pasta) ? readdirSync(pasta).map((n) => n.replace(".json", "")) : []);
+      for (const l of uff.linhas) {
+        const deve = corte.ufsCompletas.includes(uf) || Number(l[ie]) >= corte.minEleitores;
+        const cod = String(l[ic]);
+        // cidade sem local de votação no cadastro pode faltar; o contrário (arquivo fora da regra) nunca
+        if (!deve) assert.ok(!tem.has(cod), `bairros/${uf}/${cod}.json existe fora da regra do corte`);
+      }
+      if (corte.ufsCompletas.includes(uf)) assert.ok(tem.size >= uff.linhas.length * 0.95, `${uf} deveria ter todas as cidades`);
+    }
   });
 
   test("os arquivos de cidade têm as colunas lidas e índices válidos", { skip: !ufs.length }, () => {
