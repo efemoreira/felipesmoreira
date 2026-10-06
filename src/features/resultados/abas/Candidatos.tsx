@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
 import { DADO } from "@/lib/theme";
-import { carregarBairros, carregarMapa, carregarUf, n, t, temBairros, useRecurso, type Linha, type Resumo } from "../dados";
+import { carregarBairros, carregarMapa, carregarUf, n, t, temBairros, useRecurso, type Linha, type ProprioNaCidade, type Resumo } from "../dados";
 import { num, pct, titulo, UF_NOMES } from "../formato";
 import { BarrasQuociente, MapaCoropletico, Ranking } from "../graficos";
 import { Busca, Carregando, Chips, Escolha, Filtros, Kpis, Nota, Secao, Tabela, type Coluna } from "../pecas";
@@ -223,7 +223,13 @@ function Detalhe({ candidato: c, resumo }: { candidato: Linha; resumo: Resumo })
       </Secao>
 
       {dados.dado && <MelhorDeFato candidato={c} proprio={dados.dado.proprio} cidades={dados.dado.cidades} />}
-      {dados.dado && <PorBairro candidato={c} cidades={porCidade.filter((x) => temBairros(resumo, uf, x))} />}
+      {dados.dado && (
+        <PorBairro
+          candidato={c}
+          cidades={porCidade.filter((x) => temBairros(resumo, uf, x))}
+          inicial={melhorCidadeComBairro(dados.dado.proprio, t(c, "candidato_sq"))}
+        />
+      )}
     </>
   );
 }
@@ -277,12 +283,13 @@ function Numeros({ resumo }: { resumo: Resumo }) {
 }
 
 /** A votação do candidato bairro a bairro, numa cidade escolhida (as com mais voto dele primeiro). */
-function PorBairro({ candidato: c, cidades }: { candidato: Linha; cidades: Linha[] }) {
+function PorBairro({ candidato: c, cidades, inicial }: { candidato: Linha; cidades: Linha[]; inicial?: string }) {
   const uf = t(c, "uf");
   const cargo = t(c, "cargo_key");
   const opcoes = useMemo(() => [...cidades].sort((a, b) => n(b, "votos") - n(a, "votos")).slice(0, 80), [cidades]);
   const [codigo, setCodigo] = useState("");
-  const cod = codigo || t(opcoes[0], "municipio_codigo");
+  // abre na melhor cidade de fato dele que tem bairro; sem ela, na de mais votos
+  const cod = codigo || (inicial && opcoes.some((o) => t(o, "municipio_codigo") === inicial) ? inicial : t(opcoes[0], "municipio_codigo"));
   const dados = useRecurso(cod ? `${uf}/${cod}` : null, carregarBairros);
 
   const linhas = useMemo(() => {
@@ -342,7 +349,7 @@ function PorBairro({ candidato: c, cidades }: { candidato: Linha; cidades: Linha
  * que a força do partido ali explicaria para ele. Mais votos não é o mesmo que
  * melhor lugar — numa cidade onde todo o Missão vai bem, o mérito é do partido.
  */
-function MelhorDeFato({ candidato: c, proprio, cidades }: { candidato: Linha; proprio: { cand: string; municipio_codigo: string; votos: number; esperado: number }[]; cidades: Linha[] }) {
+function MelhorDeFato({ candidato: c, proprio, cidades }: { candidato: Linha; proprio: ProprioNaCidade[]; cidades: Linha[] }) {
   const nomes = useMemo(() => new Map(cidades.map((x) => [String(x.municipio_codigo), x])), [cidades]);
   const linhas = useMemo(
     () =>
@@ -359,6 +366,10 @@ function MelhorDeFato({ candidato: c, proprio, cidades }: { candidato: Linha; pr
             forca: p.votos / p.esperado,
             forca_partido: n(cid, "forca_partido"),
             quadrante: t(cid, "quadrante"),
+            melhor_bairro: p.melhor_bairro ?? "",
+            mb_votos: p.mb_votos,
+            mb_esperado: p.mb_esperado,
+            mb_a_mais: (p.mb_votos ?? NaN) - (p.mb_esperado ?? NaN),
           } as Linha;
         }),
     [proprio, c, nomes],
@@ -371,6 +382,7 @@ function MelhorDeFato({ candidato: c, proprio, cidades }: { candidato: Linha; pr
       <Kpis
         itens={[
           { rotulo: "Melhor de fato", valor: t(topo, "cidade"), sub: `${num(n(topo, "a_mais"))} votos acima do partido (força própria ${num(n(topo, "forca"), 2)})`, missao: true },
+          bairroDe(topo),
           {
             rotulo: "Onde teve mais votos",
             valor: t(maisVotos, "cidade"),
@@ -390,9 +402,35 @@ function MelhorDeFato({ candidato: c, proprio, cidades }: { candidato: Linha; pr
           { chave: "a_mais", rotulo: "A mais (ou a menos)" },
           { chave: "forca", rotulo: "Força própria", tipo: "dec", ajuda: "votos ÷ esperado" },
           { chave: "forca_partido", rotulo: "Força do partido", tipo: "dec", ajuda: "1,00 = média do estado" },
+          { chave: "melhor_bairro", rotulo: "Melhor bairro de fato", tipo: "txt", valor: (l) => (t(l, "melhor_bairro") ? `${t(l, "melhor_bairro")} (+${num(n(l, "mb_a_mais"))})` : "") },
           { chave: "quadrante", rotulo: "Quadrante", tipo: "txt" },
         ]}
       />
+      <p style={{ fontSize: 13, opacity: 0.75, margin: "6px 0 0" }}>
+        Melhor bairro de fato: dentro da cidade, o bairro onde ele teve mais votos acima do que o partido explica ali (a régua é a própria cidade). Só existe nas
+        cidades com recorte por bairro; o bairro a bairro completo está logo abaixo, em “Por bairro”.
+      </p>
     </Secao>
   );
+}
+
+/** O destaque do melhor bairro na melhor cidade (ou por que não há). */
+function bairroDe(l: Linha) {
+  const cidade = t(l, "cidade");
+  if (!t(l, "melhor_bairro")) {
+    return { rotulo: `Melhor bairro em ${cidade}`, valor: "—", sub: "a cidade não tem recorte por bairro, ou ele não ficou acima do esperado em nenhum" };
+  }
+  return {
+    rotulo: `Melhor bairro em ${cidade}`,
+    valor: t(l, "melhor_bairro"),
+    sub: `${num(n(l, "mb_a_mais"))} votos acima do partido (${num(n(l, "mb_votos"))} contra ${num(n(l, "mb_esperado"))} esperados)`,
+    missao: true,
+  };
+}
+
+/** A cidade (com recorte por bairro) onde o candidato teve mais votos acima do esperado. */
+function melhorCidadeComBairro(proprio: ProprioNaCidade[], sq: string): string | undefined {
+  return proprio
+    .filter((p) => String(p.cand) === sq && p.melhor_bairro)
+    .sort((a, b) => b.votos - b.esperado - (a.votos - a.esperado))[0]?.municipio_codigo;
 }

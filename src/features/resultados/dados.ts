@@ -44,7 +44,16 @@ export type Resumo = {
 /** `posicao`: lugar do candidato entre todos os do cargo na cidade; `total_cand`: quantos tiveram voto. */
 export type VotoNaCidade = { candidato_sq: string; municipio_codigo: string; votos: number; posicao?: number; total_cand?: number };
 /** Candidato do Missão numa cidade: votos × o que a força do partido ali explicaria (a mais = votos − esperado). */
-export type ProprioNaCidade = { cand: string; municipio_codigo: string; votos: number; esperado: number };
+export type ProprioNaCidade = {
+  cand: string;
+  municipio_codigo: string;
+  votos: number;
+  esperado: number;
+  /** cidade com recorte por bairro: o bairro onde ele mais rendeu acima do esperado (régua = a cidade) */
+  melhor_bairro?: string;
+  mb_votos?: number;
+  mb_esperado?: number;
+};
 export type DadosUf = { cidades: Linha[]; votos: VotoNaCidade[]; proprio: ProprioNaCidade[] };
 export type Mapa = { largura: number; altura: number; paths: Record<string, string> };
 

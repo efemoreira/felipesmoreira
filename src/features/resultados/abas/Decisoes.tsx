@@ -109,7 +109,14 @@ export default function Decisoes({ resumo, uf, setUf }: { resumo: Resumo; uf: st
     if (modo === "cidades") {
       return (dadosUf.dado?.proprio ?? [])
         .filter((p) => String(p.municipio_codigo) === lugar.id)
-        .map((p) => ({ nome: nomeCand.get(String(p.cand)) ?? String(p.cand), votos: p.votos, esperado: p.esperado, a_mais: p.votos - p.esperado, forca: p.votos / p.esperado }) as Linha);
+        .map((p) => ({
+          nome: nomeCand.get(String(p.cand)) ?? String(p.cand),
+          votos: p.votos,
+          esperado: p.esperado,
+          a_mais: p.votos - p.esperado,
+          forca: p.votos / p.esperado,
+          melhor_bairro: p.melhor_bairro ? `${p.melhor_bairro} (+${num((p.mb_votos ?? 0) - (p.mb_esperado ?? 0))})` : "",
+        }) as Linha);
     }
     const d = bairros.dado;
     return (d?.proprio ?? [])
@@ -235,6 +242,7 @@ export default function Decisoes({ resumo, uf, setUf }: { resumo: Resumo; uf: st
                   { chave: "esperado", rotulo: "Esperado pelo partido" },
                   { chave: "a_mais", rotulo: "A mais (ou a menos)" },
                   { chave: "forca", rotulo: "Força própria", tipo: "dec", ajuda: "votos ÷ esperado: 2,00 = o dobro do que o partido explica" },
+                  ...(modo === "cidades" ? [{ chave: "melhor_bairro", rotulo: "Melhor bairro de fato", tipo: "txt" as const }] : []),
                 ]}
               />
             </Secao>

@@ -104,7 +104,9 @@ describe("resultados: o export que a página lê", () => {
   test("cidades: força do partido, quadrante e o esperado de cada candidato (aba Decisões)", { skip: !temDados }, () => {
     const d = ler(path.join(DADOS, "uf", "ce.json"));
     for (const c of ["forca_partido", "espaco", "quadrante", "melhor_nome", "melhor_a_mais"]) assert.ok(d.cidades.colunas.includes(c), `uf/ce.json: cidades sem ${c}`);
-    assert.ok(d.proprio && ["cand", "municipio_codigo", "votos", "esperado"].every((c: string) => d.proprio.colunas.includes(c)), "uf/ce.json sem a tabela proprio");
+    assert.ok(d.proprio && ["cand", "municipio_codigo", "votos", "esperado", "melhor_bairro", "mb_votos", "mb_esperado"].every((c: string) => d.proprio.colunas.includes(c)), "uf/ce.json sem a tabela proprio (com o melhor bairro)");
+    const im = d.proprio.colunas.indexOf("melhor_bairro");
+    assert.ok(d.proprio.linhas.some((l: unknown[]) => l[im]), "nenhum candidato com melhor bairro de fato no CE");
     const iq = d.cidades.colunas.indexOf("quadrante");
     const quadrantes = new Set(d.cidades.linhas.map((l: unknown[]) => l[iq]).filter(Boolean));
     for (const q of quadrantes) assert.ok(["Nutrir", "Crescer", "Atacar", "Esperar"].includes(q as string), `quadrante desconhecido: ${q}`);
