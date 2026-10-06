@@ -59,6 +59,9 @@ export type Movimento = {
   extra: Linha;
   futuro: Linha;
   bairros: Linha[];
+  /** quanto dos votos de antes dele os candidatos do Missão de 2026 pegaram, na cidade-base */
+  captura: Linha[];
+  capturaMeta: Linha;
 };
 
 /** `posicao`: lugar do candidato entre todos os do cargo na cidade; `total_cand`: quantos tiveram voto. */

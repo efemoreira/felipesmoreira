@@ -657,6 +657,50 @@ function MovimentoVista({ resumo }: { resumo: Resumo }) {
         )}
       </Secao>
 
+      {m.captura?.length > 0 && (
+        <Secao
+          titulo={`Quem pegou os votos de ${m.nome} em ${t(f, "cidade")}`}
+          sub={`Os ${num(n(m.capturaMeta, "votos_antes"))} votos dele de ${m.ano_antes} que caem em locais que existem em 2026 (${pct(n(m.capturaMeta, "casou"))} do total), contra os candidatos do Missão de 2026, local a local (${num(n(m.capturaMeta, "locais"))} locais).`}
+          explica="captura"
+        >
+          <Kpis
+            itens={[
+              {
+                rotulo: "Mais provável",
+                valor: t(m.captura[0], "nome"),
+                sub: `~${num(n(m.captura[0], "estimativa"))} votos (de ${num(n(m.captura[0], "estimativa_min"))} a ${num(n(m.captura[0], "estimativa_max"))})`,
+                missao: true,
+              },
+              {
+                rotulo: "Todos do Missão juntos",
+                valor: `~${num(Math.min(n(m.capturaMeta, "votos_antes"), m.captura.reduce((s2, l) => s2 + (n(l, "estimativa") || 0), 0)))}`,
+                sub: `de ${num(n(m.capturaMeta, "votos_antes"))} votos dele (soma das estimativas, limitada ao total)`,
+                missao: true,
+              },
+              {
+                rotulo: "O Renan onde ele tinha voto",
+                valor: num(n(m.capturaMeta, "coef_renan"), 2),
+                sub: "votos do Renan a mais para cada voto dele, no mesmo local (descontado o tamanho do local)",
+              },
+            ]}
+          />
+          <Tabela
+            linhas={m.captura}
+            ordem="estimativa"
+            colunas={[
+              { chave: "nome", rotulo: "Candidato 2026", tipo: "txt" },
+              { chave: "numero", rotulo: "Número", tipo: "txt" },
+              { chave: "cargo", rotulo: "Cargo", tipo: "txt", valor: (l) => CARGO_TXT[t(l, "cargo")] ?? t(l, "cargo") },
+              { chave: "votos_cidade", rotulo: `Votos em ${t(f, "cidade")}` },
+              { chave: "estimativa", rotulo: "Votos dele que pegou (estim.)" },
+              { chave: "faixa", rotulo: "Faixa de 95%", tipo: "txt", valor: (l) => `${num(n(l, "estimativa_min"))} a ${num(n(l, "estimativa_max"))}` },
+              { chave: "teto", rotulo: "No máximo", ajuda: "soma, local a local, do menor entre os votos dele antes e os do candidato" },
+              { chave: "coef", rotulo: "Por voto dele", tipo: "dec", ajuda: "votos do candidato a mais para cada voto dele no mesmo local, controlando pelo Renan" },
+            ]}
+          />
+        </Secao>
+      )}
+
       <Secao titulo={`O futuro: vereador em ${t(f, "cidade")} em 2028`} sub="Os votos dele e os do Missão na cidade contra o quociente de vereador estimado para 2028." explica="vereador-2028">
         <Kpis
           itens={[

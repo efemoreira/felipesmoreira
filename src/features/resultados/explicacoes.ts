@@ -116,6 +116,12 @@ export const EXPLICACOES = {
     importa: "Mostra se a base que o movimento construiu antes do partido virou voto do Missão — e quem é peça para 2028. O controle com os outros candidatos da direita separa 'o bairro é de direita' de 'o bairro é dele'.",
     cuidado: "Correlação não é causa: a base dele e o voto no Missão podem ter a mesma origem (o mesmo perfil de eleitor). Voto anulado sub judice conta aqui (é eleitor real que digitou o número), embora não tenha contado para o partido. Canibalização positiva quer dizer que ele e os outros do Missão sobem juntos nos mesmos lugares — não que disputaram o eleitor.",
   },
+  captura: {
+    deOnde: "Votos dele na eleição de antes e votos de cada candidato do Missão em 2026, local de votação por local de votação na cidade-base (Dados Abertos do TSE). O local casa entre os anos pelo número, dentro da zona.",
+    mede: "Teto = soma, em todos os locais, do menor entre os votos dele antes e os do candidato em 2026: o máximo que o candidato pode ter herdado. Estimativa = regressão, entre os locais, dos votos do candidato em 2026 contra os votos dele antes, controlando pelos votos do Renan: o coeficiente é quantos votos do candidato acompanham cada voto dele, e a estimativa é esse coeficiente × os votos dele. A faixa é a margem de 95%.",
+    importa: "Mostra para quem foi, provavelmente, o eleitor que ele trouxe antes do partido existir — e quanto ficou sem dono.",
+    cuidado: "O voto é secreto: é uma estimativa ecológica, não um rastreio de eleitor. Ela mede o quanto o voto do candidato sobe onde ele tinha voto, além do que o 14 (Renan) já explica; parte disso pode ser o mesmo perfil de eleitor, e não o mesmo eleitor. As estimativas de candidatos diferentes não precisam somar o total.",
+  },
   "candidato-bairros": {
     deOnde: "Dados Abertos do TSE: votação por seção somada por bairro.",
     mede: "Os votos do candidato em cada bairro da cidade escolhida, a fatia dele no bairro e a força (fatia no bairro ÷ fatia no estado).",

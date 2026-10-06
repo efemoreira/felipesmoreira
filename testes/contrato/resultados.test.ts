@@ -141,6 +141,10 @@ describe("resultados: o export que a página lê", () => {
       for (const c of ["corr_chapa", "percentil_chapa", "ctrl_n"]) assert.ok(c in p.herancaBairros, `${p.nome}: herança sem ${c}`);
       for (const c of ["qe_2028", "votos_na_cidade_antes"]) assert.ok(c in p.futuro, `${p.nome}: futuro sem ${c}`);
       assert.ok(p.trajetoria.every((l: Record<string, number>) => l.votos > 0), `${p.nome}: candidatura com zero voto (anulado sub judice tem de contar)`);
+      for (const c of p.captura ?? []) {
+        assert.ok(c.estimativa_min <= c.estimativa && c.estimativa <= c.estimativa_max, `${p.nome} → ${c.nome}: estimativa fora da faixa`);
+        assert.ok(c.estimativa <= p.capturaMeta.votos_antes, `${p.nome} → ${c.nome}: estimou mais votos do que ele teve`);
+      }
     }
   });
 
