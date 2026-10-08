@@ -1,10 +1,11 @@
 "use client";
 import React, { useMemo, useState } from "react";
-import { carregarUf, n, t, useRecurso, type Resumo } from "../dados";
+import { carregarUf, n, t, useRecurso, type Linha, type Resumo } from "../dados";
 import { num, titulo, UF_NOMES } from "../formato";
 import { BarrasQuociente } from "../graficos";
 import { Carregando, Chips, Filtros, Kpis, Nota, Secao, SeletorUf, Tabela } from "../pecas";
 import { PORTES } from "../apoio";
+import { chapaVereador } from "../chapa";
 
 type Cargo = "df" | "de";
 const SITUACOES = ["Missão já faria vereador", "Missão perto (80% do QE)", "Só com os votos do Renan", "Abaixo do quociente"];
@@ -21,7 +22,13 @@ export default function Cadeiras({ resumo, uf, setUf }: { resumo: Resumo; uf: st
   const ufs = resumo.ufs.filter((u) => u.uf !== "zz" && n(u, `qe_${cargo}`) > 0);
 
   const cidades = useMemo(
-    () => (dados.dado?.cidades ?? []).filter((c) => n(c, "qe_ver_2028_est") > 0 && (porte === "Todos" || c.porte === porte)),
+    () =>
+      (dados.dado?.cidades ?? [])
+        .filter((c) => n(c, "qe_ver_2028_est") > 0 && (porte === "Todos" || c.porte === porte))
+        .map((c) => {
+          const chapa = chapaVereador(n(c, "vagas_ver"));
+          return { ...c, candidaturas_ver: chapa.candidaturas, mulheres_ver: chapa.mulheres } as Linha;
+        }),
     [dados.dado, porte],
   );
 
@@ -97,6 +104,11 @@ export default function Cadeiras({ resumo, uf, setUf }: { resumo: Resumo; uf: st
               <Kpis
                 itens={[
                   { rotulo: "Cadeiras de vereador", valor: num(cidades.reduce((s, c) => s + (n(c, "vagas_ver") || 0), 0)), sub: `${num(cidades.length)} cidades` },
+                  {
+                    rotulo: "Candidaturas por partido",
+                    valor: num(cidades.reduce((s, c) => s + (n(c, "candidaturas_ver") || 0), 0)),
+                    sub: `mínimo de ${num(cidades.reduce((s, c) => s + (n(c, "mulheres_ver") || 0), 0))} mulheres (30%) para ter chapa cheia em todas`,
+                  },
                   ...SITUACOES.slice(0, 2).map((s) => ({ rotulo: s, valor: num(cidades.filter((c) => c.situacao_vereador === s).length), missao: true })),
                   {
                     rotulo: "Votos do Renan fariam vereador",
@@ -122,7 +134,7 @@ export default function Cadeiras({ resumo, uf, setUf }: { resumo: Resumo; uf: st
                     }))}
                 />
               </Secao>
-              <Secao titulo="Tabela de cidades">
+              <Secao titulo="Tabela de cidades" explica="chapa-vereador" sub="Candidaturas = o que cada partido pode registrar (vagas + 1); mulheres = o mínimo de 30% dessa chapa.">
                 <Tabela
                   linhas={cidades}
                   ordem="qe_atingidos_ver"
@@ -131,6 +143,8 @@ export default function Cadeiras({ resumo, uf, setUf }: { resumo: Resumo; uf: st
                     { chave: "porte", rotulo: "Porte", tipo: "txt" },
                     { chave: "eleitorado", rotulo: "Eleitorado" },
                     { chave: "vagas_ver", rotulo: "Vagas" },
+                    { chave: "candidaturas_ver", rotulo: "Candidaturas" },
+                    { chave: "mulheres_ver", rotulo: "Mín. mulheres" },
                     { chave: "qe_ver_2024", rotulo: "QE 2024" },
                     { chave: "qe_ver_2028_est", rotulo: "QE 2028 (est.)" },
                     { chave: "eleitores_por_vereador", rotulo: "Eleitores/vaga" },
@@ -159,6 +173,10 @@ export default function Cadeiras({ resumo, uf, setUf }: { resumo: Resumo; uf: st
           <p style={{ margin: 0 }}>
             <b>Vereador 2028:</b> o QE de 2024 de cada cidade, ajustado pela variação do comparecimento até 2026. A comparação usa a melhor votação do Missão para
             deputado em 2026 como sinal de força local. É estimativa para planejar, não previsão de resultado.
+          </p>
+          <p style={{ margin: "8px 0 0" }}>
+            <b>Chapa de vereador:</b> cada partido registra até vagas + 1 candidatos, com no mínimo 30% de cada sexo (fração arredonda para cima). Numa
+            Câmara de 9 vagas, são 10 candidaturas e pelo menos 3 mulheres; numa de 15, 16 candidaturas e 5 mulheres.
           </p>
         </Nota>
       )}

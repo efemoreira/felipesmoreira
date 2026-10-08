@@ -73,6 +73,12 @@ export const EXPLICACOES = {
     importa: "2028 é eleição de vereador. Cidade onde o Missão já passa do quociente é cidade para montar chapa.",
     cuidado: "É estimativa: o QE real depende de quantos votarem em 2028 e do número de vagas, que pode mudar.",
   },
+  "chapa-vereador": {
+    deOnde: "Número de vagas da Câmara Municipal na eleição de 2024 (TSE). As regras são da Lei 9.504/97, art. 10, com a redação da Lei 14.211/2021.",
+    mede: "Candidaturas = quantos nomes cada partido pode registrar para vereador: vagas + 1. Mínimo de mulheres = 30% dessas candidaturas, com a fração arredondada para cima.",
+    importa: "É o tamanho da chapa a montar em 2028 em cada cidade, e quantas mulheres ela precisa ter. Sem os 30% de cada sexo, a chapa inteira pode ser indeferida.",
+    cuidado: "Os 30% valem para cada sexo e são contados sobre as candidaturas de fato registradas: chapa menor pede menos mulheres, mas nunca menos de 30%. As vagas são as de 2024 — a Câmara pode mudar o número até a eleição.",
+  },
   "cadeiras-tres": {
     deOnde: `${DIVULGACAO} Eleitos pela lista oficial do TSE; quociente de vereador pela eleição de 2024.`,
     mede: "Fez = eleitos. Pelo quociente = votos do Missão ÷ QE, contando só cadeiras inteiras (sem a distribuição das sobras). Com o Renan = a mesma conta se todos os votos dele tivessem ido para o 14. Vereador 2028 = quantas cadeiras os votos de 2026 fariam em cada cidade, somadas.",

@@ -4,6 +4,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { EXPLICACOES } from "../../src/features/resultados/explicacoes.ts";
+import { chapaVereador } from "../../src/features/resultados/chapa.ts";
 
 /**
  * /resultados lê JSON gerado FORA deste repositório (o projeto de análise do
@@ -178,5 +179,21 @@ describe("resultados: explicações", () => {
     for (const [id, e] of Object.entries(EXPLICACOES)) {
       for (const campo of ["deOnde", "mede", "importa"] as const) assert.ok(e[campo]?.length > 20, `${id}: ${campo} vazio ou curto demais`);
     }
+  });
+});
+
+describe("resultados: chapa de vereador (Lei 9.504, art. 10)", () => {
+  test("vagas + 1 candidaturas e 30% de mulheres, arredondado para cima", () => {
+    assert.deepEqual(chapaVereador(9), { candidaturas: 10, mulheres: 3 });
+    assert.deepEqual(chapaVereador(11), { candidaturas: 12, mulheres: 4 });
+    assert.deepEqual(chapaVereador(15), { candidaturas: 16, mulheres: 5 });
+    assert.deepEqual(chapaVereador(19), { candidaturas: 20, mulheres: 6 });
+    assert.deepEqual(chapaVereador(43), { candidaturas: 44, mulheres: 14 });
+    assert.deepEqual(chapaVereador(55), { candidaturas: 56, mulheres: 17 });
+  });
+
+  test("sem vagas, sem chapa", () => {
+    assert.ok(Number.isNaN(chapaVereador(NaN).candidaturas));
+    assert.ok(Number.isNaN(chapaVereador(0).mulheres));
   });
 });

@@ -6,6 +6,7 @@ import { num, pct, titulo } from "../formato";
 import { BarrasGrupos, BarrasQuociente } from "../graficos";
 import { Busca, Carregando, Escolha, Filtros, Kpis, Legenda, Secao, SeletorUf, Tabela } from "../pecas";
 import { GRUPOS, linhasGrupos, pctDe } from "../apoio";
+import { chapaVereador } from "../chapa";
 
 export default function Municipio({ resumo, uf, setUf }: { resumo: Resumo; uf: string; setUf: (u: string) => void }) {
   const opcoes = resumo.ufs.map((u) => String(u.uf)).filter((u) => u !== "zz");
@@ -27,6 +28,7 @@ export default function Municipio({ resumo, uf, setUf }: { resumo: Resumo; uf: s
 
   const cidade = cidades.find((c) => c.municipio_codigo === codigo);
   const nomes = Object.fromEntries(filtradas.map((c) => [String(c.municipio_codigo), titulo(t(c, "municipio_nome"))]));
+  const chapa = chapaVereador(n(cidade, "vagas_ver"));
   const cargoDe = (c: string) => (uf === "df" && c === "Deputado Estadual" ? "Deputado Distrital" : c);
 
   const candidatosNaCidade = useMemo(() => {
@@ -111,6 +113,18 @@ export default function Municipio({ resumo, uf, setUf }: { resumo: Resumo; uf: s
                 return ["df", "de"].includes(cargo) ? [{ nome: t(c, "candidato_urna"), cargo_key: cargo, votos: v.votos, posicao: v.posicao ?? NaN, total: v.total_cand ?? NaN }] : [];
               })}
           />
+
+          {chapa.candidaturas > 0 && (
+            <Secao explica="chapa-vereador" titulo="Chapa de vereador em 2028" sub="O que cada partido pode registrar na cidade, pelas vagas de 2024.">
+              <Kpis
+                itens={[
+                  { rotulo: "Vagas na Câmara", valor: num(n(cidade, "vagas_ver")) },
+                  { rotulo: "Candidaturas por partido", valor: num(chapa.candidaturas), sub: "vagas + 1" },
+                  { rotulo: "Mínimo de mulheres", valor: num(chapa.mulheres), sub: `30% de ${num(chapa.candidaturas)}, arredondado para cima`, missao: true },
+                ]}
+              />
+            </Secao>
+          )}
 
           {n(cidade, "qe_ver_2028_est") > 0 && (
             <Secao explica="vereador-2028" titulo="Vereador" sub="Vagas e quociente da eleição de 2024; o QE de 2028 é estimado pela variação do comparecimento até 2026.">
