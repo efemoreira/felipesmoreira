@@ -7,19 +7,19 @@ import type { Linha } from "./dados";
  * regiões somadas = Brasil).
  */
 export const REGIOES = [
-  ["ne", "Nordeste", ["al", "ba", "ce", "ma", "pb", "pe", "pi", "rn", "se"]],
-  ["no", "Norte", ["ac", "am", "ap", "pa", "ro", "rr", "to"]],
-  ["co", "Centro-Oeste", ["df", "go", "ms", "mt"]],
-  ["se", "Sudeste", ["es", "mg", "rj", "sp"]],
-  ["su", "Sul", ["pr", "rs", "sc"]],
-  ["ex", "Exterior", ["zz"]],
+  ["nordeste", "Nordeste", ["al", "ba", "ce", "ma", "pb", "pe", "pi", "rn", "se"]],
+  ["norte", "Norte", ["ac", "am", "ap", "pa", "ro", "rr", "to"]],
+  ["centro-oeste", "Centro-Oeste", ["df", "go", "ms", "mt"]],
+  ["sudeste", "Sudeste", ["es", "mg", "rj", "sp"]],
+  ["sul", "Sul", ["pr", "rs", "sc"]],
+  ["exterior", "Exterior", ["zz"]],
 ] as const satisfies readonly (readonly [string, string, readonly string[]])[];
 
 export type Regiao = (typeof REGIOES)[number][0];
 
 export const NOME_REGIAO = Object.fromEntries(REGIOES.map(([k, nome]) => [k, nome])) as Record<Regiao, string>;
 
-export const regiaoDe = (uf: string): Regiao => (REGIOES.find(([, , ufs]) => (ufs as readonly string[]).includes(uf))?.[0] ?? "ne") as Regiao;
+export const regiaoDe = (uf: string): Regiao => (REGIOES.find(([, , ufs]) => (ufs as readonly string[]).includes(uf))?.[0] ?? "nordeste") as Regiao;
 
 /**
  * Colunas que não se somam: dependem das vagas de cada estado (quociente,
