@@ -6,6 +6,7 @@ import { C, FONT_ALFA, FONT_BITTER, FONT_ELITE, HATCH, borda, sombra } from "@/l
 import { carregarResumo, useRecurso } from "./dados";
 import { Carregando, kicker } from "./pecas";
 import Brasil from "./abas/Brasil";
+import Regiao from "./abas/Regiao";
 import Estado from "./abas/Estado";
 import Municipio from "./abas/Municipio";
 import Conversao from "./abas/Conversao";
@@ -29,6 +30,7 @@ import Partidos from "./abas/Partidos";
 
 const ABAS = [
   ["brasil", "Brasil"],
+  ["regiao", "Região"],
   ["estado", "Estado"],
   ["municipio", "Município"],
   ["bairros", "Bairros"],
@@ -156,6 +158,7 @@ export default function ResultadosClient() {
         ) : (
           <main>
             {aba === "brasil" && <Brasil resumo={r} />}
+            {aba === "regiao" && <Regiao resumo={r} uf={uf} abrirUf={(u) => { setUfEstado(u); ir("estado", u); }} />}
             {aba === "estado" && <Estado resumo={r} uf={uf === "zz" ? "ce" : uf} setUf={setUf} />}
             {aba === "municipio" && <Municipio resumo={r} uf={uf} setUf={setUf} />}
             {aba === "conversao" && <Conversao resumo={r} uf={uf} setUf={setUf} />}

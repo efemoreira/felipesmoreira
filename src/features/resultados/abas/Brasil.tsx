@@ -4,8 +4,25 @@ import React, { useMemo, useState } from "react";
 import { carregarMapa, n, useRecurso, type Resumo } from "../dados";
 import { compacto, num, pct, UF_IBGE, UF_NOMES } from "../formato";
 import { BarrasGrupos, MapaCoropletico, Ranking } from "../graficos";
-import { Chips, Kpis, Legenda, Secao, Tabela } from "../pecas";
+import { Chips, Kpis, Legenda, Secao, Tabela, type Coluna } from "../pecas";
 import { GRUPOS, INDICADORES, linhasGrupos, pctDe } from "../apoio";
+
+export const COLUNAS_UF: Coluna[] = [
+  { chave: "estado", rotulo: "Estado", tipo: "txt" },
+  { chave: "eleitorado", rotulo: "Eleitorado" },
+  { chave: "pct_comparecimento", rotulo: "Comparec.", tipo: "pct" },
+  { chave: "missao_pres", rotulo: "Renan" },
+  { chave: "pct_missao_pres", rotulo: "Renan %", tipo: "pct" },
+  { chave: "missao_df", rotulo: "Missão DF" },
+  { chave: "pct_missao_df", rotulo: "DF %", tipo: "pct" },
+  { chave: "missao_de", rotulo: "Missão DE" },
+  { chave: "pct_missao_de", rotulo: "DE %", tipo: "pct" },
+  { chave: "aproveitamento_df", rotulo: "Aproveit. DF", tipo: "barra", max: 1 },
+  { chave: "vagas_df", rotulo: "Vagas DF" },
+  { chave: "qe_df", rotulo: "QE DF" },
+  { chave: "qe_atingidos_df", rotulo: "QE atingidos DF", tipo: "dec" },
+  { chave: "eleitos_df", rotulo: "Eleitos DF" },
+];
 
 export default function Brasil({ resumo }: { resumo: Resumo }) {
   const br = resumo.brasil;
@@ -73,22 +90,7 @@ export default function Brasil({ resumo }: { resumo: Resumo }) {
         <Tabela
           linhas={resumo.ufs.map((u) => ({ ...u, estado: UF_NOMES[String(u.uf)] }))}
           ordem="eleitorado"
-          colunas={[
-            { chave: "estado", rotulo: "Estado", tipo: "txt" },
-            { chave: "eleitorado", rotulo: "Eleitorado" },
-            { chave: "pct_comparecimento", rotulo: "Comparec.", tipo: "pct" },
-            { chave: "missao_pres", rotulo: "Renan" },
-            { chave: "pct_missao_pres", rotulo: "Renan %", tipo: "pct" },
-            { chave: "missao_df", rotulo: "Missão DF" },
-            { chave: "pct_missao_df", rotulo: "DF %", tipo: "pct" },
-            { chave: "missao_de", rotulo: "Missão DE" },
-            { chave: "pct_missao_de", rotulo: "DE %", tipo: "pct" },
-            { chave: "aproveitamento_df", rotulo: "Aproveit. DF", tipo: "barra", max: 1 },
-            { chave: "vagas_df", rotulo: "Vagas DF" },
-            { chave: "qe_df", rotulo: "QE DF" },
-            { chave: "qe_atingidos_df", rotulo: "QE atingidos DF", tipo: "dec" },
-            { chave: "eleitos_df", rotulo: "Eleitos DF" },
-          ]}
+          colunas={COLUNAS_UF}
         />
         <p style={{ fontSize: 13, opacity: 0.75 }}>QE = quociente eleitoral, os votos que custam uma cadeira.</p>
       </Secao>

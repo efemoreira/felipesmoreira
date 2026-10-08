@@ -45,6 +45,12 @@ export const EXPLICACOES = {
     importa: "Mostra de relance onde o Missão já é forte e onde está ausente.",
     cuidado: "Área grande no mapa não é muito eleitor. Confira sempre o total na tabela.",
   },
+  regioes: {
+    deOnde: `${DIVULGACAO} A região não vem pronta: é a soma dos estados dela (regiões do IBGE; o Distrito Federal fica no Centro-Oeste e o voto do exterior aparece à parte).`,
+    mede: "Os mesmos números do Brasil e do estado, somados por região, com os percentuais refeitos sobre a soma.",
+    importa: "Mostra em que parte do país o Missão já pegou e onde ainda falta, antes de descer para cada estado.",
+    cuidado: "Quociente e cadeira são por estado: na região, as cadeiras são a soma das de cada estado, e não existe um QE da região.",
+  },
   "cadeiras-qe": {
     deOnde: `${DIVULGACAO} Vagas e quociente vêm do próprio TSE.`,
     mede: "Quociente eleitoral (QE) = votos válidos ÷ vagas. É quanto custa uma cadeira. O partido precisa de 80% do QE para disputar as sobras; o candidato, de 10% do QE em voto nominal.",

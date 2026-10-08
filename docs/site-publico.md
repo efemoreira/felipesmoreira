@@ -60,7 +60,7 @@ Regras:
 
 ### Resultados 2026
 
-- `/resultados` é estudo interno do 1º turno (votos, cadeiras, quociente, legenda, conversão do Renan, cadeiras, candidatos e adversários — por Brasil, estado, município e bairro), sem indexação e fora do sitemap, como a Munição.
+- `/resultados` é estudo interno do 1º turno (votos, cadeiras, quociente, legenda, conversão do Renan, cadeiras, candidatos e adversários — por Brasil, região, estado, município e bairro), sem indexação e fora do sitemap, como a Munição.
 - Os dados são JSON estático em `public/resultados-2026/` (`resumo.json`, `uf/<uf>.json`, `mapa/<uf>.json`), gerados fora deste repositório pelo projeto de análise do TSE: `python -m src.cli export-site --dest <este repositório>/public/resultados-2026`. Não edite esses arquivos à mão; gere de novo.
 - Gráficos e mapas são HTML/SVG próprios (sem biblioteca); as cores de dado saem de `DADO` em `src/lib/theme.ts`.
 - A UI mora em `src/features/resultados/`; a rota é `src/app/resultados/page.tsx`.
@@ -75,7 +75,7 @@ Regras:
 - **Partidos** (aba): de que é feito o voto de cada partido no Brasil, estado, cidade ou bairro — % legenda, % do puxador, candidatos com voto, nomes para 80% do nominal, eleitos e nomes com 10% do QE — e o Missão contra os que elegeram (ou os 5 maiores, na cidade e no bairro). Perfil em código curto no JSON (`MP`, `M`, `P`, `C`, `N`), traduzido por `PERFIL` em `apoio.ts`; regra no módulo `perfil_partidos` do projeto de análise. Arquivo `partidos/<uf>.json` (estado + cidades) e tabela `partidos` nos arquivos de bairro (8 maiores por cargo + Missão).
 - **Por dentro do Missão** (Estado, Município, Bairro): cada nome com a fatia do voto do partido ali, a fatia dos válidos e o lugar entre todos os candidatos do cargo (`posicao_uf`/`total_uf` no resumo, `posicao`/`total_cand` em `uf/<uf>.json`, `posicao` e `total_cand_<cargo>` nos arquivos de bairro).
 - **Movimento (antes do partido)** (aba Candidatos): quem já era do movimento quando o Missão não existia (Pedro Arthur, vereador em Fortaleza em 2024; Kim Kataguiri e Guto Zacarias, 2022 em SP). Trajetória 22→24→26, herança (correlação da base de antes com a chapa do Missão 2026 sem ele, contra todos os outros candidatos de direita e centro da mesma eleição), retenção e canibalização para quem concorreu em 2026, e o futuro como vereador em 2028 na cidade-base. A lista fica em `MOVIMENTO` no módulo `movimento` do projeto de análise (por candidatura: ano, UF, unidade, cargo, número — sem dado pessoal); `resumo.movimento` no site. Voto anulado sub judice conta como base (é eleitor real que digitou o número). **Quem pegou os votos dele**: local de votação por local na cidade-base, o teto (soma do menor entre os votos dele antes e os do candidato em 2026) e a estimativa por regressão entre os locais, controlando pelo Renan, com faixa de 95% — estimativa ecológica, não rastreio de eleitor.
-- Não há aba de ideias: a página mostra números por nível (Brasil, estado, município, bairro) e a avaliação fica com a coordenação.
+- Não há aba de ideias: a página mostra números por nível (Brasil, região, estado, município, bairro) e a avaliação fica com a coordenação.
 - O que cada número quer dizer fica em `explicacoes.ts` (a caixa "Sobre este dado" de cada `<Secao explica="…">` e a aba "Sobre os dados"). Seção nova com número novo ganha texto lá.
 
 ### Programação

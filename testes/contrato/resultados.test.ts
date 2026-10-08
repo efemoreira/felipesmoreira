@@ -5,6 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { EXPLICACOES } from "../../src/features/resultados/explicacoes.ts";
 import { chapaVereador } from "../../src/features/resultados/chapa.ts";
+import { REGIOES, linhasRegioes, somarLinhas } from "../../src/features/resultados/regioes.ts";
 
 /**
  * /resultados lê JSON gerado FORA deste repositório (o projeto de análise do
@@ -195,5 +196,23 @@ describe("resultados: chapa de vereador (Lei 9.504, art. 10)", () => {
   test("sem vagas, sem chapa", () => {
     assert.ok(Number.isNaN(chapaVereador(NaN).candidaturas));
     assert.ok(Number.isNaN(chapaVereador(0).mulheres));
+  });
+});
+
+describe("resultados: regiões somadas dos estados", () => {
+  const arq = path.join(DADOS, "resumo.json");
+  const resumo = existsSync(arq) ? ler(arq) : null;
+
+  test("toda UF do export está em exatamente uma região", { skip: !resumo }, () => {
+    const todas = REGIOES.flatMap(([, , ufs]) => [...ufs]).sort();
+    assert.deepEqual(todas, resumo.ufs.map((u: { uf: string }) => u.uf).sort());
+  });
+
+  test("as regiões somadas dão o Brasil", { skip: !resumo }, () => {
+    const br = somarLinhas(linhasRegioes(resumo.ufs));
+    for (const k of ["eleitorado", "comparecimento", "missao_pres", "missao_df", "missao_de", "missao_leg_df", "validos_df", "eleitos_df", "vagas_df"])
+      assert.equal(br[k], resumo.brasil[k], k);
+    for (const k of ["pct_comparecimento", "pct_missao_pres", "pct_missao_df", "pct_brancos_pres", "aproveitamento_df", "pct_leg_missao_df", "pct_leg_geral_df"])
+      assert.ok(Math.abs((br[k] as number) - resumo.brasil[k]) < 1e-4, `${k}: ${br[k]} × ${resumo.brasil[k]}`);
   });
 });
