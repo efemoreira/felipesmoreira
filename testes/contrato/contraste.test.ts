@@ -1,6 +1,6 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
-import { C } from "../../src/lib/theme.ts";
+import { C, PAINEL_DADOS as P } from "../../src/lib/theme.ts";
 
 /**
  * O CONTRASTE DO TEMA, MEDIDO — não olhado.
@@ -44,6 +44,11 @@ describe("contraste: texto comum ≥ 4,5:1", () => {
     ["tinta de erro sobre fundo de erro (inscrição)", C.erroTinta, C.erroFundo],
     ["tinta de erro sobre papel", C.erroTinta, C.paper],
     ["ok sobre noite", C.ok, C.night],
+    ["dados: tinta sobre o fundo", P.tinta, P.fundo],
+    ["dados: tinta suave sobre o fundo", P.tintaSuave, P.fundo],
+    ["dados: tinta suave sobre o realce do Missão", P.tintaSuave, P.realce],
+    ["dados: ouro do Missão sobre a superfície", P.missao, P.superficie],
+    ["dados: ouro do Missão sobre o fundo", P.missao, P.fundo],
   ];
   for (const [nome, texto, fundo] of pares) {
     test(nome, () => {
@@ -59,6 +64,7 @@ describe("contraste: bordas e texto grande ≥ 3:1", () => {
     ["borda de ok sobre noite (checklist das aulas)", C.okBorda, C.night],
     ["borda de erro sobre noite (presença)", C.erroBorda, C.night],
     ["ouro queimado sobre ouro (sombra dos cartões)", C.goldDim, C.gold],
+    ["dados: contorno de controle sobre a superfície", P.linhaForte, P.superficie],
   ];
   for (const [nome, a, b] of pares) {
     test(nome, () => {

@@ -7,14 +7,29 @@ export function num(x: number, casas = 0): string {
   return x.toLocaleString("pt-BR", { minimumFractionDigits: casas, maximumFractionDigits: casas });
 }
 
+/**
+ * Percentual. Duas casas só valem abaixo de 1% (0,37% ≠ 0,4%); acima disso a
+ * segunda casa é ruído para quem lê, e `pct(x, 2)` cai para uma.
+ */
 export function pct(x: number, casas = 1): string {
-  return vazio(x) ? "—" : `${num(x * 100, casas)}%`;
+  if (vazio(x)) return "—";
+  const c = casas === 2 && Math.abs(x) >= 0.01 ? 1 : casas;
+  return `${num(x * 100, c)}%`;
 }
 
-/** 1,22 mi · 806 mil · 7.980 */
+/** Diferença em pontos percentuais: +0,4 pt · −1,2 pt. */
+export function pts(x: number, casas = 1): string {
+  if (vazio(x)) return "—";
+  const v = x * 100;
+  const s = num(Math.abs(v), casas);
+  if (Number(s.replace(",", ".")) === 0) return `${s} pt`;
+  return `${v > 0 ? "+" : "−"}${s} pt`;
+}
+
+/** 156 mi · 1,2 mi · 806 mil · 7.980 */
 export function compacto(x: number): string {
   if (vazio(x)) return "—";
-  if (Math.abs(x) >= 1e6) return `${num(x / 1e6, 2)} mi`;
+  if (Math.abs(x) >= 1e6) return `${num(x / 1e6, Math.abs(x) >= 1e8 ? 0 : 1)} mi`;
   if (Math.abs(x) >= 1e4) return `${num(x / 1e3, 0)} mil`;
   return num(x);
 }

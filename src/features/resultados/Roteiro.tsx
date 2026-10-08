@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { C, FONT_ALFA, FONT_BITTER, FONT_ELITE, borda, bordaFina, sombra } from "@/lib/theme";
+import { C, FONT_ALFA, FONT_BITTER, FONT_DADOS, FONT_ELITE, PAINEL_DADOS as P, bordaFina } from "@/lib/theme";
 import { n, t, type Linha } from "./dados";
 import { num, pct } from "./formato";
 import { ladoTexto, linkMapa } from "./apoio";
@@ -29,7 +29,7 @@ export function Roteiro({ locais, nomeBairro, titulo }: { locais: Linha[]; nomeB
       <button
         type="button"
         onClick={() => window.print()}
-        style={{ fontFamily: FONT_BITTER, fontWeight: 700, fontSize: 15, minHeight: 44, padding: "8px 16px", cursor: "pointer", color: C.ink, background: C.gold, border: borda(C.ink), boxShadow: sombra("rente") }}
+        style={{ fontFamily: FONT_DADOS, fontWeight: 700, fontSize: 15, minHeight: 44, padding: "8px 18px", cursor: "pointer", color: P.superficie, background: P.tinta, border: 0, borderRadius: 999 }}
       >
         Imprimir roteiro ({num(ordem.length)} locais)
       </button>

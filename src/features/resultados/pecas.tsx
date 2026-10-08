@@ -1,30 +1,43 @@
 "use client";
 import React, { useMemo, useState } from "react";
-import { C, FONT_ALFA, FONT_BITTER, FONT_ELITE, TEXTO, borda, bordaFina, sombra } from "@/lib/theme";
+import { C, FONT_DADOS, PAINEL_DADOS as P, RAIO_DADOS, fileteDados } from "@/lib/theme";
 import { compacto, num, pct, UF_NOMES } from "./formato";
 import type { Linha } from "./dados";
 import { EXPLICACOES, type IdExplicacao } from "./explicacoes";
 
+/*
+ * As peças de /resultados, na superfície de dados (`PAINEL_DADOS`): fundo
+ * claro, filete de 1 px, fonte do sistema com algarismos tabulares. A ordem
+ * de leitura é sempre a mesma — rótulo pequeno em cima, número grande, uma
+ * linha de contexto embaixo — e o ouro só marca o que é do Missão.
+ */
+
 /* ===== Texto e blocos ===== */
 
+/** Rótulo pequeno acima de um número ou de um campo. */
 export const kicker: React.CSSProperties = {
-  fontFamily: FONT_ELITE,
+  fontFamily: FONT_DADOS,
   fontSize: 12,
-  letterSpacing: 2.5,
+  fontWeight: 600,
+  letterSpacing: 0.4,
   textTransform: "uppercase",
-  margin: "0 0 6px",
-  color: C.goldDim,
+  margin: "0 0 4px",
+  color: P.tintaSuave,
+};
+
+export const cartao: React.CSSProperties = {
+  background: P.superficie,
+  border: fileteDados(),
+  borderRadius: RAIO_DADOS,
 };
 
 export function Secao({ titulo, sub, explica, children }: { titulo: string; sub?: React.ReactNode; explica?: IdExplicacao; children: React.ReactNode }) {
   return (
-    <section style={{ margin: "34px 0 0" }}>
-      <h2 style={{ fontFamily: FONT_ALFA, fontSize: "clamp(20px, 4.6vw, 26px)", lineHeight: 1.15, margin: "0 0 6px", color: C.ink }}>
-        {titulo}
-      </h2>
-      {sub && <p style={{ ...TEXTO.nota, margin: "0 0 8px", color: C.ink, opacity: 0.78, maxWidth: "70ch" }}>{sub}</p>}
+    <section style={{ margin: "28px 0 0", paddingTop: 20, borderTop: fileteDados() }}>
+      <h2 style={{ fontFamily: FONT_DADOS, fontSize: "clamp(18px, 4vw, 21px)", fontWeight: 700, lineHeight: 1.25, margin: "0 0 4px", color: P.tinta }}>{titulo}</h2>
+      {sub && <p style={{ fontSize: 14, lineHeight: 1.5, margin: "0 0 6px", color: P.tintaSuave, maxWidth: "72ch" }}>{sub}</p>}
       {explica && <Explica id={explica} />}
-      <div style={{ marginTop: sub || explica ? 6 : 0 }}>{children}</div>
+      <div style={{ marginTop: sub || explica ? 6 : 10 }}>{children}</div>
     </section>
   );
 }
@@ -33,26 +46,26 @@ export function Secao({ titulo, sub, explica, children }: { titulo: string; sub?
 export function Explica({ id }: { id: IdExplicacao }) {
   const e: { deOnde: string; mede: string; importa: string; cuidado?: string } = EXPLICACOES[id];
   const linhas: [string, string | undefined][] = [
-    ["De onde vem", e.deOnde],
     ["O que mede", e.mede],
     ["Por que importa", e.importa],
     ["Cuidado", e.cuidado],
+    ["De onde vem", e.deOnde],
   ];
   return (
-    <details style={{ margin: "0 0 8px", maxWidth: "75ch" }}>
-      <summary style={{ cursor: "pointer", minHeight: 44, display: "inline-flex", alignItems: "center", gap: 6, fontSize: 14, fontWeight: 600, color: C.ink }}>
-        <span aria-hidden="true" style={{ display: "inline-grid", placeItems: "center", width: 20, height: 20, border: bordaFina(C.ink), borderRadius: "50%", fontSize: 12, fontFamily: FONT_ELITE }}>
+    <details style={{ margin: "0 0 6px", maxWidth: "75ch" }}>
+      <summary style={{ cursor: "pointer", minHeight: 44, display: "inline-flex", alignItems: "center", gap: 6, fontSize: 14, fontWeight: 600, color: P.tinta }}>
+        <span aria-hidden="true" style={{ display: "inline-grid", placeItems: "center", width: 18, height: 18, border: fileteDados(P.linhaForte), borderRadius: "50%", fontSize: 11 }}>
           ?
         </span>
         Sobre este dado
       </summary>
-      <dl style={{ ...TEXTO.nota, background: C.cream, border: bordaFina(C.ink), padding: "10px 14px", margin: "4px 0 6px", display: "grid", gap: 8 }}>
+      <dl style={{ ...cartao, fontSize: 14, background: P.fundo, padding: "10px 14px", margin: "4px 0 6px", display: "grid", gap: 8 }}>
         {linhas
           .filter(([, v]) => v)
           .map(([k, v]) => (
             <div key={k}>
-              <dt style={{ fontFamily: FONT_ELITE, fontSize: 11.5, letterSpacing: 1.2, textTransform: "uppercase" }}>{k}</dt>
-              <dd style={{ margin: "2px 0 0", lineHeight: 1.5 }}>{v}</dd>
+              <dt style={{ ...kicker, margin: 0 }}>{k}</dt>
+              <dd style={{ margin: "2px 0 0", lineHeight: 1.5, color: P.tinta }}>{v}</dd>
             </div>
           ))}
       </dl>
@@ -61,16 +74,12 @@ export function Explica({ id }: { id: IdExplicacao }) {
 }
 
 export function Nota({ children }: { children: React.ReactNode }) {
-  return (
-    <div style={{ ...TEXTO.nota, background: C.cream, border: bordaFina(C.ink), padding: "12px 14px", margin: "12px 0" }}>
-      {children}
-    </div>
-  );
+  return <div style={{ ...cartao, fontSize: 14, lineHeight: 1.5, background: P.fundo, padding: "12px 14px", margin: "12px 0", color: P.tinta }}>{children}</div>;
 }
 
 export function Carregando({ erro }: { erro?: string | null }) {
   return (
-    <p style={{ ...TEXTO.corpo, padding: "30px 0", color: erro ? C.erroTinta : C.ink, opacity: erro ? 1 : 0.7 }}>
+    <p style={{ fontSize: 15, padding: "30px 0", color: erro ? C.erroTinta : P.tintaSuave }} role={erro ? "alert" : undefined}>
       {erro ? `Não consegui carregar os dados (${erro}). Recarregue a página.` : "Carregando dados…"}
     </p>
   );
@@ -80,27 +89,37 @@ export function Carregando({ erro }: { erro?: string | null }) {
 
 export type Kpi = { rotulo: string; valor: string; sub?: React.ReactNode; missao?: boolean };
 
+/** Cartões de número: rótulo, número e contexto. O do Missão leva o filete de ouro à esquerda. */
 export function Kpis({ itens }: { itens: Kpi[] }) {
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12, margin: "10px 0 6px" }}>
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10, margin: "8px 0 6px" }}>
       {itens.map((k) => (
         <div
           key={k.rotulo}
           style={{
-            background: k.missao ? C.gold2 : C.cream,
-            border: borda(C.ink),
-            boxShadow: sombra("rente"),
+            ...cartao,
+            background: k.missao ? P.realce : P.superficie,
+            borderLeft: k.missao ? `4px solid ${P.missao}` : fileteDados(),
             padding: "10px 12px 11px",
             minWidth: 0,
           }}
         >
-          <p style={{ fontFamily: FONT_ELITE, fontSize: 11.5, letterSpacing: 1.2, textTransform: "uppercase", margin: 0, color: C.ink }}>
-            {k.rotulo}
-          </p>
-          <p style={{ fontFamily: FONT_ALFA, fontSize: k.valor.length > 8 ? "clamp(17px, 4.2vw, 21px)" : "clamp(20px, 5vw, 25px)", lineHeight: 1.2, margin: "4px 0 0", color: C.ink, overflowWrap: "anywhere" }}>
+          <p style={{ ...kicker, margin: 0 }}>{k.rotulo}</p>
+          <p
+            style={{
+              fontFamily: FONT_DADOS,
+              fontWeight: 700,
+              fontVariantNumeric: "tabular-nums",
+              fontSize: k.valor.length > 10 ? "clamp(16px, 4vw, 19px)" : "clamp(20px, 5vw, 24px)",
+              lineHeight: 1.2,
+              margin: "4px 0 0",
+              color: P.tinta,
+              overflowWrap: "anywhere",
+            }}
+          >
             {k.valor}
           </p>
-          {k.sub && <p style={{ fontSize: 13, lineHeight: 1.4, margin: "4px 0 0", color: C.ink, opacity: 0.8 }}>{k.sub}</p>}
+          {k.sub && <p style={{ fontSize: 13, lineHeight: 1.4, margin: "4px 0 0", color: P.tintaSuave }}>{k.sub}</p>}
         </div>
       ))}
     </div>
@@ -109,15 +128,15 @@ export function Kpis({ itens }: { itens: Kpi[] }) {
 
 /* ===== Controles ===== */
 
-const campo: React.CSSProperties = {
-  fontFamily: FONT_BITTER,
+export const campo: React.CSSProperties = {
+  fontFamily: FONT_DADOS,
   fontSize: 16, // 16 px: abaixo disso o Safari dá zoom no campo
   minHeight: 44,
   padding: "8px 10px",
-  background: C.cream,
-  color: C.ink,
-  border: borda(C.ink),
-  borderRadius: 0,
+  background: P.superficie,
+  color: P.tinta,
+  border: fileteDados(P.linhaForte),
+  borderRadius: RAIO_DADOS,
   width: "100%",
 };
 
@@ -136,7 +155,7 @@ export function Escolha<T extends string>({
 }) {
   return (
     <label style={{ display: "block", flex: "1 1 220px", minWidth: 0 }}>
-      <span style={{ ...kicker, display: "block", color: C.ink }}>{rotulo}</span>
+      <span style={{ ...kicker, display: "block" }}>{rotulo}</span>
       <select value={valor} onChange={(e) => aoMudar(e.target.value as T)} style={campo}>
         {opcoes.map((o) => (
           <option key={o} value={o}>
@@ -151,36 +170,54 @@ export function Escolha<T extends string>({
 export function Busca({ rotulo, valor, aoMudar, dica }: { rotulo: string; valor: string; aoMudar: (v: string) => void; dica?: string }) {
   return (
     <label style={{ display: "block", flex: "1 1 220px", minWidth: 0 }}>
-      <span style={{ ...kicker, display: "block", color: C.ink }}>{rotulo}</span>
+      <span style={{ ...kicker, display: "block" }}>{rotulo}</span>
       <input type="search" value={valor} placeholder={dica} onChange={(e) => aoMudar(e.target.value)} style={campo} />
     </label>
   );
 }
 
-/** Botões de opção única (o "segmented control"). */
-export function Chips<T extends string>({ valor, opcoes, aoMudar, nome = (v) => v }: { valor: T; opcoes: T[]; aoMudar: (v: T) => void; nome?: (v: T) => string }) {
+/** Botões de opção única (o "segmented control"): o escolhido fica escuro. */
+export function Chips<T extends string>({
+  valor,
+  opcoes,
+  aoMudar,
+  nome = (v) => v,
+  desligado,
+}: {
+  valor: T;
+  opcoes: T[];
+  aoMudar: (v: T) => void;
+  nome?: (v: T) => string;
+  /** opção que não vale aqui: aparece apagada, com o motivo no `title` */
+  desligado?: (v: T) => string | false;
+}) {
   return (
-    <div role="radiogroup" style={{ display: "flex", flexWrap: "wrap", gap: 8, margin: "8px 0 12px" }}>
+    <div role="radiogroup" style={{ display: "flex", flexWrap: "wrap", gap: 6, margin: "6px 0 10px" }}>
       {opcoes.map((o) => {
         const ativo = o === valor;
+        const motivo = desligado?.(o) || "";
         return (
           <button
             key={o}
             type="button"
             role="radio"
             aria-checked={ativo}
-            onClick={() => aoMudar(o)}
+            aria-disabled={motivo ? true : undefined}
+            title={motivo || undefined}
+            onClick={() => !motivo && aoMudar(o)}
             style={{
-              fontFamily: FONT_BITTER,
+              fontFamily: FONT_DADOS,
               fontWeight: 600,
-              fontSize: 14.5,
+              fontSize: 14,
               minHeight: 44,
-              padding: "6px 12px",
-              cursor: "pointer",
-              color: C.ink,
-              background: ativo ? C.gold : C.cream,
-              border: borda(C.ink),
-              boxShadow: ativo ? "none" : sombra("rente"),
+              padding: "6px 14px",
+              cursor: motivo ? "not-allowed" : "pointer",
+              color: ativo ? P.superficie : P.tinta,
+              background: ativo ? P.tinta : P.superficie,
+              border: fileteDados(ativo ? P.tinta : P.linhaForte),
+              borderRadius: 999,
+              opacity: motivo ? 0.45 : 1,
+              whiteSpace: "nowrap",
             }}
           >
             {nome(o)}
@@ -198,14 +235,14 @@ export function Filtros({ children }: { children: React.ReactNode }) {
 /** Legenda de cores dos gráficos — identidade nunca só pela cor: cada barra também tem rótulo. */
 export function Legenda({ itens, extra }: { itens: [string, string][]; extra?: string }) {
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 16px", fontSize: 13.5, margin: "6px 0 10px", color: C.ink }}>
+    <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 16px", fontSize: 13.5, margin: "6px 0 10px", color: P.tinta }}>
       {itens.map(([cor, nome]) => (
         <span key={nome} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-          <span aria-hidden="true" style={{ width: 13, height: 13, background: cor, border: bordaFina(C.ink) }} />
+          <span aria-hidden="true" style={{ width: 12, height: 12, background: cor, borderRadius: 3 }} />
           {nome}
         </span>
       ))}
-      {extra && <span style={{ opacity: 0.75 }}>{extra}</span>}
+      {extra && <span style={{ color: P.tintaSuave }}>{extra}</span>}
     </div>
   );
 }
@@ -224,13 +261,13 @@ export type Coluna = {
 
 /** CSV que o Excel em português abre direto: `;` como separador, vírgula decimal e BOM para o acento. */
 function baixarCsv(linhas: Linha[], colunas: Coluna[], nome: string) {
-  const campo = (v: unknown) => {
+  const campoCsv = (v: unknown) => {
     if (v === undefined || v === null || (typeof v === "number" && !Number.isFinite(v))) return "";
     const s = typeof v === "number" ? String(v).replace(".", ",") : String(v);
     return /[;"\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   };
-  const corpo = [colunas.map((c) => campo(c.rotulo)).join(";"), ...linhas.map((l) => colunas.map((c) => campo(c.valor ? c.valor(l) : l[c.chave])).join(";"))];
-  const url = URL.createObjectURL(new Blob(["\ufeff" + corpo.join("\r\n")], { type: "text/csv;charset=utf-8" }));
+  const corpo = [colunas.map((c) => campoCsv(c.rotulo)).join(";"), ...linhas.map((l) => colunas.map((c) => campoCsv(c.valor ? c.valor(l) : l[c.chave])).join(";"))];
+  const url = URL.createObjectURL(new Blob(["﻿" + corpo.join("\r\n")], { type: "text/csv;charset=utf-8" }));
   const a = document.createElement("a");
   a.href = url;
   a.download = `${nome}.csv`;
@@ -244,6 +281,7 @@ export function Tabela({
   ordem: ordemInicial,
   teto = 150,
   arquivo,
+  aoEscolher,
 }: {
   linhas: Linha[];
   colunas: Coluna[];
@@ -251,6 +289,8 @@ export function Tabela({
   teto?: number;
   /** nome do CSV ("bairros-fortaleza"); sem ele, a tabela não oferece download */
   arquivo?: string;
+  /** a linha vira botão (o Explorador desce no lugar) */
+  aoEscolher?: (l: Linha) => void;
 }) {
   const [ordem, setOrdem] = useState<{ chave: string; desc: boolean }>({ chave: ordemInicial ?? colunas[0].chave, desc: true });
   const [mostrar, setMostrar] = useState(teto);
@@ -258,9 +298,10 @@ export function Tabela({
 
   const ordenadas = useMemo(() => {
     const col = colunas.find((c) => c.chave === ordem.chave) ?? colunas[0];
+    const v = (l: Linha) => (col.valor ? col.valor(l) : l[col.chave]);
     return [...linhas].sort((a, b) => {
-      const x = valorDe(a, col);
-      const y = valorDe(b, col);
+      const x = v(a);
+      const y = v(b);
       if (x === undefined || (typeof x === "number" && Number.isNaN(x))) return 1;
       if (y === undefined || (typeof y === "number" && Number.isNaN(y))) return -1;
       const r = typeof x === "number" && typeof y === "number" ? x - y : String(x).localeCompare(String(y), "pt-BR");
@@ -283,8 +324,8 @@ export function Tabela({
         const w = Math.max(0, Math.min(1, v / (c.max ?? 1)));
         return (
           <span style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 110 }}>
-            <span style={{ flex: 1, height: 10, background: C.paper, border: bordaFina(C.ink) }}>
-              <span style={{ display: "block", height: "100%", width: `${w * 100}%`, background: C.goldDim }} />
+            <span style={{ flex: 1, height: 8, background: P.fundo, borderRadius: 4, overflow: "hidden" }}>
+              <span style={{ display: "block", height: "100%", width: `${w * 100}%`, background: P.missao }} />
             </span>
             <span style={{ minWidth: 48, textAlign: "right" }}>{(c.max ?? 1) > 1.01 ? num(v, 2) : pct(v)}</span>
           </span>
@@ -297,54 +338,76 @@ export function Tabela({
 
   return (
     <div>
-      <div style={{ overflow: "auto", maxHeight: 560, border: borda(C.ink), background: C.cream }}>
-        <table style={{ borderCollapse: "collapse", width: "100%", fontSize: 14 }}>
+      <div style={{ ...cartao, overflow: "auto", maxHeight: 560 }}>
+        <table style={{ borderCollapse: "separate", borderSpacing: 0, width: "100%", fontSize: 14, fontFamily: FONT_DADOS, color: P.tinta }}>
           <thead>
             <tr>
-              {colunas.map((c, i) => (
-                <th
-                  key={c.chave}
-                  title={c.ajuda}
-                  onClick={() => setOrdem((o) => ({ chave: c.chave, desc: o.chave === c.chave ? !o.desc : true }))}
-                  style={{
-                    position: "sticky",
-                    top: 0,
-                    left: i === 0 ? 0 : undefined,
-                    zIndex: i === 0 ? 3 : 2,
-                    background: C.ink,
-                    color: C.cream,
-                    fontFamily: FONT_ELITE,
-                    fontWeight: 400,
-                    fontSize: 12,
-                    letterSpacing: 0.6,
-                    textAlign: c.tipo === "txt" ? "left" : "right",
-                    padding: "9px 8px",
-                    whiteSpace: "nowrap",
-                    cursor: "pointer",
-                  }}
-                >
-                  {c.rotulo}
-                  {ordem.chave === c.chave ? (ordem.desc ? " ▾" : " ▴") : ""}
-                </th>
-              ))}
+              {colunas.map((c, i) => {
+                const ativa = ordem.chave === c.chave;
+                return (
+                  <th
+                    key={c.chave}
+                    title={c.ajuda}
+                    aria-sort={ativa ? (ordem.desc ? "descending" : "ascending") : undefined}
+                    style={{
+                      position: "sticky",
+                      top: 0,
+                      left: i === 0 ? 0 : undefined,
+                      zIndex: i === 0 ? 3 : 2,
+                      background: P.fundo,
+                      borderBottom: fileteDados(P.linhaForte),
+                      padding: 0,
+                    }}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setOrdem((o) => ({ chave: c.chave, desc: o.chave === c.chave ? !o.desc : true }))}
+                      style={{
+                        all: "unset",
+                        boxSizing: "border-box",
+                        display: "block",
+                        width: "100%",
+                        cursor: "pointer",
+                        padding: "10px 10px",
+                        minHeight: 40,
+                        fontSize: 12,
+                        fontWeight: 700,
+                        color: ativa ? P.tinta : P.tintaSuave,
+                        textAlign: c.tipo === "txt" ? "left" : "right",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {c.rotulo}
+                      {ativa ? (ordem.desc ? " ↓" : " ↑") : ""}
+                    </button>
+                  </th>
+                );
+              })}
             </tr>
           </thead>
           <tbody>
             {ordenadas.slice(0, mostrar).map((l, r) => (
-              <tr key={r} style={{ background: r % 2 ? C.paper : C.cream }}>
+              <tr
+                key={r}
+                onClick={aoEscolher ? () => aoEscolher(l) : undefined}
+                style={{ cursor: aoEscolher ? "pointer" : undefined }}
+                className={aoEscolher ? "linha-escolhe" : undefined}
+              >
                 {colunas.map((c, i) => (
                   <td
                     key={c.chave}
                     style={{
                       position: i === 0 ? "sticky" : undefined,
                       left: i === 0 ? 0 : undefined,
-                      background: i === 0 ? (r % 2 ? C.paper : C.cream) : undefined,
+                      background: P.superficie,
                       textAlign: c.tipo === "txt" ? "left" : "right",
-                      padding: "7px 8px",
-                      borderTop: `1px solid rgba(24,18,3,.12)`,
+                      padding: "8px 10px",
+                      borderBottom: fileteDados(),
                       whiteSpace: "nowrap",
                       fontVariantNumeric: "tabular-nums",
                       fontWeight: i === 0 ? 600 : 400,
+                      textDecoration: i === 0 && aoEscolher ? "underline" : undefined,
+                      textUnderlineOffset: 3,
                     }}
                   >
                     {celula(l, c)}
@@ -355,7 +418,7 @@ export function Tabela({
           </tbody>
         </table>
       </div>
-      <p style={{ fontSize: 13, margin: "6px 0 0", opacity: 0.75 }}>
+      <p style={{ fontSize: 13, margin: "4px 0 0", color: P.tintaSuave }}>
         {num(ordenadas.length)} linhas · toque no título da coluna para ordenar
         {ordenadas.length > mostrar && (
           <>
@@ -378,7 +441,17 @@ export function Tabela({
   );
 }
 
-const linkBotao: React.CSSProperties = { font: "inherit", textDecoration: "underline", background: "none", border: 0, cursor: "pointer", color: C.ink, padding: "10px 0", minHeight: 44 };
+export const linkBotao: React.CSSProperties = {
+  font: "inherit",
+  textDecoration: "underline",
+  textUnderlineOffset: 3,
+  background: "none",
+  border: 0,
+  cursor: "pointer",
+  color: P.tinta,
+  padding: "10px 0",
+  minHeight: 44,
+};
 
 /** O estado escolhido vale para todas as abas (o pai guarda). */
 export function SeletorUf({ uf, opcoes, aoMudar }: { uf: string; opcoes: string[]; aoMudar: (u: string) => void }) {

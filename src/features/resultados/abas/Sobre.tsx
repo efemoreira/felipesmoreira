@@ -1,9 +1,9 @@
 "use client";
 import React from "react";
-import { C, FONT_ELITE, borda, bordaFina, sombra } from "@/lib/theme";
+import { FONT_DADOS, PAINEL_DADOS as P, fileteDados } from "@/lib/theme";
 import type { Resumo } from "../dados";
 import { GLOSSARIO, LIMITES } from "../explicacoes";
-import { Secao } from "../pecas";
+import { Secao, cartao } from "../pecas";
 
 /**
  * De onde vem cada número, como ele foi tratado e o que ele não diz. As bases
@@ -27,7 +27,7 @@ const POR_QUE: string[] = [
   "Local de votação é ponto de encontro natural: é onde as pessoas do bairro vão, e é onde se faz panfletagem e boca de urna.",
 ];
 
-const caixa: React.CSSProperties = { background: C.cream, border: borda(C.ink), boxShadow: sombra("rente"), padding: "12px 14px" };
+const caixa: React.CSSProperties = { ...cartao, padding: "12px 14px" };
 
 export default function Sobre({ resumo }: { resumo: Resumo }) {
   const fontes = resumo.fontes ?? [];
@@ -45,7 +45,7 @@ export default function Sobre({ resumo }: { resumo: Resumo }) {
         <ol style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gap: 10, maxWidth: "72ch" }}>
           {CAMINHO.map(([etapa, texto], i) => (
             <li key={etapa} style={{ ...caixa, display: "grid", gridTemplateColumns: "34px 1fr", gap: 10, alignItems: "start" }}>
-              <span style={{ fontFamily: FONT_ELITE, fontSize: 18, lineHeight: "30px", textAlign: "center", border: bordaFina(C.ink), borderRadius: "50%", width: 30, height: 30 }}>
+              <span style={{ fontFamily: FONT_DADOS, fontSize: 18, lineHeight: "30px", textAlign: "center", border: fileteDados(P.linhaForte), borderRadius: "50%", width: 30, height: 30 }}>
                 {i + 1}
               </span>
               <span style={{ fontSize: 15, lineHeight: 1.5 }}>
@@ -62,7 +62,7 @@ export default function Sobre({ resumo }: { resumo: Resumo }) {
         ) : (
           <div style={{ display: "grid", gap: 8 }}>
             {fontes.map((f) => (
-              <div key={f.nome} style={{ ...caixa, boxShadow: "none", border: bordaFina(C.ink), fontSize: 14.5, lineHeight: 1.45 }}>
+              <div key={f.nome} style={{ ...caixa, border: fileteDados(), fontSize: 14.5, lineHeight: 1.45 }}>
                 <b>{f.nome}</b>
                 <br />
                 Publicado em {dataBr(f.publicado)}

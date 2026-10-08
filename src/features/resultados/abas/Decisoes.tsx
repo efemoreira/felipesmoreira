@@ -1,6 +1,6 @@
 "use client";
 import React, { useMemo, useState } from "react";
-import { C } from "@/lib/theme";
+import { PAINEL_DADOS as P } from "@/lib/theme";
 import {
   carregarAdversarios,
   carregarBairros,
@@ -285,10 +285,10 @@ function Gente({ estado, erro }: { estado: Gente | null; erro: string | null }) 
         ? "Para cruzar com onde temos gente, entre no painel (com acesso a Pessoas) neste mesmo navegador e recarregue a página."
         : "Sua conta do painel não tem a área Pessoas: a coluna de gente fica de fora.";
   return (
-    <p style={{ fontSize: 14, margin: "14px 0 0", color: C.ink, opacity: 0.85 }}>
+    <p style={{ fontSize: 14, margin: "14px 0 0", color: P.tinta, opacity: 0.85 }}>
       {texto}{" "}
       {estado && !estado.autenticado && (
-        <a href="/painel/" style={{ color: C.ink, display: "inline-block", padding: "10px 0", minHeight: 44 }}>
+        <a href="/painel/" style={{ color: P.tinta, display: "inline-block", padding: "10px 0", minHeight: 44 }}>
           Abrir o painel
         </a>
       )}

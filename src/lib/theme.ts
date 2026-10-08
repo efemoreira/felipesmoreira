@@ -188,3 +188,33 @@ export const DADO = {
      tons dos grupos nas pontas; o meio é cinza quente, que se separa do papel pela borda */
   lado: ["#A8322F", "#E34948", "#F3A8A4", "#DDD6C6", "#9EC5F4", "#2A78D6", "#184F95"],
 } as const;
+
+/**
+ * A SUPERFÍCIE DE DADOS — /resultados.
+ *
+ * O cordel (papel, Alfa Slab, moldura de 3 px, sombra dura) é a voz do site;
+ * numa tela de mapa, tabela e percentual ele briga com o dado. Aqui a moldura
+ * vira filete de 1 px, a sombra some, o número sai numa fonte sem serifa com
+ * algarismos alinhados e quem separa os blocos é o espaço. O ouro do Missão
+ * (`DADO.missao`) continua sendo o único destaque. `contraste.test.ts` mede os
+ * pares de texto.
+ */
+export const PAINEL_DADOS = {
+  fundo: "#F6F6F3",
+  superficie: "#FFFFFF",
+  /* filete entre blocos e linhas de tabela */
+  linha: "#E2E1DC",
+  /* contorno de controle (campo, chip): ≥ 3:1 sobre a superfície */
+  linhaForte: "#8E8C85",
+  tinta: "#1B1B19",
+  tintaSuave: "#5F5E59",
+  /* fundo do que é do Missão (cartão, linha da tabela) */
+  realce: "#FBF3DC",
+  missao: DADO.missao,
+} as const;
+
+/** Fonte do sistema — nada a baixar — com algarismos tabulares no CSS de quem usa. */
+export const FONT_DADOS = "system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
+export const RAIO_DADOS = 8;
+/** O filete da superfície de dados. */
+export const fileteDados = (cor: string = PAINEL_DADOS.linha) => `1px solid ${cor}`;

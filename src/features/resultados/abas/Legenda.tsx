@@ -1,6 +1,6 @@
 "use client";
 import React, { useMemo, useState } from "react";
-import { C, DADO } from "@/lib/theme";
+import { DADO, PAINEL_DADOS as P } from "@/lib/theme";
 import { carregarMapa, carregarUf, n, t, useRecurso, type Resumo } from "../dados";
 import { num, pct, titulo, UF_NOMES } from "../formato";
 import { BarrasQuociente, MapaCoropletico, Ranking } from "../graficos";
@@ -108,7 +108,7 @@ export default function Legenda({ resumo, uf, setUf }: { resumo: Resumo; uf: str
               />
             </div>
             <p style={{ fontWeight: 700, margin: "22px 0 4px" }}>Legenda e vereador em 2028</p>
-            <p style={{ fontSize: 14, margin: "0 0 8px", color: C.ink }}>Quanto de uma cadeira de vereador o voto do Missão já cobre em cada cidade. Em 2024, a legenda foi em média 3% dos votos para vereador.</p>
+            <p style={{ fontSize: 14, margin: "0 0 8px", color: P.tinta }}>Quanto de uma cadeira de vereador o voto do Missão já cobre em cada cidade. Em 2024, a legenda foi em média 3% dos votos para vereador.</p>
             <BarrasQuociente
               textoRenan="votos do Renan na cidade como se fossem para vereador"
               linhas={[...cidades]
