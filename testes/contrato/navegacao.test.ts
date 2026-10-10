@@ -39,7 +39,7 @@ function arquivosDaRota(rota: string): string[] {
 
 const usaMoldura = (rota: string) => arquivosDaRota(rota).some((f) => ler(f).includes("<PaginaDoSite"));
 
-const PUBLICAS = ["", "nucleos", "temas", "portavozes", "programacao", "funcoes", "propostas", "amissao", "heroisdoceara", "queroajudar", "candidatos", "privacy", "terms"];
+const PUBLICAS = ["", "nucleos", "temas", "portavozes", "programacao", "funcoes", "propostas", "pitch", "amissao", "heroisdoceara", "queroajudar", "candidatos", "privacy", "terms"];
 const FORA = ["resultados", "presenca", "municao", "aulas", "convite"];
 
 describe("navegação: todo destino existe", () => {
