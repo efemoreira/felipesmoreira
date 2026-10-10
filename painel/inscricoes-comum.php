@@ -199,8 +199,11 @@ function normalizar_origem($bruto): string
  *
  * O vão entre se inscrever e ser aprovado é onde mais se perde gente: ela está
  * no pico de entusiasmo que vai ter, e depende de um humano decidir.
+ *
+ * 72h é o "acolhimento em 72 horas" do Plano Missão Ceará 2026–2027: todo
+ * contato novo recebe conversa em até três dias. Era 48h na campanha.
  */
-const HORAS_LIMITE_INSCRICAO = 48;
+const HORAS_LIMITE_INSCRICAO = 72;
 
 /**
  * A inscrição deixou de ser um cadastro à parte.
@@ -489,7 +492,7 @@ function pendencias_inscricoes(array $u): array
             $horas = max($horas, horas_na_fila($i));
         }
         if ($novas > 0) {
-            /* Passou de 48h, o recado sobe para urgente. Não é burocracia de
+            /* Passou de 72h, o recado sobe para urgente. Não é burocracia de
                prazo: quem se inscreveu está no pico de entusiasmo no dia em que
                se inscreveu, e uma fila parada três dias devolve gente fria. */
             $parada = $horas >= HORAS_LIMITE_INSCRICAO;
