@@ -1,0 +1,135 @@
+import type { Pitch } from "../tipos";
+
+/** De `meufrete/docs/plano.md` e `roadmap.md`. Só a Onda 0 está entregue: o preço é desenhado, não capturado. */
+export const MEU_FRETE: Pitch = {
+  slug: "meufrete",
+  nome: "Meu Frete",
+  descricao: "Meu Frete: o frete e a mudança do bairro, com preço justo e fretista verificado.",
+  marca: { primaria: "#16365C", escuro: "#0E1A2B", acento: "#FF7A1A", tintaAcento: "#0E1A2B" },
+  slides: [
+    {
+      tipo: "capa",
+      selo: "Frete e mudança",
+      titulo: "O frete e a mudança do bairro, com preço justo e fretista verificado.",
+      subtitulo: "O cliente descreve o que precisa levar, vê o preço de referência e compara propostas de fretistas perto dele.",
+      logo: "/pitch/meufrete/logo-full-dark.svg",
+    },
+    {
+      tipo: "cartoes",
+      dor: true,
+      selo: "O problema",
+      titulo: "Contratar um frete ainda é indicação de vizinho e preço no chute.",
+      itens: [
+        { titulo: "Cliente", texto: "Não sabe quanto deveria custar, nem se o fretista que achou no grupo é confiável." },
+        { titulo: "Fretista", texto: "Vive de indicação, faz orçamento no WhatsApp e volta vazio da maioria das viagens." },
+        { titulo: "Pequeno negócio", texto: "Entrega para o comprador sem acompanhamento nem comprovante." },
+        { titulo: "Os apps que existem", texto: "Ou são carga pesada rodoviária, ou entrega instantânea de pacote. A mudança do bairro fica no meio." },
+      ],
+    },
+    {
+      tipo: "cartoes",
+      selo: "A solução",
+      titulo: "Um marketplace com a ferramenta do fretista dentro.",
+      subtitulo: "As personas são acumuláveis: o mesmo usuário pode pedir frete e fazer frete.",
+      itens: [
+        { titulo: "Cliente", texto: "Frete rápido ou mudança com checklist (imóvel, ajudantes, montagem, andares), sem cadastro até o aceite." },
+        { titulo: "Fretista", texto: "Página própria, orçamento em PDF, agenda, ganhos do mês e pedidos novos perto dele." },
+        { titulo: "Empresa", texto: "Pede em nome do comprador, com fretistas favoritos e fatura do mês consolidada." },
+        { titulo: "Destinatário", texto: "Acompanha pelo link, sem conta, e informa o código de entrega." },
+      ],
+    },
+    {
+      tipo: "ilustracao",
+      desenho: "preco-explicado",
+      selo: "O produto · preço justo",
+      titulo: "O preço sugerido mostra do que é feito.",
+      itens: [
+        { titulo: "Faixa, não número mágico", texto: "Mínimo, sugerido e máximo, com a composição visível. As regras são por cidade e veículo." },
+        { titulo: "Propostas comparáveis", texto: "O fretista aceita o sugerido ou contrapropõe; o cliente vê nota, fretes feitos e tempo de resposta." },
+        { titulo: "Contato protegido", texto: "Chat por proposta com telefone mascarado até o aceite." },
+        { titulo: "Aceite sem disputa", texto: "Um aceite em transação: as outras propostas são recusadas e os contatos aparecem." },
+      ],
+    },
+    {
+      tipo: "cartoes",
+      selo: "Diferenciais",
+      titulo: "O que é difícil de copiar.",
+      itens: [
+        { titulo: "O fretista é dono da clientela", texto: "Pedido pela página dele é só dele: sem concorrência, sem máscara e fora do limite do plano." },
+        { titulo: "Espaço livre em viagens", texto: "A volta vazia vira oferta: o cliente reserva espaço numa viagem que já passa por ali, mais barato." },
+        { titulo: "Fretista verificado", texto: "CNH, CRLV e selfie conferidos pela plataforma; documento vencendo avisa antes." },
+        { titulo: "Entrega com prova", texto: "Fotos na coleta e na entrega, código de 4 dígitos e linha do tempo do frete." },
+        { titulo: "Pagamento protegido", texto: "Pix retido e liberado ao fretista na confirmação ou 24 h depois da entrega sem disputa." },
+        { titulo: "Uma cidade por vez", texto: "Lista de espera por cidade e persona decide onde lançar; a meta é proposta em 15 minutos." },
+      ],
+    },
+    {
+      tipo: "planos",
+      selo: "Modelo de negócio",
+      titulo: "Assinatura do fretista, não comissão obrigatória.",
+      subtitulo: "A receita vem da assinatura, da taxa do pagamento protegido (opcional) e do plano das empresas.",
+      planos: [
+        {
+          nome: "Grátis",
+          preco: "R$ 0",
+          unidade: "fretista",
+          resumo: "Para começar a receber pedidos.",
+          itens: ["5 fretes do marketplace por mês", "1 veículo e 1 viagem ativa", "Pedidos pela própria página sem limite"],
+        },
+        {
+          nome: "Pro",
+          preco: "R$ 49,90",
+          unidade: "por mês · fretista",
+          resumo: "Para quem vive de frete.",
+          itens: ["Fretes ilimitados", "3 veículos e 5 viagens ativas", "Aviso de pedido novo 5 min antes, sempre rotulado"],
+          recomendado: true,
+        },
+        {
+          nome: "Empresa",
+          preco: "R$ 99",
+          unidade: "por mês",
+          resumo: "Para a loja que entrega ao comprador.",
+          itens: ["5 membros e 20 fretistas favoritos", "Pedidos por CSV", "Fatura mensal consolidada"],
+        },
+      ],
+      nota: "Os limites passam a valer na Onda 4. Uma corrida em andamento nunca é bloqueada por plano.",
+    },
+    {
+      tipo: "comparacao",
+      selo: "Mercado",
+      titulo: "Entre a carga pesada e a entrega de pacote, ninguém cuida da mudança do bairro.",
+      colunas: ["Quem", "Onde joga"],
+      linhas: [
+        ["Fretebras", "Carga pesada rodoviária, com CT-e, MDF-e e ANTT"],
+        ["Lalamove, Loggi", "Entrega instantânea de pacote"],
+        ["Grupos e indicação", "Frete e mudança do bairro, sem preço de referência nem verificação"],
+        ["Meu Frete", "Frete urbano e intermunicipal curto e mudança, da moto ao caminhão 3/4"],
+      ],
+      posicao: "Pessoas e pequenos negócios, atendidos por autônomos — com preço explicado, fretista verificado e a volta vazia virando oferta.",
+    },
+    {
+      tipo: "etapas",
+      selo: "Onde estamos",
+      titulo: "Recomeço no padrão do Guardião Predial: a fundação está pronta.",
+      subtitulo: "O app antigo deixou o que era bom (mudança assistida, assinatura em vez de comissão) e as lições do que travou.",
+      itens: [
+        { etapa: "Onda 0", titulo: "Fundação", texto: "Cadastro com persona, cidades e lista de espera, planos, painel, LGPD, CI.", pronto: true },
+        { etapa: "Onda 1", titulo: "Fretista confiável", texto: "Documentos, verificação, página, orçamento em PDF, agenda e ganhos.", pronto: false },
+        { etapa: "Onda 2", titulo: "Marketplace", texto: "Preço sugerido, pedido sem cadastro, despacho, propostas e chat.", pronto: false },
+        { etapa: "Onda 3", titulo: "Execução", texto: "GPS, fotos, código de entrega, avaliações e disputas.", pronto: false },
+        { etapa: "Onda 4", titulo: "Receita", texto: "Limites dos planos e pagamento protegido com split.", pronto: false },
+        { etapa: "Ondas 5–7", titulo: "Crescer", texto: "Viagens com espaço livre, empresas, SEO por cidade e indicação.", pronto: false },
+      ],
+    },
+    {
+      tipo: "pedido",
+      selo: "O que buscamos",
+      titulo: "Vamos lançar a primeira cidade com fretista de verdade.",
+      itens: [
+        { titulo: "Fretistas fundadores", texto: "Autônomos da moto ao 3/4 que queiram a página e o orçamento já na Onda 1." },
+        { titulo: "Pequenos negócios", texto: "Lojas de móveis e eletro que entregam ao comprador e querem o link de acompanhamento." },
+        { titulo: "Primeira cidade", texto: "Parceiros locais para encher a lista de espera antes do lançamento." },
+      ],
+    },
+  ],
+};
