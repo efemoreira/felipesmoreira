@@ -35,10 +35,7 @@ export const css = `
   .in-armadilha {
     position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0;
   }
-
-  .in-voltar-site {
-    display: inline-flex; align-items: center; gap: 8px; min-height: 44px;
-    font-family: ${FONT_ELITE}; font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
+; font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
     color: ${C.ink}; background: ${C.cream}; text-decoration: none;
     padding: 10px 15px; border: ${BORDA}px solid ${C.ink};
     box-shadow: ${sombra("rente")};

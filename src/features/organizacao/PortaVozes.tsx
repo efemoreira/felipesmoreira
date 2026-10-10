@@ -92,6 +92,8 @@ export default function PortaVozes() {
 
   return (
     <Moldura
+      trilha="Liga dos Porta-vozes"
+      icone="broadcast"
       kicker="Liga dos Porta-vozes"
       titulo="Quem fala pela Missão no Ceará"
       intro={

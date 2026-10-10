@@ -5,6 +5,14 @@ declare(strict_types=1);
  * O lado POST da Organização: núcleos, grupos temáticos e a Liga. Nenhuma
  * linha de HTML aqui.
  *
+ * SALVAR MEXE SÓ NO QUE VEIO. A tela não tem um formulário gigante por
+ * unidade — tem formulários curtos, um por decisão ("marcar a próxima",
+ * "trocar o responsável", "a ficha"). Cada um manda só os seus campos, e o
+ * resto da unidade fica como estava. É o que deixa a tela ser pequena sem a
+ * gravação apagar o que o formulário não mostrou. Caixa de marcar manda um
+ * `hidden` com 0 antes dela, para "desmarcado" chegar como resposta e não como
+ * ausência.
+ *
  * Toda gravação volta para a aba de onde veio — quem registra a entrega de um
  * grupo não quer cair na lista de núcleos.
  */
@@ -12,7 +20,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/organizacao-comum.php';
 require_once __DIR__ . '/acoes-comum.php';  // avisar(), ir_para(), exigir_token_de_acao()
 
-function voltar_organizacao(string $aba = ''): void
+function voltar_organizacao(string $aba = ''): never
 {
     ir_para('/painel/organizacao.php' . ($aba !== '' ? '?aba=' . rawurlencode($aba) : ''));
 }
@@ -24,6 +32,35 @@ function pessoa_ou_vazio($id): string
     return $id !== '' && achar_pessoa($id) !== null ? $id : '';
 }
 
+/**
+ * Aplica sobre `$base` só os campos que vieram no POST, cada um pela sua régua.
+ * `$campos` é `nome => fn(bruto) => valor`.
+ */
+function mesclar_post(array $base, array $campos): array
+{
+    foreach ($campos as $nome => $limpar) {
+        if (array_key_exists($nome, $_POST)) {
+            $base[$nome] = $limpar($_POST[$nome]);
+        }
+    }
+    return $base;
+}
+
+/** As réguas de campo que núcleo e grupo dividem. */
+function campos_de_unidade(): array
+{
+    return [
+        'responsavelId' => fn ($v) => pessoa_ou_vazio($v),
+        'substitutoId'  => fn ($v) => pessoa_ou_vazio($v),
+        'ritmo'         => fn ($v) => (string) $v,
+        'proximaData'   => fn ($v) => data_iso_ou_vazio($v),
+        'proximaTexto'  => fn ($v) => limpar_texto($v, 140),
+        'contato'       => fn ($v) => contato_publico($v),
+        'publicado'     => fn ($v) => !empty($v),
+        'evidencia'     => fn ($v) => limpar_texto($v, 200),
+    ];
+}
+
 function tratar_acoes_de_organizacao(array $eu): void
 {
     if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
@@ -31,15 +68,14 @@ function tratar_acoes_de_organizacao(array $eu): void
     }
     exigir_token_de_acao();
 
-    $acao = (string) ($_POST['acao'] ?? '');
-
-    match ($acao) {
+    match ((string) ($_POST['acao'] ?? '')) {
         'nucleo-salvar'  => salvar_nucleo(),
         'grupo-salvar'   => salvar_grupo(),
         'entrega'        => registrar_entrega($eu),
         'encerrar'       => encerrar_unidade(true),
         'reabrir'        => encerrar_unidade(false),
         'pv-salvar'      => salvar_porta_voz(),
+        'pv-comprovar'   => comprovar_porta_voz(),
         'pv-mes'         => fechar_mes_porta_voz($eu),
         'pv-encerrar'    => encerrar_porta_voz(),
         default          => null,
@@ -49,57 +85,62 @@ function tratar_acoes_de_organizacao(array $eu): void
     voltar_organizacao();
 }
 
+/** Acha pelo id; `null` quando o id veio vazio (é criação). Id que não existe volta com erro. */
+function achar_para_editar(array $lista, string $aba, string $oQue): ?array
+{
+    $id = limpar_texto($_POST['id'] ?? '', 40);
+    if ($id === '') {
+        return null;
+    }
+    foreach ($lista as $item) {
+        if ($item['id'] === $id) {
+            return $item;
+        }
+    }
+    avisar('erro', $oQue . ' não encontrado.');
+    voltar_organizacao($aba);
+}
+
+/** O substituto precisa ser outra pessoa. */
+function conferir_substituto(array $u, string $aba): void
+{
+    if ($u['substitutoId'] !== '' && $u['substitutoId'] === $u['responsavelId']) {
+        avisar('erro', 'O substituto precisa ser outra pessoa — substituto de si mesmo não substitui ninguém.');
+        voltar_organizacao($aba);
+    }
+}
+
 /* ---------------------------------------------------------------- núcleos */
 
 function salvar_nucleo(): void
 {
     $nucleos = ler_nucleos();
-    $id = limpar_texto($_POST['id'] ?? '', 40);
-    $antigo = null;
-    foreach ($nucleos as $n) {
-        if ($n['id'] === $id) {
-            $antigo = $n;
-        }
-    }
-    if ($id !== '' && $antigo === null) {
-        avisar('erro', 'Núcleo não encontrado.');
-        voltar_organizacao();
-    }
+    $antigo = achar_para_editar($nucleos, '', 'Núcleo');
 
-    $nome = limpar_texto($_POST['nome'] ?? '', 80);
-    if ($nome === '') {
+    $base = $antigo ?? [
+        'id' => novo_id_organizacao('nuc'), 'nome' => '', 'tipo' => 'bairro', 'cidade' => '', 'bairro' => '',
+        'onda' => 0, 'nivel' => 'T0', 'evidencia' => '', 'responsavelId' => '', 'substitutoId' => '',
+        'ritmo' => 'mensal', 'proximaData' => '', 'proximaTexto' => '', 'contato' => '', 'publicado' => false,
+        'entregas' => [], 'criadoEm' => date('c'), 'criadoPor' => quem_grava(), 'encerradoEm' => '',
+    ];
+    $novo = mesclar_post($base, campos_de_unidade() + [
+        'nome'   => fn ($v) => limpar_texto($v, 80),
+        'tipo'   => fn ($v) => (string) $v,
+        'cidade' => fn ($v) => cidade_valida($v),
+        'bairro' => fn ($v) => limpar_texto($v, 60),
+        'onda'   => fn ($v) => (int) $v,
+        'nivel'  => fn ($v) => (string) $v,
+    ]);
+
+    if ($novo['nome'] === '') {
         avisar('erro', 'Dê um nome ao núcleo — o bairro, a cidade ou a universidade.');
         voltar_organizacao();
     }
-    $cidade = cidade_valida($_POST['cidade'] ?? '');
-    if ($cidade === '') {
+    if ($novo['cidade'] === '') {
         avisar('erro', 'Escolha a cidade do núcleo. É ela que liga o núcleo às ondas do território.');
         voltar_organizacao();
     }
-    $responsavel = pessoa_ou_vazio($_POST['responsavelId'] ?? '');
-    $substituto = pessoa_ou_vazio($_POST['substitutoId'] ?? '');
-    if ($substituto !== '' && $substituto === $responsavel) {
-        avisar('erro', 'O substituto precisa ser outra pessoa — substituto de si mesmo não substitui ninguém.');
-        voltar_organizacao();
-    }
-
-    $novo = [
-        'id'      => $id !== '' ? $id : novo_id_organizacao('nuc'),
-        'nome'    => $nome,
-        'tipo'    => (string) ($_POST['tipo'] ?? 'bairro'),
-        'cidade'  => $cidade,
-        'bairro'  => limpar_texto($_POST['bairro'] ?? '', 60),
-        'onda'    => (int) ($_POST['onda'] ?? 0),
-        'nivel'   => (string) ($_POST['nivel'] ?? 'T0'),
-        'evidencia' => limpar_texto($_POST['evidencia'] ?? '', 200),
-        'responsavelId' => $responsavel,
-        'substitutoId'  => $substituto,
-        'ritmo'   => (string) ($_POST['ritmo'] ?? 'mensal'),
-        'proximaData'  => data_iso_ou_vazio($_POST['proximaData'] ?? ''),
-        'proximaTexto' => limpar_texto($_POST['proximaTexto'] ?? '', 140),
-        'contato'   => contato_publico($_POST['contato'] ?? ''),
-        'publicado' => !empty($_POST['publicado']),
-    ] + ($antigo ?? ['entregas' => [], 'criadoEm' => date('c'), 'criadoPor' => quem_grava(), 'encerradoEm' => '']);
+    conferir_substituto($novo, '');
     $novo = carimbar_responsaveis($novo, $antigo);
 
     $lista = $antigo === null
@@ -109,7 +150,7 @@ function salvar_nucleo(): void
         avisar('erro', 'Não consegui gravar em /dados.');
         voltar_organizacao();
     }
-    avisar('ok', ($antigo === null ? 'Núcleo criado: ' : 'Núcleo salvo: ') . $nome . '.');
+    avisar('ok', ($antigo === null ? 'Núcleo criado: ' : 'Núcleo salvo: ') . $novo['nome'] . '.');
     voltar_organizacao();
 }
 
@@ -118,77 +159,66 @@ function salvar_nucleo(): void
 function salvar_grupo(): void
 {
     $grupos = ler_grupos();
-    $id = limpar_texto($_POST['id'] ?? '', 40);
-    $antigo = null;
-    foreach ($grupos as $g) {
-        if ($g['id'] === $id) {
-            $antigo = $g;
+    $antigo = achar_para_editar($grupos, 'temas', 'Grupo');
+
+    if ($antigo === null) {
+        $tema = (string) ($_POST['tema'] ?? '');
+        if (!isset(TEMAS_GRUPO[$tema])) {
+            avisar('erro', 'Escolha o tema no catálogo. Tema fora do catálogo é o primeiro passo para dois grupos sobre a mesma coisa.');
+            voltar_organizacao('temas');
         }
-    }
-    if ($id !== '' && $antigo === null) {
-        avisar('erro', 'Grupo não encontrado.');
-        voltar_organizacao('temas');
+        /* UM TEMA, UM GRUPO — a regra do plano, e a razão de o tema ser lista. */
+        if (grupo_aberto_do_tema($tema, $grupos) !== null) {
+            avisar('erro', 'Já existe um grupo aberto de ' . TEMAS_GRUPO[$tema]['nome'] . '. Um tema, um grupo: quem chega entra por uma das portas dele.');
+            voltar_organizacao('temas');
+        }
+        $base = [
+            'id' => novo_id_organizacao('grp'), 'tema' => $tema, 'finalidade' => '', 'primeiraEntrega' => '',
+            'primeiraEntregaAte' => '', 'maturidade' => 1, 'evidencia' => '',
+            /* As portas nascem do catálogo: quem abre o grupo responde só as
+               perguntas de abrir, e ajusta as portas depois, se quiser. */
+            'portaEstudo' => TEMAS_GRUPO[$tema]['estudo'],
+            'portaProfissionais' => TEMAS_GRUPO[$tema]['profissionais'],
+            'portaMovimento' => TEMAS_GRUPO[$tema]['movimento'],
+            'nucleos' => [], 'portaVozId' => '', 'responsavelId' => '', 'substitutoId' => '', 'ritmo' => 'mensal',
+            'proximaData' => '', 'proximaTexto' => '', 'contato' => '', 'publicado' => false,
+            'entregas' => [], 'criadoEm' => date('c'), 'criadoPor' => quem_grava(), 'encerradoEm' => '',
+        ];
+    } else {
+        $base = $antigo;
     }
 
-    $tema = (string) ($_POST['tema'] ?? '');
-    if (!isset(TEMAS_GRUPO[$tema])) {
-        avisar('erro', 'Escolha o tema no catálogo. Tema fora do catálogo é o primeiro passo para dois grupos sobre a mesma coisa.');
-        voltar_organizacao('temas');
-    }
-    /* UM TEMA, UM GRUPO — a regra do plano, e a razão de o tema ser lista. */
-    if (($outro = grupo_aberto_do_tema($tema, $grupos, $id)) !== null) {
-        avisar('erro', 'Já existe um grupo aberto de ' . TEMAS_GRUPO[$tema]['nome'] . '. Um tema, um grupo: quem chega entra por uma das portas dele.');
-        voltar_organizacao('temas');
-    }
+    $idsNucleos = array_column(ler_nucleos(), 'id');
+    $novo = mesclar_post($base, campos_de_unidade() + [
+        'finalidade'         => fn ($v) => limpar_texto($v, 200),
+        'primeiraEntrega'    => fn ($v) => limpar_texto($v, 140),
+        'primeiraEntregaAte' => fn ($v) => data_iso_ou_vazio($v),
+        'maturidade'         => fn ($v) => (int) $v,
+        'portaEstudo'        => fn ($v) => limpar_texto($v, 200),
+        'portaProfissionais' => fn ($v) => limpar_texto($v, 200),
+        'portaMovimento'     => fn ($v) => limpar_texto($v, 200),
+        'nucleos'            => fn ($v) => array_values(array_intersect((array) $v, $idsNucleos)),
+        'portaVozId'         => fn ($v) => limpar_texto($v, 40),
+    ]);
 
     /* As perguntas de antes de abrir. Sem elas, diz o plano, "o tema fica no
-       catálogo como prioridade futura" — e é exatamente o que a recusa faz. */
-    $finalidade = limpar_texto($_POST['finalidade'] ?? '', 200);
-    $primeira = limpar_texto($_POST['primeiraEntrega'] ?? '', 140);
-    $primeiraAte = data_iso_ou_vazio($_POST['primeiraEntregaAte'] ?? '');
-    $responsavel = pessoa_ou_vazio($_POST['responsavelId'] ?? '');
+       catálogo como prioridade futura" — e é exatamente o que a recusa faz.
+       Valem na edição também: grupo não perde a finalidade nem o dono. */
     $faltam = [];
-    if ($finalidade === '') {
+    if ($novo['finalidade'] === '') {
         $faltam[] = 'a finalidade';
     }
-    if ($responsavel === '') {
+    if ($novo['responsavelId'] === '') {
         $faltam[] = 'o responsável';
     }
-    if ($primeira === '' || $primeiraAte === '') {
+    if ($novo['primeiraEntrega'] === '' || $novo['primeiraEntregaAte'] === '') {
         $faltam[] = 'a primeira entrega e o prazo dela';
     }
     if ($faltam !== []) {
         avisar('erro', 'Antes de abrir um grupo, responda: ' . implode(', ', $faltam) . '. Sem isso o tema fica no catálogo como prioridade futura.');
         voltar_organizacao('temas');
     }
-    $substituto = pessoa_ou_vazio($_POST['substitutoId'] ?? '');
-    if ($substituto !== '' && $substituto === $responsavel) {
-        avisar('erro', 'O substituto precisa ser outra pessoa — substituto de si mesmo não substitui ninguém.');
-        voltar_organizacao('temas');
-    }
-
-    $idsNucleos = array_column(ler_nucleos(), 'id');
-    $novo = [
-        'id'    => $id !== '' ? $id : novo_id_organizacao('grp'),
-        'tema'  => $tema,
-        'finalidade' => $finalidade,
-        'primeiraEntrega' => $primeira,
-        'primeiraEntregaAte' => $primeiraAte,
-        'maturidade' => (int) ($_POST['maturidade'] ?? 0),
-        'evidencia'  => limpar_texto($_POST['evidencia'] ?? '', 200),
-        'portaEstudo'        => limpar_texto($_POST['portaEstudo'] ?? '', 200),
-        'portaProfissionais' => limpar_texto($_POST['portaProfissionais'] ?? '', 200),
-        'portaMovimento'     => limpar_texto($_POST['portaMovimento'] ?? '', 200),
-        'nucleos'    => array_values(array_intersect((array) ($_POST['nucleos'] ?? []), $idsNucleos)),
-        'portaVozId' => limpar_texto($_POST['portaVozId'] ?? '', 40),
-        'responsavelId' => $responsavel,
-        'substitutoId'  => $substituto,
-        'ritmo'   => (string) ($_POST['ritmo'] ?? 'mensal'),
-        'proximaData'  => data_iso_ou_vazio($_POST['proximaData'] ?? ''),
-        'proximaTexto' => limpar_texto($_POST['proximaTexto'] ?? '', 140),
-        'contato'   => contato_publico($_POST['contato'] ?? ''),
-        'publicado' => !empty($_POST['publicado']),
-    ] + ($antigo ?? ['entregas' => [], 'criadoEm' => date('c'), 'criadoPor' => quem_grava(), 'encerradoEm' => '']);
+    conferir_substituto($novo, 'temas');
     $novo = carimbar_responsaveis($novo, $antigo);
 
     $lista = $antigo === null
@@ -203,7 +233,7 @@ function salvar_grupo(): void
     $aviso = $antigo === null && $abertos > TETO_TEMAS_ABERTOS
         ? ' São ' . $abertos . ' grupos abertos — o plano pediu começar com no máximo ' . TETO_TEMAS_ABERTOS . '.'
         : '';
-    avisar('ok', ($antigo === null ? 'Grupo aberto: ' : 'Grupo salvo: ') . TEMAS_GRUPO[$tema]['nome'] . '.' . $aviso);
+    avisar('ok', ($antigo === null ? 'Grupo aberto: ' : 'Grupo salvo: ') . TEMAS_GRUPO[$novo['tema']]['nome'] . '.' . $aviso);
     voltar_organizacao('temas');
 }
 
@@ -219,14 +249,13 @@ function unidades_do_tipo(string $tipo): array
 
 function registrar_entrega(array $eu): void
 {
-    $tipo = (string) ($_POST['tipo'] ?? '');
-    [$lista, $gravar, $aba] = unidades_do_tipo($tipo);
+    [$lista, $gravar, $aba] = unidades_do_tipo((string) ($_POST['tipo'] ?? ''));
     $id = limpar_texto($_POST['id'] ?? '', 40);
 
     $texto = limpar_texto($_POST['texto'] ?? '', 200);
     $data = data_iso_ou_vazio($_POST['data'] ?? '');
     if ($texto === '' || $data === '') {
-        avisar('erro', 'Diga o que foi entregue e quando. Entrega sem data não conta no ciclo.');
+        avisar('erro', 'Diga o que foi feito e quando. Entrega sem data não conta no ciclo.');
         voltar_organizacao($aba);
     }
     if ($data > hoje_ce()) {
@@ -265,7 +294,7 @@ function registrar_entrega(array $eu): void
         avisar('erro', 'Não consegui gravar em /dados.');
         voltar_organizacao($aba);
     }
-    avisar('ok', 'Entrega registrada.');
+    avisar('ok', 'Registrado.');
     voltar_organizacao($aba);
 }
 
@@ -316,73 +345,38 @@ function encerrar_unidade(bool $encerrar): void
 function salvar_porta_voz(): void
 {
     $liga = ler_liga();
-    $id = limpar_texto($_POST['id'] ?? '', 40);
-    $antigo = null;
-    foreach ($liga as $pv) {
-        if ($pv['id'] === $id) {
-            $antigo = $pv;
-        }
-    }
-    if ($id !== '' && $antigo === null) {
-        avisar('erro', 'Porta-voz não encontrado.');
-        voltar_organizacao('liga');
-    }
+    $antigo = achar_para_editar($liga, 'liga', 'Porta-voz');
 
-    $pessoaId = pessoa_ou_vazio($_POST['pessoaId'] ?? '');
-    $nome = limpar_texto($_POST['nome'] ?? '', 80);
-    if ($nome === '' && $pessoaId !== '') {
-        $nome = (string) (achar_pessoa($pessoaId)['nome'] ?? '');
+    $base = $antigo ?? [
+        'id' => novo_id_organizacao('pv'), 'pessoaId' => '', 'nome' => '', 'tema' => '', 'cidade' => '',
+        'bairro' => '', 'perfis' => [], 'redesEm' => '', 'formacaoEm' => '', 'acaoEm' => '', 'acaoTexto' => '',
+        'publicado' => false, 'meses' => [], 'criadoEm' => date('c'), 'criadoPor' => quem_grava(), 'encerradoEm' => '',
+    ];
+    $novo = mesclar_post($base, [
+        'pessoaId'  => fn ($v) => pessoa_ou_vazio($v),
+        'nome'      => fn ($v) => limpar_texto($v, 80),
+        'tema'      => fn ($v) => (string) $v,
+        'cidade'    => fn ($v) => cidade_valida($v),
+        'bairro'    => fn ($v) => limpar_texto($v, 60),
+        'perfis'    => fn ($v) => array_intersect_key((array) $v, REDES_LIGA),
+        'publicado' => fn ($v) => !empty($v),
+    ]);
+    if ($novo['nome'] === '' && $novo['pessoaId'] !== '') {
+        $novo['nome'] = (string) (achar_pessoa($novo['pessoaId'])['nome'] ?? '');
     }
-    if ($nome === '') {
-        avisar('erro', 'Diga o nome público do porta-voz — o que ele usa nas redes.');
+    if ($novo['nome'] === '') {
+        avisar('erro', 'Escolha a pessoa ou diga o nome público do porta-voz — o que ele usa nas redes.');
         voltar_organizacao('liga');
     }
     /* A mesma pessoa duas vezes na Liga é placar contado duas vezes. */
-    if ($pessoaId !== '') {
+    if ($novo['pessoaId'] !== '') {
         foreach ($liga as $pv) {
-            if ($pv['pessoaId'] === $pessoaId && $pv['id'] !== $id && $pv['encerradoEm'] === '') {
+            if ($pv['pessoaId'] === $novo['pessoaId'] && $pv['id'] !== $novo['id'] && $pv['encerradoEm'] === '') {
                 avisar('erro', 'Esta pessoa já está na Liga como ' . $pv['nome'] . '.');
                 voltar_organizacao('liga');
             }
         }
     }
-
-    $perfis = [];
-    foreach (array_keys(REDES_LIGA) as $r) {
-        $perfis[$r] = (string) ($_POST['perfis'][$r] ?? '');
-    }
-
-    /* AS COMPROVAÇÕES: cada caixa marcada guarda a data em que foi marcada
-       pela primeira vez; desmarcar apaga. A data é o que diz há quanto tempo
-       a pessoa está naquele degrau. */
-    $comprova = function (string $campo) use ($antigo): string {
-        if (empty($_POST[$campo])) {
-            return '';
-        }
-        return ($antigo[$campo] ?? '') !== '' ? $antigo[$campo] : hoje_ce();
-    };
-
-    $acaoEm = $comprova('acaoEm');
-    $acaoTexto = limpar_texto($_POST['acaoTexto'] ?? '', 160);
-    if ($acaoEm !== '' && $acaoTexto === '') {
-        avisar('erro', 'Ação local precisa de registro: o que foi, onde e quantas pessoas.');
-        voltar_organizacao('liga');
-    }
-
-    $novo = [
-        'id'       => $id !== '' ? $id : novo_id_organizacao('pv'),
-        'pessoaId' => $pessoaId,
-        'nome'     => $nome,
-        'tema'     => (string) ($_POST['tema'] ?? ''),
-        'cidade'   => cidade_valida($_POST['cidade'] ?? ''),
-        'bairro'   => limpar_texto($_POST['bairro'] ?? '', 60),
-        'perfis'   => $perfis,
-        'redesEm'    => $comprova('redesEm'),
-        'formacaoEm' => $comprova('formacaoEm'),
-        'acaoEm'     => $acaoEm,
-        'acaoTexto'  => $acaoTexto,
-        'publicado'  => !empty($_POST['publicado']),
-    ] + ($antigo ?? ['meses' => [], 'criadoEm' => date('c'), 'criadoPor' => quem_grava(), 'encerradoEm' => '']);
 
     $lista = $antigo === null
         ? array_merge($liga, [$novo])
@@ -391,7 +385,48 @@ function salvar_porta_voz(): void
         avisar('erro', 'Não consegui gravar em /dados.');
         voltar_organizacao('liga');
     }
-    avisar('ok', ($antigo === null ? 'Na Liga: ' : 'Ficha salva: ') . $nome . '.');
+    avisar('ok', ($antigo === null ? 'Na Liga: ' : 'Ficha salva: ') . $novo['nome'] . '.');
+    voltar_organizacao('liga');
+}
+
+/**
+ * AS COMPROVAÇÕES, uma de cada vez: redes estruturadas, formação concluída,
+ * ação local liderada. Cada uma é um clique da coordenação (a ação local pede
+ * também o registro escrito), e guarda a data em que foi validada — é a data
+ * que diz há quanto tempo a pessoa está naquele degrau. `valor=0` desfaz.
+ */
+function comprovar_porta_voz(): void
+{
+    $campo = (string) ($_POST['campo'] ?? '');
+    if (!in_array($campo, ['redesEm', 'formacaoEm', 'acaoEm'], true)) {
+        avisar('erro', 'Comprovação desconhecida.');
+        voltar_organizacao('liga');
+    }
+    $liga = ler_liga();
+    $alvo = achar_para_editar($liga, 'liga', 'Porta-voz');
+    if ($alvo === null) {
+        avisar('erro', 'Porta-voz não encontrado.');
+        voltar_organizacao('liga');
+    }
+    $vale = ($_POST['valor'] ?? '1') !== '0';
+
+    if ($campo === 'acaoEm' && $vale) {
+        $texto = limpar_texto($_POST['acaoTexto'] ?? '', 160);
+        if ($texto === '') {
+            avisar('erro', 'Ação local precisa de registro: o que foi, onde e quantas pessoas.');
+            voltar_organizacao('liga');
+        }
+        $alvo['acaoTexto'] = $texto;
+    }
+    $alvo[$campo] = $vale ? ($alvo[$campo] !== '' ? $alvo[$campo] : hoje_ce()) : '';
+
+    $lista = array_map(fn ($pv) => $pv['id'] === $alvo['id'] ? $alvo : $pv, $liga);
+    if (!gravar_liga($lista)) {
+        avisar('erro', 'Não consegui gravar em /dados.');
+        voltar_organizacao('liga');
+    }
+    $nomes = ['redesEm' => 'Redes estruturadas', 'formacaoEm' => 'Formação concluída', 'acaoEm' => 'Ação local registrada'];
+    avisar('ok', ($vale ? $nomes[$campo] : 'Desfeito: ' . mb_strtolower($nomes[$campo])) . ' — ' . $alvo['nome'] . '.');
     voltar_organizacao('liga');
 }
 

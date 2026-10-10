@@ -1,7 +1,7 @@
 import React from "react";
-import Link from "next/link";
-import { Icon } from "@/components/icons";
-import { BORDA, C, FONT_ALFA, FONT_BITTER, FONT_ELITE, sombra, HATCH } from "@/lib/theme";
+import { PaginaDoSite } from "@/components/site/PaginaDoSite";
+import { AberturaPagina } from "@/components/site/AberturaPagina";
+import { BORDA, C, FONT_ALFA, FONT_BITTER, sombra, HATCH } from "@/lib/theme";
 import { WHATSAPP_COORDENACAO, TELEFONE_COORDENACAO } from "@/lib/contato";
 
 export interface Secao {
@@ -22,20 +22,19 @@ const PaginaLegal: React.FC<{
   atualizadoEm: string;
   secoes: Secao[];
 }> = ({ titulo, resumo, atualizadoEm, secoes }) => (
+  <PaginaDoSite
+    fundo="livre"
+    abertura={
+      <AberturaPagina
+        trilha={titulo}
+        kicker={`Atualizada em ${atualizadoEm}`}
+        titulo={titulo}
+        intro={<p>{resumo}</p>}
+      />
+    }
+  >
   <div className="lg-fundo">
-    <main className="lg-main">
-      <Link href="/" className="lg-voltar">
-        <Icon name="arrowLeft" size={16} />
-        <span>Voltar pro site</span>
-      </Link>
-
-      <header className="lg-cabecalho">
-        <p className="lg-chip">Missão Ceará</p>
-        <h1 className="lg-titulo">{titulo}</h1>
-        <p className="lg-resumo">{resumo}</p>
-        <p className="lg-data">Atualizada em {atualizadoEm}</p>
-      </header>
-
+    <div className="lg-main">
       {secoes.map((s, i) => (
         <section key={s.titulo} className="lg-secao">
           <h2 className="lg-secao-titulo">
@@ -64,46 +63,21 @@ const PaginaLegal: React.FC<{
           .
         </p>
       </footer>
-    </main>
+    </div>
 
     <style>{css}</style>
   </div>
+  </PaginaDoSite>
 );
 
 const css = `
   .lg-fundo {
-    min-height: 100dvh;
     background: ${HATCH}, ${C.paper};
     color: ${C.ink};
     font-family: ${FONT_BITTER};
     color-scheme: light;
   }
-  .lg-main { max-width: 720px; margin: 0 auto; padding: 22px 18px 64px; }
-
-  .lg-voltar {
-    display: inline-flex; align-items: center; gap: 8px; min-height: 44px;
-    font-family: ${FONT_ELITE}; font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
-    color: ${C.ink}; background: ${C.cream}; text-decoration: none;
-    padding: 10px 15px; border: ${BORDA}px solid ${C.ink};
-    box-shadow: ${sombra("rente")}; margin-bottom: 22px;
-  }
-
-  .lg-cabecalho { margin-bottom: 30px; }
-  .lg-chip {
-    display: inline-block; font-family: ${FONT_ELITE};
-    letter-spacing: 4px; font-size: 12px; text-transform: uppercase;
-    color: ${C.ink}; background: ${C.gold};
-    padding: 4px 14px; box-shadow: ${sombra("rente")}; margin: 0 0 12px;
-  }
-  .lg-titulo {
-    font-family: ${FONT_ALFA}; font-size: clamp(28px, 7vw, 42px);
-    line-height: 1.08; margin: 0 0 12px; text-shadow: 3px 3px 0 ${C.gold};
-  }
-  .lg-resumo { font-size: 15.5px; line-height: 1.6; margin: 0 0 10px; }
-  .lg-data {
-    font-family: ${FONT_ELITE}; font-size: 12px; letter-spacing: 1.5px;
-    opacity: .75; margin: 0;
-  }
+  .lg-main { max-width: 720px; margin: 0 auto; padding: 32px 16px 64px; }
 
   .lg-secao {
     background: ${C.cream}; border: ${BORDA}px solid ${C.ink};

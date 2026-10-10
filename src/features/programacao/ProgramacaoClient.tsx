@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { bordaFina } from "@/lib/theme";
 import Link from "next/link";
+import { PaginaDoSite } from "@/components/site/PaginaDoSite";
 import { Icon, IconName } from "@/components/icons";
 import CompartilharClient from "./CompartilharClient";
 import DetalheEncontro from "./DetalheEncontro";
@@ -253,6 +254,7 @@ const ProgramacaoClient: React.FC<{ semente: Agenda }> = ({ semente }) => {
   const aberto = abertoId ? ordenados.find((i) => i.id === abertoId) ?? null : null;
 
   return (
+    <PaginaDoSite fundo="livre">
     <div style={{ position: "relative", minHeight: "100dvh", background: C.night }}>
       {schemaEventos && (
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: schemaEventos }} />
@@ -286,7 +288,7 @@ const ProgramacaoClient: React.FC<{ semente: Agenda }> = ({ semente }) => {
         }}
       />
 
-      <main
+      <div
         style={{
           position: "relative",
           zIndex: 2,
@@ -297,12 +299,8 @@ const ProgramacaoClient: React.FC<{ semente: Agenda }> = ({ semente }) => {
           color: C.cream,
         }}
       >
-        {/* ===== Topo: voltar + onde assistir ===== */}
+        {/* ===== Topo: onde assistir (a volta ao Início é a barra do site) ===== */}
         <div className="ag-topo">
-          <Link href="/" className="ag-voltar">
-            <Icon name="arrowLeft" size={16} />
-            <span>Voltar</span>
-          </Link>
 
           {agenda.disponivelEm && agenda.disponivelEm.length > 0 && (
             <div className="ag-canais">
@@ -509,7 +507,7 @@ const ProgramacaoClient: React.FC<{ semente: Agenda }> = ({ semente }) => {
             perfis <strong>@moreiramissao</strong>.
           </p>
         </footer>
-      </main>
+      </div>
 
       {aberto && (
         <DetalheEncontro
@@ -522,6 +520,7 @@ const ProgramacaoClient: React.FC<{ semente: Agenda }> = ({ semente }) => {
 
       <style>{css}</style>
     </div>
+    </PaginaDoSite>
   );
 };
 
@@ -646,17 +645,12 @@ const css = `
   .ag-topo {
     display: flex; align-items: center; justify-content: space-between;
     gap: 12px; flex-wrap: wrap; margin-bottom: 26px;
-  }
-  .ag-voltar {
-    display: inline-flex; align-items: center; gap: 7px;
-    font-family: ${FONT_ELITE}; font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
+  }; font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
     color: ${C.ink}; background: ${C.gold}; text-decoration: none;
     padding: 11px 16px; min-height: 44px; border: ${bordaFina(C.ink)};
     box-shadow: ${sombra("rente")};
     transition: transform .12s ease, box-shadow .12s ease;
-  }
-  .ag-voltar:hover { transform: translate(-2px,-2px); box-shadow: ${sombraErguida("rente")}; }
-  .ag-voltar:active { transform: translate(2px,2px); box-shadow: ${sombraAfundada("rente")}; }
+  }; }; }
 
   .ag-canais { display: flex; align-items: center; gap: 10px; }
   .ag-canais-label {
@@ -911,7 +905,7 @@ const css = `
 
   @media (prefers-reduced-motion: reduce) {
     .ag-item { animation: none; }
-    .ag-cartao, .ag-voltar, .ag-canal { transition: none !important; }
+    .ag-cartao, .ag-canal { transition: none !important; }
     .ag-ponto { animation: none; }
   }
 `;

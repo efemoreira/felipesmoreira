@@ -4,7 +4,7 @@ declare(strict_types=1);
 /**
  * A ORGANIZAÇÃO PERMANENTE — núcleos, grupos temáticos e a Liga dos Porta-vozes.
  *
- * Nasce do "Plano Missão Ceará 2026–2027" (felipesmoreira.com/planomissaoce),
+ * Nasce do "Plano Missão Ceará 2026–2027" (felipesmoreira.com/plano),
  * escrito depois do 1º turno: o eleitor do 14 existe no Ceará, o que faltou foi
  * gente organizada para levá-lo até os nossos nomes. O plano pede três coisas
  * que o painel não tinha:

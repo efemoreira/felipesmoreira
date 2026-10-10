@@ -7,7 +7,7 @@
  * seguidores enquanto o painel cobra outra coisa, e `testes/contrato/
  * organizacao.test.ts` falha antes de isso ir ao ar.
  *
- * Vêm do "Plano Missão Ceará 2026–2027" (/planomissaoce).
+ * Vêm do "Plano Missão Ceará 2026–2027" (/plano).
  */
 import type { IconName } from "@/components/icons";
 

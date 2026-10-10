@@ -3,28 +3,50 @@ import React from "react";
 import Link from "next/link";
 import { Icon } from "@/components/icons";
 import { BORDA, C, FONT_ALFA, FONT_ELITE, FONT_BITTER, borda, sombra, sombraErguida, sombraAfundada, bordaFina } from "@/lib/theme";
-import { marca, coordenacao, links, socialLinks, type LinkCard } from "./data";
+import { DEGRAUS } from "@/features/organizacao/catalogo";
+import { PaginaDoSite } from "@/components/site/PaginaDoSite";
+import { marca, coordenacao, numeros, portas, mais, type Porta } from "./data";
 
+/**
+ * A HOME — a porta de entrada da militância.
+ *
+ * Era um link-in-bio: uma coluna de 560 px com oito cartões iguais, o mesmo
+ * peso para "quero participar" e para "Heróis do Ceará". Funcionava para quem
+ * chegava de um perfil e clicava num link; não explicava nada para quem
+ * chegava querendo entender onde entrar.
+ *
+ * Agora é uma página com seções, na ordem da escada do plano:
+ *
+ *   abertura   quem somos, e as duas ações (participar · ver a agenda)
+ *   números    o diagnóstico de 2026 em três carimbos — o porquê
+ *   portas     núcleo, grupo, Liga — onde eu entro
+ *   escada     de Interessado a Multiplicador — como se sobe
+ *   mais       o resto do site, em blocos menores
+ *   coordena   quem mantém isto
+ *
+ * Barra do topo e rodapé (com as redes) são os globais de `PaginaDoSite`.
+ *
+ * O FUNDO CONTINUA SENDO O CORDEL ANIMADO (`/cordel-bg.html#bg`), fixo atrás
+ * de tudo. A abertura fica sobre ele, transparente; da segunda seção em
+ * diante o conteúdo vem em papel e tinta — cartões com a moldura grossa e a
+ * sombra dura — para ser lido sem brigar com a cena.
+ *
+ * O layout responsivo mora no <style> do fim, porque estilo inline não tem
+ * media query. Cores, borda e sombra saem do tema, como no resto do site.
+ */
 export default function Home() {
   return (
-    <div style={{ position: "relative", minHeight: "100dvh", background: C.night }}>
+    <PaginaDoSite fundo="cena">
+    <div style={{ position: "relative", minHeight: "100dvh", background: C.night, fontFamily: FONT_BITTER, color: C.cream }}>
       {/* ===== Fundo animado: cena do cordel (montanhas e barcos fixos, chão parado) ===== */}
       <iframe
         src="/cordel-bg.html#bg"
         title="Cena animada de cordel — sertão do Ceará com montanhas, mar e vida da caatinga"
         aria-hidden="true"
         tabIndex={-1}
-        style={{
-          position: "fixed",
-          inset: 0,
-          width: "100%",
-          height: "100%",
-          border: "0",
-          pointerEvents: "none",
-          zIndex: 0,
-        }}
+        style={{ position: "fixed", inset: 0, width: "100%", height: "100%", border: 0, pointerEvents: "none", zIndex: 0 }}
       />
-      {/* véu escuro pra dar contraste ao conteúdo */}
+      {/* véu: leve em cima (a cena aparece), mais escuro embaixo (o texto lê) */}
       <div
         aria-hidden="true"
         style={{
@@ -32,207 +54,116 @@ export default function Home() {
           inset: 0,
           zIndex: 1,
           pointerEvents: "none",
-          background:
-            "linear-gradient(180deg, rgba(12,12,14,.55) 0%, rgba(12,12,14,.18) 26%, rgba(12,12,14,.20) 62%, rgba(12,12,14,.62) 100%)",
+          background: "linear-gradient(180deg, rgba(12,12,14,.62) 0%, rgba(12,12,14,.22) 34%, rgba(12,12,14,.35) 70%, rgba(12,12,14,.72) 100%)",
         }}
       />
 
-      {/* ===== Conteúdo (estilo link-in-bio, rolando por cima do fundo fixo) ===== */}
-      <main
-        style={{
-          position: "relative",
-          zIndex: 2,
-          maxWidth: 560,
-          margin: "0 auto",
-          padding: "56px 20px 40px",
-          fontFamily: FONT_BITTER,
-          color: C.cream,
-        }}
-      >
-        {/* Cabeçalho: a marca da Missão. O retrato do Felipe desceu para
-            "Quem coordena" — depois da eleição, quem chega procura a
-            militância, não um candidato. */}
-        <header style={{ textAlign: "center", marginBottom: 30 }}>
-          <div
-            style={{
-              width: 132,
-              height: 132,
-              margin: "0 auto 18px",
-              borderRadius: "50%",
-              overflow: "hidden",
-              background: C.night,
-              boxShadow: `0 0 0 4px ${C.ink}, 0 0 0 8px ${C.gold}, 0 0 0 12px ${C.ink}, ${sombra("alto")}`,
-            }}
-          >
+      <div className="h-main">
+        {/* ===================== ABERTURA ===================== */}
+        <header id="abertura" className="h-abertura">
+          <div className="h-abertura-texto">
+            <p className="h-selo">{marca.kicker}</p>
+            <h1 className="h-titulo">{marca.nome}</h1>
+            <p className="h-chamada">{marca.chamada}</p>
+            <p className="h-bio">{marca.bio}</p>
+            <div className="h-acoes">
+              {/* `prefetch={false}`: rota estática carrega rápido no clique, e
+                  baixar o chunk de toda rota visível custa dado de quem está
+                  no pré-pago. */}
+              <Link href="/queroajudar" prefetch={false} className="h-botao h-botao-ouro">
+                <Icon name="flag" size={20} />
+                Quero participar
+              </Link>
+              <Link href="/programacao" prefetch={false} className="h-botao h-botao-papel">
+                <Icon name="calendar" size={20} />
+                Ver a agenda
+              </Link>
+            </div>
+            <p className="h-promessa">A coordenação conversa com você em até 3 dias.</p>
+          </div>
+
+          <div className="h-emblema" aria-hidden="false">
             {/* <picture> pelo mesmo motivo do retrato: export estático, sem
                 next/image — e é ele que diz ao lint que a escolha é nossa. */}
             <picture>
               <img
                 src={marca.emblema}
                 alt="Marca da Missão: duas onças, uma branca e uma dourada, frente a frente"
-                width={132}
-                height={132}
+                width={512}
+                height={512}
                 fetchPriority="high"
                 decoding="async"
-                style={{ objectFit: "cover", width: "100%", height: "100%" }}
               />
             </picture>
           </div>
-
-          <p
-            style={{
-              display: "inline-block",
-              fontFamily: FONT_ELITE,
-              letterSpacing: 4,
-              fontSize: 12,
-              textTransform: "uppercase",
-              color: C.ink,
-              background: C.gold,
-              padding: "4px 14px",
-              boxShadow: sombra("rente"),
-              marginBottom: 14,
-            }}
-          >
-            {marca.kicker}
-          </p>
-
-          <h1
-            style={{
-              fontFamily: FONT_ALFA,
-              fontSize: "clamp(30px, 8vw, 46px)",
-              letterSpacing: 1,
-              lineHeight: 1.05,
-              textShadow: `2px 2px 0 ${C.ink}`,
-              margin: "6px 0 12px",
-            }}
-          >
-            {marca.nome}
-          </h1>
-
-          <p
-            style={{
-              maxWidth: 440,
-              margin: "0 auto",
-              fontSize: 15.5,
-              lineHeight: 1.5,
-              color: C.cream,
-              textShadow: "0 1px 6px rgba(0,0,0,.65)",
-            }}
-          >
-            {marca.bio}
-          </p>
         </header>
 
-        {/* Cartões de links */}
-        <nav
-          style={{ display: "flex", flexDirection: "column", gap: 14 }}
-          aria-label="Navegação principal"
-        >
-          {links.map((l) => {
-            const content = <CardBody link={l} />;
-            const cardStyle: React.CSSProperties = {
-              display: "block",
-              textDecoration: "none",
-              background: l.accent ? C.gold : C.paper,
-              border: borda(),
-              boxShadow: sombra(),
-              color: C.ink,
-              transition: "transform .12s ease, box-shadow .12s ease",
-            };
-            return l.internal ? (
-              /* `prefetch={false}`: por padrão o Next baixa o chunk e o payload
-                 de todo <Link> visível. Com sete cartões isso são ~239 KB de
-                 rotas que o visitante ainda não pediu — medido no 4G lento, mais
-                 de um segundo, e dado do bolso de quem está no pré-pago.
-                 Num link-in-bio a maioria abre uma página e sai; as rotas são
-                 HTML estático e carregam rápido quando alguém realmente clica. */
-              <Link
-                key={l.title}
-                href={l.href}
-                prefetch={false}
-                className="cordel-card"
-                style={cardStyle}
-                title={l.description}
-              >
-                {content}
-              </Link>
-            ) : (
-              <a
-                key={l.title}
-                href={l.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="cordel-card"
-                style={cardStyle}
-                title={l.description}
-              >
-                {content}
-              </a>
-            );
-          })}
-        </nav>
-
-        {/* O plano e quem coordena — o conteúdo indexável da home. */}
-        <section
-          aria-label="O plano da militância"
-          style={{
-            marginTop: 26,
-            padding: "20px 22px",
-            background: "rgba(20,17,12,.6)",
-            border: bordaFina(C.ink),
-            borderRadius: 4,
-            backdropFilter: "blur(2px)",
-          }}
-        >
-          <h2
-            style={{
-              fontFamily: FONT_ALFA,
-              fontSize: 20,
-              letterSpacing: 0.5,
-              color: C.gold,
-              margin: "0 0 12px",
-            }}
-          >
-            Da urna à organização permanente
-          </h2>
-          <div
-            style={{
-              fontSize: 14.5,
-              lineHeight: 1.65,
-              color: C.cream,
-              display: "flex",
-              flexDirection: "column",
-              gap: 12,
-            }}
-          >
-            <p style={{ margin: 0 }}>
-              O eleitor da Missão existe no Ceará: <strong>107.587 cearenses</strong> votaram em
-              Renan Santos para presidente em 2026. Mas só <strong>18 em cada 100</strong> deles
-              votaram também no 14 para deputado federal — no Brasil foram 46. O que faltou não foi
-              voto: foi gente organizada para levar esse voto até os nossos nomes.
-            </p>
-            <p style={{ margin: 0 }}>
-              Por isso o próximo ano é de organização: <strong>núcleos</strong> onde o 14 já é
-              forte, <strong>grupos temáticos</strong> que estudam e agem,{" "}
-              <strong>porta-vozes</strong> que crescem nas redes e na rua, e uma vida cultural
-              própria. O que mede o trabalho não é quantos entram na lista — é quantos sobem um
-              degrau por mês.
-            </p>
+        {/* ===================== NÚMEROS ===================== */}
+        <section aria-labelledby="h-numeros" className="h-secao">
+          <h2 id="h-numeros" className="h-secao-titulo">O que 2026 ensinou</h2>
+          <div className="h-numeros">
+            {numeros.map((n) => (
+              <div key={n.valor} className="h-carimbo">
+                <strong>{n.valor}</strong>
+                <span>{n.rotulo}</span>
+              </div>
+            ))}
           </div>
+          <p className="h-nota">
+            O eleitor existe. Faltou gente organizada para levar esse voto até os nossos nomes — é isso
+            que a gente constrói agora.
+          </p>
+        </section>
 
-          {/* Quem coordena. O retrato desceu para cá: depois da eleição o
-              Felipe é quem mantém o site e coordena a militância, e a história
-              dele continua inteira em /amissao. */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 14,
-              marginTop: 18,
-              paddingTop: 16,
-              borderTop: bordaFina("rgba(255,203,5,.35)"),
-            }}
-          >
+        {/* ===================== PORTAS ===================== */}
+        <section aria-labelledby="h-portas" className="h-secao">
+          <h2 id="h-portas" className="h-secao-titulo">Encontre o seu lugar</h2>
+          <p className="h-secao-sub">Três jeitos de entrar. Dá para estar em mais de um.</p>
+          <nav aria-label="Onde entrar" className="h-portas">
+            {portas.map((p) => (
+              <CartaoPorta key={p.href} p={p} />
+            ))}
+          </nav>
+        </section>
+
+        {/* ===================== ESCADA ===================== */}
+        <section aria-labelledby="h-escada" className="h-secao">
+          <h2 id="h-escada" className="h-secao-titulo">Como se sobe</h2>
+          <p className="h-secao-sub">
+            O que mede o trabalho não é quantos entram na lista. É quantos sobem um degrau por mês.
+          </p>
+          <ol className="h-escada">
+            {DEGRAUS.map((d, i) => (
+              <li key={d.nome} className="h-degrau" style={{ ["--i" as string]: i } as React.CSSProperties}>
+                <span className="h-degrau-num" aria-hidden="true">{i + 1}</span>
+                <strong>{d.nome}</strong>
+                <span>{d.resumo}</span>
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        {/* ===================== MAIS ===================== */}
+        <section aria-labelledby="h-mais" className="h-secao">
+          <h2 id="h-mais" className="h-secao-titulo">E também</h2>
+          <nav aria-label="Mais do site" className="h-mais">
+            {mais.map((p) => (
+              <Link key={p.href} href={p.href} prefetch={false} className="h-tile" title={p.description}>
+                <span className="h-tile-icone" aria-hidden="true">
+                  <Icon name={p.icon} size={20} />
+                </span>
+                <span className="h-tile-texto">
+                  <strong>{p.title}</strong>
+                  <span>{p.subtitle}</span>
+                </span>
+              </Link>
+            ))}
+          </nav>
+        </section>
+
+        {/* ===================== QUEM COORDENA ===================== */}
+        <section aria-label="Quem coordena" className="h-secao">
+          <div className="h-coordena">
             <picture>
               <source srcSet={coordenacao.photo} type="image/webp" />
               <img
@@ -242,176 +173,201 @@ export default function Home() {
                 height={72}
                 loading="lazy"
                 decoding="async"
-                style={{
-                  width: 72,
-                  height: 72,
-                  borderRadius: "50%",
-                  objectFit: "cover",
-                  boxShadow: `0 0 0 3px ${C.gold}`,
-                  flex: "0 0 auto",
-                }}
+                className="h-retrato"
               />
             </picture>
-            <div style={{ minWidth: 0 }}>
-              <p style={{ margin: 0, fontFamily: FONT_ALFA, fontSize: 16, color: C.cream }}>
-                {coordenacao.nome}
-              </p>
-              <p style={{ margin: "2px 0 0", fontSize: 13.5, color: C.cream, opacity: 0.85 }}>
-                {coordenacao.papel}
-              </p>
-              <Link
-                href="/amissao"
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 7,
-                  minHeight: 44,
-                  fontFamily: FONT_ELITE,
-                  fontSize: 12.5,
-                  letterSpacing: 1.4,
-                  textTransform: "uppercase",
-                  color: C.gold,
-                  textDecoration: "none",
-                }}
-              >
-                A história
-                <Icon name="chevronRight" size={16} />
-              </Link>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <p className="h-coordena-rotulo">Quem coordena</p>
+              <p className="h-coordena-nome">{coordenacao.nome}</p>
+              <p className="h-coordena-papel">{coordenacao.papel}</p>
             </div>
+            <Link href="/amissao" prefetch={false} className="h-link-ouro">
+              A história
+              <Icon name="chevronRight" size={16} />
+            </Link>
           </div>
         </section>
 
-        {/* Rodapé */}
-        <footer style={{ textAlign: "center", marginTop: 34 }}>
-          <nav
-            style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: 12, marginBottom: 12 }}
-            aria-label="Redes da coordenação"
-          >
-            {socialLinks.map((s) => (
-              <a
-                key={s.platform}
-                href={s.url}
-                target="_blank"
-                rel="noopener noreferrer me"
-                aria-label={`${s.platform} — ${s.handle}`}
-                title={`Siga a coordenação no ${s.platform} (${s.handle})`}
-                className="cordel-social"
-                style={socialIcon}
-              >
-                <Icon name={s.icon} size={22} />
-              </a>
-            ))}
-          </nav>
-          <p
-            style={{
-              fontFamily: FONT_ELITE,
-              fontSize: 12,
-              letterSpacing: 2,
-              color: C.cream,
-              opacity: 0.85,
-              textShadow: "0 1px 6px rgba(0,0,0,.7)",
-              margin: 0,
-            }}
-          >
-            Missão Ceará · militância · site mantido por Felipe Moreira · ©{" "}
-            {new Date().getFullYear()}
-          </p>
-          {/* A PORTA DE QUEM JÁ É DO MOVIMENTO. Embaixo, discreta, e no site
-              público — porque quem tinha conta só achava o painel digitando a
-              URL, e "a área do militante não tem link" foi a reclamação que
-              chegou. Não é CTA de eleitor: é o caminho de volta de quem já
-              entrou. */}
-          <nav aria-label="Área do militante" className="cordel-militante-nav">
-            <a href="/painel/" className="cordel-militante">
-              <Icon name="users" size={16} />
-              Área do militante
-            </a>
-          </nav>
-        </footer>
-      </main>
+      </div>
 
-      {/* hover/press dos cartões, foco de teclado, entrada suave + respeito a reduced-motion */}
       <style>{`
-        .cordel-card:hover { transform: translate(-2px,-2px); box-shadow: ${sombraErguida("cartao")} !important; }
-        .cordel-card:active { transform: translate(2px,2px); box-shadow: ${sombraAfundada("cartao")} !important; }
-        .cordel-social { transition: transform .12s ease, box-shadow .12s ease; }
-        .cordel-social:hover { transform: translate(-2px,-2px); box-shadow: ${sombraErguida("rente")}; }
-        .cordel-social:active { transform: translate(2px,2px); box-shadow: ${sombraAfundada("rente")}; }
-        .cordel-militante-nav {
-          display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap; justify-content: center;
-          margin-top: 18px; padding: 2px 8px;
-          background: rgba(20,17,12,.82); border: ${bordaFina(C.ink)};
+        .h-main { position: relative; z-index: 2; max-width: 1080px; margin: 0 auto; padding: 0 16px 48px; }
+
+        /* ---------- abertura ---------- */
+        .h-abertura {
+          min-height: min(92dvh, 760px);
+          display: grid; grid-template-columns: 1fr; align-items: center; gap: 28px;
+          padding: 24px 0 40px; text-align: center;
         }
-        .cordel-militante {
-          display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 10px;
-          font-family: ${FONT_ELITE}; font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
-          color: ${C.gold2}; text-decoration: none;
+        .h-abertura-texto { display: flex; flex-direction: column; align-items: center; }
+        .h-selo {
+          display: inline-block; margin: 0 0 16px; padding: 5px 14px;
+          font-family: ${FONT_ELITE}; font-size: 12px; letter-spacing: 3.5px; text-transform: uppercase;
+          color: ${C.ink}; background: ${C.gold}; box-shadow: ${sombra("rente")};
         }
-        .cordel-militante:hover { text-decoration: underline; }
-        .cordel-card:focus-visible, .cordel-social:focus-visible { outline: ${BORDA}px solid #FFCB05; outline-offset: 3px; }
-        @keyframes cordelIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
-        main > * { animation: cordelIn .5s ease-out backwards; }
-        main > *:nth-child(1) { animation-delay: .05s; }
-        main > *:nth-child(2) { animation-delay: .18s; }
-        main > *:nth-child(3) { animation-delay: .3s; }
-        main > *:nth-child(4) { animation-delay: .42s; }
+        .h-titulo {
+          font-family: ${FONT_ALFA}; font-size: clamp(44px, 11vw, 92px); line-height: .95; letter-spacing: 1px;
+          margin: 0 0 10px; text-shadow: 3px 3px 0 ${C.ink}, 6px 6px 0 rgba(0,0,0,.35);
+        }
+        .h-chamada {
+          font-family: ${FONT_ALFA}; font-size: clamp(19px, 4.6vw, 28px); line-height: 1.15;
+          color: ${C.gold}; margin: 0 0 16px; text-shadow: 2px 2px 0 ${C.ink};
+        }
+        .h-bio {
+          max-width: 540px; margin: 0 0 26px; padding: 14px 16px; font-size: 16.5px; line-height: 1.6;
+          /* Uma fita de tinta por trás: a abertura fica sobre a cena animada, e
+             montanha clara atrás de texto claro não se lê no celular. */
+          background: rgba(20,17,12,.72); border-left: ${BORDA}px solid ${C.gold}; text-align: left;
+        }
+        .h-acoes { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; }
+        .h-botao {
+          display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+          min-height: 54px; padding: 12px 22px; text-decoration: none;
+          font-family: ${FONT_ALFA}; font-size: 18px; letter-spacing: .4px;
+          border: ${borda()}; box-shadow: ${sombra("alto", C.sombraNoite)};
+          transition: transform .12s ease, box-shadow .12s ease;
+        }
+        .h-botao-ouro { background: ${C.gold}; color: ${C.ink}; }
+        .h-botao-papel { background: ${C.cream}; color: ${C.ink}; }
+        .h-botao:hover { transform: translate(-2px,-2px); box-shadow: ${sombraErguida("alto", C.sombraNoite)}; }
+        .h-botao:active { transform: translate(2px,2px); box-shadow: ${sombraAfundada("alto", C.sombraNoite)}; }
+        .h-promessa { margin: 14px 0 0; font-family: ${FONT_ELITE}; font-size: 12.5px; letter-spacing: 1.2px; opacity: .9; text-shadow: 0 1px 6px rgba(0,0,0,.8); }
+        .h-emblema { justify-self: center; order: -1; }
+        .h-emblema img {
+          display: block; width: clamp(132px, 34vw, 340px); height: auto; aspect-ratio: 1; border-radius: 50%;
+          background: ${C.night}; object-fit: cover;
+          box-shadow: 0 0 0 5px ${C.ink}, 0 0 0 11px ${C.gold}, 0 0 0 16px ${C.ink}, ${sombra("alto", C.sombraNoite)};
+        }
+
+        /* ---------- seções sobre papel ---------- */
+        .h-secao { margin: 0 0 22px; padding: 26px 18px; background: rgba(20,17,12,.82); border: ${bordaFina(C.ink)}; backdrop-filter: blur(3px); }
+        .h-secao-titulo { font-family: ${FONT_ALFA}; font-size: clamp(24px, 5.5vw, 34px); line-height: 1.1; color: ${C.gold}; margin: 0 0 6px; }
+        .h-secao-sub { margin: 0 0 20px; font-size: 15.5px; line-height: 1.55; opacity: .9; }
+        .h-nota { margin: 16px 0 0; font-size: 15.5px; line-height: 1.55; opacity: .92; max-width: 62ch; }
+
+        .h-numeros { display: grid; grid-template-columns: 1fr; gap: 14px; margin-top: 16px; }
+        .h-carimbo {
+          display: flex; flex-direction: column; gap: 6px; padding: 18px 18px 16px;
+          background: ${C.paper}; color: ${C.ink}; border: ${borda()}; box-shadow: ${sombra("cartao", C.sombraNoite)};
+        }
+        .h-carimbo strong { font-family: ${FONT_ALFA}; font-size: clamp(32px, 7vw, 44px); line-height: 1; color: ${C.ink}; text-shadow: 3px 3px 0 ${C.gold}; }
+        .h-carimbo span { font-size: 15px; line-height: 1.45; }
+
+        .h-portas { display: grid; grid-template-columns: 1fr; gap: 18px; }
+        .h-porta {
+          display: flex; flex-direction: column; text-decoration: none; color: ${C.ink};
+          background: ${C.cream}; border: ${borda()}; box-shadow: ${sombra("alto", C.sombraNoite)};
+          transition: transform .12s ease, box-shadow .12s ease;
+        }
+        .h-porta:hover { transform: translate(-2px,-2px); box-shadow: ${sombraErguida("alto", C.sombraNoite)}; }
+        .h-porta:active { transform: translate(2px,2px); box-shadow: ${sombraAfundada("alto", C.sombraNoite)}; }
+        .h-porta-topo { display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: ${C.gold}; border-bottom: ${borda()}; }
+        .h-porta-icone { width: 44px; height: 44px; display: grid; place-items: center; background: ${C.ink}; color: ${C.gold}; flex: 0 0 auto; }
+        .h-porta-topo strong { font-family: ${FONT_ALFA}; font-size: 21px; line-height: 1.1; }
+        .h-porta-corpo { padding: 16px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+        .h-porta-sub { font-family: ${FONT_ELITE}; font-size: 12px; letter-spacing: 1.8px; text-transform: uppercase; opacity: .75; }
+        .h-porta-desc { font-size: 15.5px; line-height: 1.55; }
+        .h-porta-ir { margin-top: auto; padding-top: 6px; display: inline-flex; align-items: center; gap: 6px; font-family: ${FONT_ALFA}; font-size: 15px; }
+
+        .h-escada { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr; gap: 10px; counter-reset: none; }
+        .h-degrau {
+          position: relative; display: grid; grid-template-columns: 44px 1fr; column-gap: 12px; row-gap: 2px; align-items: start;
+          padding: 12px 14px; background: ${C.cream}; color: ${C.ink}; border: ${bordaFina(C.ink)};
+          margin-left: calc(var(--i) * 10px);
+        }
+        .h-degrau-num {
+          grid-row: span 2; width: 44px; height: 44px; display: grid; place-items: center;
+          font-family: ${FONT_ALFA}; font-size: 22px; background: ${C.gold}; border: ${borda()};
+        }
+        .h-degrau strong { font-family: ${FONT_ALFA}; font-size: 17px; line-height: 1.2; }
+        .h-degrau span:last-child { font-size: 14.5px; line-height: 1.45; }
+
+        .h-mais { display: grid; grid-template-columns: 1fr; gap: 12px; }
+        .h-tile {
+          display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 12px 14px; text-decoration: none;
+          background: ${C.paper}; color: ${C.ink}; border: ${borda()}; box-shadow: ${sombra("rente", C.sombraNoite)};
+          transition: transform .12s ease, box-shadow .12s ease;
+        }
+        .h-tile:hover { transform: translate(-2px,-2px); box-shadow: ${sombraErguida("rente", C.sombraNoite)}; }
+        .h-tile-icone { width: 40px; height: 40px; display: grid; place-items: center; background: ${C.gold}; border: ${bordaFina(C.ink)}; flex: 0 0 auto; }
+        .h-tile-texto { display: flex; flex-direction: column; min-width: 0; }
+        .h-tile-texto strong { font-family: ${FONT_ALFA}; font-size: 16px; line-height: 1.2; }
+        .h-tile-texto span { font-size: 13.5px; opacity: .8; }
+
+        .h-coordena { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+        .h-retrato { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 3px ${C.gold}; display: block; }
+        .h-coordena-rotulo { margin: 0; font-family: ${FONT_ELITE}; font-size: 11.5px; letter-spacing: 2.4px; text-transform: uppercase; color: ${C.gold}; }
+        .h-coordena-nome { margin: 2px 0 0; font-family: ${FONT_ALFA}; font-size: 19px; }
+        .h-coordena-papel { margin: 2px 0 0; font-size: 14px; opacity: .85; }
+        .h-link-ouro {
+          display: inline-flex; align-items: center; gap: 7px; min-height: 44px;
+          font-family: ${FONT_ELITE}; font-size: 12.5px; letter-spacing: 1.4px; text-transform: uppercase;
+          color: ${C.gold}; text-decoration: none;
+        }
+
+        .h-botao:focus-visible, .h-porta:focus-visible, .h-tile:focus-visible, .h-link-ouro:focus-visible {
+          outline: ${BORDA}px solid ${C.gold}; outline-offset: 3px;
+        }
+
+        /* ---------- tablet ---------- */
+        @media (min-width: 640px) {
+          .h-numeros { grid-template-columns: repeat(3, 1fr); }
+          .h-mais { grid-template-columns: repeat(2, 1fr); }
+          .h-secao { padding: 30px 26px; }
+        }
+        /* ---------- computador ---------- */
+        @media (min-width: 900px) {
+          .h-main { padding: 0 24px 64px; }
+          .h-abertura { grid-template-columns: 1.25fr 1fr; text-align: left; gap: 48px; padding: 64px 0 56px; }
+          .h-abertura-texto { align-items: flex-start; }
+          .h-acoes { justify-content: flex-start; }
+          .h-emblema { order: 0; }
+          .h-portas { grid-template-columns: repeat(3, 1fr); }
+          .h-mais { grid-template-columns: repeat(4, 1fr); }
+          /* A escada vira escada: cinco degraus lado a lado, cada um mais alto. */
+          .h-escada { grid-template-columns: repeat(5, 1fr); align-items: end; gap: 12px; }
+          .h-degrau {
+            margin-left: 0; grid-template-columns: 1fr; row-gap: 8px;
+            min-height: calc(150px + var(--i) * 34px); align-content: start;
+          }
+          .h-degrau-num { grid-row: auto; }
+          .h-secao { padding: 34px 32px; }
+        }
+
+        /* ---------- entrada suave, e respeito a quem pediu menos movimento ---------- */
+        @keyframes hEntra { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+        .h-abertura-texto > *, .h-emblema { animation: hEntra .55s ease-out backwards; }
+        .h-abertura-texto > *:nth-child(2) { animation-delay: .06s; }
+        .h-abertura-texto > *:nth-child(3) { animation-delay: .12s; }
+        .h-abertura-texto > *:nth-child(4) { animation-delay: .18s; }
+        .h-abertura-texto > *:nth-child(5) { animation-delay: .24s; }
         @media (prefers-reduced-motion: reduce) {
-          .cordel-card, .cordel-social { transition: none !important; }
-          main > * { animation: none !important; }
+          .h-abertura-texto > *, .h-emblema { animation: none; }
+          .h-botao, .h-porta, .h-tile { transition: none; }
         }
       `}</style>
     </div>
+    </PaginaDoSite>
   );
 }
 
-const socialIcon: React.CSSProperties = {
-  width: 44,
-  height: 44,
-  display: "grid",
-  placeItems: "center",
-  borderRadius: "50%",
-  background: C.gold,
-  border: borda(),
-  color: C.ink,
-  boxShadow: sombra("rente"),
-  textDecoration: "none",
-};
-
-const CardBody: React.FC<{ link: LinkCard }> = ({ link }) => (
-  <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 16px" }}>
-    <span
-      aria-hidden="true"
-      style={{
-        width: 44,
-        height: 44,
-        flex: "0 0 auto",
-        display: "grid",
-        placeItems: "center",
-        borderRadius: 8,
-        background: link.accent ? C.ink : C.gold,
-        color: link.accent ? C.gold : C.ink,
-        border: bordaFina(C.ink),
-      }}
-    >
-      <Icon name={link.icon} size={24} />
-    </span>
-    <span style={{ flex: 1, minWidth: 0 }}>
-      <span
-        style={{
-          display: "block",
-          fontFamily: FONT_ALFA,
-          fontSize: 16,
-          letterSpacing: 0.4,
-          lineHeight: 1.15,
-        }}
-      >
-        {link.title}
+function CartaoPorta({ p }: { p: Porta }) {
+  return (
+    <Link href={p.href} prefetch={false} className="h-porta">
+      <span className="h-porta-topo">
+        <span className="h-porta-icone" aria-hidden="true">
+          <Icon name={p.icon} size={22} />
+        </span>
+        <strong>{p.title}</strong>
       </span>
-      <span style={{ display: "block", fontSize: 13, opacity: 0.8, marginTop: 2 }}>
-        {link.subtitle}
+      <span className="h-porta-corpo">
+        <span className="h-porta-sub">{p.subtitle}</span>
+        <span className="h-porta-desc">{p.description}</span>
+        <span className="h-porta-ir">
+          Conhecer
+          <Icon name="chevronRight" size={16} />
+        </span>
       </span>
-    </span>
-    <Icon name="chevronRight" size={20} style={{ opacity: 0.6, flex: "0 0 auto" }} />
-  </div>
-);
-
+    </Link>
+  );
+}

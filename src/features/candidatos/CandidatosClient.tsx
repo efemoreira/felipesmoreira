@@ -1,6 +1,7 @@
 "use client";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { PaginaDoSite } from "@/components/site/PaginaDoSite";
 import { Icon } from "@/components/icons";
 import { BORDA, C, FONT_ALFA, FONT_ELITE, FONT_BITTER, sombra } from "@/lib/theme";
 import { canvasParaBlob } from "@/lib/cordelCanvas";
@@ -181,12 +182,9 @@ export default function CandidatosClient() {
   const semNinguem = !carregando && !falhou && !temAlguem;
 
   return (
+    <PaginaDoSite fundo="livre">
     <div className="cd-fundo">
-      <main className="cd-main">
-        <Link href="/" className="cd-voltar">
-          <Icon name="arrowLeft" size={16} />
-          Voltar
-        </Link>
+      <div className="cd-main">
 
         <header style={{ margin: "16px 0 30px" }}>
           <p className="cd-kicker">Em que número votar</p>
@@ -327,9 +325,10 @@ export default function CandidatosClient() {
             A eleição passou. A lista fica no ar como registro de quem disputou.
           </p>
         )}
-      </main>
+      </div>
       <style>{css}</style>
     </div>
+    </PaginaDoSite>
   );
 }
 
@@ -491,10 +490,7 @@ const Vice: React.FC<{ c: Candidato }> = ({ c }) => {
 
 const css = `
   .cd-fundo { min-height: 100dvh; background: ${C.night}; color: ${C.cream}; font-family: ${FONT_BITTER}; }
-  .cd-main { max-width: 780px; margin: 0 auto; padding: 30px 20px 80px; }
-  .cd-voltar {
-    display: inline-flex; align-items: center; gap: 7px; min-height: 44px;
-    font-family: ${FONT_ELITE}; font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
+  .cd-main { max-width: 780px; margin: 0 auto; padding: 30px 20px 80px; }; font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
     color: ${C.gold}; text-decoration: none;
   }
   .cd-kicker {

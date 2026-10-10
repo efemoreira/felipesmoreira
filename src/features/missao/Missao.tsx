@@ -1,9 +1,10 @@
 import React from "react";
 import Link from "next/link";
 import { Icon } from "@/components/icons";
-import { BORDA, C, FONT_ALFA, FONT_ELITE, FONT_BITTER, borda, TEXTO, sombra, HATCH, bordaFina } from "@/lib/theme";
-import { FaixaEleicao } from "@/components/FaixaEleicao";
-import { CARGO, CHAMADA, CHAPA, capitulos, porQueSeguranca } from "./data";
+import { BORDA, C, FONT_ALFA, FONT_ELITE, borda, TEXTO, sombra } from "@/lib/theme";
+import { PaginaDoSite } from "@/components/site/PaginaDoSite";
+import { AberturaPagina } from "@/components/site/AberturaPagina";
+import { CHAMADA, CHAPA, capitulos, porQueSeguranca } from "./data";
 
 
 const rotulo: React.CSSProperties = {
@@ -17,98 +18,42 @@ const rotulo: React.CSSProperties = {
 
 export default function Missao() {
   return (
-    <div
-      style={{
-        colorScheme: "light",
-        background: `${HATCH}, ${C.paper}`,
-        color: C.ink,
-        fontFamily: FONT_BITTER,
-        minHeight: "100dvh",
-        overflowX: "clip",
-      }}
+    <PaginaDoSite
+      abertura={
+        <AberturaPagina
+          trilha="Quem coordena"
+          kicker="Coordenador de militância"
+          titulo="Felipe Moreira"
+          icone="users"
+          intro={<p>{CHAMADA}</p>}
+          acoes={[{ texto: "Quero participar", href: "/queroajudar" }, { texto: "O plano", href: "/plano", icone: "book" }]}
+        />
+      }
     >
-      <div style={{ maxWidth: 720, margin: "0 auto", padding: "26px 20px 90px" }}>
-        <Link
-          href="/"
+      <div style={{ maxWidth: 720, margin: "0 auto" }}>
+        <div
           style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 7,
-            minHeight: 44,
-            fontFamily: FONT_ELITE,
-            fontSize: 12.5,
-            letterSpacing: 1.5,
-            textTransform: "uppercase",
-            color: C.ink,
-            textDecoration: "none",
+            width: 124,
+            height: 124,
+            marginBottom: 28,
+            borderRadius: "50%",
+            overflow: "hidden",
+            background: C.cream,
+            boxShadow: `0 0 0 4px ${C.ink}, 0 0 0 8px ${C.gold}, 0 0 0 12px ${C.ink}`,
           }}
         >
-          <Icon name="arrowLeft" size={17} />
-          Voltar
-        </Link>
-
-        {/* ===== abertura ===== */}
-        <header style={{ margin: "16px 0 36px" }}>
-          <div
-            style={{
-              width: 124,
-              height: 124,
-              marginBottom: 20,
-              borderRadius: "50%",
-              overflow: "hidden",
-              background: C.cream,
-              boxShadow: `0 0 0 4px ${C.ink}, 0 0 0 8px ${C.gold}, 0 0 0 12px ${C.ink}`,
-            }}
-          >
-            <picture>
-              <source srcSet="/image/me-320.webp" type="image/webp" />
-              <img
-                src="/image/me-320.jpg"
-                alt="Felipe Moreira"
-                width={124}
-                height={124}
-                decoding="async"
-                style={{ objectFit: "cover", width: "100%", height: "100%" }}
-              />
-            </picture>
-          </div>
-
-          <p
-            style={{
-              display: "inline-block",
-              fontFamily: FONT_ELITE,
-              letterSpacing: 3,
-              fontSize: 11.5,
-              textTransform: "uppercase",
-              color: C.ink,
-              background: C.gold,
-              border: bordaFina(C.ink),
-              padding: "4px 12px",
-              margin: "0 0 14px",
-            }}
-          >
-            Candidato a {CARGO}
-          </p>
-
-          <h1
-            style={{
-              fontFamily: FONT_ALFA,
-              fontSize: "clamp(32px, 8.5vw, 50px)",
-              lineHeight: 1.03,
-              letterSpacing: 0.5,
-              margin: "0 0 14px",
-              textShadow: `3px 3px 0 ${C.gold}`,
-              textWrap: "balance",
-            }}
-          >
-            A Missão
-          </h1>
-
-          <p style={{ fontSize: 17.5, lineHeight: 1.55, margin: "0 0 22px", maxWidth: "58ch" }}>
-            {CHAMADA}
-          </p>
-          <FaixaEleicao />
-        </header>
+          <picture>
+            <source srcSet="/image/me-320.webp" type="image/webp" />
+            <img
+              src="/image/me-320.jpg"
+              alt="Felipe Moreira"
+              width={124}
+              height={124}
+              decoding="async"
+              style={{ objectFit: "cover", width: "100%", height: "100%" }}
+            />
+          </picture>
+        </div>
 
         {/* ===== a trajetória ===== */}
         <section style={{ marginBottom: 40 }}>
@@ -324,6 +269,6 @@ export default function Missao() {
       <style>{`
         a:focus-visible { outline: ${BORDA}px solid ${C.ink}; outline-offset: 3px; }
       `}</style>
-    </div>
+    </PaginaDoSite>
   );
 }

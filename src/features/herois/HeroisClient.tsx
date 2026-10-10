@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useMemo } from "react";
-import Link from "next/link";
+import { PaginaDoSite } from "@/components/site/PaginaDoSite";
 import { Icon, IconName } from "@/components/icons";
 import { BORDA, C, FONT_ALFA, FONT_BITTER, FONT_ELITE, borda, sombra, sombraErguida, sombraAfundada, SOMBRA, HATCH, bordaFina } from "@/lib/theme";
 import { heroes, type Hero } from "./data";
@@ -98,9 +98,9 @@ export default function HeroisClient() {
   const pm = (h: Hero) => PERIOD_META[h.period] || PERIOD_META["Colonial"];
 
   return (
+    <PaginaDoSite fundo="livre">
     <div
       style={{
-        minHeight: "100dvh",
         background: `${HATCH}, ${C.paper}`,
         color: C.ink,
         fontFamily: FONT_BITTER,
@@ -127,34 +127,10 @@ export default function HeroisClient() {
         }
       `}</style>
 
-      <div style={{ maxWidth: 1000, margin: "0 auto", padding: "40px 20px 56px" }}>
+      <div style={{ maxWidth: 1000, margin: "0 auto", padding: "32px 16px 56px" }}>
 
         {/* ===== Cabeçalho do folheto ===== */}
         <header style={{ marginBottom: 26 }}>
-          <Link
-            href="/"
-            className="h-btn"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 8,
-              fontFamily: FONT_ELITE,
-              fontSize: 12,
-              letterSpacing: 2,
-              textTransform: "uppercase",
-              textDecoration: "none",
-              color: C.ink,
-              background: C.cream,
-              border: borda(),
-              boxShadow: sombra("rente"),
-              padding: "11px 16px",
-              minHeight: 44,
-              marginBottom: 22,
-            }}
-          >
-            <Icon name="arrowLeft" size={15} />
-            Voltar
-          </Link>
 
           <p
             style={{
@@ -557,5 +533,6 @@ export default function HeroisClient() {
 
       </div>
     </div>
+    </PaginaDoSite>
   );
 }

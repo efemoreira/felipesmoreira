@@ -1,14 +1,16 @@
 import React from "react";
 import Link from "next/link";
 import { Icon, type IconName } from "@/components/icons";
-import { C, FONT_ALFA, FONT_ELITE, FONT_BITTER, borda, bordaFina, sombra, HATCH, TEXTO } from "@/lib/theme";
+import { C, FONT_ALFA, FONT_ELITE, borda, sombra, TEXTO } from "@/lib/theme";
+import { PaginaDoSite } from "@/components/site/PaginaDoSite";
+import { AberturaPagina, type Acao } from "@/components/site/AberturaPagina";
 
 /**
  * A moldura das três páginas da organização — /nucleos, /temas, /portavozes.
  *
- * O mesmo papel hachurado de /funcoes, o mesmo "Voltar", o mesmo selo de
- * kicker: as quatro são a mesma conversa ("onde eu entro?") vista de lados
- * diferentes, e precisam parecer a mesma coisa.
+ * As três são a mesma conversa ("onde eu entro?") vista de lados diferentes:
+ * a moldura do site (`PaginaDoSite`), a abertura padrão (`AberturaPagina`) e o
+ * mesmo convite no fim.
  */
 
 export const rotuloPequeno: React.CSSProperties = {
@@ -32,83 +34,38 @@ export const cartao: React.CSSProperties = {
 };
 
 export function Moldura({
+  trilha,
   kicker,
   titulo,
   children,
   intro,
+  icone,
+  acoes,
 }: {
+  trilha: string;
   kicker: string;
   titulo: string;
   intro: React.ReactNode;
+  icone?: IconName;
+  acoes?: Acao[];
   children: React.ReactNode;
 }) {
   return (
-    <div
-      style={{
-        colorScheme: "light",
-        background: `${HATCH}, ${C.paper}`,
-        color: C.ink,
-        fontFamily: FONT_BITTER,
-        minHeight: "100dvh",
-        overflowX: "clip",
-      }}
+    <PaginaDoSite
+      abertura={
+        <AberturaPagina
+          trilha={trilha}
+          kicker={kicker}
+          titulo={titulo}
+          intro={intro}
+          icone={icone}
+          acoes={acoes ?? [{ texto: "Quero participar", href: "/queroajudar" }, { texto: "Ver a agenda", href: "/programacao", icone: "calendar" }]}
+        />
+      }
     >
-      <div style={{ maxWidth: 820, margin: "0 auto", padding: "26px 16px 90px" }}>
-        <Link
-          href="/"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 7,
-            minHeight: 44,
-            fontFamily: FONT_ELITE,
-            fontSize: 12.5,
-            letterSpacing: 1.5,
-            textTransform: "uppercase",
-            color: C.ink,
-            textDecoration: "none",
-          }}
-        >
-          <Icon name="arrowLeft" size={17} />
-          Voltar
-        </Link>
-
-        <header style={{ margin: "16px 0 30px" }}>
-          <p
-            style={{
-              display: "inline-block",
-              fontFamily: FONT_ELITE,
-              letterSpacing: 3,
-              fontSize: 11.5,
-              textTransform: "uppercase",
-              background: C.gold,
-              border: bordaFina(C.ink),
-              padding: "4px 12px",
-              margin: "0 0 14px",
-            }}
-          >
-            {kicker}
-          </p>
-          <h1
-            style={{
-              fontFamily: FONT_ALFA,
-              fontSize: "clamp(30px, 8vw, 46px)",
-              lineHeight: 1.04,
-              margin: "0 0 14px",
-              textShadow: `3px 3px 0 ${C.gold}`,
-              textWrap: "balance",
-            }}
-          >
-            {titulo}
-          </h1>
-          <div style={{ fontSize: 17, lineHeight: 1.55, margin: 0, maxWidth: "60ch" }}>{intro}</div>
-        </header>
-
-        {children}
-
-        <Convite />
-      </div>
-    </div>
+      {children}
+      <Convite />
+    </PaginaDoSite>
   );
 }
 

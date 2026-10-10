@@ -39,6 +39,13 @@ Regras:
 - Dados de conteúdo ficam em `features/<nome>/data.ts` quando fizer sentido.
 - Exceção explícita: `src/app/painel/estudio/` é um produto à parte e não serve de modelo para páginas comuns.
 
+## Navegação do site público
+
+- Toda página pública se embrulha em `PaginaDoSite` (`src/components/site/`): barra do topo (`Cabecalho`, com "Participar" sempre visível), abertura padrão (`AberturaPagina`: trilha, selo, título, frase, até duas ações) e rodapé (`Rodape`, o mapa do site). Não desenhe "Voltar" nem cabeçalho próprio.
+- Menu e rodapé saem de `src/components/site/navegacao.ts`; o menu do topo tem no máximo 6 itens. Formação e Biblioteca só entram quando tiverem página pública.
+- Ficam fora de propósito: `/resultados`, `/presenca`, `/municao`, `/aulas`, `/convite`, `/plano` e o Estúdio. `testes/contrato/navegacao.test.ts` prende as duas listas e que todo destino existe.
+- Espaço e largura: `ESPACO`, `LARGURA`, `PONTOS` em `@/lib/theme`.
+
 ## Tema e identidade
 
 - Cor, fonte, moldura e escala de texto saem de `@/lib/theme`.
@@ -65,7 +72,7 @@ Regras:
 ### Foco depois de 04/10/2026
 
 - O site é da **militância da Missão Ceará**; o Felipe aparece como quem mantém o site e coordena a militância (home: "Quem coordena"), não como candidato. `/resultados` fica.
-- O rumo é o "Plano Missão Ceará 2026–2027", publicado em `/planomissaoce` (`public/planomissaoce.html`, estático, noindex — é o artefato; edite lá, não reescreva em React). `/plano` é o plano da campanha e aponta para ele.
+- O rumo é o "Plano Missão Ceará 2026–2027", publicado em `/plano` (`public/plano.html`, estático, noindex — é o artefato; edite lá, não reescreva em React). O plano da campanha saiu do ar.
 
 ### Organização (núcleos, grupos temáticos, Liga)
 

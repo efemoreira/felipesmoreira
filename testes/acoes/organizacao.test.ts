@@ -50,6 +50,27 @@ describe("organização: núcleos", () => {
     assert.notEqual(n.responsavelDesde, "");
   });
 
+  test("formulário curto mexe só no que mandou: marcar a próxima não apaga nome nem responsável", async () => {
+    painel.gravar("nucleos", [{
+      id: "nuc-a", nome: "Benfica", cidade: "Fortaleza", onda: 1, responsavelId: ADMIN, publicado: true,
+      entregas: [{ id: "e1", data: dia(-2), texto: "Escuta" }],
+    }]);
+    await painel.postar("organizacao", { acao: "nucleo-salvar", id: "nuc-a", proximaData: dia(6), proximaTexto: "Roda" });
+    const [n] = painel.ler("nucleos");
+    assert.equal(n.nome, "Benfica");
+    assert.equal(n.onda, 1);
+    assert.equal(n.responsavelId, ADMIN);
+    assert.equal(n.publicado, true);
+    assert.equal(n.entregas.length, 1);
+    assert.equal(n.proximaData, dia(6));
+  });
+
+  test("desmarcar 'aparece no site' chega como resposta", async () => {
+    painel.gravar("nucleos", [{ id: "nuc-a", nome: "Benfica", cidade: "Fortaleza", publicado: true }]);
+    await painel.postar("organizacao", { acao: "nucleo-salvar", id: "nuc-a", publicado: "0" });
+    assert.equal(painel.ler("nucleos")[0].publicado, false);
+  });
+
   test("substituto não pode ser o próprio responsável", async () => {
     const r = await painel.postar("organizacao", {
       acao: "nucleo-salvar", nome: "Benfica", cidade: "Fortaleza",
@@ -128,8 +149,9 @@ describe("organização: grupos temáticos", () => {
     await painel.postar("organizacao", grupo);
     const [g] = painel.ler("temas");
     assert.equal(g.tema, "seguranca");
-    /* As portas nascem do catálogo quando não vêm preenchidas pela tela. */
-    assert.equal(g.maturidade, 0);
+    /* Abrir pede quatro respostas; as portas nascem do catálogo. */
+    assert.equal(g.maturidade, 1);
+    assert.equal(g.portaEstudo, "Violência, crime organizado, juventude e território");
   });
 
   test("um tema, um grupo: o segundo grupo aberto do mesmo tema é recusado", async () => {
@@ -189,8 +211,28 @@ describe("organização: Liga dos Porta-vozes", () => {
   });
 
   test("ação local precisa de registro escrito", async () => {
-    const r = await painel.postar("organizacao", { acao: "pv-salvar", nome: "Ana", acaoEm: "1", acaoTexto: "" });
+    comMeses([]);
+    const r = await painel.postar("organizacao", { acao: "pv-comprovar", id: "pv-a", campo: "acaoEm", acaoTexto: "" });
     assert.match(r.html, /Ação local precisa de registro/);
+    assert.equal(painel.ler("liga")[0].acaoEm, "");
+  });
+
+  test("comprovação é um clique, guarda a data e se desfaz", async () => {
+    comMeses([]);
+    await painel.postar("organizacao", { acao: "pv-comprovar", id: "pv-a", campo: "redesEm" });
+    assert.equal(painel.ler("liga")[0].redesEm, dia(0));
+    await painel.postar("organizacao", { acao: "pv-comprovar", id: "pv-a", campo: "redesEm", valor: "0" });
+    assert.equal(painel.ler("liga")[0].redesEm, "");
+  });
+
+  test("a ficha não apaga meses nem comprovações que ela não mostra", async () => {
+    comMeses([{ mes: mesAtras(1), total: 500, eng: 4 }], { redesEm: "2026-09-01" });
+    await painel.postar("organizacao", { acao: "pv-salvar", id: "pv-a", nome: "Ana B.", publicado: "1" });
+    const [pv] = painel.ler("liga");
+    assert.equal(pv.nome, "Ana B.");
+    assert.equal(pv.meses.length, 1);
+    assert.equal(pv.redesEm, "2026-09-01");
+    assert.equal(pv.tema, "seguranca");
   });
 
   test("fechar o mesmo mês duas vezes corrige, não duplica", async () => {
@@ -268,7 +310,8 @@ describe("organização: a tela com dado abre em silêncio", () => {
     painel.gravar("liga", [{
       id: "pv-a", nome: "Ana", tema: "saude", meses: [{ mes: mesAtras(1), redes: { instagram: 500 }, engajamento: 4 }],
     }]);
-    for (const qs of ["", "aba=temas", "aba=liga", "editar=nuc-a", "aba=temas&editar=grp-a", "aba=liga&fechar=pv-a", "aba=liga&pv=pv-a"]) {
+    for (const qs of ["", "aba=temas", "aba=liga", "editar=nuc-a", "entrega=nuc-a", "proxima=nuc-a", "resp=nuc-a",
+      "aba=temas&editar=grp-a", "aba=temas&novo=seguranca", "aba=liga&fechar=pv-a", "aba=liga&pv=pv-a", "aba=liga&acao-local=pv-a"]) {
       const { html, erros } = painel.abrir("organizacao", qs);
       const ruido = erros.split("\n").filter((l) => /Warning|Notice|Deprecated|Fatal|Uncaught/i.test(l));
       assert.deepEqual(ruido, [], `organizacao?${qs}`);

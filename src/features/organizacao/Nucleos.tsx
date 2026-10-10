@@ -75,6 +75,8 @@ export default function Nucleos() {
 
   return (
     <Moldura
+      trilha="Núcleos"
+      icone="pin"
       kicker="Núcleos"
       titulo="A Missão no seu bairro"
       intro={

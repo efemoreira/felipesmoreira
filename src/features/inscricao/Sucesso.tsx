@@ -49,7 +49,7 @@ export const Sucesso: React.FC<{ nome: string; cidade: string; escolhidas: Funca
 
   return (
     <div className="in-fundo">
-      <main className="in-main in-sucesso">
+      <div className="in-main in-sucesso">
         <span className="in-sucesso-selo" aria-hidden="true">
           <Icon name="flag" size={40} />
         </span>
@@ -164,12 +164,14 @@ export const Sucesso: React.FC<{ nome: string; cidade: string; escolhidas: Funca
             <Icon name="whatsapp" size={18} />
             <span>Entrar no grupo</span>
           </a>
-          <Link className="in-btn in-btn-fantasma" href="/">
-            <Icon name="arrowLeft" size={18} />
-            <span>Voltar pro site</span>
+          {/* O próximo degrau, e não "voltar": quem acabou de se inscrever
+              quer saber onde vai atuar. */}
+          <Link className="in-btn in-btn-fantasma" href="/nucleos">
+            <Icon name="pin" size={18} />
+            <span>Achar meu núcleo</span>
           </Link>
         </div>
-      </main>
+      </div>
       <style>{css}</style>
     </div>
   );

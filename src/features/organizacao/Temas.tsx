@@ -80,6 +80,8 @@ export default function Temas() {
 
   return (
     <Moldura
+      trilha="Grupos temáticos"
+      icone="book"
       kicker="Grupos temáticos"
       titulo="Um tema, um grupo"
       intro={

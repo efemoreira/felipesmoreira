@@ -1,6 +1,6 @@
 "use client";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
+import { PaginaDoSite } from "@/components/site/PaginaDoSite";
 import { Icon } from "@/components/icons";
 import catalogo from "@/data/funcoes.json";
 import { enviarInscricao } from "@/lib/api/inscricao";
@@ -257,15 +257,18 @@ export default function InscricaoClient() {
     sinal("enviou-inscricao");
   };
 
-  if (envio === "pronto") return <Sucesso nome={campos.nome} cidade={campos.cidade} escolhidas={escolhidas} />;
+  if (envio === "pronto") {
+    return (
+      <PaginaDoSite fundo="livre">
+        <Sucesso nome={campos.nome} cidade={campos.cidade} escolhidas={escolhidas} />
+      </PaginaDoSite>
+    );
+  }
 
   return (
+    <PaginaDoSite fundo="livre">
     <div className="in-fundo">
-      <main className="in-main">
-        <Link href="/" className="in-voltar-site">
-          <Icon name="arrowLeft" size={16} />
-          <span>Voltar pro site</span>
-        </Link>
+      <div className="in-main">
 
         <header className="in-cabecalho">
           <p className="in-chip">Missão Ceará</p>
@@ -386,10 +389,11 @@ export default function InscricaoClient() {
             {funcoes.length === 1 ? "1 função escolhida" : `${funcoes.length} funções escolhidas`}
           </p>
         )}
-      </main>
+      </div>
 
       <style>{css}</style>
     </div>
+    </PaginaDoSite>
   );
 }
 

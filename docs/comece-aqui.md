@@ -9,7 +9,7 @@ docs é para depois.
 - **felipesmoreira.com** é o site da militância da Missão Ceará. Foi site de
   campanha até a eleição de **04/10/2026** (Felipe Moreira era candidato a
   Vice-Governador na chapa de Huggo Leonardo); desde então serve ao "Plano
-  Missão Ceará 2026–2027" (`/planomissaoce`): núcleos, grupos temáticos, Liga
+  Missão Ceará 2026–2027" (`/plano`): núcleos, grupos temáticos, Liga
   dos Porta-vozes e a escada de engajamento. O Felipe coordena a militância e
   mantém o site.
 - **Duas metades num repositório só:**

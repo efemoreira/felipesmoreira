@@ -218,3 +218,16 @@ export const FONT_DADOS = "system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvet
 export const RAIO_DADOS = 8;
 /** O filete da superfície de dados. */
 export const fileteDados = (cor: string = PAINEL_DADOS.linha) => `1px solid ${cor}`;
+
+/**
+ * A RÉGUA DE ESPAÇO E DE LARGURA do site público — a Fase 0 do plano de
+ * 2026–2027 (navegação, abertura e rodapé comuns). Seção, cartão e grade usam
+ * estes degraus em vez de número solto, para as páginas respirarem igual.
+ */
+export const ESPACO = { xs: 4, s: 8, m: 12, l: 16, xl: 24, xxl: 32, sec: 48, gde: 64 } as const;
+
+/** Largura do conteúdo e da coluna de leitura. */
+export const LARGURA = { conteudo: 1080, texto: "68ch" } as const;
+
+/** Os dois pontos de quebra: tablet e computador. Usados nos <style> das peças. */
+export const PONTOS = { tablet: 640, computador: 900 } as const;

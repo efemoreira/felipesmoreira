@@ -4,7 +4,7 @@ const BASE = "https://felipesmoreira.com";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
-  /* Só o que é indexável entra. /plano, /planomissaoce, /aulas e /presenca declaram noindex
+  /* Só o que é indexável entra. /plano, /aulas e /presenca declaram noindex
      na própria rota e ficam de fora de propósito — sitemap e robots dizendo
      coisas diferentes é o jeito mais rápido de confundir o buscador. */
   return [

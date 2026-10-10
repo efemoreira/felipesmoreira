@@ -1,7 +1,9 @@
 import React from "react";
 import Link from "next/link";
 import { Icon, type IconName } from "@/components/icons";
-import { BORDA, C, FONT_ALFA, FONT_ELITE, FONT_BITTER, borda, TEXTO, sombra, HATCH, bordaFina } from "@/lib/theme";
+import { BORDA, C, FONT_ALFA, FONT_ELITE, borda, TEXTO, sombra, bordaFina, PONTOS } from "@/lib/theme";
+import { PaginaDoSite } from "@/components/site/PaginaDoSite";
+import { AberturaPagina } from "@/components/site/AberturaPagina";
 import CATALOGO from "@/data/funcoes.json";
 import type { CatalogoFuncoes, Funcao, GrupoFuncao } from "@/features/inscricao/tipos";
 
@@ -143,72 +145,25 @@ const Ficha: React.FC<{ f: Funcao }> = ({ f }) => (
 
 export default function Funcoes() {
   return (
-    <div
-      style={{
-        colorScheme: "light",
-        background: `${HATCH}, ${C.paper}`,
-        color: C.ink,
-        fontFamily: FONT_BITTER,
-        minHeight: "100dvh",
-        overflowX: "clip",
-      }}
+    <PaginaDoSite
+      abertura={
+        <AberturaPagina
+          trilha="Funções"
+          kicker={`${catalogo.funcoes.length} funções`}
+          titulo="O que dá pra fazer na militância"
+          icone="users"
+          intro={
+            <p>
+              Ninguém entra pra “ajudar no que precisar” e descobre depois que não tinha função. Cada
+              uma aqui diz o que você entrega e quanto tempo pede — antes de você decidir. Tem lugar
+              pra quem tem dez horas por semana e pra quem tem trinta minutos.
+            </p>
+          }
+          acoes={[{ texto: "Quero participar", href: "/queroajudar" }]}
+        />
+      }
     >
-      <div style={{ maxWidth: 760, margin: "0 auto", padding: "26px 20px 90px" }}>
-        <Link
-          href="/"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 7,
-            minHeight: 44,
-            fontFamily: FONT_ELITE,
-            fontSize: 12.5,
-            letterSpacing: 1.5,
-            textTransform: "uppercase",
-            color: C.ink,
-            textDecoration: "none",
-          }}
-        >
-          <Icon name="arrowLeft" size={17} />
-          Voltar
-        </Link>
-
-        <header style={{ margin: "16px 0 32px" }}>
-          <p
-            style={{
-              display: "inline-block",
-              fontFamily: FONT_ELITE,
-              letterSpacing: 3,
-              fontSize: 11.5,
-              textTransform: "uppercase",
-              color: C.ink,
-              background: C.gold,
-              border: bordaFina(C.ink),
-              padding: "4px 12px",
-              margin: "0 0 14px",
-            }}
-          >
-            {catalogo.funcoes.length} funções
-          </p>
-          <h1
-            style={{
-              fontFamily: FONT_ALFA,
-              fontSize: "clamp(30px, 8vw, 46px)",
-              lineHeight: 1.04,
-              margin: "0 0 14px",
-              textShadow: `3px 3px 0 ${C.gold}`,
-              textWrap: "balance",
-            }}
-          >
-            O que dá pra fazer na militância
-          </h1>
-          <p style={{ fontSize: 17, lineHeight: 1.55, margin: 0, maxWidth: "58ch" }}>
-            Ninguém entra pra “ajudar no que precisar” e descobre depois que não tinha função. Cada
-            uma aqui diz o que você entrega e quanto tempo pede — antes de você decidir. Tem lugar
-            pra quem tem dez horas por semana e pra quem tem trinta minutos.
-          </p>
-        </header>
-
+      <div>
         {ORDEM.map((g) => {
           const doGrupo = catalogo.funcoes.filter((f) => f.grupo === g);
           if (doGrupo.length === 0) return null;
@@ -230,7 +185,7 @@ export default function Funcoes() {
                   {info.resumo}
                 </p>
               </header>
-              <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+              <div className="fn-grade">
                 {doGrupo.map((f) => (
                   <Ficha key={f.id} f={f} />
                 ))}
@@ -280,9 +235,11 @@ export default function Funcoes() {
       </div>
 
       <style>{`
+        .fn-grade { display: grid; grid-template-columns: 1fr; gap: 18px; align-items: start; }
+        @media (min-width: ${PONTOS.computador}px) { .fn-grade { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
         summary::-webkit-details-marker { display: none; }
         a:focus-visible, summary:focus-visible { outline: ${BORDA}px solid ${C.ink}; outline-offset: 3px; }
       `}</style>
-    </div>
+    </PaginaDoSite>
   );
 }

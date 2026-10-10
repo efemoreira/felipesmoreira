@@ -1,8 +1,10 @@
 "use client";
 import React, { useState } from "react";
 import Link from "next/link";
+import { PaginaDoSite } from "@/components/site/PaginaDoSite";
+import { AberturaPagina } from "@/components/site/AberturaPagina";
 import { Icon } from "@/components/icons";
-import { BORDA, C, FONT_ALFA, FONT_BITTER, FONT_ELITE, borda, TEXTO, sombra, HATCH, bordaFina } from "@/lib/theme";
+import { BORDA, C, FONT_ALFA, FONT_ELITE, borda, TEXTO, sombra, bordaFina } from "@/lib/theme";
 import {
   CHAPA,
   CITACOES,
@@ -271,89 +273,26 @@ const rotuloSecao: React.CSSProperties = {
 
 export default function PropostasClient() {
   return (
-    <div
-      style={{
-        /* O layout declara `color-scheme: dark`. Sem trocar aqui, o navegador
-           desenha caixa de seleção e foco em tema escuro sobre o papel claro. */
-        colorScheme: "light",
-        background: `${HATCH}, ${C.paper}`,
-        color: C.ink,
-        fontFamily: FONT_BITTER,
-        minHeight: "100dvh",
-        overflowX: "clip",
-      }}
+    <PaginaDoSite
+      abertura={
+        <AberturaPagina
+          trilha="Propostas"
+          kicker={`Plano de governo · ${CHAPA.paginas} páginas`}
+          titulo={CHAPA.documento}
+          icone="star"
+          intro={
+            <>
+              <p>{TESE}</p>
+              <p style={{ marginTop: 12, fontFamily: FONT_ELITE, fontSize: 13, letterSpacing: 0.5, opacity: 0.85 }}>
+                {CHAPA.governador}, governador · {CHAPA.vice}, vice · Partido {CHAPA.partido} — eleição de 2026
+              </p>
+            </>
+          }
+          acoes={[{ texto: "Quero participar", href: "/queroajudar" }]}
+        />
+      }
     >
-      <div style={{ maxWidth: 780, margin: "0 auto", padding: "26px 20px 90px" }}>
-        <Link
-          href="/"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 7,
-            minHeight: 44,
-            fontFamily: FONT_ELITE,
-            fontSize: 12.5,
-            letterSpacing: 1.5,
-            textTransform: "uppercase",
-            color: C.ink,
-            textDecoration: "none",
-          }}
-        >
-          <Icon name="arrowLeft" size={17} />
-          Voltar
-        </Link>
-
-        {/* ===== abertura ===== */}
-        <header style={{ margin: "16px 0 34px" }}>
-          <p
-            style={{
-              display: "inline-block",
-              fontFamily: FONT_ELITE,
-              letterSpacing: 3,
-              fontSize: 11.5,
-              textTransform: "uppercase",
-              color: C.ink,
-              background: C.gold,
-              border: bordaFina(C.ink),
-              padding: "4px 12px",
-              margin: "0 0 14px",
-            }}
-          >
-            Plano de governo · {CHAPA.paginas} páginas
-          </p>
-          <h1
-            style={{
-              fontFamily: FONT_ALFA,
-              fontSize: "clamp(32px, 8.5vw, 52px)",
-              lineHeight: 1.02,
-              letterSpacing: 0.5,
-              margin: "0 0 14px",
-              textShadow: `3px 3px 0 ${C.gold}`,
-              textWrap: "balance",
-            }}
-          >
-            {CHAPA.documento}
-          </h1>
-          <p style={{ fontSize: 17, lineHeight: 1.55, margin: "0 0 16px", maxWidth: "60ch" }}>
-            {TESE}
-          </p>
-          <p
-            style={{
-              fontFamily: FONT_ELITE,
-              fontSize: 13,
-              letterSpacing: 0.5,
-              lineHeight: 1.6,
-              margin: 0,
-              paddingTop: 14,
-              borderTop: borda(),
-            }}
-          >
-            <strong>{CHAPA.governador}</strong>, governador · <strong>{CHAPA.vice}</strong>, vice
-            <br />
-            Partido {CHAPA.partido} — Governo do Ceará
-          </p>
-        </header>
-
+      <div style={{ maxWidth: 780, margin: "0 auto" }}>
         {/* ===== como ler ===== */}
         <section
           style={{
@@ -578,13 +517,13 @@ export default function PropostasClient() {
       </div>
 
       <style>{`
-        #${compromissos.map((c) => c.id).join(", #")} { scroll-margin-top: 20px; }
+        #${compromissos.map((c) => c.id).join(", #")} { scroll-margin-top: 80px; }
         summary::-webkit-details-marker { display: none; }
         a:focus-visible, summary:focus-visible {
           outline: ${BORDA}px solid ${C.ink};
           outline-offset: 3px;
         }
       `}</style>
-    </div>
+    </PaginaDoSite>
   );
 }
