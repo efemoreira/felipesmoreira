@@ -20,7 +20,6 @@ export const MENU: ItemNav[] = [
   { rotulo: "Grupos", href: "/temas" },
   { rotulo: "Liga", href: "/portavozes" },
   { rotulo: "Propostas", href: "/propostas" },
-  { rotulo: "Pitches de projetos", href: "/pitch" },
 ];
 
 export const PARTICIPAR: ItemNav = { rotulo: "Participar", href: "/queroajudar" };
@@ -46,7 +45,6 @@ export const RODAPE: { titulo: string; itens: ItemNav[] }[] = [
     titulo: "Conteúdo",
     itens: [
       { rotulo: "O que defendemos", href: "/propostas" },
-      { rotulo: "Pitches de projetos", href: "/pitch" },
       { rotulo: "Heróis do Ceará", href: "/heroisdoceara" },
       { rotulo: "Candidatos de 2026", href: "/candidatos" },
     ],
