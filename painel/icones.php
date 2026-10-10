@@ -49,6 +49,7 @@ const ICONE_AREA = [
     'caixa'      => 'book',
     'leituras'   => 'world',
     'oficina'    => 'play',
+    'organizacao' => 'flag',
 ];
 
 /** SVG inline, no mesmo traço do site (stroke 2, ponta e junta arredondadas). */

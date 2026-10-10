@@ -24,6 +24,9 @@ const MEDIDAS_DE_META = [
     'inscricoes' => 'Inscrições recebidas',
     'presencas'  => 'Presenças em encontros',
     'encontros'  => 'Encontros realizados',
+    /* As duas do plano de 2026–2027: base que dura entre eleições. */
+    'nucleos'       => 'Núcleos ativos',
+    'colaboradores' => 'Pessoas de Colaborador para cima',
 ];
 
 function normalizar_meta($m): ?array
@@ -93,6 +96,12 @@ function valor_da_medida(string $medida): int
         case 'encontros':
             require_once __DIR__ . '/eventos-comum.php';
             return count(array_filter(eventos_passados(), fn ($e) => $e['status'] !== 'cancelado'));
+        case 'nucleos':
+            require_once __DIR__ . '/organizacao-comum.php';
+            return count(array_filter(ler_nucleos(), fn ($n) => unidade_ativa($n)));
+        case 'colaboradores':
+            require_once __DIR__ . '/escada-comum.php';
+            return count(array_filter(degraus_de_hoje(), fn ($d) => $d >= 3));
         default:
             return 0;
     }

@@ -31,6 +31,7 @@ const AREAS = [
     'caixa'      => 'Caixa',
     'leituras'   => 'Leituras',
     'oficina'    => 'Oficina de formatos',
+    'organizacao' => 'Núcleos, grupos e Liga',
 ];
 
 /**
@@ -75,10 +76,10 @@ const CAPACIDADES = [
        de telefones do movimento. */
     'coordenacao' => [
         'nome'   => 'Coordenação',
-        'resumo' => 'Quem entra no movimento, os encontros, os candidatos e a formação do time',
+        'resumo' => 'Quem entra no movimento, os encontros, os núcleos, os grupos temáticos, a Liga e a formação do time',
         /* Leituras é o relatório semanal — origem, território, a semana, o
            que andou acontecendo. Só lê; e lê o que a coordenação já abre. */
-        'areas'  => ['inscricoes', 'candidatos', 'aulas', 'eventos', 'agenda', 'leituras'],
+        'areas'  => ['inscricoes', 'candidatos', 'aulas', 'eventos', 'agenda', 'leituras', 'organizacao'],
     ],
     /* NÃO ABRE TELA NENHUMA — `areas` vazio, e de propósito.
        Ela habilita um bloco no Início: a lista de quem esta pessoa acompanha.
@@ -272,8 +273,9 @@ const DESTINO_AREA = [
     'candidatos' => ['url' => '/painel/candidatos.php', 'resumo' => 'Nome de urna, número e @ de cada candidato — a colinha que o eleitor leva'],
     'pessoas'    => ['url' => '/painel/pessoas.php', 'resumo' => 'Todo mundo do movimento: quem é, o que faz, em que encontros esteve'],
     'caixa'      => ['url' => '/painel/caixa.php', 'resumo' => 'Todo real que entra e sai, com origem — e os dois caixas nunca somados juntos'],
-    'leituras'   => ['url' => '/painel/leituras.php', 'resumo' => 'A leitura da semana: de onde vem a militância, onde ela mora, o que venceu e o que andou acontecendo'],
+    'leituras'   => ['url' => '/painel/leituras.php', 'resumo' => 'A leitura da semana: o painel de comando e a escada, de onde vem a militância, onde ela mora, o que venceu e o que andou acontecendo'],
     'oficina'    => ['url' => '/painel/oficina.php', 'resumo' => 'Testar um formato de vídeo por vez e medir qual deles funciona no seu nicho'],
+    'organizacao' => ['url' => '/painel/organizacao.php', 'resumo' => 'Os núcleos de cada lugar, os grupos de cada tema e a Liga dos Porta-vozes — com quem responde e o que entregou'],
 ];
 
 /**
