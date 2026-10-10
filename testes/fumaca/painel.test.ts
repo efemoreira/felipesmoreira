@@ -62,7 +62,8 @@ const TELAS: [tela: string, querystring: string, apelido: string][] = [
   ["aulas", "estado=sem-video", "aulas sem vídeo"],
   ["inscricoes", "", "fila de entrada"],
   ["inscricoes", "aba=decididas", "inscrições já decididas"],
-  ["leituras", "", "leituras — origem"],
+  ["leituras", "", "leituras — comando"],
+  ["leituras", "aba=origem", "leituras — origem"],
   ["leituras", "aba=territorio", "leituras — território"],
   ["leituras", "aba=encontros", "leituras — encontros"],
   ["leituras", "aba=formacao", "leituras — formação"],
@@ -78,6 +79,12 @@ const TELAS: [tela: string, querystring: string, apelido: string][] = [
   ["gente", "", "sua gente"],
   ["gente", "tipo=esfriando", "sua gente — esfriando"],
   ["manutencao", "", "manutenção"],
+  ["organizacao", "", "organização — núcleos"],
+  ["organizacao", "novo=nucleo", "organização — modal de núcleo novo"],
+  ["organizacao", "aba=temas", "organização — grupos temáticos"],
+  ["organizacao", "aba=temas&novo=seguranca", "organização — abrir grupo"],
+  ["organizacao", "aba=liga", "organização — Liga"],
+  ["organizacao", "aba=liga&pv=novo", "organização — pôr na Liga"],
 ];
 
 let painel: Sandbox;

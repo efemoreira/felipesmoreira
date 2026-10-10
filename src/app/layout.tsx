@@ -42,12 +42,12 @@ const bitter = Bitter({
 export const metadata: Metadata = {
   metadataBase: new URL("https://felipesmoreira.com"),
   title: {
-    default: "Felipe Moreira — Candidato a Vice-Governador do Ceará | Missão Ceará",
-    template: "%s | Felipe Moreira",
+    default: "Missão Ceará — Militância organizada no Ceará",
+    template: "%s | Missão Ceará",
   },
   description:
-    "Felipe Moreira, candidato a Vice-Governador do Ceará pela Missão Ceará. De militante de internet no MBL Ceará a militante de rua: a história, o projeto e como entrar na militância.",
-  applicationName: "Felipe Moreira",
+    "A militância da Missão no Ceará: núcleos nos bairros, grupos temáticos, a Liga dos Porta-vozes, agenda e formação. Coordenada por Felipe Moreira.",
+  applicationName: "Missão Ceará",
   keywords: [
     "Felipe Moreira",
     "Ceará",
@@ -57,9 +57,10 @@ export const metadata: Metadata = {
     "MBL",
     "MBL CE",
     "MBL Ceará",
-    "candidato a vice-governador do Ceará",
-    "vice-governador do Ceará",
-    "eleições 2026 Ceará",
+    "militância Ceará",
+    "núcleos Missão Ceará",
+    "porta-vozes",
+    "Partido Missão Ceará",
     "segurança pública Ceará",
     "sertão",
     "heróis do Ceará",
@@ -75,19 +76,19 @@ export const metadata: Metadata = {
     type: "website",
     locale: "pt_BR",
     url: "https://felipesmoreira.com",
-    siteName: "Felipe Moreira",
-    title: "Felipe Moreira — Candidato a Vice-Governador do Ceará",
+    siteName: "Missão Ceará",
+    title: "Missão Ceará — Militância organizada no Ceará",
     description:
-      "Missão Ceará: devolver aos nossos jovens a liberdade que o crime organizado roubou.",
+      "Núcleos nos bairros, grupos por tema, porta-vozes nas redes e na rua — e lugar para você.",
     // imagem OG (1200×630) gerada automaticamente por app/opengraph-image.tsx
   },
   twitter: {
     card: "summary_large_image",
     site: "@moreiramissao",
     creator: "@moreiramissao",
-    title: "Felipe Moreira — Candidato a Vice-Governador do Ceará",
+    title: "Missão Ceará — Militância organizada no Ceará",
     description:
-      "Missão Ceará: devolver aos nossos jovens a liberdade que o crime organizado roubou.",
+      "Núcleos nos bairros, grupos por tema, porta-vozes nas redes e na rua — e lugar para você.",
   },
   robots: {
     index: true,
@@ -120,48 +121,46 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  /* A ORGANIZAÇÃO, e quem a coordena. Até 04/10/2026 era uma Person (o
+     candidato); depois da eleição o site é da militância, e o Felipe aparece
+     como quem coordena — o mesmo que a home diz. */
   const schemaData = {
     "@context": "https://schema.org",
-    "@type": "Person",
-    name: "Felipe Moreira",
-    alternateName: ["Missão", "Missão Ceará", "Missão CE", "MBL Ceará", "MBL CE"],
+    "@type": "Organization",
+    name: "Missão Ceará",
+    alternateName: ["Missão CE", "Militância Missão Ceará"],
     url: "https://felipesmoreira.com",
-    /* A dimensão declarada tem que bater com o arquivo — ver originais/LEIA-ME.md. */
-    image: {
-      "@type": "ImageObject",
-      url: "https://felipesmoreira.com/image/me-512.jpg",
-      width: 512,
-      height: 512,
-    },
-    sameAs: [
-      "https://instagram.com/moreiramissao",
-      "https://x.com/moreiramissao",
-      "https://youtube.com/@moreiramissao",
-      "https://tiktok.com/@moreiramissao",
-      "https://twitch.tv/moreiramissao",
-      "https://kick.com/moreiramissao",
-    ],
-    jobTitle: "Candidato a Vice-Governador do Ceará",
+    logo: "https://felipesmoreira.com/icon.png",
     description:
-      "De militante de internet no MBL Ceará a militante de rua. Ex-líder de jovens que abraçou a Missão Ceará para devolver aos jovens a liberdade tomada pelo crime organizado. Candidato a Vice-Governador do Ceará.",
+      "A militância do Partido Missão no Ceará: núcleos territoriais, grupos temáticos, a Liga dos Porta-vozes, agenda e formação.",
+    areaServed: { "@type": "AdministrativeArea", name: "Ceará" },
+    member: {
+      "@type": "Person",
+      name: "Felipe Moreira",
+      jobTitle: "Coordenador de militância",
+      /* A dimensão declarada tem que bater com o arquivo — ver originais/LEIA-ME.md. */
+      image: {
+        "@type": "ImageObject",
+        url: "https://felipesmoreira.com/image/me-512.jpg",
+        width: 512,
+        height: 512,
+      },
+      sameAs: [
+        "https://instagram.com/moreiramissao",
+        "https://x.com/moreiramissao",
+        "https://youtube.com/@moreiramissao",
+        "https://tiktok.com/@moreiramissao",
+        "https://twitch.tv/moreiramissao",
+        "https://kick.com/moreiramissao",
+      ],
+    },
     /* Sem e-mail de propósito: o único canal é o WhatsApp. Deixar o endereço
        aqui, em dado estruturado, seria tirá-lo da tela e mantê-lo justamente
        onde raspador lê. */
-    telephone: TELEFONE_E164,
-    areaServed: "BR",
-    homeLocation: {
-      "@type": "AdministrativeArea",
-      name: "Ceará",
-    },
-    affiliation: {
-      "@type": "Organization",
-      name: "Movimento Brasil Livre",
-      alternateName: "MBL",
-    },
     contactPoint: {
       "@type": "ContactPoint",
       telephone: TELEFONE_E164,
-      contactType: "Customer Support",
+      contactType: "Militância",
       areaServed: "BR",
       availableLanguage: ["pt-BR"],
     },

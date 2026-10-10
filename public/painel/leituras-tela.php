@@ -4,6 +4,7 @@ declare(strict_types=1);
 /**
  * A tela das Leituras — quatro abas, uma pergunta cada.
  *
+ *   comando     o painel da reunião semanal: seis blocos, a escada, as decisões
  *   origem      de onde vem a militância, e o que converte
  *   territorio  onde ela mora, e onde já dá para montar um time
  *   encontros   o que cada encontro gerou — quem veio, quem voltou
@@ -23,6 +24,7 @@ require_once __DIR__ . '/leituras-encontros.php';
 require_once __DIR__ . '/leituras-formacao.php';
 require_once __DIR__ . '/leituras-semana.php';
 require_once __DIR__ . '/leituras-atividade.php';
+require_once __DIR__ . '/leituras-comando.php';
 
 function tela_de_leituras(array $eu): void
 {
@@ -31,6 +33,8 @@ function tela_de_leituras(array $eu): void
     $regioes = militancia_por_regiao($pessoas);
 
     $abas = [
+        /* Primeira e padrão: é a tela que a coordenação abre na reunião. */
+        'comando'    => ['nome' => 'Comando'],
         /* O contador é o número de ORIGENS, e não de pessoas: a pergunta da
            aba é "por quantos caminhos a militância está chegando". */
         'origem'     => ['nome' => 'Origem',     'conta' => count($origens['linhas'])],
@@ -42,7 +46,7 @@ function tela_de_leituras(array $eu): void
     ];
     $aba = (string) ($_GET['aba'] ?? '');
     if (!isset($abas[$aba])) {
-        $aba = 'origem';
+        $aba = 'comando';
     }
 
     /* Como esta tela escreve uma data — a mesma forma da tela de inscrições,
@@ -64,6 +68,7 @@ function tela_de_leituras(array $eu): void
       null,
       null,
       [
+          'Comando: os seis blocos da reunião semanal, a escada de engajamento (quantos subiram de degrau no mês) e as decisões do mês.',
           'Origem: das pessoas que cada link trouxe, quantas viraram militante. A ordem é por quem militou, não por volume.',
           'Território: só quem já foi aprovado, por cidade e bairro — onde já dá para montar time, e quem está sozinha.',
           'Encontros: por encontro realizado, quem confirmou, veio, se inscreveu, foi aprovada e VOLTOU — o degrau que separa volume de base.',
@@ -79,7 +84,9 @@ function tela_de_leituras(array $eu): void
   <?php barra_abas($abas, $aba, 'aba', 'Leituras'); ?>
 
   <?php
-  if ($aba === 'origem') {
+  if ($aba === 'comando') {
+      aba_de_comando();
+  } elseif ($aba === 'origem') {
       aba_de_origem($origens, $formatar);
   } elseif ($aba === 'territorio') {
       aba_de_territorio($regioes);

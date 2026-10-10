@@ -33,8 +33,8 @@ export const CHAPA = {
 };
 
 export const CHAMADA =
-  "De militante de internet a candidato a Vice-Governador. O caminho passou por uma sala de " +
-  "jovens na igreja — e por uma pergunta que nenhum post respondia.";
+  "De militante de internet a candidato a Vice-Governador, e daí a coordenar a militância. O " +
+  "caminho passou por uma sala de jovens na igreja — e por uma pergunta que nenhum post respondia.";
 
 /** A trajetória, em capítulos. É a espinha da página. */
 export const capitulos: { icone: IconName; marco: string; titulo: string; texto: string[] }[] = [
@@ -76,12 +76,25 @@ export const capitulos: { icone: IconName; marco: string; titulo: string; texto:
   },
   {
     icone: "star",
-    marco: "Agora",
+    marco: "2026",
     titulo: `Candidato a ${CARGO}`,
     texto: [
-      `Sou candidato a ${CARGO} na chapa do ${CHAPA.governador}, pelo Partido ${CHAPA.partido}.`,
-      "Não é troca de assunto: é a mesma pergunta, num lugar onde ela pode virar política " +
-        "pública. Devolver a esses jovens a liberdade de ir e vir — e um futuro que valha a pena.",
+      `Fui candidato a ${CARGO} na chapa do ${CHAPA.governador}, pelo Partido ${CHAPA.partido}.`,
+      "Não foi troca de assunto: era a mesma pergunta, levada a um lugar onde ela pode virar " +
+        "política pública. Devolver a esses jovens a liberdade de ir e vir — e um futuro que valha a pena.",
+    ],
+  },
+  /* DEPOIS DE 04/10/2026. A candidatura virou capítulo; o que continua é a
+     militância, e é ela que o site inteiro passou a servir. */
+  {
+    icone: "users",
+    marco: "Agora",
+    titulo: "Coordenar a militância",
+    texto: [
+      "A eleição passou; a pergunta, não. Hoje coordeno a militância da Missão no Ceará e mantenho " +
+        "este site como a porta de entrada dela.",
+      "Mais de cem mil cearenses votaram na Missão em 2026. O trabalho agora é organizar quem ficou: " +
+        "núcleos nos bairros, grupos por tema, porta-vozes nas redes e na rua.",
     ],
   },
 ];

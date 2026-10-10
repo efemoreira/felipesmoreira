@@ -2,10 +2,10 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Felipe Moreira — Missão Ceará · O Futuro é Glorioso",
-    short_name: "Felipe Moreira",
+    name: "Missão Ceará — Militância · O Futuro é Glorioso",
+    short_name: "Missão Ceará",
     description:
-      "Do mandacaru ao mar, do Ceará pro Brasil. A Missão Ceará, a história e as ideias que movem o sertão.",
+      "A militância da Missão no Ceará: núcleos, grupos por tema, porta-vozes, agenda e formação.",
     start_url: "/",
     display: "standalone",
     background_color: "#14110C",

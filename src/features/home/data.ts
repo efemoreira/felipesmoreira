@@ -1,18 +1,29 @@
 /**
- * O conteúdo da home — perfil, os cartões e as redes.
+ * O conteúdo da home — a marca, os cartões, quem coordena e as redes.
  *
- * Saiu de `src/app/page.tsx` em 12/09: a home era a única rota gorda do site
- * (477 linhas de componente e dado no mesmo arquivo), a exceção não escrita
- * à regra "page.tsx fino". Agora a rota é metadata + <Home />, como as outras.
+ * DEPOIS DE 04/10/2026 A HOME É DA MILITÂNCIA, e não de um candidato. O plano
+ * "Missão Ceará 2026–2027" (/planomissaoce) pede o site como porta de entrada
+ * da organização: levar a pessoa do interesse à participação, da participação
+ * à contribuição e da contribuição à continuidade. O Felipe continua aqui —
+ * como quem mantém o site e coordena a militância, no bloco "Quem coordena",
+ * e não como o rosto do topo.
  */
 import type { IconName } from "@/components/icons";
 import catalogo from "@/data/funcoes.json";
 
-export const profile = {
-  name: "Felipe Moreira",
-  kicker: "Candidato a Vice-Governador do Ceará",
-  bio: "De militante de internet no MBL Ceará a militante de rua. Larguei o conforto de só reclamar pela tela pra abraçar a Missão Ceará de devolver aos nossos jovens a liberdade que o crime organizado roubou.",
-  /* 320 px cobre a tela 2x do círculo de 152. Ver originais/LEIA-ME.md. */
+export const marca = {
+  nome: "Missão Ceará",
+  kicker: "Militância organizada no Ceará",
+  bio: "Em 2026, mais de 107 mil cearenses votaram na Missão para presidente. Faltou quem levasse esse voto adiante. Agora é hora de casa: núcleos nos bairros, grupos por tema, porta-vozes nas redes e na rua — e lugar para você.",
+  /* A marca das onças, a mesma do ícone do app. 192 px cobre o círculo de 132
+     em tela 2x. */
+  emblema: "/image/icone-192.png",
+};
+
+export const coordenacao = {
+  nome: "Felipe Moreira",
+  papel: "Coordenador de militância · mantém este site",
+  /* 320 px cobre a tela 2x do círculo de 72. Ver originais/LEIA-ME.md. */
   photo: "/image/me-320.webp",
   photoReserva: "/image/me-320.jpg",
 };
@@ -28,50 +39,54 @@ export type LinkCard = {
 };
 
 /**
- * Um cartão em destaque, não três.
+ * A escada do site, na ordem do funil do plano: entrar (Participe) → achar o
+ * seu lugar (núcleo, tema, Liga) → aparecer (agenda) → escolher o que fazer
+ * (funções) → o que a gente defende → a cultura.
  *
- * Antes, "Quero ajudar", "Programação" e "Heróis" eram todos `accent` e
- * disputavam o mesmo clique — o efeito de destacar tudo é não destacar nada.
- * O ouro continua sendo de um só: o degrau de entrada.
- *
- * ESSE DEGRAU AGORA É "QUERO AJUDAR". Antes era o link do grupo do WhatsApp,
- * que saía do site — a home entregava o visitante a um aplicativo antes de ele
- * saber quem é o candidato, e quem voltava não voltava para lugar nenhum. Como
- * primeiro degrau ele era barato demais para significar alguma coisa: entrar
- * num grupo custa dez segundos e não é compromisso nenhum.
- *
- * A escada continua descendo por compromisso, só que inteira dentro do site:
- * assumir função → saber quem sou → ler o plano → o resto. O convite do grupo
- * continua existindo onde ele faz sentido — no fim do /plano e depois da
- * inscrição, para quem já leu alguma coisa antes de entrar.
+ * UM CARTÃO EM DESTAQUE, e não três: o ouro é do degrau de entrada. Destacar
+ * tudo é não destacar nada.
  */
 export const links: LinkCard[] = [
   {
     icon: "flag",
-    title: "Quero ajudar",
-    subtitle: "Escolha sua função na militância",
+    title: "Quero participar",
+    subtitle: "Conversa em até 3 dias e uma primeira tarefa",
     description:
-      "Escolha como quer ajudar o movimento no Ceará — comunicação, eventos ou onde precisar — e a coordenação entra em contato",
+      "Deixe seu contato: a coordenação conversa com você, te convida para uma atividade perto de você e combina uma tarefa pequena",
     href: "/queroajudar",
     internal: true,
     accent: true,
   },
   {
-    icon: "star",
-    title: "A Missão",
-    subtitle: "Quem eu sou e por que me candidatei",
-    description:
-      "De militante de internet no MBL a candidato a Vice-Governador do Ceará: a trajetória e o motivo",
-    href: "/amissao",
+    icon: "pin",
+    title: "Núcleos",
+    subtitle: "A Missão no seu bairro",
+    description: "Os núcleos territoriais da militância: onde funcionam, com que ritmo e como entrar",
+    href: "/nucleos",
     internal: true,
   },
   {
     icon: "book",
-    title: "Propostas",
-    subtitle: "O plano de governo, com meta e prazo",
-    description:
-      "Retomar para Reconstruir: sete compromissos com meta, prazo, de onde vem o recurso e como você cobra",
-    href: "/propostas",
+    title: "Grupos temáticos",
+    subtitle: "Um tema, um grupo, três portas",
+    description: "Segurança, educação, saúde, economia e mais — entre pelo estudo, pela sua profissão ou pelo movimento",
+    href: "/temas",
+    internal: true,
+  },
+  {
+    icon: "broadcast",
+    title: "Liga dos Porta-vozes",
+    subtitle: "Quem fala pela Missão nas redes e na rua",
+    description: "Os cinco níveis da Liga, o método e quem já está nela",
+    href: "/portavozes",
+    internal: true,
+  },
+  {
+    icon: "calendar",
+    title: "Agenda",
+    subtitle: "Encontros, lives e atividades abertas",
+    description: "O que vem por aí: dia, horário, lugar ou plataforma",
+    href: "/programacao",
     internal: true,
   },
   {
@@ -84,12 +99,11 @@ export const links: LinkCard[] = [
     internal: true,
   },
   {
-    icon: "calendar",
-    title: "Programação da Semana",
-    subtitle: "Onde e quando me assistir",
-    description:
-      "Agenda da semana: lives, conversas e conteúdos com dia, horário e plataforma",
-    href: "/programacao",
+    icon: "star",
+    title: "O que defendemos",
+    subtitle: "Propostas com meta e prazo",
+    description: "Retomar para Reconstruir: sete compromissos com meta, prazo, de onde vem o recurso e como cobrar",
+    href: "/propostas",
     internal: true,
   },
   {
@@ -103,6 +117,7 @@ export const links: LinkCard[] = [
   },
 ];
 
+/** As redes de quem coordena — o perfil oficial do Missão Ceará entra aqui quando existir. */
 export const socialLinks: { platform: string; icon: IconName; url: string; handle: string }[] = [
   { platform: "Instagram", icon: "instagram", url: "https://instagram.com/moreiramissao", handle: "@moreiramissao" },
   { platform: "Twitter / X", icon: "x", url: "https://x.com/moreiramissao", handle: "@moreiramissao" },
@@ -112,4 +127,3 @@ export const socialLinks: { platform: string; icon: IconName; url: string; handl
   { platform: "Kick", icon: "kick", url: "https://kick.com/moreiramissao", handle: "moreiramissao" },
   { platform: "Kwai", icon: "video", url: "https://www.kwai.com/@moreiramissao", handle: "@moreiramissao" },
 ];
-

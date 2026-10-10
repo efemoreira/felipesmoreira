@@ -80,6 +80,13 @@ Regras:
 - Não há aba de ideias: a página mostra números por nível (Brasil, região, estado, município, bairro) e a avaliação fica com a coordenação.
 - O que cada número quer dizer fica em `explicacoes.ts` (a caixa "Sobre este dado" de cada `<Secao explica="…">` e a aba "Sobre os dados"). Seção nova com número novo ganha texto lá.
 
+### Organização: /nucleos, /temas, /portavozes
+
+- As três páginas moram em `src/features/organizacao/` com uma moldura comum (`Moldura.tsx`). A parte fixa (o que é, as portas, os níveis) sai do catálogo `catalogo.ts` e vai no HTML do build; a lista vem de `api/organizacao.php` via `obterOrganizacao()` (`src/lib/api/organizacao.ts`).
+- `catalogo.ts` é par de `organizacao-comum.php` (`testes/contrato/organizacao.test.ts`). Mudou um piso da Liga ou uma porta de tema? Mude nos dois.
+- Nada de nome de responsável nem número de seguidores na página pública: o porta-voz aparece com nome público, tema, lugar, nível e perfis, e só se `publicado`.
+- `/planomissaoce` é `public/planomissaoce.html`, o artefato do plano em HTML puro (noindex, fora do sitemap). O progresso do desafio de 90 dias fica no `localStorage` de quem marca.
+
 ### Programação
 
 - A agenda pública é derivada dos encontros do painel.

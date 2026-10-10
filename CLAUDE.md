@@ -56,11 +56,30 @@ Regras:
   2. responde JSON com `Content-Type` correto;
   3. usa `Cache-Control: no-store, private` quando aplicável;
   4. prefere estado no corpo em vez de usar status HTTP para erro esperado.
-- Endpoints públicos (sem sessão): `inscricao.php` e `presenca.php` (gravam — honeypot, teto, origem e `com_trava()`), `escala.php` (grava, por token HMAC), `sinal.php` (só contagem por dia × rota × evento, sem quem — a medição do site), `candidatos.php` e `kit.php` (só leitura, cache curto), `presenca-previa.php` (só para o robô de prévia). Nenhum usa CSRF.
+- Endpoints públicos (sem sessão): `inscricao.php` e `presenca.php` (gravam — honeypot, teto, origem e `com_trava()`), `escala.php` (grava, por token HMAC), `sinal.php` (só contagem por dia × rota × evento, sem quem — a medição do site), `candidatos.php`, `kit.php` e `organizacao.php` (só leitura, cache curto; `organizacao.php` nunca devolve nome de responsável), `presenca-previa.php` (só para o robô de prévia). Nenhum usa CSRF.
 - **Não coloque analytics de terceiro no site.** A medição é `sinal()` (`src/lib/api/sinal.ts`) → `sinais-comum.php` → Leituras › Semana; listas fechadas de rota e evento nos dois lados, `testes/contrato/sinal.test.ts` prende.
 - Todo ler→alterar→gravar que o público ou muita gente dispara passa por `com_trava()` (`sessao.php`) e relê o arquivo dentro dela.
 
 ## Regras centrais do produto
+
+### Foco depois de 04/10/2026
+
+- O site é da **militância da Missão Ceará**; o Felipe aparece como quem mantém o site e coordena a militância (home: "Quem coordena"), não como candidato. `/resultados` fica.
+- O rumo é o "Plano Missão Ceará 2026–2027", publicado em `/planomissaoce` (`public/planomissaoce.html`, estático, noindex — é o artefato; edite lá, não reescreva em React). `/plano` é o plano da campanha e aponta para ele.
+
+### Organização (núcleos, grupos temáticos, Liga)
+
+- Área `organizacao` (capacidade Coordenação): `organizacao-comum.php` é a fonte de `TEMAS_GRUPO`, `NIVEIS_TERRITORIO`, `MATURIDADE`, `ONDAS`, `NIVEIS_LIGA`; o par do site é `src/features/organizacao/catalogo.ts` — `testes/contrato/organizacao.test.ts` prende.
+- **Ativo é quem entrega**: `unidade_ativa()` = responsável + entrega nos últimos 31 dias + próxima atividade marcada. Não crie outra régua de "ativo".
+- **Um tema, um grupo**: grupo só abre com finalidade, responsável e primeira entrega; segundo grupo aberto do mesmo tema é recusado. Categoria profissional e movimento são *portas*, não grupos.
+- **Liga sobe em ordem** (`nivel_liga()`): o nível é calculado do fechamento mensal e das três comprovações (redes, formação, ação local); não há campo de nível.
+- Encerrar não apaga: unidade/porta-voz encerrado sai das contas e do site e guarda o que entregou.
+- Públicas: `/nucleos`, `/temas`, `/portavozes` (via `api/organizacao.php`, só `publicado` e aberto).
+
+### Escada de engajamento
+
+- `escada-comum.php` deriva o degrau (Interessado → Multiplicador) do que já está gravado — presença, tarefa feita, entrega, Liga, responsável, liderança. **Não existe campo "degrau"**, como não existe "reativar".
+- O indicador-norte é `subidas_por_mes()` (subir ≠ entrar). Mostra em Leituras › Comando (aba padrão), junto com os seis blocos e as decisões do mês.
 
 ### Pessoas e permissões
 

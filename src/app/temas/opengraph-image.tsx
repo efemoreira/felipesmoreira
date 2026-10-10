@@ -1,14 +1,14 @@
 import { cartaoOG, TAMANHO_OG } from "@/lib/ogCard";
 
-export const alt = "A Missão — Felipe Moreira";
+export const alt = "Grupos temáticos — Missão Ceará";
 export const size = TAMANHO_OG;
 export const contentType = "image/png";
 export const dynamic = "force-static";
 
 export default function OpengraphImage() {
   return cartaoOG({
-    kicker: "A Missão",
-    titulo: "Primeiro retomar",
-    linha: "De militante de internet a coordenador de militância",
+    kicker: "Grupos temáticos",
+    titulo: "Um tema, um grupo",
+    linha: "Três portas: estudo, profissionais e movimento",
   });
 }

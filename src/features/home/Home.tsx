@@ -3,9 +3,7 @@ import React from "react";
 import Link from "next/link";
 import { Icon } from "@/components/icons";
 import { BORDA, C, FONT_ALFA, FONT_ELITE, FONT_BITTER, borda, sombra, sombraErguida, sombraAfundada, bordaFina } from "@/lib/theme";
-import { FaixaEleicao } from "@/components/FaixaEleicao";
-import { SigaCandidatos } from "@/features/candidatos/SigaCandidatos";
-import { profile, links, socialLinks, type LinkCard } from "./data";
+import { marca, coordenacao, links, socialLinks, type LinkCard } from "./data";
 
 export default function Home() {
   return (
@@ -51,30 +49,29 @@ export default function Home() {
           color: C.cream,
         }}
       >
-        {/* Cabeçalho / perfil */}
+        {/* Cabeçalho: a marca da Missão. O retrato do Felipe desceu para
+            "Quem coordena" — depois da eleição, quem chega procura a
+            militância, não um candidato. */}
         <header style={{ textAlign: "center", marginBottom: 30 }}>
           <div
             style={{
-              width: 152,
-              height: 152,
+              width: 132,
+              height: 132,
               margin: "0 auto 18px",
               borderRadius: "50%",
               overflow: "hidden",
-              background: C.cream,
+              background: C.night,
               boxShadow: `0 0 0 4px ${C.ink}, 0 0 0 8px ${C.gold}, 0 0 0 12px ${C.ink}, ${sombra("alto")}`,
             }}
           >
-            {/* No export estático o Next não redimensiona nem negocia formato
-                (`images.unoptimized`), então o <picture> faz o trabalho que o
-                next/image faria: WebP para quem aceita, JPEG para o resto.
-                `fetchPriority` repõe o que o `priority` do next/image dava. */}
+            {/* <picture> pelo mesmo motivo do retrato: export estático, sem
+                next/image — e é ele que diz ao lint que a escolha é nossa. */}
             <picture>
-              <source srcSet={profile.photo} type="image/webp" />
               <img
-                src={profile.photoReserva}
-                alt={`${profile.name} — ativista político e porta-voz da missão do sertão do Ceará`}
-                width={152}
-                height={152}
+                src={marca.emblema}
+                alt="Marca da Missão: duas onças, uma branca e uma dourada, frente a frente"
+                width={132}
+                height={132}
                 fetchPriority="high"
                 decoding="async"
                 style={{ objectFit: "cover", width: "100%", height: "100%" }}
@@ -96,7 +93,7 @@ export default function Home() {
               marginBottom: 14,
             }}
           >
-            {profile.kicker}
+            {marca.kicker}
           </p>
 
           <h1
@@ -109,12 +106,12 @@ export default function Home() {
               margin: "6px 0 12px",
             }}
           >
-            {profile.name}
+            {marca.nome}
           </h1>
 
           <p
             style={{
-              maxWidth: 420,
+              maxWidth: 440,
               margin: "0 auto",
               fontSize: 15.5,
               lineHeight: 1.5,
@@ -122,22 +119,9 @@ export default function Home() {
               textShadow: "0 1px 6px rgba(0,0,0,.65)",
             }}
           >
-            {profile.bio}
+            {marca.bio}
           </p>
         </header>
-
-        {/* A data da eleição vem antes dos cartões: é a informação mais
-            perecível da página e a única com prazo. */}
-        <div style={{ marginBottom: 20 }}>
-          <FaixaEleicao />
-        </div>
-
-        {/* Quem são os candidatos e em que número votar. Vem logo depois da
-            faixa e antes dos cartões porque responde a mesma pergunta que ela —
-            e some sozinho enquanto não houver ninguém publicado no painel. */}
-        <div style={{ marginBottom: 20 }}>
-          <SigaCandidatos />
-        </div>
 
         {/* Cartões de links */}
         <nav
@@ -188,9 +172,9 @@ export default function Home() {
           })}
         </nav>
 
-        {/* Minha história — conteúdo indexável e com substância */}
+        {/* O plano e quem coordena — o conteúdo indexável da home. */}
         <section
-          aria-label="Minha história e a missão"
+          aria-label="O plano da militância"
           style={{
             marginTop: 26,
             padding: "20px 22px",
@@ -209,7 +193,7 @@ export default function Home() {
               margin: "0 0 12px",
             }}
           >
-            Minha história
+            Da urna à organização permanente
           </h2>
           <div
             style={{
@@ -222,40 +206,78 @@ export default function Home() {
             }}
           >
             <p style={{ margin: 0 }}>
-              Sou <strong>Felipe Moreira</strong>, candidato a{" "}
-              <strong>Vice-Governador do Ceará</strong> pelo Partido Missão, na chapa do{" "}
-              <strong>Delegado Huggo Leonardo</strong>. Durante muito tempo fui militante de
-              internet pelo <strong>MBL Ceará</strong>, ajudando no que acreditava que podia
-              ajudar.
+              O eleitor da Missão existe no Ceará: <strong>107.587 cearenses</strong> votaram em
+              Renan Santos para presidente em 2026. Mas só <strong>18 em cada 100</strong> deles
+              votaram também no 14 para deputado federal — no Brasil foram 46. O que faltou não foi
+              voto: foi gente organizada para levar esse voto até os nossos nomes.
             </p>
             <p style={{ margin: 0 }}>
-              Foi servindo como <strong>líder de jovens na igreja</strong> que enxerguei de perto
-              um problema que nenhum post resolve: jovens que não conseguem ir de um lugar a outro
-              por medo do <strong>crime organizado</strong> e das disputas entre facções. O medo
-              decidindo por onde eles podem ou não andar. Ali entendi que não bastava reclamar
-              pela tela.
+              Por isso o próximo ano é de organização: <strong>núcleos</strong> onde o 14 já é
+              forte, <strong>grupos temáticos</strong> que estudam e agem,{" "}
+              <strong>porta-vozes</strong> que crescem nas redes e na rua, e uma vida cultural
+              própria. O que mede o trabalho não é quantos entram na lista — é quantos sobem um
+              degrau por mês.
             </p>
-            {/* O resto da história mora em /amissao, e só lá. Texto repetido em
-                dois lugares é texto que diverge na terceira alteração. */}
-            <Link
-              href="/amissao"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 7,
-                minHeight: 44,
-                fontFamily: FONT_ELITE,
-                fontSize: 12.5,
-                letterSpacing: 1.4,
-                textTransform: "uppercase",
-                color: C.gold,
-                textDecoration: "none",
-                alignSelf: "flex-start",
-              }}
-            >
-              Ler a história inteira
-              <Icon name="chevronRight" size={16} />
-            </Link>
+          </div>
+
+          {/* Quem coordena. O retrato desceu para cá: depois da eleição o
+              Felipe é quem mantém o site e coordena a militância, e a história
+              dele continua inteira em /amissao. */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 14,
+              marginTop: 18,
+              paddingTop: 16,
+              borderTop: bordaFina("rgba(255,203,5,.35)"),
+            }}
+          >
+            <picture>
+              <source srcSet={coordenacao.photo} type="image/webp" />
+              <img
+                src={coordenacao.photoReserva}
+                alt={`${coordenacao.nome}, coordenador de militância da Missão Ceará`}
+                width={72}
+                height={72}
+                loading="lazy"
+                decoding="async"
+                style={{
+                  width: 72,
+                  height: 72,
+                  borderRadius: "50%",
+                  objectFit: "cover",
+                  boxShadow: `0 0 0 3px ${C.gold}`,
+                  flex: "0 0 auto",
+                }}
+              />
+            </picture>
+            <div style={{ minWidth: 0 }}>
+              <p style={{ margin: 0, fontFamily: FONT_ALFA, fontSize: 16, color: C.cream }}>
+                {coordenacao.nome}
+              </p>
+              <p style={{ margin: "2px 0 0", fontSize: 13.5, color: C.cream, opacity: 0.85 }}>
+                {coordenacao.papel}
+              </p>
+              <Link
+                href="/amissao"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 7,
+                  minHeight: 44,
+                  fontFamily: FONT_ELITE,
+                  fontSize: 12.5,
+                  letterSpacing: 1.4,
+                  textTransform: "uppercase",
+                  color: C.gold,
+                  textDecoration: "none",
+                }}
+              >
+                A história
+                <Icon name="chevronRight" size={16} />
+              </Link>
+            </div>
           </div>
         </section>
 
@@ -263,7 +285,7 @@ export default function Home() {
         <footer style={{ textAlign: "center", marginTop: 34 }}>
           <nav
             style={{ display: "flex", justifyContent: "center", flexWrap: "wrap", gap: 12, marginBottom: 12 }}
-            aria-label="Redes sociais"
+            aria-label="Redes da coordenação"
           >
             {socialLinks.map((s) => (
               <a
@@ -272,7 +294,7 @@ export default function Home() {
                 target="_blank"
                 rel="noopener noreferrer me"
                 aria-label={`${s.platform} — ${s.handle}`}
-                title={`Siga Felipe Moreira no ${s.platform} (${s.handle})`}
+                title={`Siga a coordenação no ${s.platform} (${s.handle})`}
                 className="cordel-social"
                 style={socialIcon}
               >
@@ -291,7 +313,8 @@ export default function Home() {
               margin: 0,
             }}
           >
-            @moreiramissao · © {new Date().getFullYear()} Felipe Moreira
+            Missão Ceará · militância · site mantido por Felipe Moreira · ©{" "}
+            {new Date().getFullYear()}
           </p>
           {/* A PORTA DE QUEM JÁ É DO MOVIMENTO. Embaixo, discreta, e no site
               público — porque quem tinha conta só achava o painel digitando a

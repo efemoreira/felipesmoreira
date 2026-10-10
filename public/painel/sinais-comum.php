@@ -41,6 +41,9 @@ const ROTAS_SINAL = [
     'aulas' => 'Aulas',
     'convite' => 'Convite',
     'plano' => 'Plano',
+    'nucleos' => 'Núcleos',
+    'temas' => 'Grupos temáticos',
+    'portavozes' => 'Porta-vozes',
 ];
 
 const EVENTOS_SINAL = [

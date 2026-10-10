@@ -234,6 +234,32 @@ const PlanoClient: React.FC = () => {
             daqui até outubro, com lugar pra quem tem dez horas por semana
             e pra quem tem trinta minutos.
           </p>
+          {/* Este é o plano da campanha, até 04/10/2026. O de agora — de
+              outubro de 2026 a outubro de 2027 — mora em /planomissaoce. A
+              página fica no ar porque o link dela circulou nos grupos. */}
+          <a
+            href="/planomissaoce"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              minHeight: 44,
+              marginTop: 22,
+              padding: "10px 16px",
+              background: C.gold,
+              color: C.ink,
+              border: borda(),
+              boxShadow: sombra("rente"),
+              fontFamily: FONT_ELITE,
+              fontSize: 12.5,
+              letterSpacing: 1.4,
+              textTransform: "uppercase",
+              textDecoration: "none",
+            }}
+          >
+            Este era o plano da campanha · ver o plano 2026–2027
+            <Icon name="chevronRight" size={16} />
+          </a>
           <div className="p-hint" aria-hidden="true" style={{ marginTop: 44, display: "grid", placeItems: "center", color: C.gold }}>
             <span style={{ fontFamily: FONT_ELITE, fontSize: 11, letterSpacing: 3, textTransform: "uppercase", marginBottom: 6 }}>
               role pra descer o sertão

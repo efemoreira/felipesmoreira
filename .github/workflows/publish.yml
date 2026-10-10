@@ -86,6 +86,7 @@ jobs:
           RewriteRule ^painel/importar/?$ /painel/importar.php [L]
           RewriteRule ^painel/leituras/?$ /painel/leituras.php [L]
           RewriteRule ^painel/manutencao/?$ /painel/manutencao.php [L]
+          RewriteRule ^painel/organizacao/?$ /painel/organizacao.php [L]
           # ===== Prévia do link de presença (WhatsApp, Telegram, Facebook…) =====
           # O site é estático: existe UM presenca.html para todos os encontros, e
           # qual encontro é sai do ?e=/?c= — que só o JavaScript lê. O robô que

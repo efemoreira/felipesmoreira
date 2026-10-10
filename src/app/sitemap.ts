@@ -4,7 +4,7 @@ const BASE = "https://felipesmoreira.com";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
-  /* Só o que é indexável entra. /plano, /aulas e /presenca declaram noindex
+  /* Só o que é indexável entra. /plano, /planomissaoce, /aulas e /presenca declaram noindex
      na própria rota e ficam de fora de propósito — sitemap e robots dizendo
      coisas diferentes é o jeito mais rápido de confundir o buscador. */
   return [
@@ -15,6 +15,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE}/funcoes`, lastModified: now, changeFrequency: "monthly", priority: 0.85 },
     { url: `${BASE}/queroajudar`, lastModified: now, changeFrequency: "monthly", priority: 0.9 },
     { url: `${BASE}/programacao`, lastModified: now, changeFrequency: "weekly", priority: 0.9 },
+    { url: `${BASE}/nucleos`, lastModified: now, changeFrequency: "weekly", priority: 0.9 },
+    { url: `${BASE}/temas`, lastModified: now, changeFrequency: "weekly", priority: 0.85 },
+    { url: `${BASE}/portavozes`, lastModified: now, changeFrequency: "weekly", priority: 0.85 },
     { url: `${BASE}/heroisdoceara`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
     { url: `${BASE}/privacy`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
     { url: `${BASE}/terms`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },

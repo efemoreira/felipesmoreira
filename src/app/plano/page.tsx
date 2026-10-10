@@ -3,7 +3,7 @@ import PlanoClient from "@/features/plano/PlanoClient";
 
 /* Página interna para a militância — circula por link direto, fora de buscadores */
 export const metadata: Metadata = {
-  title: "O Plano — Missão Ceará",
+  title: "O Plano de 2026",
   description:
     "Apresentação do plano da Missão Ceará para a militância: como a gente se organiza daqui até outubro.",
   robots: {
@@ -13,12 +13,12 @@ export const metadata: Metadata = {
   },
   alternates: { canonical: null },
   openGraph: {
-    title: "O Plano — Missão Ceará",
+    title: "O Plano de 2026",
     description: "De grupo de WhatsApp à militância mais organizada do Ceará.",
   },
   /* O X não herda do openGraph: sem isto o cartão dele mostra o título da raiz. */
   twitter: {
-    title: "O Plano — Missão Ceará",
+    title: "O Plano de 2026",
     description: "De grupo de WhatsApp à militância mais organizada do Ceará.",
   },
 };
