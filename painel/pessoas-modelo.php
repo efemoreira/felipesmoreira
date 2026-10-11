@@ -178,6 +178,20 @@ function normalizar_pessoa($p): ?array
            desempata pelo nome. Zero para quem não é candidato. */
         'ordem'     => (int) ($p['ordem'] ?? 0),
 
+        /* ---- onde ela atua (plano 2026–2027) ----
+           `unidades`: os núcleos (`nuc-…`), grupos temáticos (`grp-…`) e
+           grupos culturais (`cul-…`) de que
+           ela faz parte. É pertencimento, não presença — presença continua
+           sendo relação com o encontro. `interesse`: o que ela escolheu ao se
+           inscrever (`?unidade=` ou `?tema=` em /queroajudar), conferido em
+           `interesse_valido()`; a aprovação o transforma em unidade. */
+        'unidades' => array_values(array_unique(array_filter(
+            is_array($p['unidades'] ?? null) ? $p['unidades'] : [],
+            fn ($u) => is_string($u) && id_de_unidade($u) !== ''
+        ))),
+        'interesse' => preg_match(PADRAO_INTERESSE, (string) ($p['interesse'] ?? '')) === 1
+            ? (string) $p['interesse'] : '',
+
         /* ---- como ela entrou ---- */
         'status'   => $status,
         'origem'   => limpar_texto($p['origem'] ?? '', 60),

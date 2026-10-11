@@ -293,8 +293,11 @@ function tela_da_ficha(array $aberta, ?array $editando, ?string $erro, ?string $
 {
     $encontros = encontros_da_pessoa($aberta['id']);
     $historico = linha_do_tempo($aberta['id'], 50);
+    require_once __DIR__ . '/organizacao-comum.php';
+    $vinculos = vinculos_da_pessoa($aberta['id']);
     $abas = [
         'ficha'     => ['nome' => 'Ficha'],
+        'atua'      => ['nome' => 'Onde atua', 'conta' => count($vinculos)],
         'encontros' => ['nome' => 'Encontros', 'conta' => count($encontros)],
         'acesso'    => ['nome' => 'Acesso'],
         'historico' => ['nome' => 'Histórico', 'conta' => count($historico)],
@@ -437,6 +440,62 @@ function tela_da_ficha(array $aberta, ?array $editando, ?string $erro, ?string $
         <?php endif; ?>
     </fieldset>
     <?php endif; ?>
+
+  <?php elseif ($aba === 'atua'): ?>
+    <?php /* ONDE ELA ATUA — a resposta única (`vinculos_da_pessoa()`): núcleo,
+             grupo temático, grupo cultural e Liga, com o papel em cada um.
+             Fazer parte se põe e tira aqui; responder por uma unidade e ser
+             porta-voz se decidem na Organização. */ ?>
+    <fieldset id="atua">
+      <legend>Onde atua (<?= count($vinculos) ?>)</legend>
+      <?php if ($vinculos === []): ?>
+        <?php vazio('Em nenhum núcleo, grupo temático, grupo cultural ou na Liga ainda.'); ?>
+      <?php else: ?>
+        <div class="rolagem cartoes">
+          <table class="tabela">
+            <thead><tr><th>Onde</th><th>Papel</th><th></th></tr></thead>
+            <tbody>
+              <?php foreach ($vinculos as $v): ?>
+                <tr>
+                  <td data-rotulo="Onde"><strong><?= h($v['rotulo']) ?></strong></td>
+                  <td class="meia" data-rotulo="Papel"><span class="selo<?= $v['papel'] === 'faz parte' ? '' : ' selo-ok' ?>"><?= h($v['papel']) ?></span></td>
+                  <td class="rodape" data-rotulo="">
+                    <?php if ($v['papel'] === 'faz parte'): ?>
+                      <?php menu_acoes([
+                          ['texto' => 'Tirar de ' . $v['rotulo'], 'acao' => 'unidade-sair', 'campos' => ['id' => $aberta['id'], 'unidade' => $v['id']],
+                           'confirmar' => 'Tirar ' . $aberta['nome'] . ' de ' . $v['rotulo'] . '?', 'risco' => true],
+                      ]); ?>
+                    <?php elseif ($v['tipo'] !== 'liga' && pode('organizacao')): ?>
+                      <a class="btn btn-mini" href="/painel/minha-unidade.php?u=<?= h(rawurlencode($v['id'])) ?>">Abrir</a>
+                    <?php endif; ?>
+                  </td>
+                </tr>
+              <?php endforeach; ?>
+            </tbody>
+          </table>
+        </div>
+      <?php endif; ?>
+
+      <?php $ids = array_column($vinculos, 'id'); $fora = array_values(array_filter(so_abertas(todas_as_unidades()), fn ($u) => !in_array($u['id'], $ids, true))); ?>
+      <?php if ($fora !== []): ?>
+        <form method="post" class="folga">
+          <input type="hidden" name="csrf" value="<?= h(token()) ?>">
+          <input type="hidden" name="acao" value="unidade-entrar">
+          <input type="hidden" name="id" value="<?= h($aberta['id']) ?>">
+          <div class="campo">
+            <label for="atua-unidade">Pôr num núcleo, grupo ou grupo cultural</label>
+            <select id="atua-unidade" name="unidade" required>
+              <option value="">— escolha —</option>
+              <?php foreach ($fora as $u): ?>
+                <option value="<?= h($u['id']) ?>"><?= h(rotulo_da_unidade($u) . (($u['cidade'] ?? '') !== '' ? ' · ' . $u['cidade'] : '')) ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <div class="acoes"><button class="btn" type="submit">Pôr</button></div>
+        </form>
+      <?php endif; ?>
+      <p class="dica">Responsável, substituto e porta-voz se decidem em <a href="/painel/organizacao.php">Organização</a>.</p>
+    </fieldset>
 
   <?php elseif ($aba === 'encontros'): ?>
     <fieldset id="encontros">

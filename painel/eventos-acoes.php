@@ -195,6 +195,7 @@ function tratar_acoes_de_evento(array $eu, bool $coordena): void
                 'criadoEm'  => date('c'),
                 'criadoPor' => $eu['nome'],
             ];
+            $novo = onde_do_post($novo + ['unidadeId' => '', 'cidade' => '', 'bairro' => '']);
             $eventos[] = $novo;
 
             if (!gravar_eventos($eventos)) {
@@ -202,7 +203,9 @@ function tratar_acoes_de_evento(array $eu, bool $coordena): void
                 voltar();
             }
             republicar_agenda();
-            avisar('ok', 'Encontro criado. Agora escale as peças desta família.');
+            require_once __DIR__ . '/feriados-comum.php';
+            avisar('ok', 'Encontro criado. Agora escale as peças desta família.'
+                . frase_de_avisos(avisos_de_agenda(normalizar_evento($novo) ?? $novo, ler_eventos(true))));
             voltar($novo['id']);
         }
 
@@ -243,6 +246,7 @@ function tratar_acoes_de_evento(array $eu, bool $coordena): void
                     $e['inicio']   = inicio_de_dia_e_hora($_POST['dia'] ?? '', $_POST['hora'] ?? '');
                     $e['local']    = limpar_texto($_POST['local'] ?? '', 120);
                     $e['endereco'] = limpar_texto($_POST['endereco'] ?? '', 200);
+                    $e = onde_do_post($e);
                     $e['grupo']    = limpar_link($_POST['grupo'] ?? '');
                     $e['publicoEsperado'] = (int) ($_POST['publicoEsperado'] ?? 0);
                     $e['orcamento']   = limpar_texto($_POST['orcamento'] ?? '', 60);
@@ -296,6 +300,14 @@ function tratar_acoes_de_evento(array $eu, bool $coordena): void
 
             if (!gravar_eventos($eventos)) {
                 avisar('erro', 'Não consegui gravar em /dados.');
+            } elseif ($acao === 'salvar') {
+                require_once __DIR__ . '/feriados-comum.php';
+                ler_eventos(true);  // o cache ainda é o de antes de gravar
+                $salvo = achar_evento($alvo['id']);
+                $frase = $salvo ? frase_de_avisos(avisos_de_agenda($salvo, ler_eventos(true))) : '';
+                if ($frase !== '') {
+                    avisar('ok', 'Salvo.' . $frase);
+                }
             }
             /* Regrava o agenda.json na hora, e não por um botão "publicar": editar o
                encontro já exige coordenação, então não há revisão a mais para fazer

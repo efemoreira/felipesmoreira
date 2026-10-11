@@ -119,6 +119,7 @@ function desenhar_dados(array $aberto, array $time, int $naLista): void
           <input type="hidden" name="local" value="<?= h($aberto['local']) ?>">
           <input type="hidden" name="endereco" value="<?= h($aberto['endereco']) ?>">
         <?php endif; ?>
+        <?php campos_onde_do_evento($aberto, 'e'); ?>
 
         <div class="campo">
           <label for="e-grupo">Grupo de WhatsApp deste encontro <span class="dica">— opcional</span></label>

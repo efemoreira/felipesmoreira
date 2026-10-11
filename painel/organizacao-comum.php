@@ -38,6 +38,54 @@ require_once __DIR__ . '/sessao.php';
 const ARQ_NUCLEOS = PASTA_DADOS . '/nucleos.php';
 const ARQ_TEMAS   = PASTA_DADOS . '/temas.php';
 const ARQ_LIGA    = PASTA_DADOS . '/liga.php';
+const ARQ_BIBLIOTECA = PASTA_DADOS . '/biblioteca.php';
+const ARQ_CULTURA = PASTA_DADOS . '/cultura.php';
+
+/**
+ * OS EIXOS CULTURAIS — a frente de Cultura do plano ("cultura não é só livro,
+ * palestra e debate"). Os 14 eixos não viram 14 grupos: cada grupo cultural
+ * escolhe o seu, e o eixo é o que permite ver que linguagens já têm gente.
+ * Lista fechada, como TEMAS_GRUPO.
+ */
+const EIXOS_CULTURAIS = [
+    'musica'      => 'Música e expressão sonora',
+    'moda'        => 'Moda, vestuário e design',
+    'danca'       => 'Dança e movimento',
+    'jogos'       => 'Jogos e cultura lúdica',
+    'esportes'    => 'Esportes e lazer',
+    'artes'       => 'Artes visuais e fotografia',
+    'teatro'      => 'Teatro, performance e humor',
+    'cinema'      => 'Cinema, audiovisual e animação',
+    'literatura'  => 'Literatura, escrita e edição',
+    'digital'     => 'Cultura digital',
+    'artesanato'  => 'Artesanato e saberes tradicionais',
+    'popular'     => 'Cultura popular e patrimônio vivo',
+    'gastronomia' => 'Gastronomia e cultura alimentar',
+    'arquitetura' => 'Arquitetura, urbanismo e paisagem',
+];
+
+/** "Da ideia ao grupo permanente" — os quatro níveis de uma iniciativa cultural. */
+const NIVEIS_CULTURA = [
+    1 => ['nome' => 'Ideia cultural',     'resumo' => 'Registrada, sem compromisso.'],
+    2 => ['nome' => 'Atividade pontual',  'resumo' => 'Data, responsável, orçamento e resultado.'],
+    3 => ['nome' => 'Projeto recorrente', 'resumo' => 'Repete com método.'],
+    4 => ['nome' => 'Grupo permanente',   'resumo' => 'Equipe, programação e continuidade.'],
+];
+
+/**
+ * A BIBLIOTECA — "Livro Amarelo, cadernos, diagnósticos e gravações" (o mapa
+ * do site no plano). É a fonte do Círculo do Livro Amarelo e o que os grupos
+ * temáticos produzem na porta Estudo. Um material é um título, um tipo, um
+ * tema opcional e um link https — o arquivo mora onde já está (Drive,
+ * YouTube, o PDF do partido); o site não hospeda.
+ */
+const TIPOS_MATERIAL = [
+    'livro-amarelo' => 'Livro Amarelo',
+    'caderno'       => 'Caderno',
+    'diagnostico'   => 'Diagnóstico',
+    'gravacao'      => 'Gravação',
+    'guia'          => 'Guia',
+];
 
 /**
  * O CATÁLOGO DE TEMAS_GRUPO — um tema, um grupo.
@@ -279,6 +327,46 @@ function hoje_ce(?int $agora = null): string
         ->format('Y-m-d');
 }
 
+/**
+ * O próximo encontro de cada unidade, `unidadeId => encontro`.
+ *
+ * A PRÓXIMA ATIVIDADE DE UM NÚCLEO É UM ENCONTRO — "um modelo para todos":
+ * o mesmo cadastro, a mesma agenda pública, o mesmo QR na porta. Memoizada,
+ * porque a tela da Organização pergunta por unidade, linha a linha.
+ */
+function proximos_encontros_das_unidades(): array
+{
+    static $memo = null;
+    if ($memo !== null) {
+        return $memo;
+    }
+    require_once __DIR__ . '/eventos-comum.php';
+    $memo = [];
+    foreach (eventos_a_vir() as $e) {
+        if ($e['unidadeId'] !== '' && $e['status'] !== 'cancelado' && !isset($memo[$e['unidadeId']])) {
+            $memo[$e['unidadeId']] = $e;
+        }
+    }
+    return $memo;
+}
+
+/**
+ * A próxima atividade de verdade: o próximo encontro amarrado à unidade, ou —
+ * para o que foi marcado antes de a próxima virar encontro — o par
+ * `proximaData`/`proximaTexto` da ficha. `null` quando não há nada adiante.
+ */
+function proxima_efetiva(array $u, ?int $agora = null): ?array
+{
+    $e = proximos_encontros_das_unidades()[$u['id']] ?? null;
+    if ($e !== null) {
+        return ['data' => dia_do_inicio($e['inicio']), 'texto' => $e['titulo'], 'eventoId' => $e['id']];
+    }
+    if ($u['proximaData'] !== '' && $u['proximaData'] >= hoje_ce($agora)) {
+        return ['data' => $u['proximaData'], 'texto' => $u['proximaTexto'], 'eventoId' => ''];
+    }
+    return null;
+}
+
 /** A entrega mais recente, ou null. */
 function ultima_entrega(array $u): ?array
 {
@@ -301,7 +389,7 @@ function unidade_ativa(array $u, ?int $agora = null): bool
     }
     $hoje = hoje_ce($agora);
     $corte = (new DateTimeImmutable($hoje))->modify('-' . DIAS_DO_CICLO . ' days')->format('Y-m-d');
-    return $ultima['data'] >= $corte && $u['proximaData'] !== '' && $u['proximaData'] >= $hoje;
+    return $ultima['data'] >= $corte && proxima_efetiva($u, $agora) !== null;
 }
 
 /**
@@ -323,7 +411,7 @@ function o_que_falta(array $u, ?int $agora = null): array
     if ($ultima === null || $ultima['data'] < $corte) {
         $falta[] = 'entrega no ciclo';
     }
-    if ($u['proximaData'] === '' || $u['proximaData'] < $hoje) {
+    if (proxima_efetiva($u, $agora) === null) {
         $falta[] = 'próxima atividade marcada';
     }
     return $falta;
@@ -476,6 +564,115 @@ function grupo_aberto_do_tema(string $tema, array $grupos, string $ignorarId = '
 }
 
 /* =====================================================================
+   GRUPOS CULTURAIS
+   ===================================================================== */
+
+function normalizar_cultural($c): ?array
+{
+    if (!is_array($c) || empty($c['id'])) {
+        return null;
+    }
+    $nome = limpar_texto($c['nome'] ?? '', 80);
+    if ($nome === '') {
+        return null;
+    }
+    $eixo = (string) ($c['eixo'] ?? '');
+    $nivel = (int) ($c['nivel'] ?? 1);
+    return normalizar_unidade_base($c) + [
+        'nome'   => $nome,
+        'eixo'   => isset(EIXOS_CULTURAIS[$eixo]) ? $eixo : 'popular',
+        'nivel'  => isset(NIVEIS_CULTURA[$nivel]) ? $nivel : 1,
+        /* Cidade é opcional: um cineclube é de um lugar, um podcast não. */
+        'cidade' => cidade_valida($c['cidade'] ?? ''),
+        'bairro' => limpar_texto($c['bairro'] ?? '', 60),
+    ];
+}
+
+function ler_culturais(): array
+{
+    $bruto = is_file(ARQ_CULTURA) ? @include ARQ_CULTURA : null;
+    $limpos = [];
+    foreach (is_array($bruto) ? $bruto : [] as $c) {
+        if ($ok = normalizar_cultural($c)) {
+            $limpos[] = $ok;
+        }
+    }
+    usort($limpos, fn ($a, $b) => [$a['encerradoEm'] !== '', -$a['nivel'], sem_acento($a['nome'])] <=> [$b['encerradoEm'] !== '', -$b['nivel'], sem_acento($b['nome'])]);
+    return $limpos;
+}
+
+function gravar_culturais(array $culturais): bool
+{
+    return gravar_lista_organizacao(ARQ_CULTURA, $culturais, 'normalizar_cultural', ler_culturais(),
+        'Os grupos culturais — da ideia ao grupo permanente.');
+}
+
+/* =====================================================================
+   A UNIDADE, DE QUALQUER TIPO — a mesma conversa para os três
+   ===================================================================== */
+
+/**
+ * Prefixo do id → tipo, quem lê e quem grava. É aqui, e só aqui, que um tipo
+ * novo de unidade se pluga (com o regex `PADRAO_UNIDADE` em dominio.php).
+ */
+const LEITORES_DE_UNIDADE = [
+    'nuc' => ['tipo' => 'nucleo',  'ler' => 'ler_nucleos',   'gravar' => 'gravar_nucleos',   'aba' => ''],
+    'grp' => ['tipo' => 'grupo',   'ler' => 'ler_grupos',    'gravar' => 'gravar_grupos',    'aba' => 'temas'],
+    'cul' => ['tipo' => 'cultura', 'ler' => 'ler_culturais', 'gravar' => 'gravar_culturais', 'aba' => 'cultura'],
+];
+
+/** O registro de leitura/gravação de um tipo ('nucleo'|'grupo'|'cultura') ou de um id. */
+function leitor_de_unidade(string $tipoOuId): array
+{
+    foreach (LEITORES_DE_UNIDADE as $prefixo => $l) {
+        if ($tipoOuId === $l['tipo'] || str_starts_with($tipoOuId, $prefixo . '-')) {
+            return $l;
+        }
+    }
+    return LEITORES_DE_UNIDADE['nuc'];
+}
+
+/** O tipo de uma unidade: 'nucleo', 'grupo' ou 'cultura'. */
+function tipo_da_unidade(array $u): string
+{
+    return leitor_de_unidade($u['id'])['tipo'];
+}
+
+/** Todas as unidades, dos três tipos, abertas e encerradas. */
+function todas_as_unidades(): array
+{
+    $todas = [];
+    foreach (LEITORES_DE_UNIDADE as $l) {
+        $todas = array_merge($todas, $l['ler']());
+    }
+    return $todas;
+}
+
+/** Uma unidade por id, de qualquer tipo, aberta ou não. */
+function unidade_por_id(string $id): ?array
+{
+    if (id_de_unidade($id) === '') {
+        return null;
+    }
+    foreach (leitor_de_unidade($id)['ler']() as $u) {
+        if ($u['id'] === $id) {
+            return $u;
+        }
+    }
+    return null;
+}
+
+/** "Núcleo Benfica" · "Grupo Saúde e esporte" · "Cultura: Cineclube do Benfica". */
+function rotulo_da_unidade(array $u): string
+{
+    return match (tipo_da_unidade($u)) {
+        'grupo'   => 'Grupo ' . TEMAS_GRUPO[$u['tema']]['nome'],
+        'cultura' => 'Cultura: ' . $u['nome'],
+        default   => 'Núcleo ' . $u['nome'],
+    };
+}
+
+/* =====================================================================
    LIGA DOS PORTA-VOZES
    ===================================================================== */
 
@@ -567,6 +764,9 @@ function normalizar_porta_voz($p): ?array
         'acaoEm'     => data_iso_ou_vazio($p['acaoEm'] ?? ''),
         'acaoTexto'  => limpar_texto($p['acaoTexto'] ?? '', 160),
         'meses'      => array_values($meses),
+        /* "Conteúdos dos porta-vozes" — o vídeo que ele quer mostrar no site.
+           Um link, e não um embed: o site não carrega script de rede social. */
+        'destaque'   => link_de_destaque($p['destaque'] ?? ''),
         'publicado'  => !empty($p['publicado']),
         'encerradoEm' => limpar_texto($p['encerradoEm'] ?? '', 40),
         'encerradoMotivo' => limpar_texto($p['encerradoMotivo'] ?? '', 120),
@@ -575,6 +775,16 @@ function normalizar_porta_voz($p): ?array
         'alteradoEm'  => limpar_texto($p['alteradoEm'] ?? '', 40),
         'alteradoPor' => limpar_texto($p['alteradoPor'] ?? '', 60),
     ];
+}
+
+/** Só https de Instagram, TikTok, YouTube ou X — o resto vira ''. */
+function link_de_destaque($v): string
+{
+    $v = trim((string) $v);
+    $host = strtolower((string) parse_url($v, PHP_URL_HOST));
+    $host = preg_replace('/^(www\.|m\.)/', '', $host) ?? '';
+    $aceitos = ['instagram.com', 'tiktok.com', 'youtube.com', 'youtu.be', 'x.com', 'twitter.com'];
+    return str_starts_with(strtolower($v), 'https://') && in_array($host, $aceitos, true) ? limpar_texto($v, 300) : '';
 }
 
 function ler_liga(): array
@@ -638,6 +848,23 @@ function meses_crescendo(array $pv): int
 }
 
 /**
+ * A formação de militância do porta-voz: o certificado da Básica (lido do
+ * progresso da formação), ou a validação à mão da coordenação — a exceção
+ * para quem estudou antes de o painel registrar.
+ */
+function formacao_concluida(array $pv): bool
+{
+    if ($pv['formacaoEm'] !== '') {
+        return true;
+    }
+    if ($pv['pessoaId'] === '') {
+        return false;
+    }
+    require_once __DIR__ . '/formacao-comum.php';
+    return certificado_basica_em($pv['pessoaId']) !== '';
+}
+
+/**
  * O NÍVEL — a mesma escada da calculadora do plano, degrau por degrau.
  *
  * Sobe-se em ordem: não chega ao B quem não passou pelo C, mesmo com 50 mil
@@ -665,7 +892,7 @@ function nivel_liga(array $pv): array
             [$eng >= 3.0, 'Engajamento de 3% ou mais'],
         ],
         'B' => [
-            [$pv['formacaoEm'] !== '', 'Concluir a formação de militância'],
+            [formacao_concluida($pv), 'Concluir a formação de militância (a trilha Básica)'],
             [$seg >= 3000, '3.000 seguidores somados' . ($seg < 3000 ? ' (faltam ' . number_format(3000 - $seg, 0, ',', '.') . ')' : '')],
             [$eng >= 2.5, 'Engajamento de 2,5% ou mais'],
         ],
@@ -790,6 +1017,59 @@ function liga_parada(array $pv): bool
 }
 
 /* =====================================================================
+   BIBLIOTECA
+   ===================================================================== */
+
+function normalizar_material($m): ?array
+{
+    if (!is_array($m) || empty($m['id'])) {
+        return null;
+    }
+    $titulo = limpar_texto($m['titulo'] ?? '', 120);
+    $link = trim((string) ($m['link'] ?? ''));
+    if ($titulo === '' || !str_starts_with(mb_strtolower($link), 'https://')) {
+        return null;
+    }
+    $tipo = (string) ($m['tipo'] ?? 'caderno');
+    $tema = (string) ($m['tema'] ?? '');
+    return [
+        'id'        => limpar_texto($m['id'], 40),
+        'titulo'    => $titulo,
+        'tipo'      => isset(TIPOS_MATERIAL[$tipo]) ? $tipo : 'caderno',
+        'tema'      => isset(TEMAS_GRUPO[$tema]) ? $tema : '',
+        'resumo'    => limpar_texto($m['resumo'] ?? '', 240),
+        'link'      => limpar_texto($link, 300),
+        'publicado' => !empty($m['publicado']),
+        'arquivadoEm' => limpar_texto($m['arquivadoEm'] ?? '', 40),
+        'criadoEm'  => limpar_texto($m['criadoEm'] ?? '', 40),
+        'criadoPor' => limpar_texto($m['criadoPor'] ?? '', 60),
+        'alteradoEm'  => limpar_texto($m['alteradoEm'] ?? '', 40),
+        'alteradoPor' => limpar_texto($m['alteradoPor'] ?? '', 60),
+    ];
+}
+
+/** Os materiais, o Livro Amarelo primeiro e o mais novo em cima. */
+function ler_biblioteca(): array
+{
+    $bruto = is_file(ARQ_BIBLIOTECA) ? @include ARQ_BIBLIOTECA : null;
+    $limpos = [];
+    foreach (is_array($bruto) ? $bruto : [] as $m) {
+        if ($ok = normalizar_material($m)) {
+            $limpos[] = $ok;
+        }
+    }
+    $ordem = array_flip(array_keys(TIPOS_MATERIAL));
+    usort($limpos, fn ($a, $b) => [$a['arquivadoEm'] !== '', $ordem[$a['tipo']], $b['criadoEm']] <=> [$b['arquivadoEm'] !== '', $ordem[$b['tipo']], $a['criadoEm']]);
+    return $limpos;
+}
+
+function gravar_biblioteca(array $materiais): bool
+{
+    return gravar_lista_organizacao(ARQ_BIBLIOTECA, $materiais, 'normalizar_material', ler_biblioteca(),
+        'A Biblioteca — materiais com link.');
+}
+
+/* =====================================================================
    GRAVAÇÃO
    ===================================================================== */
 
@@ -834,10 +1114,7 @@ function novo_id_organizacao(string $prefixo): string
 function pendencias_organizacao(array $u): array
 {
     $tarefas = [];
-    $unidades = array_merge(
-        array_map(fn ($n) => $n + ['_tipo' => 'nucleo'], so_abertas(ler_nucleos())),
-        array_map(fn ($g) => $g + ['_tipo' => 'grupo'], so_abertas(ler_grupos())),
-    );
+    $unidades = array_map(fn ($x) => $x + ['_tipo' => tipo_da_unidade($x)], so_abertas(todas_as_unidades()));
 
     $semDono = array_values(array_filter($unidades, fn ($x) => $x['responsavelId'] === ''));
     if ($semDono !== []) {
@@ -865,9 +1142,14 @@ function pendencias_organizacao(array $u): array
                 ? nome_da_unidade($paradas[0]) . ' está parado'
                 : count($paradas) . ' núcleos ou grupos parados',
             'porque'  => 'falta ' . implode(', ', o_que_falta($paradas[0])),
-            'url'     => '/painel/organizacao.php' . ($paradas[0]['_tipo'] === 'grupo' ? '?aba=temas' : ''),
+            'url'     => '/painel/organizacao.php' . (($aba = leitor_de_unidade($paradas[0]['id'])['aba']) !== '' ? '?aba=' . $aba : ''),
         ];
     }
+
+    $tarefas = array_merge($tarefas, pendencias_de_ritmo(
+        $unidades, 'organizacao',
+        fn ($x) => '/painel/organizacao.php' . (($aba = leitor_de_unidade($x['id'])['aba']) !== '' ? '?aba=' . $aba : '') . '#u-' . $x['id']
+    ));
 
     $mesPassado = (new DateTimeImmutable(hoje_ce()))->modify('first day of last month')->format('Y-m');
     $semFechar = array_values(array_filter(
@@ -891,13 +1173,265 @@ function pendencias_organizacao(array $u): array
     return $tarefas;
 }
 
-/** "Núcleo Benfica" / "Grupo Segurança pública" — para frase. */
+/** Dia do mês a partir do qual a falta de atividade no mês seguinte vira pendência. */
+const DIA_DA_RESERVA = 25;
+
+/** Dias depois da atividade para registrar o que foi feito ("Registro contínuo"). */
+const DIAS_PARA_REGISTRAR = 7;
+
+/**
+ * O RITMO DO CALENDÁRIO, por unidade — as duas regras do plano:
+ *
+ *   - "As datas do mês seguinte são reservadas até o dia 25": do dia 25 em
+ *     diante, unidade aberta sem encontro marcado no mês que vem é pendência;
+ *   - "Cada unidade registra a entrega até 7 dias depois da atividade":
+ *     encontro da unidade que passou há mais de 7 dias sem nenhum registro
+ *     daquela data em diante é pendência.
+ *
+ * Serve a dois públicos: a coordenação (todas as unidades, em
+ * `pendencias_organizacao()`) e o responsável (só as dele, no Meu lugar).
+ * `$area` e `$url` dizem para onde o item leva.
+ */
+function pendencias_de_ritmo(array $unidades, string $area, callable $url, ?int $agora = null): array
+{
+    require_once __DIR__ . '/eventos-comum.php';
+    $hoje = hoje_ce($agora);
+    $proximoMes = (new DateTimeImmutable($hoje))->modify('first day of next month')->format('Y-m');
+    $porUnidade = [];
+    foreach (ler_eventos() as $e) {
+        if ($e['unidadeId'] !== '' && $e['status'] !== 'cancelado') {
+            $porUnidade[$e['unidadeId']][] = $e;
+        }
+    }
+
+    $itens = [];
+    foreach (so_abertas($unidades) as $u) {
+        $nome = nome_da_unidade($u);
+        $encontros = $porUnidade[$u['id']] ?? [];
+
+        if ((int) substr($hoje, 8, 2) >= DIA_DA_RESERVA) {
+            $temNoMes = array_filter($encontros, fn ($e) => substr(dia_do_inicio($e['inicio']), 0, 7) === $proximoMes);
+            if ($temNoMes === []) {
+                $itens[] = [
+                    'area' => $area, 'icone' => 'calendar', 'urgente' => false,
+                    'texto' => $nome . ' não tem atividade marcada no mês que vem',
+                    'porque' => 'as datas do mês seguinte se reservam até o dia ' . DIA_DA_RESERVA,
+                    'url' => $url($u),
+                ];
+            }
+        }
+
+        $passados = array_filter($encontros, fn ($e) => ($d = dia_do_inicio($e['inicio'])) !== '' && $d < $hoje);
+        usort($passados, fn ($a, $b) => $b['inicio'] <=> $a['inicio']);
+        $ultimo = $passados[0] ?? null;
+        if ($ultimo !== null) {
+            $dia = dia_do_inicio($ultimo['inicio']);
+            $dias = (int) (new DateTimeImmutable($dia))->diff(new DateTimeImmutable($hoje))->days;
+            $registrou = array_filter($u['entregas'], fn ($en) => $en['data'] >= $dia);
+            if ($dias > DIAS_PARA_REGISTRAR && $registrou === []) {
+                $itens[] = [
+                    'area' => $area, 'icone' => 'flag', 'urgente' => false,
+                    'texto' => 'Registrar o que ' . mb_strtolower(mb_substr($nome, 0, 1)) . mb_substr($nome, 1) . ' fez em “' . $ultimo['titulo'] . '”',
+                    'porque' => 'foi há ' . $dias . ' dias — o registro é até ' . DIAS_PARA_REGISTRAR . ' dias depois',
+                    'url' => $url($u),
+                ];
+            }
+        }
+    }
+    return $itens;
+}
+
+/**
+ * O interesse que veio do formulário público, conferido: um núcleo ou grupo
+ * que existe, está aberto e aparece no site (`nuc-…`/`grp-…`/`cul-…`), ou um tema do
+ * catálogo (`tema:<chave>`). Qualquer outra coisa vira '' — é texto de fora.
+ */
+function interesse_valido($bruto): string
+{
+    $v = trim((string) $bruto);
+    if (preg_match('/^tema:([a-z]{3,20})$/', $v, $m) === 1) {
+        return isset(TEMAS_GRUPO[$m[1]]) ? $v : '';
+    }
+    $u = unidade_por_id($v);
+    return $u !== null && $u['publicado'] && $u['encerradoEm'] === '' ? $v : '';
+}
+
+/**
+ * A unidade que um interesse aponta, se houver: o próprio núcleo/grupo, ou o
+ * grupo ABERTO do tema escolhido. Tema sem grupo aberto não aponta para nada —
+ * a pessoa é o convite para abrir um.
+ */
+function unidade_do_interesse(string $interesse): ?array
+{
+    if (str_starts_with($interesse, 'tema:')) {
+        return grupo_aberto_do_tema(substr($interesse, 5), ler_grupos());
+    }
+    $u = unidade_por_id($interesse);
+    return $u !== null && $u['encerradoEm'] === '' ? $u : null;
+}
+
+/** "o núcleo Benfica", "o tema Saúde e esporte" — o interesse em frase. '' sem interesse. */
+function frase_do_interesse(string $interesse): string
+{
+    if ($interesse === '') {
+        return '';
+    }
+    if (str_starts_with($interesse, 'tema:')) {
+        $t = TEMAS_GRUPO[substr($interesse, 5)] ?? null;
+        return $t ? 'o tema ' . $t['nome'] : '';
+    }
+    $u = unidade_do_interesse($interesse);
+    return $u === null ? '' : mb_strtolower(mb_substr(nome_da_unidade($u), 0, 1)) . mb_substr(nome_da_unidade($u), 1);
+}
+
+/**
+ * Cria o encontro da unidade — a próxima atividade dela. Entra na agenda
+ * pública se a unidade aparece no site, e herda dela a cidade e o bairro.
+ * Devolve o id, ou '' se não conseguiu gravar.
+ */
+function criar_encontro_da_unidade(array $u, string $dia, string $hora, string $titulo, string $local): string
+{
+    require_once __DIR__ . '/eventos-comum.php';
+    $nome = rotulo_da_unidade($u);
+    $inicio = inicio_de_dia_e_hora($dia, $hora);
+    if ($inicio === '') {
+        return '';
+    }
+    $eventos = ler_eventos();
+    $novo = [
+        'id'       => novo_id_evento(),
+        'titulo'   => $titulo !== '' ? $titulo : 'Encontro · ' . $nome,
+        'familia'  => 'militancia',
+        'inicio'   => $inicio,
+        'local'    => $local,
+        'cidade'   => $u['cidade'] ?? '',
+        'bairro'   => $u['bairro'] ?? '',
+        'unidadeId' => $u['id'],
+        'naAgenda' => $u['publicado'],
+        'filtro'   => FILTRO_PADRAO,
+        'token'    => bin2hex(random_bytes(10)),
+        'tokenConfirmacao' => bin2hex(random_bytes(10)),
+        'status'   => 'planejado',
+        'criadoEm' => date('c'),
+        'criadoPor' => quem_grava(),
+    ];
+    $eventos[] = $novo;
+    if (!gravar_eventos($eventos)) {
+        return '';
+    }
+    republicar_agenda();
+    return $novo['id'];
+}
+
+/**
+ * Acrescenta uma entrega à unidade e grava. Devolve a unidade atualizada, ou
+ * null se não achou ou não gravou. Usada pela Organização e pela tela do
+ * responsável (`minha-unidade.php`).
+ */
+function adicionar_entrega(string $tipo, string $id, string $data, string $texto, int $pessoas, string $porId): ?array
+{
+    $l = leitor_de_unidade($tipo);
+    $lista = $l['ler']();
+    $alvo = null;
+    foreach ($lista as &$u) {
+        if ($u['id'] === $id) {
+            $u['entregas'][] = [
+                'id' => novo_id_organizacao('ent'), 'data' => $data, 'texto' => $texto,
+                'pessoas' => $pessoas, 'porId' => $porId, 'em' => date('c'),
+            ];
+            $alvo = $u;
+        }
+    }
+    unset($u);
+    if ($alvo === null) {
+        return null;
+    }
+    return $l['gravar']($lista) ? $alvo : null;
+}
+
+/**
+ * Quem faz parte da unidade, por nome: quem tem a unidade na ficha
+ * (`unidades`) E quem responde por ela. Responsável e substituto fazem parte
+ * por definição — sem isto, a pessoa que mais trabalha no núcleo não
+ * apareceria na lista dele.
+ */
+function membros_da_unidade(string $id): array
+{
+    $u = unidade_por_id($id);
+    $responde = $u === null ? [] : array_filter([$u['responsavelId'], $u['substitutoId']]);
+    $gente = array_values(array_filter(ler_pessoas(), fn ($p) =>
+        $p['status'] !== 'recusada' && (in_array($id, $p['unidades'], true) || in_array($p['id'], $responde, true))
+    ));
+    usort($gente, fn ($a, $b) => sem_acento($a['nome']) <=> sem_acento($b['nome']));
+    return $gente;
+}
+
+/** Põe ou tira alguém da unidade. Passa pela trava: a ficha é gravada por várias telas. */
+function pertencer(string $pessoaId, string $unidadeId, bool $dentro): bool
+{
+    return com_trava(ARQ_PESSOAS, function () use ($pessoaId, $unidadeId, $dentro): bool {
+        $pessoas = ler_pessoas(true);
+        $achou = false;
+        foreach ($pessoas as &$p) {
+            if ($p['id'] !== $pessoaId) {
+                continue;
+            }
+            $achou = true;
+            $p['unidades'] = $dentro
+                ? array_values(array_unique([...$p['unidades'], $unidadeId]))
+                : array_values(array_filter($p['unidades'], fn ($x) => $x !== $unidadeId));
+        }
+        unset($p);
+        return $achou && gravar_pessoas($pessoas);
+    });
+}
+
+/** "O núcleo Benfica" / "O grupo Segurança pública" / "O grupo cultural Cineclube" — para frase. */
 function nome_da_unidade(array $x): string
 {
-    if (isset($x['tema'])) {
-        return 'O grupo ' . TEMAS_GRUPO[$x['tema']]['nome'];
+    return match (tipo_da_unidade($x)) {
+        'grupo'   => 'O grupo ' . TEMAS_GRUPO[$x['tema']]['nome'],
+        'cultura' => 'O grupo cultural ' . $x['nome'],
+        default   => 'O núcleo ' . $x['nome'],
+    };
+}
+
+/**
+ * ONDE ESTA PESSOA ATUA — a resposta única, para a ficha, o Início e as listas.
+ *
+ * Junta as três origens do vínculo: fazer parte (`unidades` na ficha),
+ * responder por (responsável ou substituto de unidade aberta) e falar por
+ * (porta-voz na Liga). Cada vínculo:
+ *   tipo   nucleo · grupo · cultura · liga
+ *   id     da unidade, ou do porta-voz
+ *   rotulo "Núcleo Benfica", "Liga dos Porta-vozes"
+ *   papel  faz parte · responsável · substituto · porta-voz nível C
+ */
+function vinculos_da_pessoa(string $pessoaId): array
+{
+    $pessoa = achar_pessoa($pessoaId);
+    if ($pessoa === null) {
+        return [];
     }
-    return 'O núcleo ' . $x['nome'];
+    $vinculos = [];
+    foreach (so_abertas(todas_as_unidades()) as $u) {
+        $papel = match (true) {
+            $u['responsavelId'] === $pessoaId => 'responsável',
+            $u['substitutoId'] === $pessoaId  => 'substituto',
+            in_array($u['id'], $pessoa['unidades'], true) => 'faz parte',
+            default => '',
+        };
+        if ($papel !== '') {
+            $vinculos[] = ['tipo' => tipo_da_unidade($u), 'id' => $u['id'], 'rotulo' => rotulo_da_unidade($u), 'papel' => $papel];
+        }
+    }
+    foreach (ler_liga() as $pv) {
+        if ($pv['pessoaId'] === $pessoaId && $pv['encerradoEm'] === '') {
+            $vinculos[] = ['tipo' => 'liga', 'id' => $pv['id'], 'rotulo' => 'Liga dos Porta-vozes',
+                           'papel' => 'porta-voz nível ' . nivel_liga($pv)['nivel']];
+        }
+    }
+    return $vinculos;
 }
 
 /**
@@ -909,6 +1443,8 @@ function catalogo_da_organizacao(): array
     return [
         'temas' => TEMAS_GRUPO,
         'liga' => NIVEIS_LIGA,
+        'eixos' => EIXOS_CULTURAIS,
+        'niveisCultura' => array_map(fn ($n) => $n['nome'], NIVEIS_CULTURA),
         'territorio' => array_map(fn ($n) => $n['nome'], NIVEIS_TERRITORIO),
         'ondas' => ONDAS,
     ];

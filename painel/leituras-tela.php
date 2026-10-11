@@ -25,6 +25,7 @@ require_once __DIR__ . '/leituras-formacao.php';
 require_once __DIR__ . '/leituras-semana.php';
 require_once __DIR__ . '/leituras-atividade.php';
 require_once __DIR__ . '/leituras-comando.php';
+require_once __DIR__ . '/leituras-site.php';
 
 function tela_de_leituras(array $eu): void
 {
@@ -35,6 +36,7 @@ function tela_de_leituras(array $eu): void
     $abas = [
         /* Primeira e padrão: é a tela que a coordenação abre na reunião. */
         'comando'    => ['nome' => 'Comando'],
+        'site'       => ['nome' => 'Site'],
         /* O contador é o número de ORIGENS, e não de pessoas: a pergunta da
            aba é "por quantos caminhos a militância está chegando". */
         'origem'     => ['nome' => 'Origem',     'conta' => count($origens['linhas'])],
@@ -69,6 +71,7 @@ function tela_de_leituras(array $eu): void
       null,
       [
           'Comando: os seis blocos da reunião semanal, a escada de engajamento (quantos subiram de degrau no mês) e as decisões do mês.',
+          'Site: os oito indicadores do site no plano — visitas às atividades, inscrição, quem volta, materiais, registro — contados sem cookie.',
           'Origem: das pessoas que cada link trouxe, quantas viraram militante. A ordem é por quem militou, não por volume.',
           'Território: só quem já foi aprovado, por cidade e bairro — onde já dá para montar time, e quem está sozinha.',
           'Encontros: por encontro realizado, quem confirmou, veio, se inscreveu, foi aprovada e VOLTOU — o degrau que separa volume de base.',
@@ -86,6 +89,8 @@ function tela_de_leituras(array $eu): void
   <?php
   if ($aba === 'comando') {
       aba_de_comando();
+  } elseif ($aba === 'site') {
+      aba_do_site();
   } elseif ($aba === 'origem') {
       aba_de_origem($origens, $formatar);
   } elseif ($aba === 'territorio') {

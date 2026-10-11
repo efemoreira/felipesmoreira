@@ -158,7 +158,7 @@ function pendencias_index(array $u): array
  * A ordem em que as áreas entram na fila e no panorama. É a ordem de leitura
  * da fila do dia — decisão de coordenação, não alfabética.
  */
-const ORDEM_AGORA = ['tarefas', 'fatos', 'pessoas', 'gente', 'producao', 'eventos', 'agenda', 'inscricoes', 'organizacao', 'oficina'];
+const ORDEM_AGORA = ['tarefas', 'minhaunidade', 'fatos', 'pessoas', 'gente', 'producao', 'eventos', 'agenda', 'inscricoes', 'organizacao', 'oficina'];
 
 /**
  * Se esta pessoa abre a área para o efeito do Início. `gente` não é área de
@@ -175,6 +175,11 @@ function abre_no_agora(string $area, array $u): bool
        tenha a área que tiver. */
     if ($area === 'tarefas') {
         require_once __DIR__ . '/tarefas-comum.php';
+        return true;
+    }
+    /* Responder por um núcleo ou grupo também: qualquer conta pode. */
+    if ($area === 'minhaunidade') {
+        require_once __DIR__ . '/minha-unidade-comum.php';
         return true;
     }
     if (!pode($area)) {

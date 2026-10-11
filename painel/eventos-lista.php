@@ -364,6 +364,7 @@ function tela_lista_de_encontros(bool $coordena, array $eu, ?string $erro, ?stri
               site mostra — nenhum dos três se digita à parte. Sem hora, o encontro
               continua na lista pelo dia, só sem horário no cartão.
             </p>
+            <?php campos_onde_do_evento(['unidadeId' => (string) ($_GET['unidade'] ?? '')], 'novo'); ?>
             <div class="campo">
               <label for="img-novo">Imagem <span class="dica">— opcional</span></label>
               <input id="img-novo" type="file" name="imagem" accept="image/*">

@@ -21,6 +21,7 @@ require_once __DIR__ . '/agenda-comum.php';  // o relógio, as cores e a publica
 require_once __DIR__ . '/pessoas-comum.php';  // a presença aponta para uma pessoa
 require_once __DIR__ . '/escala-comum.php';    // as peças, o preparo, os convites — quem faz o encontro acontecer
 require_once __DIR__ . '/presencas-comum.php'; // quem esteve, e o funil de depois
+require_once __DIR__ . '/organizacao-comum.php'; // unidade_por_id(): o núcleo, grupo ou grupo cultural do encontro
 
 const ARQ_EVENTOS = PASTA_DADOS . '/eventos.php';
 /**
@@ -341,7 +342,63 @@ function normalizar_evento($e): ?array
            Serve só para a importação não rodar duas vezes — o array é literal,
            e campo fora dele some na próxima gravação. */
         'importadoDe' => limpar_texto($e['importadoDe'] ?? '', 60),
+
+        /* ---- onde e de quem (plano 2026–2027: "um modelo para todos") ----
+           A cidade e o bairro saem do texto livre do `local` e viram campo: é
+           por eles que a /programacao filtra e que o aviso de choque compara.
+           `unidadeId` amarra o encontro a um núcleo (`nuc-…`) ou grupo
+           temático (`grp-…`): núcleos e grupos não têm agenda própria — a
+           próxima atividade deles É um encontro daqui. */
+        'cidade'    => cidade_valida($e['cidade'] ?? ''),
+        'bairro'    => limpar_texto($e['bairro'] ?? '', 60),
+        'unidadeId' => id_de_unidade($e['unidadeId'] ?? ''),
     ];
+}
+
+/**
+ * Presencial ou on-line — DERIVADO, e não campo: digital é on-line; com
+ * plataforma ou link e sem local também. Um campo a mais seria uma segunda
+ * verdade ao lado da família, e as duas divergiriam no primeiro encontro
+ * editado às pressas.
+ */
+function formato_do_evento(array $e): string
+{
+    if ($e['familia'] === 'digital') {
+        return 'online';
+    }
+    return ($e['plataforma'] !== '' || $e['link'] !== '') && $e['local'] === '' ? 'online' : 'presencial';
+}
+
+/** Núcleos, grupos temáticos e grupos culturais abertos, para o seletor "de quem": id => rótulo. */
+function unidades_para_evento(): array
+{
+    $opcoes = [];
+    foreach (so_abertas(todas_as_unidades()) as $u) {
+        $opcoes[$u['id']] = rotulo_da_unidade($u) . (($u['cidade'] ?? '') !== '' ? ' · ' . $u['cidade'] : '');
+    }
+    return $opcoes;
+}
+
+/**
+ * Lê cidade, bairro e unidade do POST para o encontro. Encontro de núcleo sem
+ * cidade herda a do núcleo — quem marca a atividade do Benfica não precisa
+ * digitar "Fortaleza".
+ */
+function onde_do_post(array $e): array
+{
+    $e['unidadeId'] = (string) ($_POST['unidadeId'] ?? $e['unidadeId'] ?? '');
+    $e['cidade'] = cidade_valida($_POST['cidade'] ?? $e['cidade'] ?? '');
+    $e['bairro'] = limpar_texto($_POST['bairro'] ?? $e['bairro'] ?? '', 60);
+    $u = unidade_por_id($e['unidadeId']);
+    if ($u !== null && ($u['cidade'] ?? '') !== '') {
+        if ($e['cidade'] === '') {
+            $e['cidade'] = $u['cidade'];
+        }
+        if ($e['bairro'] === '' && $e['cidade'] === $u['cidade']) {
+            $e['bairro'] = $u['bairro'];
+        }
+    }
+    return $e;
 }
 
 function ler_eventos(bool $recarregar = false): array
@@ -653,9 +710,24 @@ function item_publico(array $e): array
            alimenta o filtro da /programacao; nome só, sem trava nem material,
            que são informação de trabalho da coordenação. */
         'familia'    => $e['familia'],
+        /* Os filtros da /programacao: cidade, bairro, formato. */
+        'cidade'     => $e['cidade'],
+        'bairro'     => $e['bairro'],
+        'formato'    => formato_do_evento($e),
     ];
     if ($e['inicio'] !== '') {
         $item['dia'] = partes_de_exibicao($e['inicio'])['dia'];
+    }
+    /* De qual núcleo ou grupo — só se a unidade aparece no site. Nunca o nome
+       de quem responde por ela, que é dado de painel. */
+    $u = unidade_por_id($e['unidadeId']);
+    if ($u !== null && $u['publicado'] && $u['encerradoEm'] === '') {
+        $tipo = tipo_da_unidade($u);
+        $item['unidade'] = [
+            'tipo' => $tipo,
+            'nome' => $tipo === 'grupo' ? TEMAS_GRUPO[$u['tema']]['nome'] : $u['nome'],
+            'tema' => $u['tema'] ?? '',
+        ];
     }
 
     /* O "Vou" do cartão público. Só em encontro presencial que ainda vai
@@ -911,4 +983,41 @@ function estado_eventos(array $u): string
         return 'Próximo: ' . apelido_curto($e['titulo'])
             . ($e['data'] !== '' ? ' · ' . $e['data'] : '')
             . ' · preparo ' . $preparo['feito'] . '/' . $preparo['total'];
+}
+
+/**
+ * O bloco "Onde e de quem" dos formulários de encontro — cidade, bairro e a
+ * unidade. Três campos, e o terceiro preenche os dois primeiros quando ficam
+ * em branco (`onde_do_post()`).
+ */
+function campos_onde_do_evento(array $e, string $p): void
+{
+    $unidades = unidades_para_evento();
+    ?>
+    <fieldset>
+      <legend>Onde e de quem</legend>
+      <?php if ($unidades !== []): ?>
+        <div class="campo">
+          <label for="<?= h($p) ?>-unidade">De qual núcleo ou grupo <span class="dica">— opcional</span></label>
+          <select id="<?= h($p) ?>-unidade" name="unidadeId">
+            <option value="">— de nenhum: é da coordenação —</option>
+            <?php foreach ($unidades as $id => $rotulo): ?>
+              <option value="<?= h($id) ?>"<?= ($e['unidadeId'] ?? '') === $id ? ' selected' : '' ?>><?= h($rotulo) ?></option>
+            <?php endforeach; ?>
+          </select>
+          <p class="dica">Encontro de núcleo vira a próxima atividade dele, e a cidade vem junto se ficar em branco.</p>
+        </div>
+      <?php endif; ?>
+      <div class="linha g2">
+        <div class="campo">
+          <label for="<?= h($p) ?>-cidade">Cidade</label>
+          <?php campo_cidade($p . '-cidade', 'cidade', (string) ($e['cidade'] ?? ''), 'On-line ou ainda não sei'); ?>
+        </div>
+        <div class="campo">
+          <label for="<?= h($p) ?>-bairro">Bairro <span class="dica">— opcional</span></label>
+          <input id="<?= h($p) ?>-bairro" type="text" name="bairro" maxlength="60" value="<?= h((string) ($e['bairro'] ?? '')) ?>">
+        </div>
+      </div>
+    </fieldset>
+    <?php
 }

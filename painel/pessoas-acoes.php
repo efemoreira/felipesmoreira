@@ -47,6 +47,23 @@ function tratar_acoes_de_pessoa(): void
         $acao = (string) ($_POST['acao'] ?? '');
         $alvo = achar_pessoa(limpar_texto($_POST['id'] ?? '', 40));
 
+        /* ---------- onde ela atua: pôr ou tirar de núcleo, grupo ou grupo cultural ---------- */
+        if ($acao === 'unidade-entrar' || $acao === 'unidade-sair') {
+            require_once __DIR__ . '/organizacao-comum.php';
+            $unidade = unidade_por_id(limpar_texto($_POST['unidade'] ?? '', 40));
+            if ($alvo === null || $unidade === null) {
+                avisar('erro', 'Pessoa ou unidade não encontrada.');
+                voltar();
+            }
+            $dentro = $acao === 'unidade-entrar';
+            if (!pertencer($alvo['id'], $unidade['id'], $dentro)) {
+                avisar('erro', 'Não consegui gravar em /dados.');
+            } else {
+                avisar('ok', ($dentro ? 'Agora faz parte: ' : 'Saiu de: ') . rotulo_da_unidade($unidade) . '.');
+            }
+            voltar('?p=' . rawurlencode($alvo['id']) . '&aba=atua');
+        }
+
         /* ---------- cadastrar ou alterar ---------- */
         if ($acao === 'salvar') {
             $novo = $alvo === null;

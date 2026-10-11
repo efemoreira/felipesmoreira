@@ -44,6 +44,8 @@ const ROTAS_SINAL = [
     'nucleos' => 'Núcleos',
     'temas' => 'Grupos temáticos',
     'portavozes' => 'Porta-vozes',
+    'biblioteca' => 'Biblioteca',
+    'cultura' => 'Cultura',
 ];
 
 const EVENTOS_SINAL = [
@@ -52,6 +54,10 @@ const EVENTOS_SINAL = [
     'passo-2' => 'Passo 2',
     'passo-3' => 'Passo 3',
     'enviou-inscricao' => 'Inscreveram-se',
+    /* Plano 2026–2027, indicadores do site: quem chega às páginas de
+       atividade (/programacao#a-<id>) e quem abre material da Biblioteca. */
+    'abriu-atividade' => 'Abriram uma atividade',
+    'abriu-material' => 'Abriram um material',
 ];
 
 function ler_sinais(): array

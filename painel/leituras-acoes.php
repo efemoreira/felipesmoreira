@@ -26,6 +26,23 @@ function tratar_acoes_de_leituras(): void
     $acao = (string) ($_POST['acao'] ?? '');
     $metas = ler_metas();
 
+    if ($acao === 'decisoes-salvar') {
+        require_once __DIR__ . '/decisoes-comum.php';
+        $mes = limpar_texto($_POST['mes'] ?? '', 7);
+        $prioridades = array_map(fn ($p) => (string) $p, (array) ($_POST['prioridades'] ?? []));
+        $texto = limpar_texto($_POST['decisoes'] ?? '', 1200);
+        if (preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $mes) !== 1 || (array_filter($prioridades, fn ($p) => trim($p) !== '') === [] && $texto === '')) {
+            avisar('erro', 'Diga o mês e pelo menos uma prioridade ou decisão.');
+            ir_para('/painel/leituras.php#decisoes');
+        }
+        $todas = array_values(array_filter(ler_decisoes(), fn ($d) => $d['mes'] !== $mes));
+        $antes = decisao_do_mes($mes);
+        $todas[] = ['mes' => $mes, 'prioridades' => $prioridades, 'decisoes' => $texto,
+                    'em' => $antes['em'] ?? date('c'), 'por' => $antes['por'] ?? quem_grava()];
+        avisar(gravar_decisoes($todas) ? 'ok' : 'erro', 'Decisões de ' . $mes . ' registradas.');
+        ir_para('/painel/leituras.php#decisoes');
+    }
+
     if ($acao === 'meta-salvar') {
         $nova = normalizar_meta([
             'id'       => 'meta-' . bin2hex(random_bytes(4)),

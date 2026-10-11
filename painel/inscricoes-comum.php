@@ -400,6 +400,16 @@ function aprovar_pessoa(array &$pessoas, string $id, string $login, array $caps,
         if ($p['funcoes'] === []) {
             $p['funcoes'] = ['onde-precisar'];
         }
+        /* Escolheu um núcleo ou tema em /nucleos ou /temas: aprovada, ela já
+           entra na unidade — a escolha não se perde entre o formulário e o
+           primeiro encontro. Tema sem grupo aberto fica como interesse. */
+        if ($p['interesse'] !== '') {
+            require_once __DIR__ . '/organizacao-comum.php';
+            $u = unidade_do_interesse($p['interesse']);
+            if ($u !== null && !in_array($u['id'], $p['unidades'], true)) {
+                $p['unidades'][] = $u['id'];
+            }
+        }
         $achou = [
             'nome'     => $p['nome'],
             'usuario'  => $login,
