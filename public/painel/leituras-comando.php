@@ -18,6 +18,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/layout.php';
 require_once __DIR__ . '/escada-comum.php';
+require_once __DIR__ . '/decisoes-comum.php';
 
 /** Os seis blocos, no formato dos medidores do Início (`.medidor`). */
 function blocos_de_comando(?int $agora = null): array
@@ -28,7 +29,9 @@ function blocos_de_comando(?int $agora = null): array
     $subidas = subidas_por_mes(1, $agora)[0];
     $ativos = ativos_no_mes($agora);
 
-    $grupos = so_abertas(ler_grupos());
+    /* Organização = grupos temáticos E grupos culturais: as duas formas de
+       atuar sobre um assunto ou uma linguagem. Núcleo é o bloco Territórios. */
+    $grupos = array_merge(so_abertas(ler_grupos()), so_abertas(ler_culturais()));
     $gruposAtivos = array_values(array_filter($grupos, fn ($g) => unidade_ativa($g, $agora)));
     $nucleos = so_abertas(ler_nucleos());
     $nucleosAtivos = array_values(array_filter($nucleos, fn ($n) => unidade_ativa($n, $agora)));
@@ -56,8 +59,8 @@ function blocos_de_comando(?int $agora = null): array
         [
             'rotulo' => 'Organização',
             'num'    => count($gruposAtivos) . '/' . count($grupos),
-            'nota'   => 'grupos temáticos ativos · '
-                . count(array_filter($grupos, fn ($g) => $g['maturidade'] >= 2)) . ' com maturidade 2 ou mais',
+            'nota'   => 'grupos temáticos e culturais ativos · '
+                . count(array_filter($grupos, fn ($g) => ($g['maturidade'] ?? 0) >= 2 || ($g['nivel'] ?? 0) === 3 || ($g['nivel'] ?? 0) === 4)) . ' já com rotina',
             'estado' => $grupos === [] ? 'atencao' : (count($gruposAtivos) === count($grupos) ? 'ok' : 'atencao'),
             'url'    => '/painel/organizacao.php?aba=temas',
         ],
@@ -101,8 +104,7 @@ function blocos_de_comando(?int $agora = null): array
 function decisoes_do_mes(?int $agora = null): array
 {
     $unidades = array_merge(
-        array_map(fn ($n) => $n + ['_nome' => 'Núcleo ' . $n['nome']], so_abertas(ler_nucleos())),
-        array_map(fn ($g) => $g + ['_nome' => 'Grupo ' . TEMAS_GRUPO[$g['tema']]['nome']], so_abertas(ler_grupos())),
+        array_map(fn ($x) => $x + ['_nome' => rotulo_da_unidade($x)], so_abertas(todas_as_unidades())),
     );
 
     /* Pronta para subir: ativa, com substituto, e duas entregas em meses
@@ -190,7 +192,12 @@ function aba_de_comando(): void
       </p>
     </fieldset>
 
-    <fieldset>
+    <?php
+    $mesAtual = substr(hoje_ce(), 0, 7);
+    $registro = decisao_do_mes($mesAtual);
+    $anteriores = array_values(array_filter(ler_decisoes(), fn ($d) => $d['mes'] !== $mesAtual));
+    ?>
+    <fieldset id="decisoes">
       <legend>Decisões do mês</legend>
       <ol class="lista-travas">
         <?php foreach (decisoes_do_mes() as $d): ?>
@@ -202,6 +209,38 @@ function aba_de_comando(): void
           </li>
         <?php endforeach; ?>
       </ol>
+
+      <?php /* A ATA: o que a reunião decidiu, gravado. Três prioridades e um
+               texto — curto de propósito, para ser escrito durante a reunião. */ ?>
+      <form method="post" class="folga">
+        <input type="hidden" name="csrf" value="<?= h(token()) ?>">
+        <input type="hidden" name="acao" value="decisoes-salvar">
+        <input type="hidden" name="mes" value="<?= h($mesAtual) ?>">
+        <p class="dica colado"><strong>A ata de <?= h(mes_curto($mesAtual)) ?></strong><?= $registro !== null ? ' · registrada por ' . h($registro['por']) : '' ?></p>
+        <div class="linha g3">
+          <?php for ($i = 0; $i < 3; $i++): ?>
+            <div class="campo">
+              <label for="dc-p<?= $i ?>">Prioridade <?= $i + 1 ?></label>
+              <input id="dc-p<?= $i ?>" type="text" name="prioridades[]" maxlength="140" value="<?= h($registro['prioridades'][$i] ?? '') ?>">
+            </div>
+          <?php endfor; ?>
+        </div>
+        <div class="campo">
+          <label for="dc-d">O que foi decidido <span class="dica">— subir, apoiar, simplificar, adiar, encerrar</span></label>
+          <textarea id="dc-d" name="decisoes" rows="4" maxlength="1200"><?= h($registro['decisoes'] ?? '') ?></textarea>
+        </div>
+        <div class="acoes"><button class="btn btn-ouro" type="submit">Registrar as decisões</button></div>
+      </form>
+
+      <?php if ($anteriores !== []): ?>
+        <details class="folga">
+          <summary class="dica">Atas anteriores (<?= count($anteriores) ?>)</summary>
+          <?php foreach ($anteriores as $d): ?>
+            <p class="hub-linha"><strong><?= h(mes_curto($d['mes'])) ?></strong>
+              <span class="dica"><?= h(implode(' · ', $d['prioridades'])) ?><?= $d['decisoes'] !== '' ? ' — ' . h($d['decisoes']) : '' ?></span></p>
+          <?php endforeach; ?>
+        </details>
+      <?php endif; ?>
     </fieldset>
     <?php
 }

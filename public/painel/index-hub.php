@@ -90,7 +90,10 @@ function tela_do_inicio(array $u, ?string $aviso, ?string $sucesso): void
     ?>
     <div class="capa">
       <?php
-        if ($areas === []) {
+        /* Sem área nenhuma, mas com algo esperando (a unidade por que responde,
+           uma tarefa combinada): a fila aparece. Quem responde por um núcleo
+           não precisa de área do menu para receber o que é dele. */
+        if ($areas === [] && $naFila === 0) {
             $resumo = 'Seu acesso está ativo, mas nenhuma área foi liberada ainda.';
         } elseif ($soPassos) {
             $resumo = 'Bem-vinda. Três passos para começar — o resto vem depois deles.';
@@ -141,6 +144,50 @@ function tela_do_inicio(array $u, ?string $aviso, ?string $sucesso): void
         </p>
       <?php endif; ?>
 
+      <?php /* MEU LUGAR (plano 2026–2027): o degrau na escada e as unidades desta
+               pessoa — o núcleo e o grupo de que faz parte, a próxima atividade
+               de cada um e, para quem responde, a porta da unidade. É o "cada
+               pessoa vê seus grupos" do plano, sem área nova no menu. */ ?>
+      <?php
+        require_once __DIR__ . '/minha-unidade-comum.php';
+        $lugar = meu_lugar_de($u);
+        $degrau = DEGRAUS[$lugar['degrau']];
+      ?>
+      <section class="meu-lugar" aria-label="Meu lugar">
+        <p class="hub-linha">
+          <?= icone('flag', 18) ?>
+          Degrau <?= $lugar['degrau'] ?> de 5: <strong><?= h($degrau['nome']) ?></strong>
+          <span class="dica">· próximo passo: <?= h(mb_strtolower($degrau['proximo'])) ?></span>
+        </p>
+        <?php foreach ($lugar['unidades'] as $x): ?>
+          <p class="hub-linha">
+            <?= icone(['grupo' => 'book', 'cultura' => 'star', 'nucleo' => 'pin'][tipo_da_unidade($x)], 18) ?>
+            <strong><?= h(rotulo_da_unidade($x)) ?></strong>
+            <span class="dica">· próxima: <?= ($px = proxima_efetiva($x)) ? h(data_humana($px['data']) . ($px['texto'] !== '' ? ' · ' . $px['texto'] : '')) : 'ainda não marcada' ?></span>
+            <?php if (responde_por($u, $x)): ?>
+              <a class="btn btn-mini btn-ouro" href="/painel/minha-unidade.php?u=<?= h(rawurlencode($x['id'])) ?>">Cuidar</a>
+            <?php endif; ?>
+          </p>
+        <?php endforeach; ?>
+        <?php
+          require_once __DIR__ . '/formacao-comum.php';
+          $minhaFormacao = formacao_da_pessoa($u['id']);
+        ?>
+        <p class="hub-linha">
+          <?= icone('play', 18) ?>
+          Formação:
+          <?php foreach ($minhaFormacao as $nivel => $f): ?>
+            <span class="selo<?= $f['concluidoEm'] !== '' ? ' selo-ok' : '' ?>"><?= h(NIVEIS_FORMACAO[$nivel]['nome']) ?> <?= $f['feitas'] ?>/<?= $f['total'] ?></span>
+          <?php endforeach; ?>
+          <?php if (($minhaFormacao['basica']['concluidoEm'] ?? '') !== ''): ?>
+            <a class="btn btn-mini" href="/painel/certificado.php">Certificado</a>
+          <?php endif; ?>
+        </p>
+        <?php if ($lugar['unidades'] === []): ?>
+          <p class="dica colado">Você ainda não está num núcleo nem num grupo. <a href="/nucleos">Ver os núcleos</a> · <a href="/temas">os grupos</a>.</p>
+        <?php endif; ?>
+      </section>
+
       <?php if ($soPassos): ?>
         <h2 class="secao">Seus primeiros passos · <?= $dados ?> de <?= count($passos) ?></h2>
         <ol class="passos">
@@ -165,7 +212,7 @@ function tela_do_inicio(array $u, ?string $aviso, ?string $sucesso): void
 
       <?php if (!$soPassos): ?>
 
-      <?php if ($areas === []): ?>
+      <?php if ($areas === [] && $naFila === 0): ?>
         <p class="msg msg-erro">
           Nenhuma área foi liberada para a sua conta ainda. Fale com a coordenação no
           <a href="<?= h(WHATSAPP_COORDENACAO) ?>" target="_blank" rel="noopener">WhatsApp</a>

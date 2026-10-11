@@ -5,6 +5,7 @@ import { Icon } from "@/components/icons";
 import { BORDA, C, FONT_ALFA, FONT_ELITE, FONT_BITTER, borda, sombra, sombraErguida, sombraAfundada, bordaFina } from "@/lib/theme";
 import { DEGRAUS } from "@/features/organizacao/catalogo";
 import { PaginaDoSite } from "@/components/site/PaginaDoSite";
+import { NaVozDaLiga } from "./NaVozDaLiga";
 import { marca, coordenacao, numeros, portas, mais, type Porta } from "./data";
 
 /**
@@ -125,6 +126,9 @@ export default function Home() {
             ))}
           </nav>
         </section>
+
+        {/* ===================== NA VOZ DA LIGA ===================== */}
+        <NaVozDaLiga />
 
         {/* ===================== ESCADA ===================== */}
         <section aria-labelledby="h-escada" className="h-secao">

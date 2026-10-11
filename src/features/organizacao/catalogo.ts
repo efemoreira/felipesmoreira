@@ -70,6 +70,32 @@ export const ONDAS: Record<number, string> = {
   0: "Mapear (T0)",
 };
 
+/** Os eixos da frente de Cultura — par de EIXOS_CULTURAIS em organizacao-comum.php. */
+export const EIXOS_CULTURAIS: Record<string, string> = {
+  musica: "Música e expressão sonora",
+  moda: "Moda, vestuário e design",
+  danca: "Dança e movimento",
+  jogos: "Jogos e cultura lúdica",
+  esportes: "Esportes e lazer",
+  artes: "Artes visuais e fotografia",
+  teatro: "Teatro, performance e humor",
+  cinema: "Cinema, audiovisual e animação",
+  literatura: "Literatura, escrita e edição",
+  digital: "Cultura digital",
+  artesanato: "Artesanato e saberes tradicionais",
+  popular: "Cultura popular e patrimônio vivo",
+  gastronomia: "Gastronomia e cultura alimentar",
+  arquitetura: "Arquitetura, urbanismo e paisagem",
+};
+
+/** "Da ideia ao grupo permanente" — par de NIVEIS_CULTURA. */
+export const NIVEIS_CULTURA: Record<number, string> = {
+  1: "Ideia cultural",
+  2: "Atividade pontual",
+  3: "Projeto recorrente",
+  4: "Grupo permanente",
+};
+
 /** A escada de engajamento — par de `DEGRAUS` em escada-comum.php. */
 export const DEGRAUS = [
   { nome: "Interessado", resumo: "Deixou contato ou entrou num grupo." },

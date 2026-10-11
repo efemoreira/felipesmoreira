@@ -71,13 +71,17 @@ function tratar_acoes_de_organizacao(array $eu): void
     match ((string) ($_POST['acao'] ?? '')) {
         'nucleo-salvar'  => salvar_nucleo(),
         'grupo-salvar'   => salvar_grupo(),
+        'cultura-salvar' => salvar_cultural(),
         'entrega'        => registrar_entrega($eu),
         'encerrar'       => encerrar_unidade(true),
         'reabrir'        => encerrar_unidade(false),
+        'proxima'        => marcar_proxima(),
         'pv-salvar'      => salvar_porta_voz(),
         'pv-comprovar'   => comprovar_porta_voz(),
         'pv-mes'         => fechar_mes_porta_voz($eu),
         'pv-encerrar'    => encerrar_porta_voz(),
+        'material-salvar' => salvar_material(),
+        'material-arquivar' => arquivar_material(),
         default          => null,
     };
 
@@ -237,19 +241,102 @@ function salvar_grupo(): void
     voltar_organizacao('temas');
 }
 
+/* ---------------------------------------------------------------- cultura */
+
+function salvar_cultural(): void
+{
+    $lista = ler_culturais();
+    $antigo = achar_para_editar($lista, 'cultura', 'Grupo cultural');
+    $base = $antigo ?? [
+        'id' => novo_id_organizacao('cul'), 'nome' => '', 'eixo' => 'popular', 'nivel' => 1, 'cidade' => '', 'bairro' => '',
+        'evidencia' => '', 'responsavelId' => '', 'substitutoId' => '', 'ritmo' => 'mensal', 'proximaData' => '',
+        'proximaTexto' => '', 'contato' => '', 'publicado' => false, 'entregas' => [],
+        'criadoEm' => date('c'), 'criadoPor' => quem_grava(), 'encerradoEm' => '',
+    ];
+    $novo = mesclar_post($base, campos_de_unidade() + [
+        'nome'   => fn ($v) => limpar_texto($v, 80),
+        'eixo'   => fn ($v) => (string) $v,
+        'nivel'  => fn ($v) => (int) $v,
+        'cidade' => fn ($v) => cidade_valida($v),
+        'bairro' => fn ($v) => limpar_texto($v, 60),
+    ]);
+    if ($novo['nome'] === '') {
+        avisar('erro', 'Dê um nome ao grupo cultural — "Cineclube do Benfica", "Sarau do Cariri".');
+        voltar_organizacao('cultura');
+    }
+    if (!isset(EIXOS_CULTURAIS[$novo['eixo']])) {
+        avisar('erro', 'Escolha o eixo cultural.');
+        voltar_organizacao('cultura');
+    }
+    conferir_substituto($novo, 'cultura');
+    $novo = carimbar_responsaveis($novo, $antigo);
+    $lista = $antigo === null ? [...$lista, $novo] : array_map(fn ($c) => $c['id'] === $novo['id'] ? $novo : $c, $lista);
+    if (!gravar_culturais($lista)) {
+        avisar('erro', 'Não consegui gravar em /dados.');
+        voltar_organizacao('cultura');
+    }
+    avisar('ok', ($antigo === null ? 'Grupo cultural criado: ' : 'Salvo: ') . $novo['nome'] . '.');
+    voltar_organizacao('cultura');
+}
+
 /* ------------------------------------------------------ comum às unidades */
 
-/** [lista, gravar, aba] do tipo pedido no POST. */
+/** Acha a unidade do POST (`tipo` + `id`) e devolve [unidade, aba]. */
+function unidade_do_post(): array
+{
+    [$lista, , $aba] = unidades_do_tipo((string) ($_POST['tipo'] ?? ''));
+    $id = limpar_texto($_POST['id'] ?? '', 40);
+    foreach ($lista as $u) {
+        if ($u['id'] === $id) {
+            return [$u, $aba];
+        }
+    }
+    avisar('erro', 'Não encontrado.');
+    voltar_organizacao($aba);
+}
+
+/**
+ * "Marcar a próxima atividade" — cria o encontro. Dia, hora opcional, o quê e
+ * onde. Data no passado não é próxima.
+ */
+function marcar_proxima(): void
+{
+    [$u, $aba] = unidade_do_post();
+    $dia = data_iso_ou_vazio($_POST['dia'] ?? '');
+    if ($dia === '' || $dia < hoje_ce()) {
+        avisar('erro', 'Diga o dia da próxima atividade — de hoje em diante.');
+        voltar_organizacao($aba);
+    }
+    $id = criar_encontro_da_unidade(
+        $u, $dia, (string) ($_POST['hora'] ?? ''),
+        limpar_texto($_POST['titulo'] ?? '', 120), limpar_texto($_POST['local'] ?? '', 120)
+    );
+    if ($id === '') {
+        avisar('erro', 'Não consegui gravar o encontro.');
+        voltar_organizacao($aba);
+    }
+    require_once __DIR__ . '/feriados-comum.php';
+    $criado = null;
+    foreach (ler_eventos(true) as $e) {
+        if ($e['id'] === $id) {
+            $criado = $e;
+        }
+    }
+    avisar('ok', 'Marcado. A atividade já é um encontro' . ($u['publicado'] ? ' e aparece na agenda do site.' : '.')
+        . ($criado ? frase_de_avisos(avisos_de_agenda($criado, ler_eventos())) : ''));
+    voltar_organizacao($aba);
+}
+
+/** [lista, gravar, aba] do tipo pedido no POST: 'nucleo', 'grupo' ou 'cultura'. */
 function unidades_do_tipo(string $tipo): array
 {
-    return $tipo === 'grupo'
-        ? [ler_grupos(), 'gravar_grupos', 'temas']
-        : [ler_nucleos(), 'gravar_nucleos', ''];
+    $l = leitor_de_unidade($tipo);
+    return [$l['ler'](), $l['gravar'], $l['aba']];
 }
 
 function registrar_entrega(array $eu): void
 {
-    [$lista, $gravar, $aba] = unidades_do_tipo((string) ($_POST['tipo'] ?? ''));
+    [, , $aba] = unidades_do_tipo((string) ($_POST['tipo'] ?? ''));
     $id = limpar_texto($_POST['id'] ?? '', 40);
 
     $texto = limpar_texto($_POST['texto'] ?? '', 200);
@@ -263,38 +350,21 @@ function registrar_entrega(array $eu): void
         voltar_organizacao($aba);
     }
 
-    $achou = false;
-    foreach ($lista as &$u) {
-        if ($u['id'] !== $id) {
-            continue;
-        }
-        $achou = true;
-        $u['entregas'][] = [
-            'id'      => novo_id_organizacao('ent'),
-            'data'    => $data,
-            'texto'   => $texto,
-            'pessoas' => (int) ($_POST['pessoas'] ?? 0),
-            'porId'   => (string) ($eu['id'] ?? ''),
-            'em'      => date('c'),
-        ];
-        /* A próxima vem no mesmo formulário: "registrou ao menos uma entrega e
-           tem plano para o próximo" são as duas metades de ficar ativo. */
-        $proxima = data_iso_ou_vazio($_POST['proximaData'] ?? '');
-        if ($proxima !== '') {
-            $u['proximaData'] = $proxima;
-            $u['proximaTexto'] = limpar_texto($_POST['proximaTexto'] ?? '', 140);
-        }
-    }
-    unset($u);
-    if (!$achou) {
-        avisar('erro', 'Não achei de quem é esta entrega.');
+    $alvo = adicionar_entrega((string) ($_POST['tipo'] ?? ''), $id, $data, $texto, (int) ($_POST['pessoas'] ?? 0), (string) ($eu['id'] ?? ''));
+    if ($alvo === null) {
+        avisar('erro', 'Não achei de quem é esta entrega, ou não consegui gravar.');
         voltar_organizacao($aba);
     }
-    if (!$gravar($lista)) {
-        avisar('erro', 'Não consegui gravar em /dados.');
-        voltar_organizacao($aba);
+    /* A próxima vem no mesmo formulário: "registrou ao menos uma entrega e
+       tem plano para o próximo" são as duas metades de ficar ativo. E a
+       próxima é um encontro, como a de "Marcar a próxima". */
+    $proxima = data_iso_ou_vazio($_POST['proximaData'] ?? '');
+    $marcou = false;
+    if ($proxima !== '' && $proxima >= hoje_ce() && !isset(proximos_encontros_das_unidades()[$id])) {
+        $marcou = criar_encontro_da_unidade($alvo, $proxima, (string) ($_POST['proximaHora'] ?? ''),
+            limpar_texto($_POST['proximaTexto'] ?? '', 120), '') !== '';
     }
-    avisar('ok', 'Registrado.');
+    avisar('ok', $marcou ? 'Registrado, e a próxima já está na agenda.' : 'Registrado.');
     voltar_organizacao($aba);
 }
 
@@ -359,6 +429,7 @@ function salvar_porta_voz(): void
         'cidade'    => fn ($v) => cidade_valida($v),
         'bairro'    => fn ($v) => limpar_texto($v, 60),
         'perfis'    => fn ($v) => array_intersect_key((array) $v, REDES_LIGA),
+        'destaque'  => fn ($v) => link_de_destaque($v),
         'publicado' => fn ($v) => !empty($v),
     ]);
     if ($novo['nome'] === '' && $novo['pessoaId'] !== '') {
@@ -513,4 +584,50 @@ function encerrar_porta_voz(): void
     }
     avisar('ok', 'Saiu da Liga. Sai também do site.');
     voltar_organizacao('liga');
+}
+
+/* ---------------------------------------------------------------- Biblioteca */
+
+function salvar_material(): void
+{
+    $lista = ler_biblioteca();
+    $antigo = achar_para_editar($lista, 'biblioteca', 'Material');
+    $base = $antigo ?? [
+        'id' => novo_id_organizacao('mat'), 'titulo' => '', 'tipo' => 'caderno', 'tema' => '', 'resumo' => '',
+        'link' => '', 'publicado' => false, 'criadoEm' => date('c'), 'criadoPor' => quem_grava(), 'arquivadoEm' => '',
+    ];
+    $novo = mesclar_post($base, [
+        'titulo'    => fn ($v) => limpar_texto($v, 120),
+        'tipo'      => fn ($v) => (string) $v,
+        'tema'      => fn ($v) => (string) $v,
+        'resumo'    => fn ($v) => limpar_texto($v, 240),
+        'link'      => fn ($v) => trim((string) $v),
+        'publicado' => fn ($v) => !empty($v),
+    ]);
+    if ($novo['titulo'] === '' || !str_starts_with(mb_strtolower($novo['link']), 'https://')) {
+        avisar('erro', 'Material precisa de título e de um link https — o Drive, o YouTube, o PDF onde ele já está.');
+        voltar_organizacao('biblioteca');
+    }
+    $lista = $antigo === null ? [...$lista, $novo] : array_map(fn ($m) => $m['id'] === $novo['id'] ? $novo : $m, $lista);
+    if (!gravar_biblioteca($lista)) {
+        avisar('erro', 'Não consegui gravar em /dados.');
+        voltar_organizacao('biblioteca');
+    }
+    avisar('ok', ($antigo === null ? 'Na Biblioteca: ' : 'Salvo: ') . $novo['titulo'] . '.');
+    voltar_organizacao('biblioteca');
+}
+
+/** Arquivar tira do site sem apagar: o material velho continua achável no painel. */
+function arquivar_material(): void
+{
+    $lista = ler_biblioteca();
+    $alvo = achar_para_editar($lista, 'biblioteca', 'Material');
+    if ($alvo === null) {
+        avisar('erro', 'Material não encontrado.');
+        voltar_organizacao('biblioteca');
+    }
+    $alvo['arquivadoEm'] = $alvo['arquivadoEm'] === '' ? date('c') : '';
+    gravar_biblioteca(array_map(fn ($m) => $m['id'] === $alvo['id'] ? $alvo : $m, $lista));
+    avisar('ok', $alvo['arquivadoEm'] !== '' ? 'Arquivado. Saiu do site.' : 'Desarquivado.');
+    voltar_organizacao('biblioteca');
 }

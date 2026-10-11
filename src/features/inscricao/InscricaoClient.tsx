@@ -1,6 +1,9 @@
 "use client";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PaginaDoSite } from "@/components/site/PaginaDoSite";
+import { obterOrganizacao } from "@/lib/api/organizacao";
+import { temaPorChave } from "@/features/organizacao/catalogo";
+import { interesseDaUrl } from "./interesse";
 import { Icon } from "@/components/icons";
 import catalogo from "@/data/funcoes.json";
 import { enviarInscricao } from "@/lib/api/inscricao";
@@ -74,8 +77,33 @@ export default function InscricaoClient() {
    * pessoa. Fica na sessão da aba, não no domínio inteiro — some ao fechar.
    */
   const origem = useRef("");
+  /* O núcleo ou tema escolhido em /nucleos ou /temas, e o nome dele para a
+     faixa "Você quer entrar em…". O nome do tema sai do catálogo; o do núcleo,
+     da API pública (o id sozinho não diz nada a quem lê). */
+  const [interesse, setInteresse] = useState("");
+  const [nomeInteresse, setNomeInteresse] = useState("");
   useEffect(() => {
     const busca = new URLSearchParams(window.location.search);
+
+    const quer = interesseDaUrl(busca);
+    if (quer) {
+      setInteresse(quer);
+      if (quer.startsWith("tema:")) {
+        setNomeInteresse(`o grupo de ${temaPorChave(quer.slice(5))?.nome ?? "um tema"}`);
+      } else {
+        obterOrganizacao()
+          .then((o) => {
+            const n = o.nucleos.find((x) => x.id === quer);
+            const g = o.temas.find((x) => x.id === quer);
+            const c = o.cultura.find((x) => x.id === quer);
+            if (c) setNomeInteresse(`o grupo cultural ${c.nome}`);
+            else if (n) setNomeInteresse(`o núcleo ${n.nome}`);
+            else if (g) setNomeInteresse(`o grupo de ${temaPorChave(g.tema)?.nome ?? "um tema"}`);
+            else setInteresse("");
+          })
+          .catch(() => setNomeInteresse("o núcleo que você escolheu"));
+      }
+    }
 
     /* `?funcao=olheiro` vem de /funcoes: quem leu a ficha inteira e decidiu não
        deve ter que procurar a mesma função de novo numa lista de doze. Só entra
@@ -239,6 +267,7 @@ export default function InscricaoClient() {
       bairro: campos.bairro.trim(),
       funcoes,
       de: origem.current,
+      interesse,
       consentimento: true,
       site: honeypot.current?.value ?? "",
     });
@@ -282,6 +311,17 @@ export default function InscricaoClient() {
             pra mudar depois.
           </p>
         </header>
+
+        {interesse && nomeInteresse && (
+          <div className="in-interesse" role="status">
+            <span>
+              Você quer entrar em <strong>{nomeInteresse}</strong>. A coordenação já te encaminha para lá.
+            </span>
+            <button type="button" className="in-editar" onClick={() => setInteresse("")}>
+              Não, só quero participar
+            </button>
+          </div>
+        )}
 
         {/* progresso */}
         <div className="in-progresso" aria-hidden="true">

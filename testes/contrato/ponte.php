@@ -34,12 +34,15 @@ require_once $raiz . '/inscricoes-comum.php';
 require_once $raiz . '/producao-comum.php';
 require_once $raiz . '/trilhas.php';
 require_once $raiz . '/eventos-comum.php';  // token_de_escala(), url_do_convite()
-require_once $raiz . '/escada-comum.php';   // DEGRAUS — e, por ele, organizacao-comum.php
+require_once $raiz . '/escada-comum.php';
+require_once $raiz . '/feriados-comum.php';   // DEGRAUS — e, por ele, organizacao-comum.php
 
 /** As funções que o teste pode chamar, e só elas. */
 const PONTES = [
     'catalogo_da_organizacao',
     'catalogo_da_escada',
+    'feriados_do_painel',
+    'feriado_em',
     'sem_acento',
     'so_digitos',
     'limpar_texto',

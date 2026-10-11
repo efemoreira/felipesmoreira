@@ -48,6 +48,14 @@ function CartaoTema({ t, g }: { t: Tema; g?: Grupo }) {
             <dd style={{ margin: 0, ...TEXTO.corpo }}>
               <strong>{dataCurta(g.proxima.data)}</strong>
               {g.proxima.texto ? ` — ${g.proxima.texto}` : ""}
+              {g.proxima.atividade && (
+                <>
+                  {" · "}
+                  <a href={`/programacao#a-${g.proxima.atividade}`} style={{ color: "inherit", fontWeight: 600 }}>
+                    ver na agenda
+                  </a>
+                </>
+              )}
             </dd>
           </div>
         )}
@@ -65,7 +73,7 @@ function CartaoTema({ t, g }: { t: Tema; g?: Grupo }) {
           Entrar no grupo
         </BotaoEscuro>
       ) : (
-        <BotaoEscuro href="/queroajudar">{g ? "Quero entrar" : "Quero ajudar a abrir"}</BotaoEscuro>
+        <BotaoEscuro href={g ? `/queroajudar?unidade=${g.id}` : `/queroajudar?tema=${t.chave}`}>{g ? "Quero entrar" : "Quero ajudar a abrir"}</BotaoEscuro>
       )}
     </article>
   );

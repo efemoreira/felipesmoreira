@@ -163,6 +163,9 @@ const DADOS = new Set([
   "nucleos",
   "temas",
   "liga",
+  "decisoes",
+  "biblioteca",
+  "cultura",
   "inscricoes-limite",
   "tentativas",
   "segredo",
@@ -636,7 +639,8 @@ require __DIR__ . '/painel/caixa-comum.php';
 require __DIR__ . '/painel/oficina-comum.php';
 require __DIR__ . '/painel/metas-comum.php';
 require __DIR__ . '/painel/tarefas-comum.php';
-require __DIR__ . '/painel/organizacao-comum.php';
+require_once __DIR__ . '/painel/organizacao-comum.php';
+require_once __DIR__ . '/painel/decisoes-comum.php';
 /* O nome do arquivo nem sempre é o nome da função: os cards do quadro moram
    em \`producao.php\` e quem os grava é \`gravar_cards()\`, e o progresso da
    formação é gravado por \`gravar_progresso()\`. O progresso é o único que não
@@ -647,6 +651,7 @@ $comoGrava = [
   'aulas-progresso' => 'gravar_progresso',
   'kit' => 'gravar_pecas',
   'temas' => 'gravar_grupos',
+  'cultura' => 'gravar_culturais',
 ];
 $fn = $comoGrava[$argv[1]] ?? ('gravar_' . str_replace('-', '_', $argv[1]));
 if (!function_exists($fn)) {

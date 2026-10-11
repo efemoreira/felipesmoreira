@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { chamarPhp } from "./ponte.ts";
-import { TEMAS, NIVEIS_LIGA, NIVEIS_TERRITORIO, ONDAS, DEGRAUS } from "@/features/organizacao/catalogo";
+import { TEMAS, NIVEIS_LIGA, NIVEIS_TERRITORIO, ONDAS, DEGRAUS, EIXOS_CULTURAIS, NIVEIS_CULTURA } from "@/features/organizacao/catalogo";
 
 /**
  * A ORGANIZAÇÃO NOS DOIS LADOS — o painel decide, o site explica.
@@ -25,6 +25,8 @@ interface CatalogoPhp {
   liga: Record<string, { nome: string; seguidores: number; engajamento: number; exige: string }>;
   territorio: Record<string, string>;
   ondas: Record<string, string>;
+  eixos: Record<string, string>;
+  niveisCultura: Record<string, string>;
 }
 
 const [php, degrausPhp] = chamarPhp([
@@ -63,6 +65,14 @@ describe("organização: os catálogos concordam", () => {
     );
   });
 
+  test("os eixos e os níveis da Cultura", () => {
+    assert.deepEqual(EIXOS_CULTURAIS, php.eixos);
+    assert.deepEqual(
+      Object.fromEntries(Object.entries(NIVEIS_CULTURA).map(([k, v]) => [String(k), v])),
+      Object.fromEntries(Object.entries(php.niveisCultura).map(([k, v]) => [String(k), v])),
+    );
+  });
+
   test("os degraus da escada", () => {
     assert.deepEqual(DEGRAUS.map((d) => ({ nome: d.nome, resumo: d.resumo })), degrausPhp);
   });
@@ -80,5 +90,6 @@ describe("organização: o que o endpoint público NÃO devolve", () => {
 
   test("só desce o que está publicado e aberto", () => {
     assert.equal((api.match(/if \(!\$[a-z]+\['publicado'\] \|\| \$[a-z]+\['encerradoEm'\] !== ''\)/g) ?? []).length, 3);
+    assert.match(api, /\$m\['publicado'\] && \$m\['arquivadoEm'\] === ''/, "a biblioteca desce sem o filtro de publicado");
   });
 });

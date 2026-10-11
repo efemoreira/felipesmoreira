@@ -112,13 +112,15 @@ function selo_da_unidade(array $u): void
     }
 }
 
-/** "15/10 · Escuta aberta" ou o convite para marcar. */
+/** "15/10 · Escuta aberta", com link para o encontro, ou "—". */
 function proxima_da_unidade(array $u): string
 {
-    if ($u['proximaData'] === '' || $u['proximaData'] < hoje_ce()) {
+    $p = proxima_efetiva($u);
+    if ($p === null) {
         return '—';
     }
-    return data_humana($u['proximaData']) . ($u['proximaTexto'] !== '' ? ' · ' . $u['proximaTexto'] : '');
+    $texto = h(data_humana($p['data']) . ($p['texto'] !== '' ? ' · ' . $p['texto'] : ''));
+    return $p['eventoId'] !== '' ? '<a href="/painel/eventos.php?e=' . h($p['eventoId']) . '">' . $texto . '</a>' : $texto;
 }
 
 /** Os três pontinhos de núcleo e grupo — iguais nos dois. */
@@ -132,6 +134,7 @@ function menu_da_unidade(string $tipo, array $u, string $qsAba, string $nome): v
     menu_acoes([
         ['texto' => 'Marcar a próxima atividade', 'url' => '?' . $qsAba . 'proxima=' . $id, 'modal' => 'proxima-' . $id],
         ['texto' => 'Quem responde', 'url' => '?' . $qsAba . 'resp=' . $id, 'modal' => 'resp-' . $id],
+        ['texto' => 'Quem participa e tarefas', 'url' => '/painel/minha-unidade.php?u=' . rawurlencode($id)],
         ['texto' => 'Ficha completa', 'url' => '?' . $qsAba . 'editar=' . $id, 'modal' => 'ficha-' . $id],
         ['texto' => 'Encerrar', 'acao' => 'encerrar', 'campos' => ['tipo' => $tipo, 'id' => $id],
          'confirmar' => 'Encerrar ' . $nome . '? Sai das contas e do site; o que entregou continua contado.', 'risco' => true],
@@ -143,7 +146,7 @@ function modais_da_unidade(string $tipo, array $u, string $nome, array $gente): 
 {
     $id = $u['id'];
     $p = substr(md5($id), 0, 6);
-    $acaoSalvar = $tipo === 'grupo' ? 'grupo-salvar' : 'nucleo-salvar';
+    $acaoSalvar = ['grupo' => 'grupo-salvar', 'cultura' => 'cultura-salvar', 'nucleo' => 'nucleo-salvar'][$tipo];
 
     abrir_modal('entrega-' . $id, 'O que fizemos · ' . $nome, ($_GET['entrega'] ?? '') === $id);
     form_abre('entrega', $id, ['tipo' => $tipo]);
@@ -151,19 +154,36 @@ function modais_da_unidade(string $tipo, array $u, string $nome, array $gente): 
     echo '<div class="linha g2">';
     campo("e$p-d", 'data', 'Quando', hoje_ce(), ['tipo' => 'date', 'limite' => hoje_ce(), 'obrigatorio' => true]);
     campo("e$p-n", 'pessoas', 'Quantas pessoas', '', ['tipo' => 'number', 'dica' => 'opcional']);
-    echo '</div><fieldset><legend>E a próxima?</legend><div class="linha g2">';
-    campo("e$p-pd", 'proximaData', 'Data', $u['proximaData'] >= hoje_ce() ? $u['proximaData'] : '', ['tipo' => 'date']);
-    campo("e$p-pt", 'proximaTexto', 'O quê', $u['proximaTexto'], ['max' => 140]);
-    echo '</div></fieldset>';
+    echo '</div>';
+    $proxima = proxima_efetiva($u);
+    if ($proxima !== null) {
+        echo '<p class="dica">Próxima já marcada: <strong>' . h(data_humana($proxima['data']) . ' · ' . $proxima['texto']) . '</strong>.</p>';
+    } else {
+        /* Sem próxima, ela se marca aqui mesmo — vira um encontro na agenda. */
+        echo '<fieldset><legend>E a próxima?</legend><div class="linha g3">';
+        campo("e$p-pd", 'proximaData', 'Dia', '', ['tipo' => 'date', 'dica' => 'vira encontro']);
+        campo("e$p-ph", 'proximaHora', 'Hora', '', ['tipo' => 'time']);
+        campo("e$p-pt", 'proximaTexto', 'O quê', '', ['max' => 120]);
+        echo '</div></fieldset>';
+    }
     form_fecha('Registrar');
     fechar_modal();
 
     abrir_modal('proxima-' . $id, 'Próxima atividade · ' . $nome, ($_GET['proxima'] ?? '') === $id);
-    form_abre($acaoSalvar, $id);
+    $proxima = proxima_efetiva($u);
+    if ($proxima !== null && $proxima['eventoId'] !== '') {
+        echo '<p class="dica">Já marcada: <a href="/painel/eventos.php?e=' . h($proxima['eventoId']) . '">'
+            . h(data_humana($proxima['data']) . ' · ' . $proxima['texto']) . '</a>. Marcar outra cria mais um encontro.</p>';
+    }
+    echo '<p class="dica">Vira um encontro: entra na agenda' . ($u['publicado'] ? ' do site' : ' (a unidade não está no site, então fica só no painel)')
+        . ', com o QR da porta e a confirmação de presença.</p>';
+    form_abre('proxima', $id, ['tipo' => $tipo]);
+    campo("x$p-t", 'titulo', 'O quê', '', ['max' => 120, 'marcador' => 'Encontro aberto de apresentação']);
     echo '<div class="linha g2">';
-    campo("x$p-d", 'proximaData', 'Data', $u['proximaData'], ['tipo' => 'date', 'obrigatorio' => true]);
-    campo("x$p-t", 'proximaTexto', 'O quê', $u['proximaTexto'], ['max' => 140, 'marcador' => 'Encontro aberto de apresentação']);
+    campo("x$p-d", 'dia', 'Dia', '', ['tipo' => 'date', 'obrigatorio' => true]);
+    campo("x$p-h", 'hora', 'Hora', '', ['tipo' => 'time', 'dica' => 'opcional']);
     echo '</div>';
+    campo("x$p-l", 'local', 'Onde', '', ['max' => 120, 'marcador' => 'Praça do Benfica', 'dica' => 'opcional']);
     form_fecha('Marcar');
     fechar_modal();
 
@@ -200,6 +220,8 @@ function tela_de_organizacao(?string $erro, ?string $ok): void
         'nucleos' => ['nome' => 'Núcleos',          'conta' => count(so_abertas($nucleos))],
         'temas'   => ['nome' => 'Grupos temáticos', 'conta' => count(so_abertas($grupos))],
         'liga'    => ['nome' => 'Liga',             'conta' => count(array_filter($liga, fn ($p) => $p['encerradoEm'] === ''))],
+        'cultura' => ['nome' => 'Cultura',          'conta' => count(so_abertas(ler_culturais()))],
+        'biblioteca' => ['nome' => 'Biblioteca',    'conta' => count(array_filter(ler_biblioteca(), fn ($m) => $m['arquivadoEm'] === ''))],
     ];
     $aba = (string) ($_GET['aba'] ?? '');
     if (!isset($abas[$aba])) {
@@ -233,6 +255,10 @@ function tela_de_organizacao(?string $erro, ?string $ok): void
       aba_de_grupos($grupos, $nucleos, $liga, $gente, $nomes);
   } elseif ($aba === 'liga') {
       aba_da_liga($liga, $gente);
+  } elseif ($aba === 'cultura') {
+      aba_da_cultura(ler_culturais(), $gente, $nomes);
+  } elseif ($aba === 'biblioteca') {
+      aba_da_biblioteca(ler_biblioteca());
   } else {
       aba_de_nucleos($nucleos, $gente, $nomes);
   }
@@ -271,17 +297,18 @@ function aba_de_nucleos(array $nucleos, array $gente, array $nomes): void
           </thead>
           <tbody>
             <?php foreach ($nucleos as $n): ?>
-              <tr id="n-<?= h($n['id']) ?>">
+              <tr id="u-<?= h($n['id']) ?>">
                 <td data-rotulo="Núcleo">
                   <strong><?= h($n['nome']) ?></strong>
                   <span class="dica">
                     <?= h($n['cidade']) ?><?= $n['bairro'] !== '' ? ' · ' . h($n['bairro']) : '' ?>
                     · <?= $n['onda'] === 0 ? 'mapear' : 'onda ' . $n['onda'] ?>
                     · <span title="<?= h(NIVEIS_TERRITORIO[$n['nivel']]['resumo']) ?>"><?= h($n['nivel'] . ' ' . NIVEIS_TERRITORIO[$n['nivel']]['nome']) ?></span>
+                    · <?= count(membros_da_unidade($n['id'])) ?> fazem parte
                   </span>
                 </td>
                 <td class="meia" data-rotulo="Situação"><?php selo_da_unidade($n); ?></td>
-                <td class="meia" data-rotulo="Próxima"><?= h(proxima_da_unidade($n)) ?></td>
+                <td class="meia" data-rotulo="Próxima"><?= proxima_da_unidade($n) ?></td>
                 <td class="tarde" data-rotulo="Responde">
                   <?= h($nomes[$n['responsavelId']] ?? '—') ?>
                   <?php if ($n['substitutoId'] === '' && $n['encerradoEm'] === ''): ?>
@@ -387,16 +414,17 @@ function aba_de_grupos(array $grupos, array $nucleos, array $liga, array $gente,
           </thead>
           <tbody>
             <?php foreach ($grupos as $g): $nomeTema = TEMAS_GRUPO[$g['tema']]['nome']; ?>
-              <tr id="g-<?= h($g['id']) ?>">
+              <tr id="u-<?= h($g['id']) ?>">
                 <td data-rotulo="Grupo">
                   <strong><?= h($nomeTema) ?></strong>
                   <span class="dica" title="<?= h(MATURIDADE[$g['maturidade']]['resumo']) ?>">
                     Maturidade <?= $g['maturidade'] ?> · <?= h(MATURIDADE[$g['maturidade']]['nome']) ?>
                     · 1ª entrega: <?= h($g['primeiraEntrega']) ?> até <?= h(data_humana($g['primeiraEntregaAte'])) ?>
+                    · <?= count(membros_da_unidade($g['id'])) ?> fazem parte
                   </span>
                 </td>
                 <td class="meia" data-rotulo="Situação"><?php selo_da_unidade($g); ?></td>
-                <td class="meia" data-rotulo="Próxima"><?= h(proxima_da_unidade($g)) ?></td>
+                <td class="meia" data-rotulo="Próxima"><?= proxima_da_unidade($g) ?></td>
                 <td class="tarde" data-rotulo="Responde">
                   <?= h($nomes[$g['responsavelId']] ?? '—') ?>
                   <?php if ($g['substitutoId'] === '' && $g['encerradoEm'] === ''): ?>
@@ -693,7 +721,9 @@ function modal_ficha_porta_voz(array $pv, array $gente): void
     foreach (REDES_LIGA as $r => $rotulo) {
         campo("$p-$r", "perfis[$r]", $rotulo, $pv['perfis'][$r] ?? '', ['max' => 60]);
     }
-    echo '</div></fieldset>';
+    echo '</div>';
+    campo("$p-dest", 'destaque', 'Vídeo em destaque', $pv['destaque'], ['tipo' => 'url', 'max' => 300, 'dica' => 'link de Instagram, TikTok, YouTube ou X — aparece no site']);
+    echo '</fieldset>';
     caixa('publicado', $pv['publicado'], 'Aparece em /portavozes — com autorização dele: nome público, tema, lugar, nível e perfis');
     form_fecha('Salvar');
     fechar_modal();
@@ -733,4 +763,155 @@ function modal_de_mes(array $pv, string $mesPadrao): void
     echo '</div></details>';
     form_fecha('Fechar o mês');
     fechar_modal();
+}
+
+/* =================================================================== Biblioteca */
+
+function aba_da_biblioteca(array $materiais): void
+{
+    ?>
+  <fieldset id="biblioteca">
+    <legend>Biblioteca</legend>
+    <p class="dica folga">
+      Livro Amarelo, cadernos, diagnósticos, gravações. O arquivo mora onde já está — aqui vai o link.
+      O que for marcado aparece em <a href="/biblioteca" target="_blank">/biblioteca</a>.
+    </p>
+    <div class="acoes">
+      <?php botao_modal('material-novo', 'Pôr um material', 'aba=biblioteca&material=novo'); ?>
+    </div>
+    <?php if ($materiais === []): ?>
+      <?php vazio('Nada ainda. Comece pelo Livro Amarelo: é o texto do Círculo de leitura.',
+          ['url' => '?aba=biblioteca&material=novo', 'texto' => 'Pôr o primeiro']); ?>
+    <?php else: ?>
+      <div class="rolagem cartoes">
+        <table class="tabela">
+          <thead><tr><th>Material</th><th>Tipo</th><th>Tema</th><th>Site</th><th></th></tr></thead>
+          <tbody>
+            <?php foreach ($materiais as $m): ?>
+              <tr>
+                <td data-rotulo="Material"><strong><?= h($m['titulo']) ?></strong> <span class="dica"><?= h($m['resumo']) ?></span></td>
+                <td class="terco" data-rotulo="Tipo"><?= h(TIPOS_MATERIAL[$m['tipo']]) ?></td>
+                <td class="terco" data-rotulo="Tema"><?= $m['tema'] !== '' ? h(TEMAS_GRUPO[$m['tema']]['nome']) : '—' ?></td>
+                <td class="terco" data-rotulo="Site">
+                  <?php if ($m['arquivadoEm'] !== ''): ?><span class="selo selo-cinza">Arquivado</span>
+                  <?php elseif ($m['publicado']): ?><span class="selo selo-publicado">No site</span>
+                  <?php else: ?><span class="dica">só no painel</span><?php endif; ?>
+                </td>
+                <td class="rodape" data-rotulo="">
+                  <?php menu_acoes([
+                      ['texto' => 'Abrir o link', 'url' => $m['link'], 'novaAba' => true],
+                      ['texto' => 'Editar', 'url' => '?aba=biblioteca&material=' . $m['id'], 'modal' => 'material-' . $m['id']],
+                      ['texto' => $m['arquivadoEm'] === '' ? 'Arquivar' : 'Desarquivar', 'acao' => 'material-arquivar', 'campos' => ['id' => $m['id']]],
+                  ]); ?>
+                </td>
+              </tr>
+            <?php endforeach; ?>
+          </tbody>
+        </table>
+      </div>
+    <?php endif; ?>
+  </fieldset>
+    <?php
+    modal_de_material(null);
+    foreach ($materiais as $m) {
+        modal_de_material($m);
+    }
+}
+
+function modal_de_material(?array $m): void
+{
+    $id = $m === null ? 'material-novo' : 'material-' . $m['id'];
+    $p = 'b' . substr(md5($id), 0, 6);
+    abrir_modal($id, $m === null ? 'Pôr um material' : 'Material', ($_GET['material'] ?? '') === ($m['id'] ?? 'novo'));
+    form_abre('material-salvar', $m['id'] ?? '');
+    campo("$p-t", 'titulo', 'Título', $m['titulo'] ?? '', ['max' => 120, 'obrigatorio' => true, 'marcador' => 'Livro Amarelo — capítulo 1']);
+    campo("$p-l", 'link', 'Link', $m['link'] ?? '', ['tipo' => 'url', 'max' => 300, 'obrigatorio' => true, 'marcador' => 'https://…']);
+    echo '<div class="linha g2">';
+    escolha("$p-tipo", 'tipo', 'Tipo', TIPOS_MATERIAL, $m['tipo'] ?? 'caderno');
+    escolha("$p-tema", 'tema', 'Tema', ['' => '— nenhum —'] + array_map(fn ($t) => $t['nome'], TEMAS_GRUPO), $m['tema'] ?? '');
+    echo '</div>';
+    campo("$p-r", 'resumo', 'Do que trata', $m['resumo'] ?? '', ['max' => 240, 'dica' => 'uma frase']);
+    caixa('publicado', $m['publicado'] ?? false, 'Aparece em /biblioteca');
+    form_fecha('Salvar');
+    fechar_modal();
+}
+
+/* =================================================================== Cultura */
+
+function aba_da_cultura(array $culturais, array $gente, array $nomes): void
+{
+    $abertos = so_abertas($culturais);
+    ?>
+  <fieldset id="cultura">
+    <legend>Grupos culturais</legend>
+    <p class="dica folga">
+      A frente de Cultura: música, cinema, jogos, cordel, esporte… Da <strong>ideia</strong> à <strong>atividade pontual</strong>,
+      ao <strong>projeto recorrente</strong> e ao <strong>grupo permanente</strong>. Cultura tem valor próprio — nem toda
+      atividade precisa virar aula ou ação partidária.
+    </p>
+    <div class="acoes"><?php botao_modal('cultura-novo', 'Novo grupo cultural', 'aba=cultura&novo=cultura'); ?></div>
+    <?php if ($culturais === []): ?>
+      <?php vazio('Nenhum ainda. Comece pequeno: uma noite de jogos, uma sessão de cinema — e quem responde por ela.',
+          ['url' => '?aba=cultura&novo=cultura', 'texto' => 'Criar o primeiro']); ?>
+    <?php else: ?>
+      <div class="rolagem cartoes">
+        <table class="tabela">
+          <thead><tr><th>Grupo</th><th>Situação</th><th>Próxima</th><th>Responde</th><th></th></tr></thead>
+          <tbody>
+            <?php foreach ($culturais as $c): ?>
+              <tr id="u-<?= h($c['id']) ?>">
+                <td data-rotulo="Grupo">
+                  <strong><?= h($c['nome']) ?></strong>
+                  <span class="dica"><?= h(EIXOS_CULTURAIS[$c['eixo']]) ?> · <?= $c['nivel'] ?> <?= h(NIVEIS_CULTURA[$c['nivel']]['nome']) ?><?= $c['cidade'] !== '' ? ' · ' . h($c['cidade']) : '' ?>
+                    · <?= count(membros_da_unidade($c['id'])) ?> fazem parte</span>
+                </td>
+                <td class="meia" data-rotulo="Situação"><?php selo_da_unidade($c); ?></td>
+                <td class="meia" data-rotulo="Próxima"><?= proxima_da_unidade($c) ?></td>
+                <td class="tarde" data-rotulo="Responde"><?= h($nomes[$c['responsavelId']] ?? '—') ?></td>
+                <td class="rodape" data-rotulo="">
+                  <?php if ($c['encerradoEm'] === ''): ?>
+                    <?php botao_modal('entrega-' . $c['id'], 'Registrar', 'aba=cultura&entrega=' . $c['id'], 'btn btn-mini btn-ouro'); ?>
+                  <?php endif; ?>
+                  <?php menu_da_unidade('cultura', $c, 'aba=cultura&', 'o grupo cultural ' . $c['nome']); ?>
+                </td>
+              </tr>
+            <?php endforeach; ?>
+          </tbody>
+        </table>
+      </div>
+    <?php endif; ?>
+  </fieldset>
+    <?php
+    /* Criar: nome, eixo e quem responde. Nível, cidade e o site ficam para a ficha. */
+    abrir_modal('cultura-novo', 'Novo grupo cultural', ($_GET['novo'] ?? '') === 'cultura');
+    form_abre('cultura-salvar');
+    campo('cn-nome', 'nome', 'Nome', '', ['max' => 80, 'obrigatorio' => true, 'marcador' => 'Cineclube do Benfica']);
+    escolha('cn-eixo', 'eixo', 'Eixo', EIXOS_CULTURAIS, 'cinema');
+    echo '<div class="campo"><label for="cn-resp">Quem responde</label>';
+    select_pessoa('cn-resp', 'responsavelId', '', $gente);
+    echo '</div>';
+    form_fecha('Criar');
+    fechar_modal();
+
+    foreach ($culturais as $c) {
+        modais_da_unidade('cultura', $c, $c['nome'], $gente);
+        $p = 'f' . substr(md5($c['id']), 0, 6);
+        abrir_modal('ficha-' . $c['id'], 'Grupo cultural · ' . $c['nome'], ($_GET['editar'] ?? '') === $c['id']);
+        form_abre('cultura-salvar', $c['id']);
+        echo '<fieldset><legend>O grupo</legend>';
+        campo("$p-nome", 'nome', 'Nome', $c['nome'], ['max' => 80, 'obrigatorio' => true]);
+        echo '<div class="linha g2">';
+        escolha("$p-eixo", 'eixo', 'Eixo', EIXOS_CULTURAIS, $c['eixo']);
+        escolha("$p-nivel", 'nivel', 'Nível', array_map(fn ($n) => $n['nome'], NIVEIS_CULTURA), (string) $c['nivel']);
+        echo '</div>';
+        campo("$p-evid", 'evidencia', 'O que mostra que ele está nesse nível', $c['evidencia'], ['max' => 200]);
+        echo '</fieldset><fieldset><legend>Onde <span class="dica">— opcional: um podcast não tem cidade</span></legend><div class="linha g2"><div class="campo"><label for="' . $p . '-cidade">Cidade</label>';
+        campo_cidade("$p-cidade", 'cidade', $c['cidade'], 'Sem cidade');
+        echo '</div>';
+        campo("$p-bairro", 'bairro', 'Bairro', $c['bairro'], ['max' => 60]);
+        echo '</div></fieldset>';
+        campos_ritmo_e_site($p, $c);
+        form_fecha('Salvar');
+        fechar_modal();
+    }
 }

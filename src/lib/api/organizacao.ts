@@ -14,6 +14,8 @@ export interface Proxima {
   /** AAAA-MM-DD, sempre hoje ou depois */
   data: string;
   texto: string;
+  /** id do encontro na agenda pública — vira link /programacao#a-<id>; vazio quando não é público */
+  atividade?: string;
 }
 
 export interface Nucleo {
@@ -61,12 +63,52 @@ export interface PortaVoz {
   nivel: string;
   /** só os @ preenchidos, sem arroba */
   perfis: Partial<Record<"instagram" | "tiktok" | "youtube" | "x", string>>;
+  /** o vídeo em destaque (link https de Instagram, TikTok, YouTube ou X), ou vazio */
+  destaque?: string;
+}
+
+/** O mês que passou: destaques da Liga e núcleos que entregaram — só nomes. */
+export interface Reconhecimento {
+  /** AAAA-MM */
+  mes: string;
+  portavozes: string[];
+  nucleos: string[];
+}
+
+export interface Material {
+  id: string;
+  titulo: string;
+  /** livro-amarelo, caderno, diagnostico, gravacao, guia */
+  tipo: string;
+  tipoNome: string;
+  tema: string;
+  resumo: string;
+  /** https, onde o arquivo já mora */
+  link: string;
+}
+
+export interface GrupoCultural {
+  id: string;
+  nome: string;
+  /** chave em EIXOS_CULTURAIS (catalogo.ts) */
+  eixo: string;
+  /** 1 ideia · 2 atividade pontual · 3 projeto recorrente · 4 grupo permanente */
+  nivel: number;
+  cidade: string;
+  bairro: string;
+  ritmo: string;
+  ativo: boolean;
+  contato: string;
+  proxima: Proxima | null;
 }
 
 export interface Organizacao {
   nucleos: Nucleo[];
   temas: Grupo[];
   portavozes: PortaVoz[];
+  reconhecimento: Reconhecimento;
+  biblioteca: Material[];
+  cultura: GrupoCultural[];
 }
 
 export async function obterOrganizacao(): Promise<Organizacao> {
@@ -76,6 +118,13 @@ export async function obterOrganizacao(): Promise<Organizacao> {
     temas: Array.isArray(r.temas) ? r.temas : [],
     /* Um painel mais velho que não manda os perfis não derruba a página. */
     portavozes: Array.isArray(r.portavozes) ? r.portavozes.map((p) => ({ ...p, perfis: p.perfis ?? {} })) : [],
+    reconhecimento: {
+      mes: r.reconhecimento?.mes ?? "",
+      portavozes: r.reconhecimento?.portavozes ?? [],
+      nucleos: r.reconhecimento?.nucleos ?? [],
+    },
+    biblioteca: Array.isArray(r.biblioteca) ? r.biblioteca : [],
+    cultura: Array.isArray(r.cultura) ? r.cultura : [],
   };
 }
 

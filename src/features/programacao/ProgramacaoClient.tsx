@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { bordaFina } from "@/lib/theme";
 import Link from "next/link";
 import { PaginaDoSite } from "@/components/site/PaginaDoSite";
+import { sinal } from "@/lib/api/sinal";
 import { Icon, IconName } from "@/components/icons";
 import CompartilharClient from "./CompartilharClient";
 import DetalheEncontro from "./DetalheEncontro";
@@ -172,9 +173,52 @@ const ProgramacaoClient: React.FC<{ semente: Agenda }> = ({ semente }) => {
       setFamilia("todas");
     }
   }, [familiasPresentes, familia]);
+  /**
+   * ONDE E COMO — cidade e formato (plano 2026–2027: "agenda com filtros").
+   *
+   * A cidade só oferece as que têm alguma atividade no recorte. Escolher uma
+   * cidade não esconde o que é on-line: a live serve para quem está em
+   * Caucaia também. Quem quer só o presencial aperta "Presencial".
+   *
+   * Os dois moram na URL (`?cidade=Caucaia&formato=online`), para o link
+   * filtrado poder ir para o grupo do núcleo.
+   */
+  const cidadesPresentes = useMemo(
+    () => [...new Set(futuros.map((i) => i.cidade ?? "").filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR")),
+    [futuros],
+  );
+  const temOnline = futuros.some((i) => i.formato === "online");
+  const temPresencial = futuros.some((i) => i.formato !== "online");
+  const [cidade, setCidade] = useState("");
+  const [formato, setFormato] = useState<"" | "presencial" | "online">("");
+  const leuUrl = useRef(false);
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    setCidade(q.get("cidade") ?? "");
+    const f = q.get("formato");
+    if (f === "online" || f === "presencial") setFormato(f);
+    leuUrl.current = true;
+  }, []);
+  useEffect(() => {
+    if (!leuUrl.current) return;
+    const q = new URLSearchParams(window.location.search);
+    if (cidade) q.set("cidade", cidade);
+    else q.delete("cidade");
+    if (formato) q.set("formato", formato);
+    else q.delete("formato");
+    const s = q.toString();
+    window.history.replaceState(null, "", window.location.pathname + (s ? `?${s}` : "") + window.location.hash);
+  }, [cidade, formato]);
+
   const itens = useMemo(
-    () => (familia === "todas" ? futuros : futuros.filter((i) => i.familia === familia)),
-    [futuros, familia],
+    () =>
+      futuros.filter(
+        (i) =>
+          (familia === "todas" || i.familia === familia) &&
+          (formato === "" || (formato === "online" ? i.formato === "online" : i.formato !== "online")) &&
+          (cidade === "" || i.cidade === cidade || i.formato === "online"),
+      ),
+    [futuros, familia, cidade, formato],
   );
 
   /**
@@ -220,7 +264,6 @@ const ProgramacaoClient: React.FC<{ semente: Agenda }> = ({ semente }) => {
                 "@type": "VirtualLocation",
                 url: i.link || "https://felipesmoreira.com/programacao",
               },
-          performer: { "@type": "Person", name: "Felipe Moreira" },
           organizer: { "@type": "Organization", name: "Missão Ceará" },
         },
       })),
@@ -242,16 +285,36 @@ const ProgramacaoClient: React.FC<{ semente: Agenda }> = ({ semente }) => {
    */
   const [abertoId, setAbertoId] = useState<string | null>(null);
   const origemRef = useRef<HTMLElement | null>(null);
+  /* CADA ATIVIDADE TEM ENDEREÇO: `/programacao#a-<id>`. Abrir a ficha põe o
+     endereço na barra (é o que se copia e manda no grupo), e chegar por ele
+     abre a ficha direto. O sinal conta quem chegou às atividades — o primeiro
+     indicador do site no plano. */
   const abrir = useCallback((item: ItemAgenda, origem: HTMLElement) => {
     origemRef.current = origem;
     setAbertoId(item.id);
+    window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}#a-${item.id}`);
+    sinal("abriu-atividade");
   }, []);
   const fechar = useCallback(() => {
     setAbertoId(null);
+    window.history.replaceState(null, "", window.location.pathname + window.location.search);
     origemRef.current?.focus();
     origemRef.current = null;
   }, []);
-  const aberto = abertoId ? ordenados.find((i) => i.id === abertoId) ?? null : null;
+  useEffect(() => {
+    const doEndereco = () => {
+      const m = window.location.hash.match(/^#a-([a-z0-9-]+)$/i);
+      if (m) {
+        setAbertoId(m[1]);
+        sinal("abriu-atividade");
+      }
+    };
+    doEndereco();
+    window.addEventListener("hashchange", doEndereco);
+    return () => window.removeEventListener("hashchange", doEndereco);
+  }, []);
+  /* Pelo endereço, a atividade abre mesmo fora do recorte ou do filtro. */
+  const aberto = abertoId ? ordenados.find((i) => i.id === abertoId) ?? todos.find((i) => i.id === abertoId) ?? null : null;
 
   return (
     <PaginaDoSite fundo="livre">
@@ -410,6 +473,32 @@ const ProgramacaoClient: React.FC<{ semente: Agenda }> = ({ semente }) => {
                 {NOMES_FAMILIA[f]}
               </button>
             ))}
+          </div>
+        )}
+
+        {/* ===== Onde e como ===== */}
+        {agora && (cidadesPresentes.length > 0 || (temOnline && temPresencial)) && (
+          <div className="ag-filtros">
+            {cidadesPresentes.length > 0 && (
+              <label className="ag-cidade">
+                <span>Cidade</span>
+                <select value={cidade} onChange={(e) => setCidade(e.target.value)}>
+                  <option value="">Todas as cidades</option>
+                  {cidadesPresentes.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </label>
+            )}
+            {temOnline && temPresencial && (
+              <div className="ag-recorte" role="group" aria-label="Formato">
+                {([["", "Tudo"], ["presencial", "Presencial"], ["online", "On-line"]] as const).map(([v, r]) => (
+                  <button key={v} type="button" className={formato === v ? "ag-recorte-on" : undefined} aria-pressed={formato === v} onClick={() => setFormato(v)}>
+                    {r}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -696,6 +785,13 @@ const css = `
 
   /* O recorte de período. Três alvos de 44px, como o resto do site: quem lê
      esta página está no celular, em pé, e o dedo é o mouse. */
+  .ag-filtros { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; margin: 0 0 18px; }
+  .ag-filtros .ag-recorte { margin: 0; }
+  .ag-cidade { display: flex; flex-direction: column; gap: 4px; font-family: ${FONT_ELITE}; font-size: 11.5px; letter-spacing: 1.6px; text-transform: uppercase; color: ${C.gold}; }
+  .ag-cidade select {
+    min-height: 44px; min-width: 220px; padding: 0 12px; font-size: 16px; font-family: ${FONT_BITTER};
+    color: ${C.ink}; background: ${C.cream}; border: ${BORDA}px solid ${C.ink}; box-shadow: ${sombra("rente", C.sombraNoite)};
+  }
   .ag-recorte {
     display: flex; justify-content: center; flex-wrap: wrap;
     gap: 8px; margin: 0 0 22px;

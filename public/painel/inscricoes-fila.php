@@ -135,6 +135,14 @@ function aba_da_fila(array $novas, string $buscaIn, callable $formatar, ?array $
               <dd><span class="selo"><?= h($i['origem']) ?></span></dd>
             </div>
           <?php endif; ?>
+          <?php if ($i['interesse'] !== ''): require_once __DIR__ . '/organizacao-comum.php'; ?>
+            <?php /* O núcleo ou tema escolhido em /nucleos ou /temas. Aprovar já
+                      põe a pessoa na unidade; a conversa começa por ali. */ ?>
+            <div>
+              <dt>Quer entrar</dt>
+              <dd><span class="selo selo-ok"><?= h(frase_do_interesse($i['interesse']) ?: 'num núcleo ou tema que não está mais aberto') ?></span></dd>
+            </div>
+          <?php endif; ?>
           <div class="ficha-funcoes">
             <dt>Quer ajudar em</dt>
             <dd>

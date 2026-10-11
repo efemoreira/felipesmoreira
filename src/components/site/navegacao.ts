@@ -2,8 +2,8 @@
  * Para onde o site leva — o menu do topo e o mapa do rodapé, numa fonte só.
  *
  * O menu tem poucos itens, de propósito: as portas da organização, a agenda e
- * o que defendemos. Ação tem botão próprio ("Participar"), e o resto mora no
- * rodapé. Formação e Biblioteca entram aqui quando tiverem página pública —
+ * a Biblioteca. Ação tem botão próprio ("Participar"), e o resto (Propostas
+ * inclusive) mora no rodapé. Formação entra quando tiver página pública —
  * `/aulas` pede login e mandaria o visitante para uma porta fechada.
  *
  * `testes/contrato/navegacao.test.ts` confere que todo destino existe.
@@ -18,8 +18,9 @@ export const MENU: ItemNav[] = [
   { rotulo: "Agenda", href: "/programacao" },
   { rotulo: "Núcleos", href: "/nucleos" },
   { rotulo: "Grupos", href: "/temas" },
+  { rotulo: "Cultura", href: "/cultura" },
   { rotulo: "Liga", href: "/portavozes" },
-  { rotulo: "Propostas", href: "/propostas" },
+  { rotulo: "Biblioteca", href: "/biblioteca" },
 ];
 
 export const PARTICIPAR: ItemNav = { rotulo: "Participar", href: "/queroajudar" };
@@ -38,6 +39,7 @@ export const RODAPE: { titulo: string; itens: ItemNav[] }[] = [
     itens: [
       { rotulo: "Núcleos", href: "/nucleos" },
       { rotulo: "Grupos temáticos", href: "/temas" },
+      { rotulo: "Cultura", href: "/cultura" },
       { rotulo: "Liga dos Porta-vozes", href: "/portavozes" },
     ],
   },
@@ -45,6 +47,7 @@ export const RODAPE: { titulo: string; itens: ItemNav[] }[] = [
     titulo: "Conteúdo",
     itens: [
       { rotulo: "O que defendemos", href: "/propostas" },
+      { rotulo: "Biblioteca", href: "/biblioteca" },
       { rotulo: "Heróis do Ceará", href: "/heroisdoceara" },
       { rotulo: "Candidatos de 2026", href: "/candidatos" },
     ],

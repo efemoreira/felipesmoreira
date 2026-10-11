@@ -4,7 +4,7 @@ import { Icon, type IconName } from "@/components/icons";
 import { C, FONT_ALFA, TEXTO, borda, bordaFina } from "@/lib/theme";
 import { linkDoPerfil, type PortaVoz } from "@/lib/api/organizacao";
 import { NIVEIS_LIGA, temaPorChave } from "./catalogo";
-import { Moldura, Secao, cartao, rotuloPequeno } from "./Moldura";
+import { Moldura, Reconhecimento, Secao, cartao, mesPorExtenso, rotuloPequeno } from "./Moldura";
 import { useOrganizacao } from "./useOrganizacao";
 
 /**
@@ -57,6 +57,17 @@ function CartaoPortaVoz({ p }: { p: PortaVoz }) {
           </p>
         </div>
       </header>
+      {p.destaque && (
+        <a
+          href={p.destaque}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ display: "inline-flex", alignItems: "center", gap: 8, minHeight: 44, fontFamily: FONT_ALFA, fontSize: 15, color: C.ink }}
+        >
+          <Icon name="play" size={18} />
+          Ver o vídeo em destaque
+        </a>
+      )}
       {perfis.length > 0 && (
         <nav aria-label={`Perfis de ${p.nome}`} style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
           {perfis.map(([rede, arroba]) => (
@@ -104,6 +115,13 @@ export default function PortaVozes() {
         </p>
       }
     >
+      {estado.fase === "pronto" && (
+        <Reconhecimento
+          titulo={`Destaques de ${mesPorExtenso(estado.dados.reconhecimento.mes)}`}
+          nomes={estado.dados.reconhecimento.portavozes}
+        />
+      )}
+
       <Secao titulo="Na Liga" sub="Quem autorizou aparecer aqui, do nível mais alto para o mais novo.">
         {estado.fase === "carregando" && <p style={{ ...TEXTO.corpo, margin: 0 }}>Carregando a Liga…</p>}
         {estado.fase === "erro" && <p style={{ ...TEXTO.corpo, margin: 0 }}>Não consegui carregar a Liga agora. Tente de novo em instantes.</p>}

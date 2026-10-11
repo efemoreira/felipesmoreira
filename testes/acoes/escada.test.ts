@@ -114,3 +114,36 @@ describe("painel de comando", () => {
     assert.match(semana, /meta-numero"><strong>1<\/strong> de 5</);
   });
 });
+
+describe("decisões do mês: a ata da revisão", () => {
+  test("grava prioridades e decisões do mês, e gravar de novo corrige", async () => {
+    const mes = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Fortaleza" }).format(new Date()).slice(0, 7);
+    await painel.postar("leituras", { acao: "decisoes-salvar", mes, prioridades: ["Abrir o núcleo de Caucaia", "", ""], decisoes: "Encerrar o grupo de tecnologia" });
+    await painel.postar("leituras", { acao: "decisoes-salvar", mes, prioridades: ["Abrir o núcleo de Caucaia", "Formar substitutos", ""], decisoes: "Adiar o festival" });
+    const atas = painel.ler("decisoes");
+    assert.equal(atas.length, 1);
+    assert.deepEqual(atas[0].prioridades, ["Abrir o núcleo de Caucaia", "Formar substitutos"]);
+    assert.equal(atas[0].decisoes, "Adiar o festival");
+    assert.match(painel.abrir("leituras").html, /value="Formar substitutos"/);
+  });
+
+  test("ata vazia é recusada", async () => {
+    const r = await painel.postar("leituras", { acao: "decisoes-salvar", mes: "2026-10", prioridades: ["", "", ""], decisoes: "" });
+    assert.match(r.html, /pelo menos uma prioridade ou decisão/);
+  });
+});
+
+describe("leituras › site: os indicadores do plano", () => {
+  test("os oito aparecem, e as tarefas do mês contam", () => {
+    painel.gravar("tarefas", [
+      { id: "t1", titulo: "A", donoId: MARIA, criadoEm: agoraIso(), feitaEm: agoraIso() },
+      { id: "t2", titulo: "B", donoId: MARIA, criadoEm: agoraIso() },
+    ]);
+    const html = painel.abrir("leituras", "aba=site").html;
+    for (const i of ["Visitas às atividades", "Confirmaram → vieram", "Visita → inscrição", "Pessoas que voltam",
+      "Materiais abertos", "Unidades atualizadas no mês", "Da atividade ao registro", "Tarefas no mês"]) {
+      assert.match(html, new RegExp(i), `falta ${i}`);
+    }
+    assert.match(html, /1 feitas de 2 combinadas/);
+  });
+});

@@ -37,6 +37,9 @@ function normalizar_tarefa($t): ?array
         'donoId'    => limpar_texto($t['donoId'] ?? '', 40),
         'ate'       => preg_match('/^\d{4}-\d{2}-\d{2}$/', $ate) === 1 ? $ate : '',
         'eventoId'  => limpar_texto($t['eventoId'] ?? '', 40),
+        /* De qual núcleo ou grupo (plano 2026–2027): a tarefa que o
+           responsável combina com quem faz parte da unidade. */
+        'unidadeId' => id_de_unidade($t['unidadeId'] ?? ''),
         'criadoEm'  => limpar_texto($t['criadoEm'] ?? '', 40),
         'criadoPor' => limpar_texto($t['criadoPor'] ?? '', 60),
         'feitaEm'   => limpar_texto($t['feitaEm'] ?? '', 40),
@@ -97,6 +100,11 @@ function gravar_tarefas(array $tarefas): bool
 function tarefas_abertas(): array
 {
     return array_values(array_filter(ler_tarefas(), fn ($t) => $t['feitaEm'] === ''));
+}
+
+function tarefas_da_unidade(string $unidadeId): array
+{
+    return array_values(array_filter(ler_tarefas(), fn ($t) => $t['unidadeId'] === $unidadeId));
 }
 
 function tarefas_do_evento(string $eventoId): array

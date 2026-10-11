@@ -11,7 +11,7 @@
  * Fora do `apiFetch` de propósito — ele espera JSON de volta e lança em erro,
  * e aqui a resposta não interessa.
  */
-export type EventoDeSinal = "abriu" | "compartilhou" | "passo-2" | "passo-3" | "enviou-inscricao";
+export type EventoDeSinal = "abriu" | "compartilhou" | "passo-2" | "passo-3" | "enviou-inscricao" | "abriu-atividade" | "abriu-material";
 
 const ENDPOINT = "/painel/api/sinal.php";
 

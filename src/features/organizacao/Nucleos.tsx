@@ -4,7 +4,7 @@ import { Icon } from "@/components/icons";
 import { C, FONT_ALFA, TEXTO, bordaFina } from "@/lib/theme";
 import type { Nucleo } from "@/lib/api/organizacao";
 import { NIVEIS_TERRITORIO } from "./catalogo";
-import { BotaoEscuro, Moldura, Secao, SeloIcone, cartao, dataCurta, rotuloPequeno } from "./Moldura";
+import { BotaoEscuro, Moldura, Reconhecimento, Secao, SeloIcone, cartao, dataCurta, mesPorExtenso, rotuloPequeno } from "./Moldura";
 import { useOrganizacao } from "./useOrganizacao";
 
 /**
@@ -53,6 +53,14 @@ function CartaoNucleo({ n }: { n: Nucleo }) {
             <dd style={{ margin: 0, ...TEXTO.corpo }}>
               <strong>{dataCurta(n.proxima.data)}</strong>
               {n.proxima.texto ? ` — ${n.proxima.texto}` : ""}
+              {n.proxima.atividade && (
+                <>
+                  {" · "}
+                  <a href={`/programacao#a-${n.proxima.atividade}`} style={{ color: "inherit", fontWeight: 600 }}>
+                    ver na agenda
+                  </a>
+                </>
+              )}
             </dd>
           </div>
         )}
@@ -62,7 +70,7 @@ function CartaoNucleo({ n }: { n: Nucleo }) {
           Falar com o núcleo
         </BotaoEscuro>
       ) : (
-        <BotaoEscuro href="/queroajudar">Quero entrar neste núcleo</BotaoEscuro>
+        <BotaoEscuro href={`/queroajudar?unidade=${n.id}`}>Quero entrar neste núcleo</BotaoEscuro>
       )}
     </article>
   );
@@ -87,6 +95,13 @@ export default function Nucleos() {
         </p>
       }
     >
+      {estado.fase === "pronto" && (
+        <Reconhecimento
+          titulo={`Entregaram em ${mesPorExtenso(estado.dados.reconhecimento.mes)}`}
+          nomes={estado.dados.reconhecimento.nucleos}
+        />
+      )}
+
       <Secao titulo="Os núcleos que já funcionam" sub="Só o que a coordenação publicou. Sem nome de ninguém: o lugar, o ritmo e como chegar.">
         {estado.fase === "carregando" && <p style={{ ...TEXTO.corpo, margin: 0 }}>Carregando os núcleos…</p>}
         {estado.fase === "erro" && (

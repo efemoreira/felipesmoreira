@@ -78,6 +78,13 @@ export interface ItemAgenda {
    * sair de casa.
    */
   confirmar?: string;
+  /** A cidade do encontro (lista do Ceará), ou vazio — on-line ou ainda não sabido. */
+  cidade?: string;
+  bairro?: string;
+  /** Derivado no painel (`formato_do_evento()`): digital, ou link sem local, é on-line. */
+  formato?: "presencial" | "online";
+  /** O núcleo ou grupo temático que faz o encontro, quando ele está publicado no site. */
+  unidade?: { tipo: "nucleo" | "grupo"; nome: string; tema: string };
   /** A categoria do encontro. Ausente em item gravado antes deste campo existir. */
   familia?: Familia;
   /**

@@ -1,6 +1,6 @@
 import { test, describe, before, beforeEach, after } from "node:test";
 import assert from "node:assert/strict";
-import { montarSandbox, type Sandbox } from "../sandbox.ts";
+import { montarSandbox, ADMIN, type Sandbox } from "../sandbox.ts";
 
 /**
  * AÇÃO: a fila de entrada — aprovar e recusar quem se inscreveu.
@@ -353,5 +353,42 @@ describe("ação: aprovar em lote", () => {
     const r = await painel.postar("inscricoes", { acao: "aprovar-lote" });
     assert.match(r.html, /Não marquei ninguém/);
     assert.equal(painel.ler("pessoas").find((p) => p.id === NA_FILA)!.status, "pendente");
+  });
+});
+
+describe("inscrição com interesse: a escolha de /nucleos e /temas não se perde", () => {
+  const corpo = (interesse: string) => ({
+    nome: "Joana Teste da Silva", telefone: "85988887777", email: "", cidade: "Fortaleza", bairro: "Benfica",
+    funcoes: [], de: "", interesse, consentimento: true, site: "",
+  });
+
+  test("núcleo publicado entra como interesse; aprovar põe a pessoa no núcleo", async () => {
+    painel.gravar("nucleos", [{ id: "nuc-a1b2c3", nome: "Benfica", cidade: "Fortaleza", publicado: true }]);
+    const r = await painel.postarJson("api/inscricao.php", corpo("nuc-a1b2c3"));
+    assert.equal(r.json.ok, true, JSON.stringify(r.json));
+    const joana = painel.ler("pessoas").find((p: { telefone: string }) => p.telefone === "85988887777");
+    assert.equal(joana.interesse, "nuc-a1b2c3");
+    assert.match(painel.abrir("inscricoes").html, /o núcleo Benfica/);
+
+    await painel.postar("inscricoes", { acao: "aprovar", id: joana.id, usuario: "joana" });
+    const aprovada = painel.ler("pessoas").find((p: { id: string }) => p.id === joana.id);
+    assert.deepEqual(aprovada.unidades, ["nuc-a1b2c3"]);
+  });
+
+  test("núcleo que não está no site, ou id inventado, não vira interesse", async () => {
+    painel.gravar("nucleos", [{ id: "nuc-a1b2c3", nome: "Benfica", cidade: "Fortaleza", publicado: false }]);
+    await painel.postarJson("api/inscricao.php", corpo("nuc-a1b2c3"));
+    const joana = painel.ler("pessoas").find((p: { telefone: string }) => p.telefone === "85988887777");
+    assert.equal(joana.interesse, "");
+  });
+
+  test("tema com grupo aberto: aprovada, entra no grupo", async () => {
+    painel.gravar("temas", [{ id: "grp-a1b2c3", tema: "saude", finalidade: "UPAs", responsavelId: ADMIN,
+      primeiraEntrega: "X", primeiraEntregaAte: "2027-01-01" }]);
+    await painel.postarJson("api/inscricao.php", corpo("tema:saude"));
+    const joana = painel.ler("pessoas").find((p: { telefone: string }) => p.telefone === "85988887777");
+    assert.equal(joana.interesse, "tema:saude");
+    await painel.postar("inscricoes", { acao: "aprovar", id: joana.id, usuario: "joana" });
+    assert.deepEqual(painel.ler("pessoas").find((p: { id: string }) => p.id === joana.id).unidades, ["grp-a1b2c3"]);
   });
 });

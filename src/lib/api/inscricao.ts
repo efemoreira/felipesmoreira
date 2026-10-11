@@ -20,6 +20,8 @@ export interface Inscricao {
   bairro: string;
   funcoes: string[];
   de: string;
+  /** o núcleo (`nuc-…`), grupo (`grp-…`) ou tema (`tema:<chave>`) escolhido antes — ver features/inscricao/interesse.ts */
+  interesse: string;
   consentimento: true;
   /** o campo-armadilha: vazio em gente, preenchido por robô */
   site: string;

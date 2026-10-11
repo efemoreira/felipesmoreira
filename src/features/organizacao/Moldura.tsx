@@ -136,6 +136,27 @@ export function BotaoEscuro({ href, icone = "flag", children, externo }: { href:
   );
 }
 
+/** "setembro de 2026" a partir de "2026-09". */
+export function mesPorExtenso(mes: string): string {
+  const nomes = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+  const [a, m] = mes.split("-").map(Number);
+  return a && m ? `${nomes[m - 1]} de ${a}` : "";
+}
+
+/** A faixa de reconhecimento do mês: um título e nomes, sem número nenhum. */
+export function Reconhecimento({ titulo, nomes }: { titulo: string; nomes: string[] }) {
+  if (nomes.length === 0) return null;
+  return (
+    <section
+      aria-label={titulo}
+      style={{ background: C.gold, border: borda(), boxShadow: sombra("cartao"), padding: "16px 18px", marginBottom: 32 }}
+    >
+      <p style={{ ...rotuloPequeno, opacity: 1, margin: "0 0 6px" }}>★ {titulo}</p>
+      <p style={{ margin: 0, fontFamily: FONT_ALFA, fontSize: 19, lineHeight: 1.35 }}>{nomes.join(" · ")}</p>
+    </section>
+  );
+}
+
 /** "17/10" — a data curta da próxima atividade. */
 export function dataCurta(iso: string): string {
   const [, m, d] = iso.split("-");

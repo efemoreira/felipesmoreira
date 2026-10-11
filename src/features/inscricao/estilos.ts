@@ -1,4 +1,4 @@
-import { BORDA, C, FONT_ALFA, FONT_ELITE, FONT_BITTER, sombra, sombraErguida, sombraAfundada, HATCH, bordaFina } from "@/lib/theme";
+import { BORDA, C, FONT_ALFA, FONT_ELITE, FONT_BITTER, sombra, sombraErguida, sombraAfundada, HATCH, bordaFina, borda } from "@/lib/theme";
 
 /**
  * A folha de estilo do formulário de `/queroajudar`, num arquivo só.
@@ -216,6 +216,12 @@ export const css = `
     text-transform: uppercase; opacity: .7; min-width: 108px;
   }
   .in-resumo-dados dd { margin: 0; font-weight: 600; }
+  /* A faixa "Você quer entrar em…": o núcleo ou tema escolhido antes. */
+  .in-interesse {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px;
+    margin: 0 0 22px; padding: 12px 14px; font-size: 15.5px; line-height: 1.5;
+    background: ${C.gold}; color: ${C.ink}; border: ${borda()};
+  }
   .in-editar {
     display: inline-flex; align-items: center; min-height: 44px;
     font-family: ${FONT_ELITE}; font-size: 12px; letter-spacing: 1.4px;

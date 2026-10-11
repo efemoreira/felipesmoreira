@@ -942,3 +942,18 @@ describe("as pendências da escala", () => {
     assert.doesNotMatch(html, /Você é Captação em/, "cobrou quem já avisou que não pode");
   });
 });
+
+describe("encontro: aviso de choque e feriado (plano 2026–2027)", () => {
+  test("segunda atividade aberta na mesma cidade e no mesmo dia avisa, sem travar", async () => {
+    const dia = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Fortaleza" }).format(new Date(Date.now() + 6 * 86_400_000));
+    await painel.postar("eventos", { acao: "criar", titulo: "Panfletagem no Centro", familia: "militancia", dia, cidade: "Caucaia", naAgenda: "1" });
+    const r = await painel.postar("eventos", { acao: "criar", titulo: "Roda de conversa", familia: "militancia", dia, cidade: "Caucaia", naAgenda: "1" });
+    assert.match(r.html, /já tem “Panfletagem no Centro” em Caucaia no mesmo dia/);
+    assert.equal(painel.ler("eventos").filter((e: { cidade: string }) => e.cidade === "Caucaia").length, 2);
+  });
+
+  test("encontro em feriado avisa", async () => {
+    const r = await painel.postar("eventos", { acao: "criar", titulo: "Ato", familia: "militancia", dia: "2027-09-07", cidade: "Sobral" });
+    assert.match(r.html, /é feriado \(Independência do Brasil\)/);
+  });
+});

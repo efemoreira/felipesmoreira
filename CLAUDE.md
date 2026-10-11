@@ -81,7 +81,14 @@ Regras:
 - **Um tema, um grupo**: grupo só abre com finalidade, responsável e primeira entrega; segundo grupo aberto do mesmo tema é recusado. Categoria profissional e movimento são *portas*, não grupos.
 - **Liga sobe em ordem** (`nivel_liga()`): o nível é calculado do fechamento mensal e das três comprovações (redes, formação, ação local); não há campo de nível.
 - Encerrar não apaga: unidade/porta-voz encerrado sai das contas e do site e guarda o que entregou.
-- Públicas: `/nucleos`, `/temas`, `/portavozes` (via `api/organizacao.php`, só `publicado` e aberto).
+- Públicas: `/nucleos`, `/temas`, `/cultura`, `/portavozes`, `/biblioteca` (via `api/organizacao.php`, só `publicado` e aberto). Os botões "Quero entrar" levam `?unidade=`/`?tema=` para `/queroajudar`; aprovar põe a pessoa na unidade.
+
+### Registro das pessoas na estrutura
+
+- Três tipos de **unidade**, o mesmo molde (responsável, substituto, entregas, próxima atividade = encontro): núcleo (`nuc-`), grupo temático (`grp-`), grupo cultural (`cul-`, eixo + nível 1–4). O formato do id é `PADRAO_UNIDADE` em `dominio.php`; o tipo se pluga em `LEITORES_DE_UNIDADE` (`organizacao-comum.php`) — use `unidade_por_id()`, `todas_as_unidades()`, `tipo_da_unidade()`, `rotulo_da_unidade()`, nunca `isset($u['tema'])`.
+- Pertencer é o campo `unidades` da ficha (`pertencer()`, sob `com_trava()`); responsável e substituto fazem parte por definição (`membros_da_unidade()`).
+- **"Onde esta pessoa atua" tem uma resposta só: `vinculos_da_pessoa()`** (unidades + Liga). A ficha (aba Onde atua), o Meu lugar e as listas leem dela. `testes/acoes/registro.test.ts` prende que todo caminho de registro (ficha, unidade, inscrição com interesse, Liga, responsável) chega nela.
+- Quem responde cuida da unidade em `/painel/minha-unidade.php` sem capacidade Coordenação; nomes encobertos, telefone só da coordenação.
 
 ### Escada de engajamento
 

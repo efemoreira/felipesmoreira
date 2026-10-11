@@ -30,12 +30,18 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') {
     exit;
 }
 
-$hoje = hoje_ce();
 /* A próxima atividade só desce se ainda vai acontecer: a página pública
    mostra o que vem, como a /programacao. */
-$proxima = fn (array $u) => $u['proximaData'] !== '' && $u['proximaData'] >= $hoje
-    ? ['data' => $u['proximaData'], 'texto' => $u['proximaTexto']]
-    : null;
+$proxima = function (array $u): ?array {
+    $p = proxima_efetiva($u);
+    /* O id do encontro desce para o site virar link para a atividade
+       (/programacao#a-<id>), e só quando o encontro está na agenda pública. */
+    if ($p === null) {
+        return null;
+    }
+    $publico = $p['eventoId'] !== '' && (proximos_encontros_das_unidades()[$u['id']]['naAgenda'] ?? false);
+    return ['data' => $p['data'], 'texto' => $p['texto'], 'atividade' => $publico ? $p['eventoId'] : ''];
+};
 
 $nucleos = [];
 $nomeNucleo = [];
@@ -74,6 +80,7 @@ foreach (ler_liga() as $pv) {
         'bairro' => $pv['bairro'],
         'nivel'  => nivel_liga($pv)['nivel'],
         'perfis' => array_filter($pv['perfis']),
+        'destaque' => $pv['destaque'],
     ];
 }
 
@@ -103,4 +110,38 @@ foreach (ler_grupos() as $g) {
     ];
 }
 
-echo json_encode(['nucleos' => $nucleos, 'temas' => $temas, 'portavozes' => $liga], JSON_UNESCAPED_UNICODE);
+/* RECONHECIMENTO MENSAL — o mês que passou: os três primeiros de cada nível
+   do placar (só quem está publicado) e os núcleos publicados que registraram
+   entrega. SÓ NOMES, nunca pontos: "avaliações individuais nunca públicas". */
+$mesPassado = (new DateTimeImmutable(hoje_ce()))->modify('first day of last month')->format('Y-m');
+$destaques = [];
+foreach (placar_da_liga(ler_liga(), $mesPassado) as $linhas) {
+    foreach (array_slice($linhas, 0, 3) as $l) {
+        if ($l['pv']['publicado']) {
+            $destaques[] = $l['pv']['nome'];
+        }
+    }
+}
+$entregaram = [];
+foreach (ler_nucleos() as $n) {
+    if ($n['publicado'] && $n['encerradoEm'] === ''
+        && array_filter($n['entregas'], fn ($e) => substr($e['data'], 0, 7) === $mesPassado) !== []) {
+        $entregaram[] = $n['nome'];
+    }
+}
+
+echo json_encode([
+    'nucleos' => $nucleos, 'temas' => $temas, 'portavozes' => $liga,
+    'reconhecimento' => ['mes' => $mesPassado, 'portavozes' => $destaques, 'nucleos' => $entregaram],
+    /* Os grupos culturais: só o publicado e aberto, sem nome de quem responde. */
+    'cultura' => array_values(array_map(fn ($c) => [
+        'id' => $c['id'], 'nome' => $c['nome'], 'eixo' => $c['eixo'], 'nivel' => $c['nivel'],
+        'cidade' => $c['cidade'], 'bairro' => $c['bairro'], 'ritmo' => RITMOS[$c['ritmo']],
+        'ativo' => unidade_ativa($c), 'contato' => $c['contato'], 'proxima' => $proxima($c),
+    ], array_filter(ler_culturais(), fn ($c) => $c['publicado'] && $c['encerradoEm'] === ''))),
+    /* A Biblioteca: só o publicado e não arquivado. */
+    'biblioteca' => array_values(array_map(fn ($m) => [
+        'id' => $m['id'], 'titulo' => $m['titulo'], 'tipo' => $m['tipo'], 'tipoNome' => TIPOS_MATERIAL[$m['tipo']],
+        'tema' => $m['tema'], 'resumo' => $m['resumo'], 'link' => $m['link'],
+    ], array_filter(ler_biblioteca(), fn ($m) => $m['publicado'] && $m['arquivadoEm'] === ''))),
+], JSON_UNESCAPED_UNICODE);

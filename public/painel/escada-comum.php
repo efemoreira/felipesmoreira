@@ -110,9 +110,8 @@ function datas_da_escada(): array
             marcar_degrau($datas, $t['donoId'], 3, dia_do_carimbo($t['feitaEm']));
         }
     }
-    $nucleos = ler_nucleos();
-    $grupos = ler_grupos();
-    foreach (array_merge($nucleos, $grupos) as $u) {
+    $unidades = todas_as_unidades();  // núcleos, grupos temáticos e grupos culturais
+    foreach ($unidades as $u) {
         foreach ($u['entregas'] as $e) {
             marcar_degrau($datas, $e['porId'], 3, $e['data']);
         }
@@ -125,8 +124,8 @@ function datas_da_escada(): array
        grupo. Unidade encerrada continua contando: a escada guarda o degrau
        ALCANÇADO, e encerrar não é fracasso — quem respondeu por um núcleo
        que cumpriu o ciclo dele não volta a ser Interessado. */
-    $polo = fn ($u) => (isset($u['nivel']) && $u['nivel'] === 'T4') || (($u['maturidade'] ?? 0) === 4);
-    foreach (array_merge($nucleos, $grupos) as $u) {
+    $polo = fn ($u) => (($u['nivel'] ?? '') === 'T4') || (($u['maturidade'] ?? 0) === 4);
+    foreach ($unidades as $u) {
         foreach (['responsavel', 'substituto'] as $papel) {
             $id = $u[$papel . 'Id'];
             $desde = dia_do_carimbo($u[$papel . 'Desde']) ?: dia_do_carimbo($u['criadoEm']);
@@ -257,7 +256,7 @@ function ativos_no_mes(?int $agora = null): int
             $ativos[$t['donoId']] = true;
         }
     }
-    foreach (array_merge(ler_nucleos(), ler_grupos()) as $u) {
+    foreach (todas_as_unidades() as $u) {
         foreach ($u['entregas'] as $e) {
             if ($e['data'] >= $desde && $e['porId'] !== '') {
                 $ativos[$e['porId']] = true;

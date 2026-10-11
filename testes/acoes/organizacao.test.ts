@@ -346,7 +346,7 @@ describe("api/organizacao: o que o site público recebe", () => {
     const { json, bruto, cabecalhos } = await api();
     assert.deepEqual(json.nucleos.map((n: { nome: string }) => n.nome), ["Benfica"]);
     assert.equal(json.nucleos[0].ativo, true);
-    assert.deepEqual(json.nucleos[0].proxima, { data: dia(5), texto: "Escuta aberta" });
+    assert.deepEqual(json.nucleos[0].proxima, { data: dia(5), texto: "Escuta aberta", atividade: "" });
     /* O núcleo escondido não vaza pelo grupo. */
     assert.deepEqual(json.temas[0].nucleos, ["Benfica"]);
     assert.deepEqual(json.portavozes.map((p: { nome: string }) => p.nome), ["Ana do Benfica"]);
@@ -355,5 +355,129 @@ describe("api/organizacao: o que o site público recebe", () => {
     assert.doesNotMatch(bruto, /Coordenação de Teste/, "nome de responsável no JSON público");
     assert.doesNotMatch(bruto, /Texto interno da entrega/, "texto de entrega no JSON público");
     assert.match(cabecalhos["content-type"] ?? "", /application\/json/);
+  });
+});
+
+describe("um modelo para todos: a próxima atividade é um encontro", () => {
+  const nucleo = { id: "nuc-a1b2c3", nome: "Benfica", cidade: "Fortaleza", bairro: "Benfica", responsavelId: ADMIN, publicado: true,
+    entregas: [{ id: "e1", data: dia(-2), texto: "Escuta" }] };
+
+  test("marcar a próxima cria um encontro amarrado ao núcleo, com a cidade dele, na agenda", async () => {
+    painel.gravar("nucleos", [nucleo]);
+    const r = await painel.postar("organizacao", { acao: "proxima", tipo: "nucleo", id: "nuc-a1b2c3", dia: dia(5), hora: "19:00", titulo: "Escuta aberta" });
+    assert.match(r.html, /A atividade já é um encontro e aparece na agenda do site/);
+    const novo = painel.ler("eventos").find((e: { unidadeId: string }) => e.unidadeId === "nuc-a1b2c3");
+    assert.ok(novo, "não criou o encontro");
+    assert.equal(novo.titulo, "Escuta aberta");
+    assert.equal(novo.cidade, "Fortaleza");
+    assert.equal(novo.bairro, "Benfica");
+    assert.equal(novo.naAgenda, true);
+    /* E o núcleo fica ativo pelo encontro, sem `proximaData` nenhuma. */
+    assert.match(painel.abrir("organizacao").html, /selo-ok">Ativo/);
+  });
+
+  test("dia no passado não é próxima", async () => {
+    painel.gravar("nucleos", [nucleo]);
+    const r = await painel.postar("organizacao", { acao: "proxima", tipo: "nucleo", id: "nuc-a1b2c3", dia: dia(-1) });
+    assert.match(r.html, /de hoje em diante/);
+  });
+
+  test("registrar com 'e a próxima?' preenchido também cria o encontro", async () => {
+    painel.gravar("nucleos", [{ ...nucleo, entregas: [] }]);
+    await painel.postar("organizacao", { acao: "entrega", tipo: "nucleo", id: "nuc-a1b2c3", texto: "Roda", data: dia(0), proximaData: dia(9) });
+    assert.ok(painel.ler("eventos").some((e: { unidadeId: string }) => e.unidadeId === "nuc-a1b2c3"));
+  });
+
+  test("encontro do painel com núcleo herda a cidade quando ela fica em branco", async () => {
+    painel.gravar("nucleos", [nucleo]);
+    await painel.postar("eventos", { acao: "criar", titulo: "Panfletagem", familia: "militancia", dia: dia(4), unidadeId: "nuc-a1b2c3", cidade: "" });
+    const e = painel.ler("eventos").find((x: { titulo: string }) => x.titulo === "Panfletagem");
+    assert.equal(e.cidade, "Fortaleza");
+    assert.equal(e.unidadeId, "nuc-a1b2c3");
+  });
+
+  test("a API pública manda o id da atividade para virar link", async () => {
+    painel.gravar("nucleos", [nucleo]);
+    await painel.postar("organizacao", { acao: "proxima", tipo: "nucleo", id: "nuc-a1b2c3", dia: dia(5), titulo: "Escuta" });
+    const json = JSON.parse((await painel.buscar("api/organizacao")).html);
+    assert.match(json.nucleos[0].proxima.atividade, /^[a-z0-9-]+$/);
+  });
+});
+
+describe("ritmo do calendário", () => {
+  test("atividade do núcleo que passou há mais de 7 dias sem registro vira pendência; com registro, some", () => {
+    const passou = new Date(Date.now() - 10 * 86_400_000).toISOString();
+    painel.gravar("nucleos", [{ id: "nuc-a1b2c3", nome: "Benfica", cidade: "Fortaleza", responsavelId: ADMIN }]);
+    const eventos = painel.ler("eventos");
+    painel.gravar("eventos", [...eventos, {
+      id: "ev-nucleo", titulo: "Escuta na praça", familia: "militancia", inicio: passou, unidadeId: "nuc-a1b2c3",
+      status: "realizado", token: "c".repeat(16), tokenConfirmacao: "d".repeat(16), criadoEm: passou,
+    }]);
+    assert.match(painel.abrir("index").html, /Registrar o que o núcleo Benfica fez em “Escuta na praça”/);
+
+    painel.gravar("nucleos", [{ id: "nuc-a1b2c3", nome: "Benfica", cidade: "Fortaleza", responsavelId: ADMIN,
+      entregas: [{ id: "e1", data: dia(-9), texto: "Escuta com 12 pessoas" }] }]);
+    assert.doesNotMatch(painel.abrir("index").html, /Registrar o que o núcleo Benfica fez/);
+  });
+});
+
+describe("conteúdo dos porta-vozes: vídeo em destaque", () => {
+  test("aceita link de rede social, recusa o resto, e desce na API só de quem está no site", async () => {
+    painel.gravar("liga", [{ id: "pv-a", nome: "Ana", publicado: true }]);
+    await painel.postar("organizacao", { acao: "pv-salvar", id: "pv-a", destaque: "https://www.instagram.com/reel/abc123/" });
+    assert.equal(painel.ler("liga")[0].destaque, "https://www.instagram.com/reel/abc123/");
+    const json = JSON.parse((await painel.buscar("api/organizacao")).html);
+    assert.equal(json.portavozes[0].destaque, "https://www.instagram.com/reel/abc123/");
+
+    for (const ruim of ["http://instagram.com/x", "https://golpe.com/instagram.com", "javascript:alert(1)"]) {
+      await painel.postar("organizacao", { acao: "pv-salvar", id: "pv-a", destaque: ruim });
+      assert.equal(painel.ler("liga")[0].destaque, "", ruim);
+    }
+  });
+});
+
+describe("reconhecimento mensal: nomes, nunca pontos", () => {
+  test("destaques do mês passado e núcleos que entregaram, só os publicados", async () => {
+    const passado = mesAtras(1);
+    painel.gravar("liga", [
+      { id: "pv-a", nome: "Ana Publicada", publicado: true, meses: [{ mes: passado, redes: { instagram: 900 }, engajamento: 4, lives: 1 }] },
+      { id: "pv-b", nome: "Bia Escondida", publicado: false, meses: [{ mes: passado, redes: { instagram: 900 }, engajamento: 5 }] },
+    ]);
+    painel.gravar("nucleos", [
+      { id: "nuc-a1b2c3", nome: "Benfica", cidade: "Fortaleza", publicado: true, entregas: [{ id: "e1", data: `${passado}-15`, texto: "Escuta" }] },
+      { id: "nuc-d4e5f6", nome: "Parado", cidade: "Fortaleza", publicado: true },
+    ]);
+    const r = await painel.buscar("api/organizacao");
+    const { reconhecimento } = JSON.parse(r.html);
+    assert.equal(reconhecimento.mes, passado);
+    assert.deepEqual(reconhecimento.portavozes, ["Ana Publicada"]);
+    assert.deepEqual(reconhecimento.nucleos, ["Benfica"]);
+    assert.doesNotMatch(JSON.stringify(reconhecimento), /total|pontos|crescimento/);
+  });
+});
+
+describe("biblioteca", () => {
+  test("material precisa de título e link https; publicado desce, arquivado sai", async () => {
+    const sem = await painel.postar("organizacao", { acao: "material-salvar", titulo: "Livro", link: "http://x.com" });
+    assert.match(sem.html, /link https/);
+
+    await painel.postar("organizacao", { acao: "material-salvar", titulo: "Livro Amarelo — cap. 1", link: "https://drive.google.com/x", tipo: "livro-amarelo", publicado: "1" });
+    await painel.postar("organizacao", { acao: "material-salvar", titulo: "Rascunho interno", link: "https://drive.google.com/y", publicado: "0" });
+    let json = JSON.parse((await painel.buscar("api/organizacao")).html);
+    assert.deepEqual(json.biblioteca.map((m: { titulo: string }) => m.titulo), ["Livro Amarelo — cap. 1"]);
+    assert.equal(json.biblioteca[0].tipoNome, "Livro Amarelo");
+
+    const id = painel.ler("biblioteca").find((m: { titulo: string }) => m.titulo.startsWith("Livro")).id;
+    await painel.postar("organizacao", { acao: "material-arquivar", id });
+    json = JSON.parse((await painel.buscar("api/organizacao")).html);
+    assert.equal(json.biblioteca.length, 0);
+    assert.equal(painel.ler("biblioteca").length, 2, "arquivar não apaga");
+  });
+
+  test("a aba abre em silêncio", () => {
+    painel.gravar("biblioteca", [{ id: "mat-1", titulo: "Caderno", link: "https://a.b/c", publicado: true }]);
+    const { erros, html } = painel.abrir("organizacao", "aba=biblioteca&material=mat-1");
+    assert.deepEqual(erros.split("\n").filter((l) => /Warning|Notice|Fatal|Uncaught/.test(l)), []);
+    assert.match(html, /Caderno/);
   });
 });

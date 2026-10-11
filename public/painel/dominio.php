@@ -319,3 +319,22 @@ function grupo_de(array $pessoa): string
 
 /** O contato oficial. Não existe e-mail: este é o único canal. */
 const WHATSAPP_COORDENACAO = 'https://wa.me/5585981872972';
+
+/**
+ * O FORMATO DO ID DE UMA UNIDADE — núcleo (`nuc-`), grupo temático (`grp-`)
+ * ou grupo cultural (`cul-`). Uma fonte só: a ficha da pessoa (`unidades`), o
+ * encontro (`unidadeId`), a tarefa (`unidadeId`) e o interesse da inscrição
+ * conferem por aqui. Tipo novo de unidade entra neste regex e em
+ * `LEITORES_DE_UNIDADE` (organizacao-comum.php), e em nenhum outro lugar.
+ */
+const PADRAO_UNIDADE = '/^(nuc|grp|cul)-[a-f0-9]{6,20}$/';
+
+/** O interesse da inscrição: uma unidade, ou um tema do catálogo. Par de `FORMATO_INTERESSE` (TS). */
+const PADRAO_INTERESSE = '/^((nuc|grp|cul)-[a-f0-9]{6,20}|tema:[a-z]{3,20})$/';
+
+/** O id, se tem o formato de unidade; senão ''. */
+function id_de_unidade($v): string
+{
+    $v = (string) ($v ?? '');
+    return preg_match(PADRAO_UNIDADE, $v) === 1 ? $v : '';
+}

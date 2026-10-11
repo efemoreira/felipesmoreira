@@ -1035,6 +1035,14 @@ input[type=file]::file-selector-button {
 }
 .hub-linha svg { flex:0 0 auto; color:var(--acento); }
 .hub-linha strong { color:var(--texto); }
+
+/* MEU LUGAR — o degrau e as unidades de cada conta, no alto do Início. Um
+   bloco só, com as linhas empilhadas; a última linha não leva margem. */
+.meu-lugar {
+  margin:0 0 22px; padding:14px 16px 2px;
+  border:2px solid var(--linha); border-left:6px solid var(--ouro); background:var(--papel);
+}
+.meu-lugar .hub-linha .btn { margin-left:auto; }
 .hub-linha .selo { margin:0; }
 
 .cartao-grupo {

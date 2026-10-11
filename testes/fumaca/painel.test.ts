@@ -36,6 +36,7 @@ const TELAS: [tela: string, querystring: string, apelido: string][] = [
   ["pessoas", "tipo=reativar&q=maria", "busca na lista de reativação"],
   ["pessoas", "p=pes00000000teste", "ficha aberta"],
   ["pessoas", "p=pes00000000teste&aba=encontros", "ficha — encontros"],
+  ["pessoas", "p=pes00000000teste&aba=atua", "ficha — onde atua"],
   ["pessoas", "p=pes00000000teste&aba=acesso", "ficha — acesso"],
   ["pessoas", "p=pes00000000teste&aba=historico", "ficha — histórico"],
   ["pessoas", "p=pes00000000teste&editar=pes00000000teste", "ficha com o modal de edição"],
@@ -64,6 +65,7 @@ const TELAS: [tela: string, querystring: string, apelido: string][] = [
   ["inscricoes", "aba=decididas", "inscrições já decididas"],
   ["leituras", "", "leituras — comando"],
   ["leituras", "aba=origem", "leituras — origem"],
+  ["leituras", "aba=site", "leituras — site"],
   ["leituras", "aba=territorio", "leituras — território"],
   ["leituras", "aba=encontros", "leituras — encontros"],
   ["leituras", "aba=formacao", "leituras — formação"],
@@ -85,6 +87,9 @@ const TELAS: [tela: string, querystring: string, apelido: string][] = [
   ["organizacao", "aba=temas&novo=seguranca", "organização — abrir grupo"],
   ["organizacao", "aba=liga", "organização — Liga"],
   ["organizacao", "aba=liga&pv=novo", "organização — pôr na Liga"],
+  ["organizacao", "aba=cultura", "organização — cultura"],
+  ["organizacao", "aba=cultura&novo=cultura", "organização — novo grupo cultural"],
+  ["organizacao", "aba=biblioteca", "organização — biblioteca"],
 ];
 
 let painel: Sandbox;

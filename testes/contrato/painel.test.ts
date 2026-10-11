@@ -230,7 +230,7 @@ describe("painel: o que cada área diz ao Início é registro, não cadeia de if
     .flatMap((f) => [...readFileSync(path.join(PAINEL, f), "utf8").matchAll(/^function (?:pendencias|medidores|estado)_([a-z]+)\(array \$u\)/gm)].map((m) => [m[1], f]));
 
   /* Os itens soltos: não são área, qualquer conta os tem. */
-  const SOLTOS = ["gente", "tarefas"];
+  const SOLTOS = ["gente", "tarefas", "minhaunidade"];
 
   test("ORDEM_AGORA só tem área que existe (ou item solto: gente, tarefas)", () => {
     assert.ok(ordem.length >= 5, `só achei ${ordem.length} em ORDEM_AGORA`);

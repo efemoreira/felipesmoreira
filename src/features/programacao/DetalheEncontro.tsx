@@ -1,5 +1,6 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
+import { feriadoEm } from "@/lib/feriados";
 import React, { useEffect, useRef } from "react";
 import Link from "next/link";
 import { bordaFina, FONT_ALFA, FONT_ELITE } from "@/lib/theme";
@@ -74,6 +75,8 @@ const DetalheEncontro: React.FC<{
 
   const temQuando = item.dia || item.data || item.hora;
   const temOnde = item.local || item.endereco || nomePlataforma;
+  /* O dia é feriado? A ficha avisa — quem vai planeja diferente. */
+  const feriado = item.inicio ? feriadoEm(item.inicio.slice(0, 10), item.cidade ?? "") : null;
   const temQuem = !!item.responsaveis?.length;
   /* O mesmo destino do botão do cartão, do mesmo lugar: a ficha não pode levar
      a um lugar diferente do cartão que a abriu. */
@@ -113,6 +116,13 @@ const DetalheEncontro: React.FC<{
         <h2 id="dt-titulo" className="dt-titulo">{item.titulo}</h2>
         {subtitulo && <p className="dt-sub">{subtitulo}</p>}
 
+        {feriado && (
+          <p className="dt-sub">
+            <strong>Feriado:</strong> {feriado.nome}
+            {feriado.onde === "facultativo" ? " (ponto facultativo)" : ""}
+          </p>
+        )}
+
         {(temQuando || temOnde || temQuem) && (
           <dl className="dt-lista">
             {temQuando && (
@@ -134,6 +144,8 @@ const DetalheEncontro: React.FC<{
                   {item.local && <strong>{item.local}</strong>}
                   {item.local && item.endereco && <br />}
                   {item.endereco}
+                  {item.cidade && (item.local || item.endereco) && <br />}
+                  {item.cidade && [item.bairro, item.cidade].filter(Boolean).join(", ")}
                 </dd>
               </div>
             )}
@@ -141,6 +153,17 @@ const DetalheEncontro: React.FC<{
               <div className="dt-linha">
                 <dt><Icon name="broadcast" size={16} /><span>Onde</span></dt>
                 <dd>{nomePlataforma}</dd>
+              </div>
+            )}
+            {item.unidade && (
+              <div className="dt-linha">
+                <dt><Icon name="flag" size={16} /><span>De quem</span></dt>
+                <dd>
+                  <a href={item.unidade.tipo === "nucleo" ? "/nucleos" : `/temas#${item.unidade.tema}`}>
+                    {item.unidade.tipo === "nucleo" ? "Núcleo " : "Grupo "}
+                    {item.unidade.nome}
+                  </a>
+                </dd>
               </div>
             )}
             {temQuem && (
