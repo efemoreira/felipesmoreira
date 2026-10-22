@@ -26,6 +26,7 @@ require_once __DIR__ . '/leituras-semana.php';
 require_once __DIR__ . '/leituras-atividade.php';
 require_once __DIR__ . '/leituras-comando.php';
 require_once __DIR__ . '/leituras-site.php';
+require_once __DIR__ . '/leituras-construcao.php';
 
 function tela_de_leituras(array $eu): void
 {
@@ -47,6 +48,9 @@ function tela_de_leituras(array $eu): void
         'atividade'  => ['nome' => 'Atividade'],
     ];
     $aba = (string) ($_GET['aba'] ?? '');
+    if (tem_capacidade('coordenacao')) {
+        $abas = array_slice($abas, 0, 1, true) + ['construcao' => ['nome' => 'Construção']] + array_slice($abas, 1, null, true);
+    }
     if (!isset($abas[$aba])) {
         $aba = 'comando';
     }
@@ -89,6 +93,8 @@ function tela_de_leituras(array $eu): void
   <?php
   if ($aba === 'comando') {
       aba_de_comando();
+  } elseif ($aba === 'construcao') {
+      aba_de_construcao();
   } elseif ($aba === 'site') {
       aba_do_site();
   } elseif ($aba === 'origem') {

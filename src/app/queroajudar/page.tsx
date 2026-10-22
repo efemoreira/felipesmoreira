@@ -6,9 +6,9 @@ import InscricaoClient from "@/features/inscricao/InscricaoClient";
    ele precisa ler é o que se espera dele. `twitter` repetido de propósito: sem
    ele o cartão do X cai no do layout raiz e volta a anunciar a candidatura. */
 export const metadata: Metadata = {
-  title: "Quero ajudar",
+  title: "Vamos construir juntos",
   description:
-    "Inscreva-se para ajudar a militância da Missão Ceará. Escolha como quer contribuir — comunicação, eventos ou onde precisar — e a coordenação entra em contato.",
+    "Ajude a construir a Missão Ceará. Informe sua cidade e bairro e, se quiser, trabalho, estudo, interesses e disponibilidade para formar núcleos, grupos e atividades.",
   alternates: { canonical: "https://felipesmoreira.com/queroajudar" },
   openGraph: {
     title: "Ajude a Missão",

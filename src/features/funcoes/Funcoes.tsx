@@ -20,7 +20,7 @@ import type { CatalogoFuncoes, Funcao, GrupoFuncao } from "@/features/inscricao/
  */
 const catalogo = CATALOGO as CatalogoFuncoes;
 
-const ORDEM: GrupoFuncao[] = ["comunicacao", "eventos", "outro"];
+const ORDEM = Object.keys(catalogo.grupos) as GrupoFuncao[];
 
 
 const rotulo: React.CSSProperties = {
@@ -138,7 +138,7 @@ const Ficha: React.FC<{ f: Funcao }> = ({ f }) => (
       }}
     >
       <Icon name="flag" size={17} />
-      Quero ser {f.nome}
+      Conversar sobre esta função
     </Link>
   </article>
 );
@@ -154,9 +154,9 @@ export default function Funcoes() {
           icone="users"
           intro={
             <p>
-              Ninguém entra pra “ajudar no que precisar” e descobre depois que não tinha função. Cada
-              uma aqui diz o que você entrega e quanto tempo pede — antes de você decidir. Tem lugar
-              pra quem tem dez horas por semana e pra quem tem trinta minutos.
+              Estas são possibilidades de contribuição para construir o movimento. Você pode registrar
+              seus interesses sem escolher uma função agora. As entregas e os ritmos são referências:
+              a coordenação combina com você o que cabe na sua disponibilidade.
             </p>
           }
           acoes={[{ texto: "Quero participar", href: "/queroajudar" }]}

@@ -35,13 +35,6 @@ export const css = `
   .in-armadilha {
     position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0;
   }
-; font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
-    color: ${C.ink}; background: ${C.cream}; text-decoration: none;
-    padding: 10px 15px; border: ${BORDA}px solid ${C.ink};
-    box-shadow: ${sombra("rente")};
-    margin-bottom: 22px;
-  }
-
   .in-cabecalho { margin-bottom: 26px; }
   .in-chip {
     display: inline-block; font-family: ${FONT_ELITE};
@@ -178,14 +171,15 @@ export const css = `
     font-size: 10.5px; letter-spacing: 1px; opacity: .6;
     margin-left: 7px; text-transform: none;
   }
-  .in-campo input, .in-campo select {
+  .in-campo input, .in-campo select, .in-campo textarea {
+    box-sizing: border-box;
     width: 100%; font-family: ${FONT_BITTER}; font-size: 16px;
     min-height: 48px; padding: 11px 13px;
     background: ${C.cream}; color: ${C.ink};
     border: ${BORDA}px solid ${C.ink}; border-radius: 0;
     box-shadow: ${sombra("rente")};
   }
-  .in-campo input:focus-visible, .in-campo select:focus-visible { outline: ${BORDA}px solid ${C.goldDim}; outline-offset: 2px; }
+  .in-campo input:focus-visible, .in-campo select:focus-visible, .in-campo textarea:focus-visible { outline: ${BORDA}px solid ${C.goldDim}; outline-offset: 2px; }
   .in-campo input.com-erro, .in-campo select.com-erro { border-color: ${C.erroTinta}; box-shadow: ${sombra("rente", C.sombraErro)}; }
   .in-dica { font-size: 13px; line-height: 1.45; opacity: .7; margin: 6px 0 0; }
   .in-erro {
@@ -321,6 +315,21 @@ export const css = `
   }
   .in-aviso { font-size: 14px; line-height: 1.6; opacity: .8; margin: 20px 0 0; }
   .in-sucesso .in-acoes { justify-content: center; }
+
+  .in-sem-borda { border: 0; margin: 0; padding: 0; min-width: 0; }
+  .in-detalhes { margin: 0 0 18px; padding: 12px; border: ${bordaFina(C.ink)}; background: ${C.cream}; }
+  .in-detalhes summary { min-height: 44px; font-family: ${FONT_BITTER}; font-weight: 700; cursor: pointer; }
+  .in-detalhes[open] summary { margin-bottom: 12px; }
+  .in-escolhas { border: 0; margin: 0 0 20px; padding: 0; min-width: 0; }
+  .in-escolhas legend { font-family: ${FONT_ALFA}; font-size: 18px; margin-bottom: 12px; }
+  .in-opcoes { display: grid; gap: 8px; }
+  .in-opcao { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 10px 12px; border: ${bordaFina(C.ink)}; background: ${C.paper}; cursor: pointer; line-height: 1.5; }
+  .in-opcao.selecionada { background: ${C.gold}; }
+  .in-opcao input { width: 22px; height: 22px; flex-shrink: 0; accent-color: ${C.ink}; }
+  .in-campo textarea { resize: vertical; }
+  .in-proximo-passo { margin-top: 26px; text-align: left; line-height: 1.6; }
+  .in-proximo-passo .in-btn { box-sizing: border-box; width: 100%; }
+  .in-sucesso .in-btn-fantasma { flex: 1 1 230px; }
 
   /* ---- telas pequenas ---- */
   @media (max-width: 620px) {

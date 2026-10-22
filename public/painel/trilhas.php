@@ -77,6 +77,19 @@ const MESA_DA_FUNCAO = [
        pergunta errada — a mensagem de hoje é para quem venceu hoje, e não para
        quem veio ao encontro tal. */
     'follow-up'  => ['area' => 'eventos',  'acao' => 'Abrir o follow-up',     'destino' => '?aba=follow-up#funil'],
+    // Primeira ferramenta das novas funções: preparar a contribuição na formação.
+    'mobilizacao-local' => ['area' => 'aulas', 'acao' => 'Abrir a formação', 'destino' => ''],
+    'articulacao-universitaria' => ['area' => 'aulas', 'acao' => 'Abrir a formação', 'destino' => ''],
+    'acolhimento' => ['area' => 'aulas', 'acao' => 'Abrir a formação', 'destino' => ''],
+    'pesquisa-tematica' => ['area' => 'aulas', 'acao' => 'Abrir a formação', 'destino' => ''],
+    'facilitacao' => ['area' => 'aulas', 'acao' => 'Abrir a formação', 'destino' => ''],
+    'criacao-cultural' => ['area' => 'aulas', 'acao' => 'Abrir a formação', 'destino' => ''],
+    'producao-cultural' => ['area' => 'aulas', 'acao' => 'Abrir a formação', 'destino' => ''],
+    'secretaria' => ['area' => 'aulas', 'acao' => 'Abrir a formação', 'destino' => ''],
+    'apoio-financeiro' => ['area' => 'aulas', 'acao' => 'Abrir a formação', 'destino' => ''],
+    'tecnologia-dados' => ['area' => 'aulas', 'acao' => 'Abrir a formação', 'destino' => ''],
+    'porta-voz' => ['area' => 'aulas', 'acao' => 'Abrir a formação', 'destino' => ''],
+    'comunidade-digital' => ['area' => 'aulas', 'acao' => 'Abrir a formação', 'destino' => ''],
 ];
 
 /**

@@ -80,6 +80,8 @@ Regras:
 - **Ativo é quem entrega**: `unidade_ativa()` = responsável + entrega nos últimos 31 dias + próxima atividade marcada. Não crie outra régua de "ativo".
 - **Um tema, um grupo**: grupo só abre com finalidade, responsável e primeira entrega; segundo grupo aberto do mesmo tema é recusado. Categoria profissional e movimento são *portas*, não grupos.
 - **Liga sobe em ordem** (`nivel_liga()`): o nível é calculado do fechamento mensal e das três comprovações (redes, formação, ação local); não há campo de nível.
+- Promoção de núcleo/grupo passa por `faltas_para_promocao()`: dois últimos meses encerrados com entrega e avaliação com evidência. As avaliações e o histórico de níveis ficam na unidade (`organizacao-crescimento.php`). A indicação de promoção em Comando usa essa mesma regra.
+- Liga conserva o nível conquistado até a revisão de trimestres completos: dois trimestres seguidos sem crescimento líquido ou ação local retiram um nível; falta de fechamento é pendência. CSV de fechamentos usa prévia na sessão e confirmação sob trava (`liga-importacao.php`), sem coleta automática das redes. Operação detalhada em `docs/painel.md`.
 - Encerrar não apaga: unidade/porta-voz encerrado sai das contas e do site e guarda o que entregou.
 - Públicas: `/nucleos`, `/temas`, `/cultura`, `/portavozes`, `/biblioteca` (via `api/organizacao.php`, só `publicado` e aberto). Os botões "Quero entrar" levam `?unidade=`/`?tema=` para `/queroajudar`; aprovar põe a pessoa na unidade.
 
@@ -106,7 +108,7 @@ Regras:
 
 ### Inscrição e presença
 
-- `/queroajudar` cria ou reaproveita uma **pessoa** com `status = 'pendente'`; não cria conta.
+- `/queroajudar` cria ou reaproveita uma **pessoa** com `status = 'pendente'`; não cria conta. O fluxo começa por contato e localização; perfil e funções são opcionais. `participacao` na própria ficha mapeia trabalho, estudo, instituição/campus, interesses e disponibilidade para construir as frentes (catálogo compartilhado em `public/painel/participacao-catalogo.json`). Leituras › Construção inclui pendentes e aprovados, só para Coordenação; novo cadastro não entra automaticamente em unidade ao ser aprovado.
 - Aprovar inscrição **dá conta à ficha existente**, com senha provisória e `trocarSenha = true`.
 - `/presenca` trabalha com dois tokens: um para confirmação (RSVP, `?c=`, vai no grupo) e outro para presença na porta (`?e=`, o QR). **O cartaz da recepção** é `eventos.php?e=<id>&cartaz=1` (`eventos-cartaz.php`): página sem moldura, só o QR da porta, "CHEGUEI" e a linha dizendo que o RSVP é outro link. Não imprima a aba Pessoas.
 - A passagem `/presenca` → `/queroajudar` usa `sessionStorage` (`CHAVE_RASCUNHO`), nunca querystring para telefone.

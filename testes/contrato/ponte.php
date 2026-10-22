@@ -35,10 +35,16 @@ require_once $raiz . '/producao-comum.php';
 require_once $raiz . '/trilhas.php';
 require_once $raiz . '/eventos-comum.php';  // token_de_escala(), url_do_convite()
 require_once $raiz . '/escada-comum.php';
+require_once $raiz . '/liga-importacao.php';
 require_once $raiz . '/feriados-comum.php';   // DEGRAUS — e, por ele, organizacao-comum.php
 
 /** As funções que o teste pode chamar, e só elas. */
 const PONTES = [
+    'normalizar_porta_voz',
+    'catalogo_de_participacao',
+    'normalizar_participacao',
+    'nivel_liga',
+    'revisao_trimestral_liga',
     'catalogo_da_organizacao',
     'catalogo_da_escada',
     'feriados_do_painel',

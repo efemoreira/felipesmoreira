@@ -43,11 +43,7 @@ function CartaoCultural({ c }: { c: GrupoCultural }) {
           </div>
         )}
       </dl>
-      {c.contato ? (
-        <BotaoEscuro href={c.contato} icone="whatsapp" externo>Falar com o grupo</BotaoEscuro>
-      ) : (
-        <BotaoEscuro href={`/queroajudar?unidade=${c.id}`}>Quero entrar</BotaoEscuro>
-      )}
+      <BotaoEscuro href={`/queroajudar?unidade=${c.id}`}>Registrar interesse nesta iniciativa</BotaoEscuro>
     </article>
   );
 }
@@ -61,6 +57,7 @@ export default function Cultura() {
       trilha="Cultura"
       kicker="Cultura"
       titulo="Cultura tem valor próprio"
+      acoes={[{ texto: "Ajudar a construir a frente cultural", href: "/queroajudar?frente=cultura" }, { texto: "Conhecer o plano", href: "/plano" }]}
       icone="star"
       intro={
         <p style={{ margin: 0 }}>
@@ -70,7 +67,7 @@ export default function Cultura() {
         </p>
       }
     >
-      <Secao titulo="Os grupos culturais" sub="Só o que a coordenação publicou. Para entrar, um toque.">
+      <Secao titulo="Iniciativas culturais em construção" sub="Declare seus interesses no cadastro para ajudar a planejar as primeiras atividades.">
         {estado.fase === "carregando" && <p style={{ ...TEXTO.corpo, margin: 0 }}>Carregando…</p>}
         {estado.fase === "erro" && <p style={{ ...TEXTO.corpo, margin: 0 }}>Não consegui carregar agora. Tente de novo em instantes.</p>}
         {estado.fase === "pronto" && grupos.length === 0 && (

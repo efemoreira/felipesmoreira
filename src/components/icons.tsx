@@ -53,6 +53,7 @@ const paths: Record<string, string[]> = {
   arrowLeft: ["M5 12l14 0", "M5 12l6 6", "M5 12l6 -6"],
   close: ["M18 6l-12 12", "M6 6l12 12"],
   sword: ["M20 4v5l-9 7l-4 4l-3 -3l4 -4l7 -9z", "M6.5 11.5l6 6"],
+  check: ["M5 12l4 4l10 -10"],
   book: [
     "M19 4v16h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12z",
     "M19 16h-12a2 2 0 0 0 -2 2",

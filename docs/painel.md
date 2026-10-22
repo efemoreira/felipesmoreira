@@ -123,6 +123,90 @@ Se a tarefa tocar em capacidade, área, navegação ou dado pessoal, confira tam
 - só quem decide mexe em criação, edição, cancelamento e telefone aberto;
 - encontro com gente na lista não se apaga.
 
+## Acompanhar crescimento (plano 2026–2027)
+
+### Construir a base antes de abrir núcleos e grupos
+
+O `/queroajudar` começa por nome, WhatsApp, cidade e bairro. E-mail e perfil
+de participação são opcionais: trabalho/área, situação de trabalho e estudo,
+instituição, campus, cidade da instituição, curso/vínculo, frentes, temas,
+cultura, contribuições, habilidades, disponibilidade, períodos, modalidade,
+perfil/canal e ideia. Escolher função deixou de ser condição para avançar.
+
+As informações ficam em `participacao` na própria ficha da pessoa. A fila de
+Inscrições mostra o perfil para orientar o acolhimento; na ficha de Pessoas,
+**Interesses para construir o movimento → Atualizar interesses após a conversa**
+permite corrigir e completar o perfil. O perfil não concede acesso, não cria
+unidades e não é publicado na API de organização.
+
+**Leituras → Construção** (capacidade Coordenação) inclui pendentes e aprovados,
+exclui recusados e apagados e permite cruzar cidade, bairro, instituição, campus,
+trabalho, frentes, temas, cultura, contribuições e disponibilidade. A busca também
+encontra curso, habilidades e ideias. As tabelas separam pendentes de aprovados;
+as contagens são de interessados, não de pessoas ativas. Uma pessoa pode constar
+em vários interesses. O CSV exporta o mesmo recorte e todo o perfil.
+
+Instituição e cidade onde mora são dados diferentes: quem mora em Caucaia e
+estuda na UNIFOR em Fortaleza aparece nos dois lugares certos. Siglas e nomes
+conhecidos, como UNIFOR e Universidade de Fortaleza, são normalizados pelo
+catálogo; outras instituições são aceitas como texto livre. Campus não informado
+fica separado. Grafias com maiúsculas, minúsculas e acentos são agrupadas.
+
+Um cadastro novo guarda `participacao.registradoEm`. Mesmo quando vem de um link
+de núcleo ou tema, a referência só orienta a conversa: aprovar esse cadastro não
+o inclui automaticamente na unidade. Os vínculos são combinados depois. A
+aprovação de inscrições antigas com interesse explícito continua compatível.
+
+O catálogo é `public/painel/participacao-catalogo.json`, lido por PHP e front,
+sem cópia extra no deploy. O consentimento está na versão 2. O rascunho fica
+na sessão da aba, inclui perfil e funções e só é salvo depois da restauração
+inicial; é apagado no sucesso. A ponte de `/presenca` continua válida.
+
+O catálogo de funções foi ampliado para organização e acolhimento, estudo e
+formação, cultura e apoio à organização, além de comunicação e eventos. As novas
+funções têm aulas práticas de aprofundamento, checklists e uma primeira
+ferramenta de preparação. Escolher uma função continua sem conceder acesso
+administrativo; a coordenação combina o papel e o acesso na aprovação.
+
+### Acompanhar os passos seguintes
+
+- **Leituras → Comando** mostra a escada de engajamento, quem subiu de degrau
+  por mês e as unidades prontas para avaliação de promoção. Cadastro novo é
+  contado à parte. Presença, tarefa concluída e entrega precisam ser registradas.
+- **Organização → Núcleos / Temas → Avaliar ciclo e crescimento** registra a
+  avaliação de cada mês encerrado: nível cujo critério foi cumprido e evidência
+  concreta (resultado, registro ou link). O mês precisa ter uma entrega. Corrigir
+  a avaliação substitui só aquele mês.
+- A **ficha completa** permite mudar o nível. Para subir, os dois últimos meses
+  encerrados devem ter entrega e avaliação com evidência do nível pretendido
+  (ou superior). A unidade deve estar ativa; níveis 3 e 4 também pedem substituto.
+  Mês em andamento e meses separados não completam dois ciclos consecutivos.
+  Núcleo novo começa em T0; grupo temático começa em maturidade 1. Cadastros
+  existentes mantêm seus níveis, sem inventar avaliações retroativas.
+- Toda mudança de nível exige justificativa e guarda data, autor e, nas
+  promoções, cópia das duas avaliações. O histórico fica na própria unidade.
+- **Organização → Liga → Fechar o mês** recebe seguidores nas quatro redes,
+  engajamento, ritmo e ações. O histórico permite abrir um mês específico para
+  correção. A origem (manual ou planilha) e quem registrou ficam no fechamento.
+- **Importar fechamentos da equipe** tem modelo CSV para baixar com os ids dos
+  porta-vozes ativos. Preencha todos os números, incluindo zeros, e envie o CSV
+  ou cole o texto. A prévia mostra valores e quais meses serão corrigidos;
+  apenas confirmar grava. Qualquer linha inválida bloqueia o lote inteiro.
+  Limites: 500 registros, 1 MB, prévia válida por 30 minutos. Uma alteração do
+  mesmo fechamento depois da prévia exige gerar outra prévia. Não há coleta
+  automática das redes: faltam as credenciais das APIs oficiais.
+- A **revisão da Liga** considera trimestres de calendário encerrados, em
+  janeiro, abril, julho e outubro. Crescimento líquido compara o último mês
+  com o mês anterior ao começo do trimestre; ações são as ações locais
+  informadas nos três fechamentos. Dois trimestres consecutivos sem crescimento
+  ou sem ação local retiram um nível. Um par não aplica a punição de novo a cada
+  abertura da tela. Um mês parado sozinho não apaga o nível conquistado.
+- Fechamento ausente gera pendência e interrompe a sequência de reprovações;
+  nunca equivale a zero. A correção dos dados recalcula a revisão. Para recuperar
+  um nível retirado, é preciso um trimestre saudável e voltar a cumprir os
+  critérios de subida; recupera-se no máximo um nível por revisão. O histórico
+  mensal e os motivos de cada trimestre ficam junto ao fechamento.
+
 ## Mobile first do painel
 
 O painel precisa funcionar em celular, e várias das rotinas diárias acontecem em

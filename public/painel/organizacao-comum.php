@@ -34,6 +34,7 @@ declare(strict_types=1);
  */
 
 require_once __DIR__ . '/sessao.php';
+require_once __DIR__ . '/organizacao-crescimento.php';
 
 const ARQ_NUCLEOS = PASTA_DADOS . '/nucleos.php';
 const ARQ_TEMAS   = PASTA_DADOS . '/temas.php';
@@ -311,6 +312,8 @@ function normalizar_unidade_base(array $u): array
         'publicado'      => !empty($u['publicado']),
         'evidencia'      => limpar_texto($u['evidencia'] ?? '', 200),
         'entregas'       => $entregas,
+        'avaliacoes'     => normalizar_avaliacoes_de_ciclo($u['avaliacoes'] ?? []),
+        'historicoNiveis' => normalizar_historico_de_niveis($u['historicoNiveis'] ?? []),
         'encerradoEm'    => limpar_texto($u['encerradoEm'] ?? '', 40),
         'criadoEm'       => limpar_texto($u['criadoEm'] ?? '', 40),
         'criadoPor'      => limpar_texto($u['criadoPor'] ?? '', 60),
@@ -720,6 +723,7 @@ function normalizar_mes_liga($m): ?array
         'lives'   => max(0, min(50, (int) ($m['lives'] ?? 0))),
         'em'      => limpar_texto($m['em'] ?? '', 40),
         'por'     => limpar_texto($m['por'] ?? '', 60),
+        'origem'  => ($m['origem'] ?? '') === 'planilha' ? 'planilha' : 'manual',
     ];
 }
 
@@ -871,9 +875,10 @@ function formacao_concluida(array $pv): bool
  * seguidores. É a regra que impede o porta-voz "só de rede" (o risco do mapa de
  * riscos) de pular a formação e a rua.
  *
- * Devolve o nível e o que falta para o próximo, já em frases.
+ * Os critérios ficam separados da revisão trimestral para não tratar um mês
+ * sem crescimento como perda imediata do nível conquistado.
  */
-function nivel_liga(array $pv): array
+function criterios_da_liga(array $pv): array
 {
     $seg = seguidores_de($pv);
     $m = ultimo_mes($pv);
@@ -881,7 +886,7 @@ function nivel_liga(array $pv): array
     $sem = $m['semanasSeguidas'] ?? 0;
     $crescendo = meses_crescendo($pv);
 
-    $degraus = [
+    return [
         'D' => [
             [$pv['redesEm'] !== '', 'Estruturar Instagram, TikTok, YouTube e X (validado pela coordenação)'],
         ],
@@ -902,7 +907,12 @@ function nivel_liga(array $pv): array
             [$eng >= 2.0, 'Engajamento de 2% ou mais'],
         ],
     ];
+}
 
+/** O nível comprovado por este conjunto de fechamentos, sem revisão de manutenção. */
+function nivel_liga_por_criterios(array $pv): array
+{
+    $degraus = criterios_da_liga($pv);
     $nivel = 'E';
     foreach ($degraus as $para => $itens) {
         if (array_product(array_map(fn ($i) => $i[0] ? 1 : 0, $itens)) === 1) {
@@ -1008,12 +1018,7 @@ function suspeita_de_compra(array $pv): bool
 /** "Dois trimestres seguidos sem crescimento líquido" — o sinal de revisão. */
 function liga_parada(array $pv): bool
 {
-    $meses = $pv['meses'];
-    if (count($meses) < 6) {
-        return false;
-    }
-    $seis = array_slice($meses, -6);
-    return seguidores_de($pv, $seis[5]) <= seguidores_de($pv, $seis[0]);
+    return revisao_trimestral_liga($pv)['rebaixamentos'] > 0;
 }
 
 /* =====================================================================

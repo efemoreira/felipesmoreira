@@ -107,15 +107,13 @@ function decisoes_do_mes(?int $agora = null): array
         array_map(fn ($x) => $x + ['_nome' => rotulo_da_unidade($x)], so_abertas(todas_as_unidades())),
     );
 
-    /* Pronta para subir: ativa, com substituto, e duas entregas em meses
-       diferentes — os "dois ciclos mensais seguidos" do critério de nível. */
+    /* A mesma regra da gravação: dois ciclos consecutivos com evidência. */
     $prontas = array_filter($unidades, function ($u) use ($agora) {
-        if (!unidade_ativa($u, $agora) || $u['substitutoId'] === '') {
+        if (!in_array(tipo_da_unidade($u), ['nucleo', 'grupo'], true)) {
             return false;
         }
-        $meses = array_unique(array_map(fn ($e) => substr($e['data'], 0, 7), $u['entregas']));
-        $teto = isset($u['nivel']) ? $u['nivel'] !== 'T4' : $u['maturidade'] < 4;
-        return count($meses) >= 2 && $teto;
+        $alvo = grau_da_unidade($u) + 1;
+        return $alvo <= 4 && faltas_para_promocao($u, $alvo, $agora) === [];
     });
     $paradas = array_filter($unidades, fn ($u) => !unidade_ativa($u, $agora));
     $semSubstituto = array_filter($unidades, fn ($u) => $u['substitutoId'] === '');

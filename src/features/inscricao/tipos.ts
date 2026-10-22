@@ -1,6 +1,6 @@
 /** Espelha a forma de src/data/funcoes.json — a lista canônica das funções. */
 
-export type GrupoFuncao = "comunicacao" | "eventos" | "outro";
+export type GrupoFuncao = keyof typeof import("@/data/funcoes.json").grupos;
 
 export interface Funcao {
   id: string;
@@ -48,6 +48,7 @@ export interface DadosInscricao {
   cidade: string;
   bairro: string;
   funcoes: string[];
+  participacao?: import("./perfil").PerfilParticipacao;
   /**
    * De onde veio — o `?de=` da URL. `?de=joao-silva` diz quem trouxe,
    * `?de=live-domingo` diz por qual canal. Vai vazio quando a pessoa chegou

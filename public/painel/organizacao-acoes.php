@@ -19,6 +19,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/organizacao-comum.php';
 require_once __DIR__ . '/acoes-comum.php';  // avisar(), ir_para(), exigir_token_de_acao()
+require_once __DIR__ . '/liga-importacao.php';
 
 function voltar_organizacao(string $aba = ''): never
 {
@@ -68,22 +69,43 @@ function tratar_acoes_de_organizacao(array $eu): void
     }
     exigir_token_de_acao();
 
-    match ((string) ($_POST['acao'] ?? '')) {
-        'nucleo-salvar'  => salvar_nucleo(),
-        'grupo-salvar'   => salvar_grupo(),
-        'cultura-salvar' => salvar_cultural(),
-        'entrega'        => registrar_entrega($eu),
-        'encerrar'       => encerrar_unidade(true),
-        'reabrir'        => encerrar_unidade(false),
-        'proxima'        => marcar_proxima(),
-        'pv-salvar'      => salvar_porta_voz(),
-        'pv-comprovar'   => comprovar_porta_voz(),
-        'pv-mes'         => fechar_mes_porta_voz($eu),
-        'pv-encerrar'    => encerrar_porta_voz(),
-        'material-salvar' => salvar_material(),
-        'material-arquivar' => arquivar_material(),
-        default          => null,
+    $acao = (string) ($_POST['acao'] ?? '');
+    $arquivo = match ($acao) {
+        'nucleo-salvar' => ARQ_NUCLEOS,
+        'grupo-salvar' => ARQ_TEMAS,
+        'pv-salvar', 'pv-comprovar', 'pv-mes', 'pv-encerrar' => ARQ_LIGA,
+        'avaliar-ciclo', 'entrega', 'encerrar', 'reabrir' => match ((string) ($_POST['tipo'] ?? '')) {
+            'nucleo' => ARQ_NUCLEOS, 'grupo' => ARQ_TEMAS, 'cultura' => ARQ_CULTURA, default => null,
+        },
+        default => null,
     };
+    // Relê dentro da trava: uma avaliação ou planilha não pode apagar outra atualização.
+    $executar = function () use ($acao, $eu): void {
+        match ($acao) {
+            'nucleo-salvar'  => salvar_nucleo(),
+            'grupo-salvar'   => salvar_grupo(),
+            'cultura-salvar' => salvar_cultural(),
+            'entrega'        => registrar_entrega($eu),
+            'encerrar'       => encerrar_unidade(true),
+            'reabrir'        => encerrar_unidade(false),
+            'proxima'        => marcar_proxima(),
+            'pv-salvar'      => salvar_porta_voz(),
+            'pv-comprovar'   => comprovar_porta_voz(),
+            'pv-mes'         => fechar_mes_porta_voz($eu),
+            'avaliar-ciclo'  => avaliar_ciclo_da_unidade(),
+            'pv-importar-previa' => preparar_importacao_da_liga(),
+            'pv-importar-gravar' => confirmar_importacao_da_liga($eu),
+            'pv-encerrar'    => encerrar_porta_voz(),
+            'material-salvar' => salvar_material(),
+            'material-arquivar' => arquivar_material(),
+            default          => null,
+        };
+    };
+    if ($arquivo !== null) {
+        com_trava($arquivo, $executar);
+    } else {
+        $executar();
+    }
 
     avisar('erro', 'Ação desconhecida.');
     voltar_organizacao();
@@ -145,6 +167,7 @@ function salvar_nucleo(): void
         voltar_organizacao();
     }
     conferir_substituto($novo, '');
+    $novo = conferir_mudanca_de_nivel($novo, $antigo, 'nucleo', '');
     $novo = carimbar_responsaveis($novo, $antigo);
 
     $lista = $antigo === null
@@ -223,6 +246,7 @@ function salvar_grupo(): void
         voltar_organizacao('temas');
     }
     conferir_substituto($novo, 'temas');
+    $novo = conferir_mudanca_de_nivel($novo, $antigo, 'grupo', 'temas');
     $novo = carimbar_responsaveis($novo, $antigo);
 
     $lista = $antigo === null
@@ -515,9 +539,23 @@ function fechar_mes_porta_voz(array $eu): void
         voltar_organizacao('liga');
     }
 
+    foreach (['engajamento' => 100, 'semanasSeguidas' => 520, 'acoes' => 50, 'modulos' => 50, 'lives' => 50] as $campo => $max) {
+        $valor = str_replace(',', '.', trim((string) ($_POST[$campo] ?? '0')));
+        $forma = $campo === 'engajamento' ? '/^\d+(\.\d+)?$/' : '/^\d+$/';
+        if (!preg_match($forma, $valor) || (float) $valor > $max) {
+            avisar('erro', 'Confira ' . $campo . ': informe um número entre 0 e ' . $max . '.');
+            voltar_organizacao('liga');
+        }
+    }
+
     $redes = [];
     foreach (array_keys(REDES_LIGA) as $r) {
-        $redes[$r] = (int) preg_replace('/\D/', '', (string) ($_POST['redes'][$r] ?? '0'));
+        $valor = trim((string) ($_POST['redes'][$r] ?? '0'));
+        if (!preg_match('/^\d+$/', $valor) || (float) $valor > 100000000) {
+            avisar('erro', 'Confira os seguidores de ' . REDES_LIGA[$r] . ': use um inteiro de 0 a 100000000.');
+            voltar_organizacao('liga');
+        }
+        $redes[$r] = (int) $valor;
     }
 
     $achou = false;

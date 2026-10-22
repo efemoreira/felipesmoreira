@@ -1,4 +1,5 @@
 import { ApiError, apiFetch } from "./client";
+import type { PerfilParticipacao } from "@/features/inscricao/perfil";
 
 /**
  * A inscrição do /queroajudar (public/painel/api/inscricao.php).
@@ -22,6 +23,7 @@ export interface Inscricao {
   de: string;
   /** o núcleo (`nuc-…`), grupo (`grp-…`) ou tema (`tema:<chave>`) escolhido antes — ver features/inscricao/interesse.ts */
   interesse: string;
+  participacao: PerfilParticipacao;
   consentimento: true;
   /** o campo-armadilha: vazio em gente, preenchido por robô */
   site: string;

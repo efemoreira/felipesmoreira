@@ -13,6 +13,8 @@ declare(strict_types=1);
  * `sessao.php`, que inclui este arquivo depois de defini-los.
  */
 
+require_once __DIR__ . '/participacao-comum.php';
+
 /** Preenche os campos que faltam e descarta registro sem o mínimo. */
 /**
  * UMA pessoa, e não quatro.
@@ -109,6 +111,7 @@ function normalizar_pessoa($p): ?array
         'email'    => limpar_texto($p['email'] ?? '', 120),
         'cidade'   => cidade_valida($p['cidade'] ?? ''),
         'bairro'   => limpar_texto($p['bairro'] ?? '', 60),
+        'participacao' => normalizar_participacao($p['participacao'] ?? []),
 
         /* ---- o que ela faz no movimento (Olheiro, Design…) ---- */
         'funcoes' => array_values(array_filter(array_map(

@@ -180,11 +180,11 @@ function Convite() {
       }}
     >
       <h2 style={{ fontFamily: FONT_ALFA, fontSize: 22, lineHeight: 1.15, margin: "0 0 10px" }}>
-        Quer entrar?
+        Quer ajudar a construir?
       </h2>
       <p style={{ margin: "0 auto 18px", maxWidth: "46ch", ...TEXTO.corpoSolto }}>
-        Deixe seu contato. A coordenação conversa com você em até três dias, te convida para uma
-        atividade perto de você e combina uma primeira tarefa pequena.
+        Informe sua cidade, bairro e interesses. Estamos reunindo pessoas para planejar os primeiros
+        núcleos, grupos e atividades. A meta de acolhimento é de até 72 horas; os próximos passos serão combinados na conversa.
       </p>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 12, justifyContent: "center" }}>
         <BotaoEscuro href="/queroajudar">Quero participar</BotaoEscuro>

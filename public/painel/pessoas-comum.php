@@ -108,6 +108,14 @@ function juntar_pessoas(string $idManter, string $idSumir): bool
     /* As redes SOMAM, como as funções: um advogado que também é professor não
        deixa de ser nenhum dos dois porque a ficha duplicada foi juntada. */
     $manter['redes'] = array_values(array_unique(array_merge($manter['redes'], $sumir['redes'])));
+    foreach ($manter['participacao'] as $campo => $valor) {
+        $outro = $sumir['participacao'][$campo];
+        if (is_array($valor)) {
+            $manter['participacao'][$campo] = array_values(array_unique(array_merge($valor, $outro)));
+        } elseif ($valor === '') {
+            $manter['participacao'][$campo] = $outro;
+        }
+    }
 
     /* A conta e as capacidades vêm junto quando quem some é que as tinha. */
     if (!tem_conta($manter) && tem_conta($sumir)) {

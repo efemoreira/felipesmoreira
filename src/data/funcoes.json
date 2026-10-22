@@ -1,5 +1,5 @@
 {
-  "versao": "1",
+  "versao": "2026-10-organizacao",
   "grupos": {
     "comunicacao": {
       "nome": "Comunicação",
@@ -8,6 +8,22 @@
     "eventos": {
       "nome": "Eventos",
       "resumo": "Fazer os encontros acontecerem: escolher o lugar, chamar o povo, receber bem e registrar tudo."
+    },
+    "organizacao": {
+      "nome": "Organização e acolhimento",
+      "resumo": "Construir núcleos, aproximar pessoas e cuidar de quem chega."
+    },
+    "formacao": {
+      "nome": "Estudo e formação",
+      "resumo": "Pesquisar os problemas do Ceará, construir propostas e compartilhar conhecimento."
+    },
+    "cultura": {
+      "nome": "Cultura",
+      "resumo": "Criar, produzir e manter atividades culturais com continuidade."
+    },
+    "apoio": {
+      "nome": "Apoio à organização",
+      "resumo": "Cuidar de calendário, recursos, ferramentas e dados, junto da coordenação."
     },
     "outro": {
       "nome": "Ainda não sei",
@@ -86,7 +102,7 @@
       "grupo": "comunicacao",
       "icone": "star",
       "resumo": "Você cria as artes dos posts e dos eventos, com a identidade visual do movimento.",
-      "entrega": "Cards prontos para feed e stories, no padrão visual da campanha.",
+      "entrega": "Cards para o site, as redes e as atividades, na identidade visual do movimento.",
       "ritmo": "1 a 2 peças por dia, mais as artes de evento. Cerca de 1 hora por peça.",
       "detalhe": [
         "Receba o fato aprovado ou o roteiro pronto.",
@@ -384,6 +400,210 @@
         "fatos",
         "producao",
         "eventos"
+      ]
+    },
+    {
+      "id": "mobilizacao-local",
+      "nome": "Mobilização local",
+      "grupo": "organizacao",
+      "icone": "pin",
+      "resumo": "Você aproxima pessoas do bairro ou da cidade para começar uma articulação.",
+      "entrega": "Contatos interessados, escuta do lugar e uma primeira atividade combinada.",
+      "ritmo": "Combinado conforme sua disponibilidade e a rotina da equipe.",
+      "detalhe": [
+        "Converse com a coordenação sobre sua disponibilidade.",
+        "Combine uma primeira entrega pequena, com responsável e prazo.",
+        "Registre o resultado e avalie o próximo passo com a equipe."
+      ],
+      "areas": [
+        "aulas"
+      ]
+    },
+    {
+      "id": "articulacao-universitaria",
+      "nome": "Articulação universitária",
+      "grupo": "organizacao",
+      "icone": "book",
+      "resumo": "Você reúne quem estuda ou trabalha na mesma instituição, como a UNIFOR.",
+      "entrega": "Interessados por instituição e campus, com uma primeira conversa organizada.",
+      "ritmo": "Combinado conforme sua disponibilidade e a rotina da equipe.",
+      "detalhe": [
+        "Converse com a coordenação sobre sua disponibilidade.",
+        "Combine uma primeira entrega pequena, com responsável e prazo.",
+        "Registre o resultado e avalie o próximo passo com a equipe."
+      ],
+      "areas": [
+        "aulas"
+      ]
+    },
+    {
+      "id": "acolhimento",
+      "nome": "Acolhimento",
+      "grupo": "organizacao",
+      "icone": "heartHandshake",
+      "resumo": "Você conversa com quem chega e ajuda a encontrar uma forma de participar.",
+      "entrega": "Novas pessoas acolhidas e encaminhamentos acompanhados com a coordenação.",
+      "ritmo": "Combinado conforme sua disponibilidade e a rotina da equipe.",
+      "detalhe": [
+        "Converse com a coordenação sobre sua disponibilidade.",
+        "Combine uma primeira entrega pequena, com responsável e prazo.",
+        "Registre o resultado e avalie o próximo passo com a equipe."
+      ],
+      "areas": [
+        "aulas"
+      ]
+    },
+    {
+      "id": "pesquisa-tematica",
+      "nome": "Pesquisa temática",
+      "grupo": "formacao",
+      "icone": "search",
+      "resumo": "Você estuda problemas do Ceará e ajuda a construir diagnósticos e propostas.",
+      "entrega": "Uma pesquisa com fontes, diagnóstico ou proposta discutida com o grupo.",
+      "ritmo": "Combinado conforme sua disponibilidade e a rotina da equipe.",
+      "detalhe": [
+        "Converse com a coordenação sobre sua disponibilidade.",
+        "Combine uma primeira entrega pequena, com responsável e prazo.",
+        "Registre o resultado e avalie o próximo passo com a equipe."
+      ],
+      "areas": [
+        "aulas"
+      ]
+    },
+    {
+      "id": "facilitacao",
+      "nome": "Facilitação de estudos",
+      "grupo": "formacao",
+      "icone": "book",
+      "resumo": "Você prepara e conduz rodas de estudo e ajuda outras pessoas a aprender.",
+      "entrega": "Encontro de estudo preparado, realizado e avaliado com os participantes.",
+      "ritmo": "Combinado conforme sua disponibilidade e a rotina da equipe.",
+      "detalhe": [
+        "Converse com a coordenação sobre sua disponibilidade.",
+        "Combine uma primeira entrega pequena, com responsável e prazo.",
+        "Registre o resultado e avalie o próximo passo com a equipe."
+      ],
+      "areas": [
+        "aulas"
+      ]
+    },
+    {
+      "id": "criacao-cultural",
+      "nome": "Criação cultural",
+      "grupo": "cultura",
+      "icone": "star",
+      "resumo": "Você contribui com música, literatura, artes, audiovisual ou outras linguagens.",
+      "entrega": "Uma criação ou oficina cultural com resultado combinado.",
+      "ritmo": "Combinado conforme sua disponibilidade e a rotina da equipe.",
+      "detalhe": [
+        "Converse com a coordenação sobre sua disponibilidade.",
+        "Combine uma primeira entrega pequena, com responsável e prazo.",
+        "Registre o resultado e avalie o próximo passo com a equipe."
+      ],
+      "areas": [
+        "aulas"
+      ]
+    },
+    {
+      "id": "producao-cultural",
+      "nome": "Produção cultural",
+      "grupo": "cultura",
+      "icone": "users",
+      "resumo": "Você ajuda uma ideia cultural a virar atividade e programação recorrente.",
+      "entrega": "Atividade com equipe, programação, recursos e registro do resultado.",
+      "ritmo": "Combinado conforme sua disponibilidade e a rotina da equipe.",
+      "detalhe": [
+        "Converse com a coordenação sobre sua disponibilidade.",
+        "Combine uma primeira entrega pequena, com responsável e prazo.",
+        "Registre o resultado e avalie o próximo passo com a equipe."
+      ],
+      "areas": [
+        "aulas"
+      ]
+    },
+    {
+      "id": "secretaria",
+      "nome": "Secretaria e calendário",
+      "grupo": "apoio",
+      "icone": "clock",
+      "resumo": "Você organiza combinados, decisões, prazos e calendário da equipe.",
+      "entrega": "Agenda atualizada e decisões com responsáveis e prazos registrados.",
+      "ritmo": "Combinado conforme sua disponibilidade e a rotina da equipe.",
+      "detalhe": [
+        "Converse com a coordenação sobre sua disponibilidade.",
+        "Combine uma primeira entrega pequena, com responsável e prazo.",
+        "Registre o resultado e avalie o próximo passo com a equipe."
+      ],
+      "areas": [
+        "aulas"
+      ]
+    },
+    {
+      "id": "apoio-financeiro",
+      "nome": "Planejamento financeiro",
+      "grupo": "apoio",
+      "icone": "building",
+      "resumo": "Você ajuda a planejar custos e organizar a prestação de contas com a coordenação.",
+      "entrega": "Orçamento e registros conferidos com a pessoa responsável pelas finanças.",
+      "ritmo": "Combinado conforme sua disponibilidade e a rotina da equipe.",
+      "detalhe": [
+        "Converse com a coordenação sobre sua disponibilidade.",
+        "Combine uma primeira entrega pequena, com responsável e prazo.",
+        "Registre o resultado e avalie o próximo passo com a equipe."
+      ],
+      "areas": [
+        "aulas"
+      ]
+    },
+    {
+      "id": "tecnologia-dados",
+      "nome": "Tecnologia e dados",
+      "grupo": "apoio",
+      "icone": "dispositivo",
+      "resumo": "Você ajuda a manter ferramentas e transformar registros em informação útil.",
+      "entrega": "Uma melhoria de ferramenta ou de qualidade dos dados, com privacidade.",
+      "ritmo": "Combinado conforme sua disponibilidade e a rotina da equipe.",
+      "detalhe": [
+        "Converse com a coordenação sobre sua disponibilidade.",
+        "Combine uma primeira entrega pequena, com responsável e prazo.",
+        "Registre o resultado e avalie o próximo passo com a equipe."
+      ],
+      "areas": [
+        "aulas"
+      ]
+    },
+    {
+      "id": "porta-voz",
+      "nome": "Porta-voz em formação",
+      "grupo": "comunicacao",
+      "icone": "broadcast",
+      "resumo": "Você quer aprender a comunicar um tema nas redes e na rua.",
+      "entrega": "Uma rotina de formação, conteúdo e participação local combinada com a coordenação.",
+      "ritmo": "Combinado conforme sua disponibilidade e a rotina da equipe.",
+      "detalhe": [
+        "Converse com a coordenação sobre sua disponibilidade.",
+        "Combine uma primeira entrega pequena, com responsável e prazo.",
+        "Registre o resultado e avalie o próximo passo com a equipe."
+      ],
+      "areas": [
+        "aulas"
+      ]
+    },
+    {
+      "id": "comunidade-digital",
+      "nome": "Comunidade digital",
+      "grupo": "comunicacao",
+      "icone": "whatsapp",
+      "resumo": "Você acolhe conversas nas redes e convida interessados para atividades.",
+      "entrega": "Conversas respondidas e convites acompanhados, sem disparos em massa.",
+      "ritmo": "Combinado conforme sua disponibilidade e a rotina da equipe.",
+      "detalhe": [
+        "Converse com a coordenação sobre sua disponibilidade.",
+        "Combine uma primeira entrega pequena, com responsável e prazo.",
+        "Registre o resultado e avalie o próximo passo com a equipe."
+      ],
+      "areas": [
+        "aulas"
       ]
     }
   ]

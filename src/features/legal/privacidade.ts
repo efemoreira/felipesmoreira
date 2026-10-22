@@ -3,7 +3,7 @@ import type { Secao } from "./PaginaLegal";
 /** O texto de /privacy. Saiu da page em 12/09: conteúdo mora em features/. */
 export const titulo = "Política de Privacidade";
 export const resumo = "Em resumo: a gente só coleta o que você mesmo digita — no formulário “Quero ajudar” ou na lista de presença de um encontro —, usa isso só para organizar a militância, não compartilha com ninguém de fora, e apaga quando você pedir.";
-export const atualizadoEm = "19 de agosto de 2026";
+export const atualizadoEm = "21 de outubro de 2026";
 
 export const secoes: Secao[] = [
   {
@@ -23,7 +23,10 @@ export const secoes: Secao[] = [
         "WhatsApp — é por onde a coordenação entra em contato e envia seu acesso.",
         "Cidade e bairro — para montar os times por região.",
         "E-mail — opcional, só como segunda forma de contato.",
-        "As funções em que você quer ajudar — para saber onde você se encaixa.",
+        "Interesses de participação, temas, atividades culturais e contribuições desejadas — opcionais, para planejar as frentes do movimento.",
+        "Trabalho ou área de atuação, situação de trabalho e estudo, instituição de ensino, campus, cidade da instituição e curso ou vínculo — opcionais, para identificar pessoas próximas e planejar articulações profissionais e universitárias. Não pedimos o nome do empregador.",
+        "Habilidades, experiências, ideias, disponibilidade, períodos e preferência por participação presencial ou on-line — opcionais, para combinar uma contribuição que caiba na sua rotina.",
+        "Perfil ou canal que você queira informar e funções desejadas — opcionais. Esse cadastro não publica seu perfil nem te inclui automaticamente na Liga, num núcleo ou grupo.",
       ],
       "Na lista de presença dos encontros, quando você lê o QR da mesa de recepção ou passa seus dados para quem está recebendo:",
       [
@@ -49,7 +52,7 @@ export const secoes: Secao[] = [
       [
         "Entrar em contato sobre a sua participação.",
         "Enviar seu usuário e senha de acesso à área da militância.",
-        "Organizar os times por região e por função.",
+        "Mapear interessados por cidade, bairro, instituição, temas e disponibilidade, para construir núcleos, grupos, atividades e equipes. Os agrupamentos são privados e não significam estruturas já funcionando.",
         "Avisar sobre encontros, formações e atividades do movimento.",
         "Depois de um encontro, agradecer sua presença e te chamar para o próximo.",
       ],

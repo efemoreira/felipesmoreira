@@ -65,13 +65,7 @@ function CartaoNucleo({ n }: { n: Nucleo }) {
           </div>
         )}
       </dl>
-      {n.contato ? (
-        <BotaoEscuro href={n.contato} icone="whatsapp" externo>
-          Falar com o núcleo
-        </BotaoEscuro>
-      ) : (
-        <BotaoEscuro href={`/queroajudar?unidade=${n.id}`}>Quero entrar neste núcleo</BotaoEscuro>
-      )}
+      <BotaoEscuro href={`/queroajudar?unidade=${n.id}`}>Registrar interesse nesta articulação</BotaoEscuro>
     </article>
   );
 }
@@ -86,12 +80,13 @@ export default function Nucleos() {
       trilha="Núcleos"
       icone="pin"
       kicker="Núcleos"
-      titulo="A Missão no seu bairro"
+      titulo="A Missão onde você está"
+      acoes={[{ texto: "Ajudar a construir um núcleo", href: "/queroajudar?frente=territorio" }, { texto: "Conhecer o plano", href: "/plano" }]}
       intro={
         <p style={{ margin: 0 }}>
-          O núcleo é a militância onde você mora, estuda ou trabalha: um grupo do bairro, da cidade ou
-          da universidade, com alguém que responde por ele, encontros com ritmo certo e o registro do
-          que foi feito. É assim que o voto vira presença que dura entre uma eleição e outra.
+          Estamos reunindo pessoas por cidade, bairro e instituição de ensino para construir núcleos.
+          Cadastre onde você mora e, se estuda ou trabalha numa universidade, informe a instituição e o campus.
+          Missão UNIFOR, por exemplo, será uma articulação universitária, que pode colaborar com os grupos temáticos.
         </p>
       }
     >
@@ -102,7 +97,7 @@ export default function Nucleos() {
         />
       )}
 
-      <Secao titulo="Os núcleos que já funcionam" sub="Só o que a coordenação publicou. Sem nome de ninguém: o lugar, o ritmo e como chegar.">
+      <Secao titulo="Articulações publicadas" sub="São referências para a construção. A coordenação combina os próximos passos com os interessados; cadastro não significa núcleo ativo.">
         {estado.fase === "carregando" && <p style={{ ...TEXTO.corpo, margin: 0 }}>Carregando os núcleos…</p>}
         {estado.fase === "erro" && (
           <p style={{ ...TEXTO.corpo, margin: 0 }}>
@@ -112,8 +107,7 @@ export default function Nucleos() {
         )}
         {estado.fase === "pronto" && nucleos.length === 0 && (
           <p style={{ ...TEXTO.corpo, margin: 0 }}>
-            Os primeiros núcleos estão sendo abertos agora. Se você quer que o seu bairro seja um deles,
-            deixe seu contato: núcleo começa com uma pessoa que topa responder por ele.
+            Ainda estamos mapeando os interessados. Informe sua cidade, bairro e instituição no cadastro, mesmo que seu lugar ainda não apareça aqui. Você pode participar sem assumir uma coordenação.
           </p>
         )}
         {cidades.map((cidade) => (

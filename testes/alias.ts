@@ -24,7 +24,10 @@ const EXTENSOES = [".ts", ".tsx", "/index.ts", "/index.tsx", ".js", ""];
 
 const resolver: ResolveHookSync = (especificador, contexto, seguinte) => {
   if (!especificador.startsWith("@/")) {
-    return seguinte(especificador, contexto);
+    const resolvido = seguinte(especificador, contexto);
+    return resolvido.url.endsWith(".json")
+      ? { ...resolvido, format: "json", importAttributes: { type: "json" } }
+      : resolvido;
   }
   const base = path.join(SRC, especificador.slice(2));
   const achado = EXTENSOES.map((e) => base + e).find((c) => existsSync(c)) ?? base;

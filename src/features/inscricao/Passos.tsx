@@ -5,6 +5,7 @@ import { Icon, IconName } from "@/components/icons";
 import type { CampoTexto, Funcao, GrupoFuncao } from "./tipos";
 import { CartaoFuncao, Campo, CampoCidade, ROTULOS } from "./Campos";
 import { WHATSAPP_COORDENACAO, TELEFONE_COORDENACAO } from "@/lib/contato";
+import { PARTICIPACAO, nomesSelecionados, type PerfilParticipacao } from "./perfil";
 
 /**
  * OS TRÊS PASSOS de `/queroajudar`, um componente cada.
@@ -77,13 +78,12 @@ export const PassoDados: React.FC<{
 }> = ({ campos, erros, tocado, aoMudar, aoSair, refs }) => (
   <div className="in-campos">
     <p className="in-ajuda">
-      O <strong>WhatsApp</strong> é o mais importante: é por ele que a
-      coordenação manda seu acesso.
+      Cidade e bairro ajudam a reunir quem está perto e planejar os primeiros núcleos. O WhatsApp é para a coordenação conversar com você. Só estes dados e seu nome são obrigatórios.
     </p>
 
     <Campo
       campo="nome" valor={campos.nome} erro={tocado.nome ? erros.nome : ""}
-      dica="Como você é chamado no documento."
+      dica="Para a coordenação saber com quem está falando."
       autoComplete="name" inputMode="text"
       aoMudar={aoMudar} aoSair={aoSair} refs={refs}
     />
@@ -117,14 +117,19 @@ export const PassoDados: React.FC<{
 export const PassoConfirmar: React.FC<{
   campos: Record<CampoTexto, string>;
   escolhidas: Funcao[];
+  perfil: PerfilParticipacao;
   consentimento: boolean;
   aoConsentir: (v: boolean) => void;
   aoVoltarPara: (passo: number) => void;
   refConsentimento: React.RefObject<HTMLInputElement | null>;
-}> = ({ campos, escolhidas, consentimento, aoConsentir, aoVoltarPara, refConsentimento }) => (
+}> = ({ campos, escolhidas, perfil, consentimento, aoConsentir, aoVoltarPara, refConsentimento }) => (
   <div className="in-confirma">
     <div className="in-resumo">
-      <h3 className="in-resumo-titulo">Você escolheu ajudar em</h3>
+      <h3 className="in-resumo-titulo">Seus interesses e contribuições</h3>
+      <dl className="in-resumo-dados">
+        {([['Participação', nomesSelecionados(PARTICIPACAO.frentes, perfil.frentes)], ['Temas', nomesSelecionados(PARTICIPACAO.temas, perfil.temas)], ['Cultura', nomesSelecionados(PARTICIPACAO.cultura, perfil.cultura)], ['Contribuições', nomesSelecionados(PARTICIPACAO.contribuicoes, perfil.contribuicoes)], ['Disponibilidade', (PARTICIPACAO.disponibilidades as Record<string, string>)[perfil.disponibilidade]], ['Modalidade', (PARTICIPACAO.modalidades as Record<string, string>)[perfil.modalidade]], ['Períodos', nomesSelecionados(PARTICIPACAO.periodos, perfil.periodos)], ['Trabalho e estudo', (PARTICIPACAO.situacoes as Record<string, string>)[perfil.situacao]], ['Área de atuação', perfil.profissao], ['Instituição', perfil.instituicao], ['Campus', perfil.campus], ['Cidade da instituição', perfil.cidadeInstituicao], ['Curso / vínculo', perfil.curso], ['Habilidades', perfil.habilidades], ['Ideia', perfil.ideia], ['Perfil / canal', perfil.perfilPublico]] as [string, string | undefined][]).filter(([, valor]) => valor).map(([nome, valor]) => <div key={nome}><dt>{nome}</dt><dd>{valor}</dd></div>)}
+      </dl>
+      {perfil.frentes.length === 0 && <p>Você prefere conversar com a coordenação antes de escolher. Tudo bem.</p>}
       <ul className="in-resumo-funcoes">
         {escolhidas.map((f) => (
           <li key={f.id}>
@@ -133,9 +138,10 @@ export const PassoConfirmar: React.FC<{
           </li>
         ))}
       </ul>
-      <button type="button" className="in-editar" onClick={() => aoVoltarPara(1)}>
-        Mudar as funções
+      <button type="button" className="in-editar" onClick={() => aoVoltarPara(2)}>
+        Corrigir interesses e contribuições
       </button>
+      <button type="button" className="in-editar" onClick={() => aoVoltarPara(1)}>Corrigir trabalho e estudo</button>
     </div>
 
     <div className="in-resumo">
@@ -150,7 +156,7 @@ export const PassoConfirmar: React.FC<{
             </div>
           ))}
       </dl>
-      <button type="button" className="in-editar" onClick={() => aoVoltarPara(2)}>
+      <button type="button" className="in-editar" onClick={() => aoVoltarPara(1)}>
         Corrigir meus dados
       </button>
     </div>
@@ -164,11 +170,11 @@ export const PassoConfirmar: React.FC<{
       <ul className="in-lgpd-lista">
         <li>
           <strong>O que a gente guarda:</strong> seu nome, WhatsApp, cidade,
-          bairro, e-mail (se você preencheu) e as funções que você escolheu.
+          bairro e, se você informar, e-mail, trabalho, instituição e curso, interesses, habilidades, disponibilidade, perfil público e funções desejadas.
         </li>
         <li>
           <strong>Pra quê:</strong> falar com você sobre a militância, te
-          mandar seu acesso e organizar os times por região e função.
+          planejar núcleos e grupos por região, instituição e interesses, combinar atividades e formas de contribuição. O cadastro não cria filiação partidária, conta nem participação automática numa unidade.
         </li>
         <li>
           <strong>Quem vê:</strong> só a coordenação da Missão Ceará.

@@ -30,7 +30,7 @@ function CartaoTema({ t, g }: { t: Tema; g?: Grupo }) {
         <div style={{ flex: 1, minWidth: 0 }}>
           <h3 style={{ fontFamily: FONT_ALFA, fontSize: 20, lineHeight: 1.15, margin: 0 }}>{t.nome}</h3>
           <p style={{ margin: "2px 0 0", ...TEXTO.nota, opacity: 0.8 }}>
-            {g ? `Grupo aberto · ${g.ritmo.toLowerCase()}` : "Ainda sem grupo — pode ser o seu"}
+            {g ? `Articulação publicada · ${g.ritmo.toLowerCase()}` : "Ainda sem grupo — estamos mapeando interessados"}
           </p>
         </div>
       </header>
@@ -68,13 +68,7 @@ function CartaoTema({ t, g }: { t: Tema; g?: Grupo }) {
           </div>
         )}
       </dl>
-      {g?.contato ? (
-        <BotaoEscuro href={g.contato} icone="whatsapp" externo>
-          Entrar no grupo
-        </BotaoEscuro>
-      ) : (
-        <BotaoEscuro href={g ? `/queroajudar?unidade=${g.id}` : `/queroajudar?tema=${t.chave}`}>{g ? "Quero entrar" : "Quero ajudar a abrir"}</BotaoEscuro>
-      )}
+      <BotaoEscuro href={g ? `/queroajudar?unidade=${g.id}` : `/queroajudar?tema=${t.chave}`}>Tenho interesse neste tema</BotaoEscuro>
     </article>
   );
 }
@@ -92,9 +86,10 @@ export default function Temas() {
       icone="book"
       kicker="Grupos temáticos"
       titulo="Um tema, um grupo"
+      acoes={[{ texto: "Registrar meus interesses", href: "/queroajudar?frente=temas" }, { texto: "Conhecer o plano", href: "/plano" }]}
       intro={
         <p style={{ margin: 0 }}>
-          Cada assunto tem um grupo só — segurança, educação, saúde, economia… — e cada grupo tem três
+          Estamos reunindo interessados para construir grupos de segurança, educação, saúde, economia e outros temas. O plano prevê um grupo por assunto, com três
           portas. Médico entra no de Saúde pela porta dos profissionais; quem quer organizar uma
           corrida no bairro entra pela do movimento. Ninguém precisa de um grupo à parte para a
           própria categoria.
@@ -122,7 +117,7 @@ export default function Temas() {
         sub={
           estado.fase === "erro"
             ? "Não consegui ver agora quais grupos já estão abertos. Os temas e as portas estão aqui."
-            : "Começamos com poucos grupos, bem cuidados. Tema sem grupo ainda é convite."
+            : "Declare seus interesses mesmo que o grupo ainda não exista. A coordenação usará os cadastros para planejar por onde começar."
         }
       >
         <div style={{ display: "grid", gap: 16, gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 340px), 1fr))" }}>

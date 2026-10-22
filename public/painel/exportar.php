@@ -22,6 +22,11 @@ $o = (string) ($_GET['o'] ?? '');
 $hoje = date('Y-m-d');
 
 switch ($o) {
+    case 'construcao':
+        require_once __DIR__ . '/construcao-comum.php';
+        $nome = "construcao-$hoje.csv";
+        $corpo = csv_de_construcao($_GET);
+        break;
     case 'pessoas':
         $nome = "pessoas-$hoje.csv";
         $corpo = csv_de_pessoas($_GET);

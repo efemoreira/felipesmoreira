@@ -126,6 +126,12 @@ function datas_da_escada(): array
        que cumpriu o ciclo dele não volta a ser Interessado. */
     $polo = fn ($u) => (($u['nivel'] ?? '') === 'T4') || (($u['maturidade'] ?? 0) === 4);
     foreach ($unidades as $u) {
+        // O nível alcançado não desaparece quando a unidade é reclassificada.
+        foreach ($u['historicoNiveis'] as $mudanca) {
+            if (in_array($mudanca['para'], ['T4', '4'], true)) {
+                marcar_degrau($datas, $mudanca['responsavelId'], 5, dia_do_carimbo($mudanca['em']));
+            }
+        }
         foreach (['responsavel', 'substituto'] as $papel) {
             $id = $u[$papel . 'Id'];
             $desde = dia_do_carimbo($u[$papel . 'Desde']) ?: dia_do_carimbo($u['criadoEm']);

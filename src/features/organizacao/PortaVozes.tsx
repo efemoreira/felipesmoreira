@@ -107,9 +107,10 @@ export default function PortaVozes() {
       icone="broadcast"
       kicker="Liga dos Porta-vozes"
       titulo="Quem fala pela Missão no Ceará"
+      acoes={[{ texto: "Quero me desenvolver como porta-voz", href: "/queroajudar?frente=liga" }, { texto: "Conhecer o plano", href: "/plano" }]}
       intro={
         <p style={{ margin: 0 }}>
-          Porta-voz da Missão atua nas redes e na rua ao mesmo tempo. Começa crescendo nas redes, que é o
+          A Liga está em construção: registre seu interesse no cadastro, mesmo que esteja começando do zero. Porta-voz da Missão atua nas redes e na rua ao mesmo tempo. Começa crescendo nas redes, que é o
           caminho mais rápido, mas só chega ao topo quem também estuda, conclui a formação de militância
           e lidera ações reais no seu bairro, cidade ou tema.
         </p>

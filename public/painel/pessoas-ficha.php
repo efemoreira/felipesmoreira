@@ -383,6 +383,8 @@ function tela_da_ficha(array $aberta, ?array $editando, ?string $erro, ?string $
         <div><dt>E-mail</dt><dd><?= $aberta['email'] !== '' ? h($aberta['email']) : '—' ?></dd></div>
       </dl>
 
+      <?php require_once __DIR__ . '/participacao-tela.php'; ficha_de_participacao($aberta, true); ?>
+
       <p style="margin:0 0 6px"><strong>Faz:</strong>
         <?php if ($aberta['funcoes'] === []): ?><span class="dica">nenhuma função ainda</span><?php endif; ?>
         <?php foreach ($aberta['funcoes'] as $f): ?>

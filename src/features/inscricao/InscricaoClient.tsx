@@ -1,440 +1,153 @@
 "use client";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { PaginaDoSite } from "@/components/site/PaginaDoSite";
-import { obterOrganizacao } from "@/lib/api/organizacao";
-import { temaPorChave } from "@/features/organizacao/catalogo";
-import { interesseDaUrl } from "./interesse";
 import { Icon } from "@/components/icons";
 import catalogo from "@/data/funcoes.json";
 import { enviarInscricao } from "@/lib/api/inscricao";
 import { sinal } from "@/lib/api/sinal";
-import type { CampoTexto, CatalogoFuncoes, Funcao, GrupoFuncao } from "./tipos";
-import {
-  mascararTelefone,
-  soDigitos,
-  validarBairro,
-  validarCidade,
-  validarEmail,
-  validarNome,
-  validarTelefone,
-  CHAVE_RASCUNHO,
-} from "./validacao";
+import { interesseDaUrl } from "./interesse";
+import type { CampoTexto, CatalogoFuncoes, GrupoFuncao } from "./tipos";
+import { mascararTelefone, soDigitos, validarBairro, validarCidade, validarEmail, validarNome, validarTelefone, CHAVE_RASCUNHO } from "./validacao";
 import { PassoFuncoes, PassoDados, PassoConfirmar } from "./Passos";
+import { Interesses, TrabalhoEstudo } from "./PerfilCampos";
+import { PARTICIPACAO, perfilVazio, restaurarPerfil } from "./perfil";
 import { Sucesso } from "./Sucesso";
 import { css } from "./estilos";
 
-/**
- * O FLUXO de `/queroajudar`: três passos, o estado deles e o envio.
- *
- * Só o fluxo. O que saiu daqui e por quê:
- *   Passos.tsx    um componente por passo, a mesma divisão da barra de progresso
- *   Campos.tsx    o cartão de função e os dois campos — desenho, sem regra
- *   Sucesso.tsx   a tela de confirmação, que é outra tela e não um quarto passo
- *   estilos.ts    as 330 linhas de CSS que ficavam depois do fim do arquivo
- *
- * O que fica é o que se lê quando alguma coisa está errada: a validação, o
- * rascunho que sobrevive ao F5, a origem de quem trouxe a pessoa e o POST.
- */
-
 const CATALOGO = catalogo as CatalogoFuncoes;
-const ORDEM_GRUPOS: GrupoFuncao[] = ["comunicacao", "eventos", "outro"];
-const TOTAL_PASSOS = 3;
-
-
-type Envio = "parado" | "enviando" | "erro" | "pronto";
-
-const VALIDADORES: Record<CampoTexto, (v: string) => string> = {
-  nome: validarNome,
-  telefone: validarTelefone,
-  email: validarEmail,
-  cidade: validarCidade,
-  bairro: validarBairro,
-};
+const ORDEM_GRUPOS = Object.keys(CATALOGO.grupos) as GrupoFuncao[];
+const VALIDADORES = { nome: validarNome, telefone: validarTelefone, email: validarEmail, cidade: validarCidade, bairro: validarBairro };
+const PASSOS = ["Você e seu lugar", "Seus interesses", "Confirmar"];
+const CAMPOS_VAZIOS: Record<CampoTexto, string> = { nome: "", telefone: "", email: "", cidade: "", bairro: "" };
 
 export default function InscricaoClient() {
   const [passo, setPasso] = useState(1);
+  const [campos, setCampos] = useState(CAMPOS_VAZIOS);
+  const [perfil, setPerfil] = useState(perfilVazio);
   const [funcoes, setFuncoes] = useState<string[]>([]);
   const [aberta, setAberta] = useState<string | null>(null);
-  const [campos, setCampos] = useState<Record<CampoTexto, string>>({
-    nome: "", telefone: "", email: "", cidade: "", bairro: "",
-  });
+  const [interesse, setInteresse] = useState("");
+  const [consentimento, setConsentimento] = useState(false);
   const [erros, setErros] = useState<Partial<Record<CampoTexto, string>>>({});
   const [tocado, setTocado] = useState<Partial<Record<CampoTexto, boolean>>>({});
-  const [consentimento, setConsentimento] = useState(false);
-  const [erroGeral, setErroGeral] = useState<string | null>(null);
-  const [envio, setEnvio] = useState<Envio>("parado");
-  const honeypot = useRef<HTMLInputElement>(null);
-
-  /**
-   * De onde a pessoa veio — o `?de=` do link que ela abriu.
-   *
-   * Fica num ref, e não no estado, porque nada na tela depende dele: é carga
-   * que viaja junto com o envio. Só é lido no navegador porque a página é
-   * pré-renderizada no build, quando não existe URL de visitante.
-   *
-   * O `sessionStorage` guarda para o caso de recarregar no meio dos três
-   * passos: sem isso, um F5 no passo 2 apagaria o crédito de quem trouxe a
-   * pessoa. Fica na sessão da aba, não no domínio inteiro — some ao fechar.
-   */
+  const [erroGeral, setErroGeral] = useState("");
+  const [envio, setEnvio] = useState<"parado" | "enviando" | "pronto">("parado");
+  const [rascunhoLido, setRascunhoLido] = useState(false);
   const origem = useRef("");
-  /* O núcleo ou tema escolhido em /nucleos ou /temas, e o nome dele para a
-     faixa "Você quer entrar em…". O nome do tema sai do catálogo; o do núcleo,
-     da API pública (o id sozinho não diz nada a quem lê). */
-  const [interesse, setInteresse] = useState("");
-  const [nomeInteresse, setNomeInteresse] = useState("");
+  const honeypot = useRef<HTMLInputElement>(null);
+  const tituloRef = useRef<HTMLHeadingElement>(null);
+  const consentRef = useRef<HTMLInputElement>(null);
+  const refs = useRef<Partial<Record<CampoTexto, HTMLElement | null>>>({});
+  const listaFuncoesRef = useRef<HTMLDivElement>(null);
+  const emEnvio = useRef(false);
+  const primeiroRender = useRef(true);
+
   useEffect(() => {
     const busca = new URLSearchParams(window.location.search);
-
-    const quer = interesseDaUrl(busca);
-    if (quer) {
-      setInteresse(quer);
-      if (quer.startsWith("tema:")) {
-        setNomeInteresse(`o grupo de ${temaPorChave(quer.slice(5))?.nome ?? "um tema"}`);
-      } else {
-        obterOrganizacao()
-          .then((o) => {
-            const n = o.nucleos.find((x) => x.id === quer);
-            const g = o.temas.find((x) => x.id === quer);
-            const c = o.cultura.find((x) => x.id === quer);
-            if (c) setNomeInteresse(`o grupo cultural ${c.nome}`);
-            else if (n) setNomeInteresse(`o núcleo ${n.nome}`);
-            else if (g) setNomeInteresse(`o grupo de ${temaPorChave(g.tema)?.nome ?? "um tema"}`);
-            else setInteresse("");
-          })
-          .catch(() => setNomeInteresse("o núcleo que você escolheu"));
-      }
-    }
-
-    /* `?funcao=olheiro` vem de /funcoes: quem leu a ficha inteira e decidiu não
-       deve ter que procurar a mesma função de novo numa lista de doze. Só entra
-       id que existe no catálogo — parâmetro é texto de fora. */
-    const pedida = busca.get("funcao");
-    if (pedida && CATALOGO.funcoes.some((f) => f.id === pedida)) {
-      setFuncoes([pedida]);
-    }
-
-    const daUrl = busca.get("de") ?? "";
-    if (daUrl) {
-      origem.current = daUrl;
-      try { sessionStorage.setItem("de", daUrl); } catch { /* aba anônima */ }
-    } else {
-      try { origem.current = sessionStorage.getItem("de") ?? ""; } catch { /* idem */ }
-    }
-
-    /* O que a pessoa já digitou também sobrevive ao F5, pela mesma razão que o
-       `de` sobrevive: recarregar no passo 2 apagava tudo e ela recomeçava do
-       zero — em pé, no celular, isso é a inscrição que não acontece.
-       `sessionStorage` e não `localStorage`: some ao fechar a aba, que é o
-       certo para dado de gente num celular que pode ser emprestado.
-
-       Vem também da ponte da presença (`/presenca` → "quer ajudar?"), que
-       grava a mesma chave para a pessoa não redigitar o que acabou de dizer
-       na porta do encontro. */
+    const referencia = interesseDaUrl(busca);
+    const frente = busca.get("frente") ?? "";
     try {
-      const guardado = sessionStorage.getItem(CHAVE_RASCUNHO);
-      if (guardado) {
-        const d = JSON.parse(guardado) as Partial<Record<CampoTexto, string>>;
-        setCampos((c) => {
-          const novo = { ...c };
-          for (const k of Object.keys(c) as CampoTexto[]) {
-            if (typeof d[k] === "string") novo[k] = d[k] as string;
-          }
-          return novo;
-        });
+      const salvo = JSON.parse(sessionStorage.getItem(CHAVE_RASCUNHO) ?? "null");
+      if (salvo && typeof salvo === "object") {
+        const restaurados = { ...CAMPOS_VAZIOS };
+        for (const k of Object.keys(restaurados) as CampoTexto[]) {
+          if (typeof salvo[k] === "string") restaurados[k] = salvo[k];
+        }
+        setCampos(restaurados);
+        setPerfil(restaurarPerfil(salvo.participacao));
+        if (Array.isArray(salvo.funcoes)) setFuncoes(CATALOGO.funcoes.filter(f => salvo.funcoes.includes(f.id)).map(f => f.id));
+        if (!referencia && typeof salvo.interesse === "string") setInteresse(interesseDaUrl(new URLSearchParams(salvo.interesse.startsWith("tema:") ? { tema: salvo.interesse.slice(5) } : { unidade: salvo.interesse })));
       }
-    } catch { /* json torto ou aba anônima: começa em branco, sem quebrar */ }
+      origem.current = busca.get("de") ?? sessionStorage.getItem("de") ?? "";
+      if (origem.current) sessionStorage.setItem("de", origem.current);
+    } catch { origem.current = busca.get("de") ?? ""; }
+    if (referencia) {
+      setInteresse(referencia);
+      setPerfil(p => ({ ...p,
+        frentes: [...new Set([...p.frentes, referencia.startsWith("nuc-") ? "territorio" : referencia.startsWith("cul-") ? "cultura" : "temas"])],
+        temas: referencia.startsWith("tema:") ? [...new Set([...p.temas, referencia.slice(5)])] : p.temas,
+      }));
+    }
+    if (Object.hasOwn(PARTICIPACAO.frentes, frente)) setPerfil(p => ({ ...p, frentes: [...new Set([...p.frentes, frente])] }));
+    const funcao = busca.get("funcao");
+    if (funcao && CATALOGO.funcoes.some(f => f.id === funcao)) setFuncoes([funcao]);
+    setRascunhoLido(true);
   }, []);
 
-  /* Grava a cada tecla. É barato (um JSON de cinco campos curtos) e é o único
-     jeito de não perder o que foi digitado desde o último passo. */
   useEffect(() => {
-    try { sessionStorage.setItem(CHAVE_RASCUNHO, JSON.stringify(campos)); } catch { /* idem */ }
-  }, [campos]);
+    if (!rascunhoLido || envio === "pronto") return;
+    try { sessionStorage.setItem(CHAVE_RASCUNHO, JSON.stringify({ ...campos, participacao: perfil, funcoes, interesse })); } catch { /* armazenamento indisponível */ }
+  }, [campos, perfil, funcoes, interesse, rascunhoLido, envio]);
 
-  const tituloRef = useRef<HTMLHeadingElement>(null);
-  /* HTMLElement, e não HTMLInputElement: a cidade é um <select>, e o "leve-me
-     ao primeiro erro" lá embaixo precisa alcançá-la pelo mesmo mapa. */
-  const refs = useRef<Partial<Record<CampoTexto, HTMLElement | null>>>({});
-  const consentRef = useRef<HTMLInputElement>(null);
-  const listaFuncoesRef = useRef<HTMLDivElement>(null);
-
-  /* Ao trocar de passo o foco vai para o título — sem isso o leitor de tela
-     continua lendo o passo anterior e quem usa teclado se perde. */
-  const primeiroRender = useRef(true);
   useEffect(() => {
-    if (primeiroRender.current) {
-      primeiroRender.current = false;
-      return;
-    }
+    if (primeiroRender.current) { primeiroRender.current = false; return; }
     tituloRef.current?.focus();
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [passo]);
 
-  const porGrupo = useMemo(() => {
-    const mapa = new Map<GrupoFuncao, Funcao[]>();
-    for (const g of ORDEM_GRUPOS) mapa.set(g, []);
-    for (const f of CATALOGO.funcoes) mapa.get(f.grupo)?.push(f);
-    return mapa;
-  }, []);
-
-  const escolhidas = useMemo(
-    () => CATALOGO.funcoes.filter((f) => funcoes.includes(f.id)),
-    [funcoes],
-  );
-
-  const alternar = (id: string) => {
-    setErroGeral(null);
-    setFuncoes((atual) =>
-      atual.includes(id) ? atual.filter((x) => x !== id) : [...atual, id],
-    );
-  };
-
+  const porGrupo = useMemo(() => new Map(ORDEM_GRUPOS.map(g => [g, CATALOGO.funcoes.filter(f => f.grupo === g)])), []);
+  const escolhidas = CATALOGO.funcoes.filter(f => funcoes.includes(f.id));
   const mudar = (campo: CampoTexto, valor: string) => {
     const v = campo === "telefone" ? mascararTelefone(valor) : valor;
-    setCampos((a) => ({ ...a, [campo]: v }));
-    // já mostrou erro neste campo? então revalida enquanto digita, pra
-    // mensagem sumir assim que a pessoa conserta
-    if (erros[campo]) {
-      setErros((a) => ({ ...a, [campo]: VALIDADORES[campo](v) }));
-    }
+    setCampos(c => ({ ...c, [campo]: v }));
+    if (erros[campo]) setErros(e => ({ ...e, [campo]: VALIDADORES[campo](v) }));
   };
-
   const aoSair = (campo: CampoTexto) => {
-    setTocado((a) => ({ ...a, [campo]: true }));
-    setErros((a) => ({ ...a, [campo]: VALIDADORES[campo](campos[campo]) }));
+    setTocado(t => ({ ...t, [campo]: true }));
+    setErros(e => ({ ...e, [campo]: VALIDADORES[campo](campos[campo]) }));
   };
-
-  const validarPasso2 = useCallback(() => {
-    const novos: Partial<Record<CampoTexto, string>> = {};
-    (Object.keys(VALIDADORES) as CampoTexto[]).forEach((c) => {
-      const e = VALIDADORES[c](campos[c]);
-      if (e) novos[c] = e;
-    });
+  const validarContato = () => {
+    const novos = Object.fromEntries((Object.keys(VALIDADORES) as CampoTexto[]).map(k => [k, VALIDADORES[k](campos[k])])) as Record<CampoTexto, string>;
     setErros(novos);
-    setTocado({ nome: true, telefone: true, email: true, cidade: true, bairro: true });
-    const primeiro = (Object.keys(VALIDADORES) as CampoTexto[]).find((c) => novos[c]);
-    if (primeiro) {
-      refs.current[primeiro]?.focus();
-      return false;
-    }
+    setTocado({ nome: true, telefone: true, cidade: true, bairro: true, email: true });
+    const primeiro = (Object.keys(novos) as CampoTexto[]).find(k => novos[k]);
+    if (primeiro) { setPasso(1); window.setTimeout(() => refs.current[primeiro]?.focus(), 0); return false; }
     return true;
-  }, [campos]);
-
+  };
   const avancar = () => {
-    setErroGeral(null);
-    if (passo === 1) {
-      /* Escolher é obrigatório, e "Onde precisar" (grupo "Ainda não sei") é a
-         escolha de quem ainda não sabe — por isso o recado do erro aponta pra
-         ela. Seguir em branco e seguir por "Ainda não sei" dão no mesmo pro
-         cadastro; a diferença é que a segunda é uma resposta, e resposta é o
-         que a coordenação usa pra puxar a conversa depois. */
-      if (funcoes.length === 0) {
-        setErroGeral(
-          'Escolha ao menos uma função. Se ainda não sabe, marque "Onde precisar", em "Ainda não sei" — a coordenação conversa com você depois.',
-        );
-        listaFuncoesRef.current?.focus();
-        return;
-      }
-      setPasso(2);
-      sinal("passo-2");
-      return;
-    }
-    if (passo === 2) {
-      if (!validarPasso2()) return;
-      setPasso(3);
-      sinal("passo-3");
-    }
+    setErroGeral("");
+    if (passo === 1 && !validarContato()) return;
+    setPasso(p => Math.min(3, p + 1));
+    sinal(passo === 1 ? "passo-2" : "passo-3");
   };
-
-  const voltar = () => {
-    setErroGeral(null);
-    setPasso((p) => Math.max(1, p - 1));
-  };
-
   const enviar = async () => {
-    if (!consentimento) {
-      setErroGeral("Para continuar, você precisa concordar com o uso dos seus dados.");
-      consentRef.current?.focus();
-      return;
-    }
+    if (emEnvio.current || !validarContato()) return;
+    if (!consentimento) { setErroGeral("Concorde com o uso dos seus dados para enviar o cadastro."); consentRef.current?.focus(); return; }
+    emEnvio.current = true;
     setEnvio("enviando");
-    setErroGeral(null);
-    const r = await enviarInscricao({
-      nome: campos.nome.trim().replace(/\s+/g, " "),
-      telefone: soDigitos(campos.telefone),
-      email: campos.email.trim(),
-      cidade: campos.cidade.trim(),
-      bairro: campos.bairro.trim(),
-      funcoes,
-      de: origem.current,
-      interesse,
-      consentimento: true,
-      site: honeypot.current?.value ?? "",
-    });
-    if (!r.ok) {
-      setEnvio("erro");
-      setErroGeral(
-        r.erro || "Não deu para enviar agora. Confira sua internet e tente de novo — o que você preencheu está guardado.",
-      );
-      return;
-    }
-    /* Inscrição feita: o rascunho não tem mais razão de existir, e deixá-lo
-       faria a próxima pessoa a usar o mesmo celular abrir o formulário com os
-       dados de quem veio antes. */
-    try { sessionStorage.removeItem(CHAVE_RASCUNHO); } catch { /* aba anônima */ }
+    setErroGeral("");
+    const r = await enviarInscricao({ ...campos, nome: campos.nome.trim().replace(/\s+/g, " "), telefone: soDigitos(campos.telefone),
+      funcoes, interesse, participacao: perfil, de: origem.current, consentimento: true, site: honeypot.current?.value ?? "" });
+    emEnvio.current = false;
+    if (!r.ok) { setEnvio("parado"); setErroGeral(r.erro || "Não foi possível enviar agora. Seus dados continuam nesta aba; confira a conexão e tente novamente."); return; }
     setEnvio("pronto");
+    try { sessionStorage.removeItem(CHAVE_RASCUNHO); } catch { /* armazenamento indisponível */ }
     sinal("enviou-inscricao");
   };
 
-  if (envio === "pronto") {
-    return (
-      <PaginaDoSite fundo="livre">
-        <Sucesso nome={campos.nome} cidade={campos.cidade} escolhidas={escolhidas} />
-      </PaginaDoSite>
-    );
-  }
-
-  return (
-    <PaginaDoSite fundo="livre">
-    <div className="in-fundo">
-      <div className="in-main">
-
-        <header className="in-cabecalho">
-          <p className="in-chip">Missão Ceará</p>
-          <h1 className="in-titulo">Quero ajudar</h1>
-          {/* Uma frase, e não duas: quem chega por link de WhatsApp decide em
-              segundos se rola ou fecha, e a instrução ("marque uma") vale mais
-              aqui do que a tese ("o movimento é feito de gente com função") —
-              essa está inteira em /funcoes, que é a página escrita para ela. */}
-          <p className="in-linha">
-            Escolha por onde você quer começar. Dá pra marcar mais de uma, e dá
-            pra mudar depois.
-          </p>
-        </header>
-
-        {interesse && nomeInteresse && (
-          <div className="in-interesse" role="status">
-            <span>
-              Você quer entrar em <strong>{nomeInteresse}</strong>. A coordenação já te encaminha para lá.
-            </span>
-            <button type="button" className="in-editar" onClick={() => setInteresse("")}>
-              Não, só quero participar
-            </button>
-          </div>
-        )}
-
-        {/* progresso */}
-        <div className="in-progresso" aria-hidden="true">
-          {[1, 2, 3].map((n) => (
-            <span key={n} className={`in-passo-marca${n <= passo ? " ativo" : ""}`}>
-              <b>{n}</b>
-              <i>{n === 1 ? "Como ajudar" : n === 2 ? "Seus dados" : "Confirmar"}</i>
-            </span>
-          ))}
+  if (envio === "pronto") return <PaginaDoSite fundo="livre"><Sucesso nome={campos.nome} cidade={campos.cidade} perfil={perfil} /></PaginaDoSite>;
+  return <PaginaDoSite fundo="livre"><div className="in-fundo"><div className="in-main">
+    <header className="in-cabecalho"><p className="in-chip">Missão Ceará · em construção</p><h1 className="in-titulo">Vamos construir juntos</h1>
+      <p className="in-linha">Estamos reunindo pessoas para formar núcleos, grupos e atividades no Ceará. Conte onde você está e o que te interessa. Não precisa ter experiência nem escolher uma função agora.</p></header>
+    <div className="in-progresso" aria-hidden="true">{PASSOS.map((nome, i) => <span key={nome} className={`in-passo-marca${i < passo ? " ativo" : ""}`}><b>{i + 1}</b><i>{nome}</i></span>)}</div>
+    <p className="in-sr" aria-live="polite">Passo {passo} de 3: {PASSOS[passo - 1]}</p>
+    <h2 className="in-passo-titulo" ref={tituloRef} tabIndex={-1}>{PASSOS[passo - 1]}</h2>
+    {erroGeral && <p className="in-erro-geral" role="alert">{erroGeral}</p>}
+    <form onSubmit={e => { e.preventDefault(); if (passo < 3) avancar(); else void enviar(); }}>
+      <fieldset className="in-sem-borda" disabled={envio === "enviando"}>
+        {passo === 1 && <><PassoDados campos={campos} erros={erros} tocado={tocado} aoMudar={mudar} aoSair={aoSair} refs={refs} /><TrabalhoEstudo perfil={perfil} aoMudar={setPerfil} /></>}
+        {passo === 2 && <><Interesses perfil={perfil} aoMudar={setPerfil} />
+          {interesse && <p className="in-ajuda">Seu cadastro veio de uma página de núcleo ou grupo. Essa referência será levada à conversa com a coordenação; a participação será combinada conforme a estrutura for organizada. <button type="button" className="in-editar" onClick={() => setInteresse("")}>Retirar essa referência</button></p>}
+          <details className="in-detalhes"><summary>Já sabe uma função em que gostaria de ajudar? {funcoes.length > 0 ? `(${funcoes.length} selecionadas)` : "Opcional"}</summary>
+            <PassoFuncoes porGrupo={porGrupo} grupos={CATALOGO.grupos} ordem={ORDEM_GRUPOS} marcadas={funcoes} aberta={aberta}
+              aoAlternar={id => setFuncoes(f => f.includes(id) ? f.filter(k => k !== id) : [...f, id])} aoAbrir={setAberta} foco={listaFuncoesRef} />
+          </details></>}
+        {passo === 3 && <PassoConfirmar campos={campos} perfil={perfil} escolhidas={escolhidas} consentimento={consentimento} aoConsentir={setConsentimento} aoVoltarPara={setPasso} refConsentimento={consentRef} />}
+        <input ref={honeypot} type="text" name="site" className="in-armadilha" tabIndex={-1} autoComplete="off" aria-hidden="true" />
+        <div className="in-acoes">{passo > 1 && <button type="button" className="in-btn in-btn-fantasma" onClick={() => { setErroGeral(""); setPasso(p => p - 1); }}>Voltar</button>}
+          <button type="submit" className="in-btn in-btn-principal"><Icon name={passo === 3 ? "check" : "chevronRight"} size={18} />{envio === "enviando" ? "Enviando…" : passo === 3 ? "Enviar meu cadastro" : passo === 2 ? "Revisar meu cadastro" : "Continuar"}</button>
         </div>
-        <p className="in-sr" aria-live="polite">
-          Passo {passo} de {TOTAL_PASSOS}
-        </p>
-
-        <h2 className="in-passo-titulo" ref={tituloRef} tabIndex={-1}>
-          {passo === 1 && "Como você quer ajudar?"}
-          {passo === 2 && "Seus dados"}
-          {passo === 3 && "Confira e confirme"}
-        </h2>
-
-        {erroGeral && (
-          <p className="in-erro-geral" role="alert">
-            <Icon name="close" size={16} />
-            <span>{erroGeral}</span>
-          </p>
-        )}
-
-        {passo === 1 && (
-          <PassoFuncoes
-            porGrupo={porGrupo}
-            grupos={CATALOGO.grupos}
-            ordem={ORDEM_GRUPOS}
-            marcadas={funcoes}
-            aberta={aberta}
-            aoAlternar={alternar}
-            aoAbrir={setAberta}
-            foco={listaFuncoesRef}
-          />
-        )}
-
-        {passo === 2 && (
-          <PassoDados
-            campos={campos}
-            erros={erros}
-            tocado={tocado}
-            aoMudar={mudar}
-            aoSair={aoSair}
-            refs={refs}
-          />
-        )}
-
-        {passo === 3 && (
-          <PassoConfirmar
-            campos={campos}
-            escolhidas={escolhidas}
-            consentimento={consentimento}
-            aoConsentir={(v) => {
-              setConsentimento(v);
-              if (v) setErroGeral(null);
-            }}
-            aoVoltarPara={setPasso}
-            refConsentimento={consentRef}
-          />
-        )}
-
-        {/* honeypot: invisível pra gente, irresistível pra robô */}
-        <input
-          ref={honeypot}
-          type="text"
-          name="site"
-          className="in-armadilha"
-          tabIndex={-1}
-          autoComplete="off"
-          aria-hidden="true"
-        />
-
-        {/* ============ NAVEGAÇÃO ============ */}
-        <div className="in-acoes">
-          {passo > 1 && (
-            <button type="button" className="in-btn in-btn-fantasma" onClick={voltar} disabled={envio === "enviando"}>
-              <Icon name="arrowLeft" size={18} />
-              <span>Voltar</span>
-            </button>
-          )}
-          {passo < TOTAL_PASSOS ? (
-            <button type="button" className="in-btn in-btn-principal" onClick={avancar}>
-              <span>Continuar</span>
-              <Icon name="chevronRight" size={18} />
-            </button>
-          ) : (
-            <button
-              type="button"
-              className="in-btn in-btn-principal"
-              onClick={enviar}
-              disabled={envio === "enviando"}
-            >
-              <Icon name="whatsapp" size={18} />
-              <span>{envio === "enviando" ? "Enviando…" : "Enviar inscrição"}</span>
-            </button>
-          )}
-        </div>
-
-        {passo === 1 && funcoes.length > 0 && (
-          <p className="in-contagem" aria-live="polite">
-            {funcoes.length === 1 ? "1 função escolhida" : `${funcoes.length} funções escolhidas`}
-          </p>
-        )}
-      </div>
-
-      <style>{css}</style>
-    </div>
-    </PaginaDoSite>
-  );
+      </fieldset>
+    </form>
+  </div><style>{css}</style></div></PaginaDoSite>;
 }
-
-/* ===================== peças ===================== */

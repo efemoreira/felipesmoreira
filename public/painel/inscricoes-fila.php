@@ -139,7 +139,7 @@ function aba_da_fila(array $novas, string $buscaIn, callable $formatar, ?array $
             <?php /* O núcleo ou tema escolhido em /nucleos ou /temas. Aprovar já
                       põe a pessoa na unidade; a conversa começa por ali. */ ?>
             <div>
-              <dt>Quer entrar</dt>
+              <dt>Referência de interesse</dt>
               <dd><span class="selo selo-ok"><?= h(frase_do_interesse($i['interesse']) ?: 'num núcleo ou tema que não está mais aberto') ?></span></dd>
             </div>
           <?php endif; ?>
@@ -159,6 +159,7 @@ function aba_da_fila(array $novas, string $buscaIn, callable $formatar, ?array $
             </dd>
           </div>
         </dl>
+        <?php require_once __DIR__ . '/participacao-tela.php'; ficha_de_participacao($i); ?>
 
         <?php if ($encontro !== null && $i['telefone'] !== ''): ?>
           <?php

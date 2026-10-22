@@ -83,6 +83,10 @@ $origem   = normalizar_origem($bruto['de'] ?? '');
    contra o que existe e está no site — nunca gravado como veio. */
 require_once __DIR__ . '/../organizacao-comum.php';
 $interesse = interesse_valido($bruto['interesse'] ?? '');
+$participacao = normalizar_participacao($bruto['participacao'] ?? []);
+if (is_array($bruto['participacao'] ?? null)) {
+    $participacao['registradoEm'] = date('c');
+}
 
 $nome = preg_replace('/\s+/u', ' ', $nome) ?? $nome;
 
@@ -116,7 +120,7 @@ if ($ja !== null) {
        coordenação. Ela não vira uma segunda ficha — entra na fila a ficha que já
        existe, com o que ela acabou de dizer por cima. Antes isso criava uma
        inscrição paralela, e a mesma pessoa passava a existir duas vezes. */
-    $gravou = com_trava(ARQ_PESSOAS, function () use ($ja, $nome, $email, $cidade, $bairro, $funcoes, $origem, $interesse): bool {
+    $gravou = com_trava(ARQ_PESSOAS, function () use ($ja, $nome, $email, $cidade, $bairro, $funcoes, $origem, $interesse, $participacao, $bruto): bool {
         $pessoas = ler_pessoas(true);
         foreach ($pessoas as &$p) {
             if ($p['id'] !== $ja['id']) {
@@ -125,6 +129,9 @@ if ($ja !== null) {
             $p['nome']   = $nome;
             $p['status'] = 'pendente';
             $p['criadoEm'] = date('c');   // o relógio da fila começa agora
+            if (is_array($bruto['participacao'] ?? null)) {
+                $p['participacao'] = $participacao;
+            }
             foreach (['email' => $email, 'cidade' => $cidade, 'bairro' => $bairro] as $campo => $valor) {
                 if ($valor !== '') {
                     $p[$campo] = $valor;
@@ -157,7 +164,7 @@ if ($ja !== null) {
 /* Dentro da tranca, e conferindo o telefone DE NOVO lá dentro: o "já existe?"
    de cima foi respondido antes da fila, e um clique duplo no botão mandava dois
    POSTs que passavam os dois — duas fichas da mesma pessoa. */
-$gravou = com_trava(ARQ_PESSOAS, function () use ($nome, $telefone, $email, $cidade, $bairro, $funcoes, $origem, $interesse): bool {
+$gravou = com_trava(ARQ_PESSOAS, function () use ($nome, $telefone, $email, $cidade, $bairro, $funcoes, $origem, $interesse, $participacao): bool {
     $pessoas = ler_pessoas(true);
     foreach ($pessoas as $p) {
         if ($p['telefone'] === $telefone) {
@@ -178,6 +185,7 @@ $gravou = com_trava(ARQ_PESSOAS, function () use ($nome, $telefone, $email, $cid
         'funcoes'  => $funcoes,
         'origem'   => $origem,
         'interesse' => $interesse,
+        'participacao' => $participacao,
         'status'   => 'pendente',
         'criadoEm' => date('c'),
         'consentimentoEm'     => date('c'),

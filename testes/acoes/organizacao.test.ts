@@ -40,7 +40,7 @@ describe("organização: núcleos", () => {
 
     await painel.postar("organizacao", {
       acao: "nucleo-salvar", nome: "Benfica", cidade: "Fortaleza", bairro: "Benfica",
-      onda: "1", nivel: "T1", responsavelId: ADMIN, ritmo: "quinzenal",
+      onda: "1", nivel: "T0", responsavelId: ADMIN, ritmo: "quinzenal",
     });
     const [n] = painel.ler("nucleos");
     assert.equal(n.nome, "Benfica");

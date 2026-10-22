@@ -93,3 +93,20 @@ flowchart LR
 - `estadoDe()` (TS) e `estado_do_evento()` (PHP) têm de concordar.
 - `nome_de_arquivo()`/`apelido()` da Produção e do Estúdio têm de concordar.
 - `sem_acento()` no PHP e `normalize("NFD")` no JS são o par correto para slug e nome de arquivo.
+
+## Perfil para construção da organização
+
+`pessoa.participacao` guarda interesses declarados, trabalho e estudo,
+instituição/campus, temas, cultura, contribuições e disponibilidade. É
+normalizado por `participacao-comum.php`, com catálogo compartilhado em JSON.
+O registro é independente de `funcoes` (tarefas que a pessoa quer exercer),
+`unidades` (pertencimento efetivo), `redes` (rede profissional) e `capacidades`
+(acesso administrativo). Nenhum interesse cadastrado cria automaticamente
+núcleo, grupo, vínculo ou conta. O carimbo `registradoEm` é escrito pelo
+servidor, nunca aceito do visitante. Campos desconhecidos são descartados.
+
+A construção se lê em `/painel/leituras?aba=construcao`, incluindo a fila que
+ainda não foi aprovada. Os agrupamentos não contam pessoas como militantes
+ativos. Exportação, ficha e fila mantêm os dados privados; o dossiê inclui o
+perfil e a exclusão da pessoa também o elimina. A fusão de duplicatas soma
+seleções e preenche campos vazios, preservando os valores da ficha mantida.
