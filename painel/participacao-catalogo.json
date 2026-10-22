@@ -1,0 +1,107 @@
+{
+  "frentes": {
+    "territorio": "Ajudar a formar um núcleo no meu bairro, cidade ou universidade",
+    "temas": "Participar de um grupo sobre um tema",
+    "cultura": "Criar ou participar de atividades culturais",
+    "liga": "Me desenvolver como porta-voz",
+    "formacao": "Estudar e participar de formações",
+    "apoio": "Ajudar a equipe a organizar o movimento",
+    "conhecer": "Conhecer melhor, antes de decidir"
+  },
+  "temas": {
+    "seguranca": "Segurança pública",
+    "educacao": "Educação e juventude",
+    "saude": "Saúde e esporte",
+    "economia": "Economia e empreendedorismo",
+    "cidades": "Cidades e infraestrutura",
+    "instituicoes": "Instituições e direito",
+    "mulheres": "Mulheres e família",
+    "tecnologia": "Tecnologia e inovação",
+    "sertao": "Água, sertão e meio ambiente"
+  },
+  "cultura": {
+    "musica": "Música e expressão sonora",
+    "moda": "Moda, vestuário e design",
+    "danca": "Dança e movimento",
+    "jogos": "Jogos e cultura lúdica",
+    "esportes": "Esportes e lazer",
+    "artes": "Artes visuais e fotografia",
+    "teatro": "Teatro, performance e humor",
+    "cinema": "Cinema, audiovisual e animação",
+    "literatura": "Literatura, escrita e edição",
+    "digital": "Cultura digital",
+    "artesanato": "Artesanato e saberes tradicionais",
+    "popular": "Cultura popular e patrimônio vivo",
+    "gastronomia": "Gastronomia e cultura alimentar",
+    "arquitetura": "Arquitetura, urbanismo e paisagem"
+  },
+  "contribuicoes": {
+    "mobilizacao": "Mobilização e articulação local",
+    "acolhimento": "Acolhimento e acompanhamento de pessoas",
+    "pesquisa": "Pesquisa, diagnóstico e propostas",
+    "formacao": "Ensinar, facilitar encontros e organizar estudos",
+    "comunicacao": "Comunicação, redes e audiovisual",
+    "eventos": "Eventos e logística",
+    "cultura": "Criação e produção cultural",
+    "secretaria": "Secretaria, calendário e organização",
+    "financas": "Planejamento financeiro e prestação de contas",
+    "tecnologia": "Tecnologia e organização de dados"
+  },
+  "situacoes": {
+    "estudo": "Estudo",
+    "trabalho": "Trabalho",
+    "estudo-trabalho": "Estudo e trabalho",
+    "autonomo": "Sou autônomo ou empreendedor",
+    "buscando": "Estou buscando trabalho",
+    "aposentado": "Sou aposentado",
+    "outro": "Outra situação"
+  },
+  "disponibilidades": {
+    "a-combinar": "Ainda preciso combinar",
+    "pontual": "Ações pontuais, quando puder",
+    "1h": "Até 1 hora por semana",
+    "2-3h": "De 2 a 3 horas por semana",
+    "4-6h": "De 4 a 6 horas por semana",
+    "7h-mais": "7 horas ou mais por semana"
+  },
+  "periodos": {
+    "semana-dia": "Durante a semana, de dia",
+    "semana-noite": "Durante a semana, à noite",
+    "fim-semana": "Fins de semana"
+  },
+  "modalidades": {
+    "presencial": "Presencial",
+    "online": "On-line",
+    "ambas": "Presencial e on-line"
+  },
+  "instituicoes": {
+    "UNIFOR": [
+      "UNIFOR",
+      "Universidade de Fortaleza"
+    ],
+    "UFC": [
+      "UFC",
+      "Universidade Federal do Ceará"
+    ],
+    "UECE": [
+      "UECE",
+      "Universidade Estadual do Ceará"
+    ],
+    "IFCE": [
+      "IFCE",
+      "Instituto Federal do Ceará"
+    ],
+    "UVA": [
+      "UVA",
+      "Universidade Estadual Vale do Acaraú"
+    ],
+    "URCA": [
+      "URCA",
+      "Universidade Regional do Cariri"
+    ],
+    "UNILAB": [
+      "UNILAB",
+      "Universidade da Integração Internacional da Lusofonia Afro-Brasileira"
+    ]
+  }
+}

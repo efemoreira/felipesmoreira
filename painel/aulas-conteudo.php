@@ -56,6 +56,8 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/checklists.php';
 
+require_once __DIR__ . '/formacao-organizacao.php';
+
 const CURRICULO = [
 
 /* ============================ DIA 0 ============================ */
@@ -1197,6 +1199,7 @@ const CURRICULO = [
         ],
     ],
 
+    ...AULAS_ORGANIZACAO,
     ],
 ],
 

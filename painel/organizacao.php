@@ -16,6 +16,10 @@ require_once __DIR__ . '/organizacao-tela.php';
 
 exigir_area('organizacao');
 
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET' && ($_GET['modelo-liga'] ?? '') === '1') {
+    baixar_modelo_csv_da_liga();
+}
+
 tratar_acoes_de_organizacao(usuario_atual() ?? []);
 
 ['erro' => $erro, 'ok' => $ok] = recado_pendente();

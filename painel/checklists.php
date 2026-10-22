@@ -12,7 +12,10 @@ declare(strict_types=1);
  * Só define constante — incluir este arquivo não exige login nem imprime nada.
  */
 
+require_once __DIR__ . '/formacao-organizacao.php';
+
 const CHECKLISTS = [
+    ...CHECKLISTS_ORGANIZACAO,
 
     /* ---------- Comunicação: pronto quando ---------- */
 

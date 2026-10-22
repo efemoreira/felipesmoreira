@@ -20,7 +20,7 @@ require_once __DIR__ . '/limite-comum.php';    // o teto de envios dos endpoints
 const ARQ_FUNCOES    = __DIR__ . '/../funcoes.json';
 
 /** Versão do texto de consentimento aceito no formulário. */
-const VERSAO_CONSENTIMENTO = '1';
+const VERSAO_CONSENTIMENTO = '2';
 
 /** Teto por IP: segura enxurrada sem atrapalhar a família que se inscreve junta. */
 /* A mesa da recepção: uma fila inteira sai do mesmo Wi‑Fi do local, em minutos.
@@ -403,7 +403,7 @@ function aprovar_pessoa(array &$pessoas, string $id, string $login, array $caps,
         /* Escolheu um núcleo ou tema em /nucleos ou /temas: aprovada, ela já
            entra na unidade — a escolha não se perde entre o formulário e o
            primeiro encontro. Tema sem grupo aberto fica como interesse. */
-        if ($p['interesse'] !== '') {
+        if ($p['interesse'] !== '' && $p['participacao']['registradoEm'] === '') {
             require_once __DIR__ . '/organizacao-comum.php';
             $u = unidade_do_interesse($p['interesse']);
             if ($u !== null && !in_array($u['id'], $p['unidades'], true)) {

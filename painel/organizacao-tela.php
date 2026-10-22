@@ -23,6 +23,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/organizacao-comum.php';
 require_once __DIR__ . '/layout.php';
+require_once __DIR__ . '/liga-importacao-tela.php';
 
 /** Quem pode ser responsável, substituto ou porta-voz: gente que já entrou. */
 function pessoas_para_organizacao(): array
@@ -131,19 +132,26 @@ function menu_da_unidade(string $tipo, array $u, string $qsAba, string $nome): v
         menu_acoes([['texto' => 'Reabrir', 'acao' => 'reabrir', 'campos' => ['tipo' => $tipo, 'id' => $id]]]);
         return;
     }
-    menu_acoes([
+    $itens = [
         ['texto' => 'Marcar a próxima atividade', 'url' => '?' . $qsAba . 'proxima=' . $id, 'modal' => 'proxima-' . $id],
         ['texto' => 'Quem responde', 'url' => '?' . $qsAba . 'resp=' . $id, 'modal' => 'resp-' . $id],
         ['texto' => 'Quem participa e tarefas', 'url' => '/painel/minha-unidade.php?u=' . rawurlencode($id)],
         ['texto' => 'Ficha completa', 'url' => '?' . $qsAba . 'editar=' . $id, 'modal' => 'ficha-' . $id],
         ['texto' => 'Encerrar', 'acao' => 'encerrar', 'campos' => ['tipo' => $tipo, 'id' => $id],
          'confirmar' => 'Encerrar ' . $nome . '? Sai das contas e do site; o que entregou continua contado.', 'risco' => true],
-    ]);
+    ];
+    if (in_array($tipo, ['nucleo', 'grupo'], true)) {
+        array_splice($itens, 3, 0, [['texto' => 'Avaliar ciclo e crescimento', 'url' => '?' . $qsAba . 'ciclo=' . $id, 'modal' => 'ciclo-' . $id]]);
+    }
+    menu_acoes($itens);
 }
 
 /** Os formulários curtos que núcleo e grupo dividem: registrar, próxima, quem responde. */
 function modais_da_unidade(string $tipo, array $u, string $nome, array $gente): void
 {
+    if (in_array($tipo, ['nucleo', 'grupo'], true)) {
+        modal_de_crescimento($tipo, $u, $nome);
+    }
     $id = $u['id'];
     $p = substr(md5($id), 0, 6);
     $acaoSalvar = ['grupo' => 'grupo-salvar', 'cultura' => 'cultura-salvar', 'nucleo' => 'nucleo-salvar'][$tipo];
@@ -195,6 +203,47 @@ function modais_da_unidade(string $tipo, array $u, string $nome, array $gente): 
     select_pessoa("r$p-s", 'substitutoId', $u['substitutoId'], $gente);
     echo '</div>';
     form_fecha('Salvar');
+    fechar_modal();
+}
+
+function modal_de_crescimento(string $tipo, array $u, string $nome): void
+{
+    $p = 'c' . substr(md5($u['id']), 0, 6);
+    abrir_modal('ciclo-' . $u['id'], 'Crescimento · ' . $nome, ($_GET['ciclo'] ?? '') === $u['id']);
+    echo '<p class="dica">A promoção exige os dois últimos meses encerrados, com entrega e avaliação do critério pretendido em cada mês. A coordenação confirma a evidência; o painel confere os ciclos.</p>';
+    form_abre('avaliar-ciclo', $u['id'], ['tipo' => $tipo]);
+    $meses = meses_de_promocao();
+    campo("$p-mes", 'mes', 'Mês encerrado', $meses[1], ['tipo' => 'month', 'limite' => $meses[1], 'obrigatorio' => true]);
+    $catalogo = $tipo === 'grupo' ? MATURIDADE : NIVEIS_TERRITORIO;
+    $opcoes = [];
+    foreach ($catalogo as $nivel => $dados) {
+        $grau = $tipo === 'grupo' ? (int) $nivel : (int) substr($nivel, 1);
+        $opcoes[$grau] = $nivel . ' · ' . $dados['nome'] . ': ' . $dados['resumo'];
+    }
+    escolha("$p-nivel", 'nivelAvaliado', 'Critério cumprido neste mês', $opcoes, (string) min(4, grau_da_unidade($u) + 1));
+    campo("$p-evid", 'evidenciaCiclo', 'Evidência do critério (resultado, registro ou link)', '', ['max' => 500, 'obrigatorio' => true]);
+    form_fecha('Salvar avaliação do mês');
+    if (grau_da_unidade($u) < 4) {
+        $faltas = faltas_para_promocao($u, grau_da_unidade($u) + 1);
+        echo '<p class="dica">' . h($faltas === [] ? 'Pronto para avaliação de promoção. Atualize o nível na ficha completa.' : 'Para subir falta: ' . implode('; ', $faltas)) . '</p>';
+    }
+    echo '<h3>Avaliações registradas</h3><ul>';
+    foreach (array_reverse($u['avaliacoes']) as $a) {
+        echo '<li>' . h($a['mes'] . ' · nível ' . $a['nivel'] . ' · ' . $a['evidencia'] . ' · ' . $a['por']) . '</li>';
+    }
+    echo '</ul><h3>Mudanças de nível</h3><ul>';
+    foreach (array_reverse($u['historicoNiveis']) as $h) {
+        echo '<li>' . h($h['de'] . ' → ' . $h['para'] . ' · ' . $h['evidencia'] . ' · ' . $h['em'] . ' · ' . $h['por']);
+        if ($h['ciclos'] !== []) {
+            echo '<details><summary>Evidências na data da promoção</summary><ul>';
+            foreach ($h['ciclos'] as $a) {
+                echo '<li>' . h($a['mes'] . ' · nível ' . $a['nivel'] . ' · ' . $a['evidencia'] . ' · ' . $a['por']) . '</li>';
+            }
+            echo '</ul></details>';
+        }
+        echo '</li>';
+    }
+    echo '</ul>';
     fechar_modal();
 }
 
@@ -591,13 +640,17 @@ function aba_da_liga(array $liga, array $gente): void
                     <span class="selo selo-cinza">Fora da Liga<?= $pv['encerradoMotivo'] !== '' ? ': ' . h($pv['encerradoMotivo']) : '' ?></span>
                   <?php elseif (suspeita_de_compra($pv)): ?>
                     <span class="selo selo-off">Conferir: salto com engajamento baixo</span>
-                  <?php elseif (liga_parada($pv)): ?>
-                    <span class="selo selo-atencao">Dois trimestres sem crescer</span>
+                  <?php elseif ($nv['revisao']['rebaixamentos'] > 0): ?>
+                    <span class="selo selo-atencao">Rebaixamento na revisão trimestral</span>
                   <?php elseif ($pv['publicado']): ?>
                     <span class="selo selo-publicado">No site</span>
                   <?php endif; ?>
                 </td>
-                <td class="terco" data-rotulo="Nível"><strong><?= h($nv['nivel']) ?></strong> · <?= h(NIVEIS_LIGA[$nv['nivel']]['nome']) ?></td>
+                <td class="terco" data-rotulo="Nível"><strong><?= h($nv['nivel']) ?></strong> · <?= h(NIVEIS_LIGA[$nv['nivel']]['nome']) ?>
+                  <?php if ($nv['revisao']['pendentes'] !== []): ?>
+                    <span class="dica">Revisão pendente: faltam fechamentos. Veja o histórico.</span>
+                  <?php endif; ?>
+                </td>
                 <td class="terco" data-rotulo="Último mês">
                   <?php if ($m === null): ?>
                     <span class="dica">ainda não fechou</span>
@@ -626,6 +679,8 @@ function aba_da_liga(array $liga, array $gente): void
       </div>
     <?php endif; ?>
   </fieldset>
+
+  <?php tela_de_importacao_da_liga($liga); ?>
 
   <fieldset id="placar">
     <legend>Placar de <?= h($mes) ?></legend>
@@ -697,6 +752,7 @@ function menu_do_porta_voz(array $pv): array
         ? ['texto' => 'Registrar ação local', 'url' => '?aba=liga&acao-local=' . $id, 'modal' => 'acao-' . $id]
         : ['texto' => 'Desfazer: ação local', 'acao' => 'pv-comprovar', 'campos' => ['id' => $id, 'campo' => 'acaoEm', 'valor' => '0']];
     $itens[] = ['texto' => 'Ficha e perfis', 'url' => '?aba=liga&pv=' . $id, 'modal' => 'pv-' . $id];
+    $itens[] = ['texto' => 'Histórico e revisão trimestral', 'url' => '?aba=liga&fechar=' . $id, 'modal' => 'mes-' . $id];
     $itens[] = ['texto' => 'Tirar da Liga', 'acao' => 'pv-encerrar', 'campos' => ['id' => $id, 'motivo' => 'Saiu pela coordenação'],
                 'confirmar' => 'Tirar ' . $pv['nome'] . ' da Liga? Sai também do site.', 'risco' => true];
     return $itens;
@@ -744,24 +800,53 @@ function modal_de_mes(array $pv, string $mesPadrao): void
 {
     $p = 'm' . substr(md5($pv['id']), 0, 6);
     $ultimo = ultimo_mes($pv);
+    $editado = null;
+    if (($_GET['fechar'] ?? '') === $pv['id']) {
+        $mesEditar = mes_valido($_GET['mes-editar'] ?? '');
+        foreach ($pv['meses'] as $m) {
+            if ($m['mes'] === $mesEditar) {
+                $editado = $m;
+                $mesPadrao = $mesEditar;
+            }
+        }
+    }
     abrir_modal('mes-' . $pv['id'], 'Fechar o mês · ' . $pv['nome'], ($_GET['fechar'] ?? '') === $pv['id']);
+    echo '<p class="dica">Informe os números do painel de cada rede ou importe o CSV da equipe. Não há coleta automática das redes.</p>';
     form_abre('pv-mes', $pv['id']);
     campo("$p-mes", 'mes', 'Mês', $mesPadrao, ['tipo' => 'month', 'limite' => substr(hoje_ce(), 0, 7), 'obrigatorio' => true, 'dica' => 'fechar de novo corrige']);
     echo '<fieldset><legend>Seguidores no fim do mês</legend><div class="linha g2">';
     foreach (REDES_LIGA as $r => $rotulo) {
-        campo("$p-$r", "redes[$r]", $rotulo, (string) (int) ($ultimo['redes'][$r] ?? 0), ['tipo' => 'number']);
+        campo("$p-$r", "redes[$r]", $rotulo, (string) (int) ($editado['redes'][$r] ?? $ultimo['redes'][$r] ?? 0), ['tipo' => 'number', 'obrigatorio' => true]);
     }
     echo '</div></fieldset><fieldset><legend>Ritmo</legend><div class="linha g2">';
-    campo("$p-eng", 'engajamento', 'Engajamento médio (%)', '', ['max' => 6, 'marcador' => '3,4', 'dica' => 'interações ÷ seguidores, 30 dias']);
-    campo("$p-sem", 'semanasSeguidas', 'Semanas seguidas com 3 vídeos', (string) (int) ($ultimo['semanasSeguidas'] ?? 0), ['tipo' => 'number']);
+    campo("$p-eng", 'engajamento', 'Engajamento médio (%)', (string) ($editado['engajamento'] ?? ''), ['max' => 6, 'marcador' => '3,4', 'dica' => 'interações ÷ seguidores, 30 dias', 'obrigatorio' => true]);
+    campo("$p-sem", 'semanasSeguidas', 'Semanas seguidas com 3 vídeos', (string) (int) ($editado['semanasSeguidas'] ?? $ultimo['semanasSeguidas'] ?? 0), ['tipo' => 'number']);
     echo '</div>';
-    echo '<label class="check"><input type="checkbox" name="todasSemanas" value="1"> Todas as semanas deste mês com 3 vídeos</label>';
+    caixa('todasSemanas', !empty($editado['todasSemanas']), 'Todas as semanas deste mês com 3 vídeos');
     echo '</fieldset><details><summary class="dica">Ações do mês (para o placar)</summary><div class="linha g3">';
-    campo("$p-acoes", 'acoes', 'Ações locais', '0', ['tipo' => 'number']);
-    campo("$p-mod", 'modulos', 'Módulos de formação', '0', ['tipo' => 'number']);
-    campo("$p-lives", 'lives', 'Lives', '0', ['tipo' => 'number']);
+    campo("$p-acoes", 'acoes', 'Ações locais', (string) ($editado['acoes'] ?? 0), ['tipo' => 'number']);
+    campo("$p-mod", 'modulos', 'Módulos de formação', (string) ($editado['modulos'] ?? 0), ['tipo' => 'number']);
+    campo("$p-lives", 'lives', 'Lives', (string) ($editado['lives'] ?? 0), ['tipo' => 'number']);
     echo '</div></details>';
     form_fecha('Fechar o mês');
+    echo '<details><summary>Histórico mensal e revisão trimestral</summary><ul>';
+    foreach (array_reverse($pv['meses']) as $m) {
+        $redes = [];
+        foreach (REDES_LIGA as $r => $nome) {
+            $redes[] = $nome . ': ' . $m['redes'][$r];
+        }
+        echo '<li>' . h($m['mes'] . ' · ' . implode(', ', $redes) . ' · engajamento ' . $m['engajamento'] . '% · ações ' . $m['acoes']
+            . ' · ' . $m['origem'] . ' · ' . $m['por']) . ' · <a href="?aba=liga&amp;fechar=' . h($pv['id']) . '&amp;mes-editar=' . h($m['mes']) . '">Corrigir este mês</a></li>';
+    }
+    echo '</ul><p class="dica">Dois trimestres completos seguidos sem crescimento líquido ou sem ação local retiram um nível. Dados ausentes deixam a revisão pendente.</p><ul>';
+    $revisao = revisao_trimestral_liga($pv);
+    foreach ($revisao['trimestres'] as $t) {
+        echo '<li>' . h($t['trimestre'] . ': ' . ($t['motivos'] === [] ? 'crescimento e ação local comprovados' : implode(' e ', $t['motivos']))) . '</li>';
+    }
+    foreach ($revisao['pendentes'] as $pendente) {
+        echo '<li>' . h($pendente) . '</li>';
+    }
+    echo '</ul></details>';
     fechar_modal();
 }
 

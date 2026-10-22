@@ -47,6 +47,23 @@ function tratar_acoes_de_pessoa(): void
         $acao = (string) ($_POST['acao'] ?? '');
         $alvo = achar_pessoa(limpar_texto($_POST['id'] ?? '', 40));
 
+        if ($acao === 'participacao-salvar' && $alvo !== null) {
+            $ok = com_trava(ARQ_PESSOAS, function () use ($alvo): bool {
+                $pessoas = ler_pessoas(true);
+                foreach ($pessoas as &$p) {
+                    if ($p['id'] === $alvo['id']) {
+                        $perfil = normalizar_participacao($_POST['participacao'] ?? []);
+                        $perfil['registradoEm'] = $p['participacao']['registradoEm'] ?: date('c');
+                        $p['participacao'] = $perfil;
+                    }
+                }
+                unset($p);
+                return gravar_pessoas($pessoas);
+            });
+            avisar($ok ? 'ok' : 'erro', $ok ? 'Interesses e disponibilidade atualizados.' : 'Não consegui gravar os interesses.');
+            voltar('?p=' . rawurlencode($alvo['id']));
+        }
+
         /* ---------- onde ela atua: pôr ou tirar de núcleo, grupo ou grupo cultural ---------- */
         if ($acao === 'unidade-entrar' || $acao === 'unidade-sair') {
             require_once __DIR__ . '/organizacao-comum.php';
