@@ -58,7 +58,6 @@ if (passou_do_limite('plano-feedback', 4, 12)) {
 $nota = filter_var($dados['nota'] ?? null, FILTER_VALIDATE_INT);
 $opiniao = limpar_texto($dados['opiniao'] ?? '', 2000);
 $melhoria = limpar_texto($dados['melhoria'] ?? '', 2000);
-$nome = limpar_texto($dados['nome'] ?? '', 100);
 $parte = limpar_texto($dados['parte'] ?? '', 40);
 $partes = ['geral', 'diagnostico', 'novidades', 'estrutura', 'militancia', 'portavozes', 'cultura', 'territorio', 'calendario', 'desafio', 'indicadores', 'site', 'governanca', 'modelos'];
 if ($nota === false || $nota < 1 || $nota > 5 || mb_strlen($opiniao) < 10 || !in_array($parte, $partes, true)) {
@@ -72,7 +71,6 @@ $feedback = [
     'parte' => $parte,
     'opiniao' => $opiniao,
     'melhoria' => $melhoria,
-    'nome' => $nome,
 ];
 if (!guardar_feedback_plano($feedback)) {
     responder_feedback(500, 'Não foi possível salvar. Tente novamente.');

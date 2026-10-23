@@ -17,6 +17,7 @@ test("a avaliação pública fica salva e a coordenação consegue lê-la", asyn
   assert.equal(salvos.length, 1);
   assert.equal(salvos[0].nota, 4);
   assert.equal(salvos[0].melhoria, corpo.melhoria);
+  assert.equal(salvos[0].nome, undefined);
   const lista = await painel.postarJson("api/plano-feedback.php", { acao: "listar" });
   assert.equal(lista.status, 200);
   assert.equal(lista.json.feedbacks.length, 1);

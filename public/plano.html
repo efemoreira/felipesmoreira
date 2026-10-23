@@ -572,7 +572,7 @@ html{scroll-behavior:smooth}
 <aside class="feedback-box" aria-labelledby="feedback-title">
   <div class="eyebrow">Plano em construção</div>
   <h2 id="feedback-title">Avalie este plano</h2>
-  <p>Sua opinião será guardada para a equipe estudar as sugestões. Ela e seu nome, se informado, aparecerão para quem tiver este link. Qualquer leitor poderá apagar uma avaliação.</p>
+  <p>Sua opinião será guardada para a equipe estudar as sugestões e aparecerá para quem tiver este link. Qualquer leitor poderá apagar uma avaliação.</p>
   <form id="feedback-form">
     <label>Sobre qual parte?
       <select name="parte" required>
@@ -594,7 +594,6 @@ html{scroll-behavior:smooth}
     </div></fieldset>
     <label>Sua opinião *<textarea name="opiniao" minlength="10" maxlength="2000" required placeholder="O que você acha do plano?"></textarea></label>
     <label>O que pode melhorar? <textarea name="melhoria" maxlength="2000" placeholder="Deixe uma ideia ou proposta concreta."></textarea></label>
-    <label>Seu nome (opcional)<input name="nome" maxlength="100" autocomplete="name"></label>
     <input name="site" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px" value="">
     <button class="btn y" type="submit">Enviar avaliação</button>
     <p class="feedback-status" id="feedback-status" role="status" aria-live="polite"></p>
