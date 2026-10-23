@@ -27,6 +27,36 @@ require_once __DIR__ . '/leituras-atividade.php';
 require_once __DIR__ . '/leituras-comando.php';
 require_once __DIR__ . '/leituras-site.php';
 require_once __DIR__ . '/leituras-construcao.php';
+require_once __DIR__ . '/plano-feedback-comum.php';
+
+function aba_de_feedbacks_plano(): void
+{
+    if (!tem_capacidade('coordenacao')) {
+        return;
+    }
+    $feedbacks = array_reverse(ler_feedbacks_plano());
+    $partes = ['geral' => 'Plano inteiro', 'diagnostico' => 'Diagnóstico', 'novidades' => 'O que há de novo', 'estrutura' => 'Estrutura', 'militancia' => 'Militância', 'portavozes' => 'Porta-vozes', 'cultura' => 'Cultura e formação', 'territorio' => 'Território', 'calendario' => 'Calendário', 'desafio' => 'Desafio 90 dias', 'indicadores' => 'Indicadores', 'site' => 'Site', 'governanca' => 'Governança', 'modelos' => 'Modelos'];
+    ?>
+    <fieldset>
+      <legend>Avaliações do plano</legend>
+      <p class="dica"><?= count($feedbacks) ?> avaliação(ões) recebida(s). Leia as ideias antes de decidir se entram no plano.</p>
+      <?php if ($feedbacks === []): ?>
+        <p>Nenhuma avaliação recebida ainda.</p>
+      <?php else: ?>
+        <?php foreach ($feedbacks as $item): ?>
+          <article class="cartao" style="margin:12px 0;padding:16px;border:1px solid #ccc;border-radius:6px">
+            <h3><?= h($partes[$item['parte'] ?? ''] ?? 'Plano') ?> · <?= h($item['nota'] ?? '') ?>/5</h3>
+            <p class="dica"><?= h($item['nome'] ?: 'Pessoa anônima') ?> · <?= h(date('d/m/Y H:i', strtotime((string) ($item['criadoEm'] ?? 'now')))) ?></p>
+            <p style="white-space:pre-wrap"><?= h($item['opiniao'] ?? '') ?></p>
+            <?php if (($item['melhoria'] ?? '') !== ''): ?>
+              <p style="white-space:pre-wrap"><strong>O que pode melhorar:</strong> <?= h($item['melhoria']) ?></p>
+            <?php endif; ?>
+          </article>
+        <?php endforeach; ?>
+      <?php endif; ?>
+    </fieldset>
+    <?php
+}
 
 function tela_de_leituras(array $eu): void
 {
@@ -50,6 +80,7 @@ function tela_de_leituras(array $eu): void
     $aba = (string) ($_GET['aba'] ?? '');
     if (tem_capacidade('coordenacao')) {
         $abas = array_slice($abas, 0, 1, true) + ['construcao' => ['nome' => 'Construção']] + array_slice($abas, 1, null, true);
+        $abas = array_slice($abas, 0, 2, true) + ['plano' => ['nome' => 'Avaliações do plano', 'conta' => count(ler_feedbacks_plano())]] + array_slice($abas, 2, null, true);
     }
     if (!isset($abas[$aba])) {
         $aba = 'comando';
@@ -95,6 +126,8 @@ function tela_de_leituras(array $eu): void
       aba_de_comando();
   } elseif ($aba === 'construcao') {
       aba_de_construcao();
+  } elseif ($aba === 'plano') {
+      aba_de_feedbacks_plano();
   } elseif ($aba === 'site') {
       aba_do_site();
   } elseif ($aba === 'origem') {

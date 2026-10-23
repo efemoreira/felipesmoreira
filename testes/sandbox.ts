@@ -166,6 +166,7 @@ const DADOS = new Set([
   "decisoes",
   "biblioteca",
   "cultura",
+  "plano-feedback",
   "inscricoes-limite",
   "tentativas",
   "segredo",
