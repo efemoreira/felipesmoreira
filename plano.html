@@ -347,6 +347,26 @@ ol.principles li::marker{font-family:var(--f-mono);color:var(--accent-ink);font-
 .srcs{font-size:.82rem;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:12px}
 footer{padding-block:40px 60px;color:var(--muted);font-size:.86rem}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:var(--r);font-size:.9rem;z-index:50}
+.feedback-box{background:var(--surface);border:1px solid var(--line);border-top:5px solid var(--yellow);border-radius:var(--r);padding:18px;margin:20px;box-shadow:0 8px 28px #0001}
+.feedback-box h2{font-size:1.35rem;margin:6px 0 8px}
+.feedback-box p{font-size:.88rem;color:var(--muted);line-height:1.45}
+.feedback-box form{display:grid;gap:12px;margin-top:16px}
+.feedback-box label,.feedback-box fieldset{display:grid;gap:5px;font-size:.85rem;font-weight:650}
+.feedback-box input,.feedback-box select,.feedback-box textarea{width:100%;border:1px solid var(--line);border-radius:4px;background:var(--bg);color:var(--ink);padding:8px;font-size:.9rem}
+.feedback-box textarea{min-height:80px;resize:vertical}
+.feedback-box fieldset{border:0;padding:0;margin:0}
+.feedback-box legend{padding:0;margin-bottom:5px}
+.feedback-stars{display:flex;justify-content:space-between;gap:4px}
+.feedback-stars label{display:grid;place-items:center;gap:0;flex:1;cursor:pointer}
+.feedback-stars input{position:absolute;opacity:0;width:1px;height:1px}
+.feedback-stars span{display:grid;place-items:center;width:100%;min-height:40px;border:1px solid var(--line);border-radius:4px;color:var(--muted);font-size:1.35rem}
+.feedback-stars input:checked+span{background:var(--yellow);border-color:var(--yellow);color:#17150E}
+.feedback-stars input:focus-visible+span{outline:3px solid var(--yellow);outline-offset:2px}
+.feedback-box button{justify-content:center}
+.feedback-box .feedback-status{font-size:.85rem;min-height:1.4em}
+@media(min-width:1200px){body{padding-right:330px}.feedback-box{position:fixed;z-index:25;right:12px;top:14px;bottom:14px;width:300px;margin:0;overflow-y:auto}}
+@media(max-width:1199px){.feedback-box{max-width:680px;margin:24px auto}}
+@media(max-width:720px){.feedback-box{margin:16px 20px}}
 
 @media (max-width:900px){
   .hero-grid,.mapbox,.calc{grid-template-columns:1fr}
@@ -540,6 +560,38 @@ html{scroll-behavior:smooth}
     <a href="#modelos"><svg class="ic" aria-hidden="true"><use href="#i-file"/></svg>Modelos</a>
   </div>
 </nav>
+
+<aside class="feedback-box" aria-labelledby="feedback-title">
+  <div class="eyebrow">Plano em construção</div>
+  <h2 id="feedback-title">Avalie este plano</h2>
+  <p>Sua opinião será guardada para a equipe estudar as sugestões e decidir o que pode entrar no plano.</p>
+  <form id="feedback-form">
+    <label>Sobre qual parte?
+      <select name="parte" required>
+        <option value="geral">Plano inteiro</option>
+        <option value="diagnostico">Diagnóstico</option><option value="novidades">O que há de novo</option>
+        <option value="estrutura">Estrutura</option><option value="militancia">Militância</option>
+        <option value="portavozes">Porta-vozes</option><option value="cultura">Cultura e formação</option>
+        <option value="territorio">Território</option><option value="calendario">Calendário</option>
+        <option value="desafio">Desafio 90 dias</option><option value="indicadores">Indicadores</option>
+        <option value="site">Site</option><option value="governanca">Governança</option><option value="modelos">Modelos</option>
+      </select>
+    </label>
+    <fieldset><legend>Que nota você dá? *</legend><div class="feedback-stars">
+      <label><input type="radio" name="nota" value="1" required aria-label="1 de 5"><span aria-hidden="true">1</span></label>
+      <label><input type="radio" name="nota" value="2" aria-label="2 de 5"><span aria-hidden="true">2</span></label>
+      <label><input type="radio" name="nota" value="3" aria-label="3 de 5"><span aria-hidden="true">3</span></label>
+      <label><input type="radio" name="nota" value="4" aria-label="4 de 5"><span aria-hidden="true">4</span></label>
+      <label><input type="radio" name="nota" value="5" aria-label="5 de 5"><span aria-hidden="true">5</span></label>
+    </div></fieldset>
+    <label>Sua opinião *<textarea name="opiniao" minlength="10" maxlength="2000" required placeholder="O que você acha do plano?"></textarea></label>
+    <label>O que pode melhorar? <textarea name="melhoria" maxlength="2000" placeholder="Deixe uma ideia ou proposta concreta."></textarea></label>
+    <label>Seu nome (opcional)<input name="nome" maxlength="100" autocomplete="name"></label>
+    <input name="site" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px" value="">
+    <button class="btn y" type="submit">Enviar avaliação</button>
+    <p class="feedback-status" id="feedback-status" role="status" aria-live="polite"></p>
+  </form>
+</aside>
 
 <main>
 <!-- DIAGNÓSTICO -->
@@ -1052,6 +1104,21 @@ const fmt = n => n.toLocaleString('pt-BR');
 const fmt2 = n => n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 const esc = s => String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const I = (n,c='') => `<svg class="ic ${c}" aria-hidden="true"><use href="#i-${n}"/></svg>`;
+const feedbackForm=$('#feedback-form');
+feedbackForm.addEventListener('submit',async e=>{
+  e.preventDefault();
+  const botao=feedbackForm.querySelector('button[type=submit]');
+  const status=$('#feedback-status');
+  const dados=Object.fromEntries(new FormData(feedbackForm));
+  botao.disabled=true;status.textContent='Salvando sua avaliação…';
+  try{
+    const resposta=await fetch('/painel/api/plano-feedback.php',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(dados)});
+    const retorno=await resposta.json();
+    if(!resposta.ok)throw new Error(retorno.mensagem||'Não foi possível salvar.');
+    feedbackForm.reset();status.textContent=retorno.mensagem;
+  }catch(erro){status.textContent=erro.message||'Falha de conexão. Tente novamente.'}
+  finally{botao.disabled=false}
+});
 function toast(msg){const t=$('#toast');t.textContent=msg;t.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>t.hidden=true,2400)}
 async function copy(text){try{await navigator.clipboard.writeText(text);toast('Copiado')}catch(e){const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');toast('Copiado')}catch(_){toast('Selecione e copie manualmente')}ta.remove()}}
 
