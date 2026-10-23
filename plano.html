@@ -364,6 +364,14 @@ footer{padding-block:40px 60px;color:var(--muted);font-size:.86rem}
 .feedback-stars input:focus-visible+span{outline:3px solid var(--yellow);outline-offset:2px}
 .feedback-box button{justify-content:center}
 .feedback-box .feedback-status{font-size:.85rem;min-height:1.4em}
+.feedback-salvos{border-top:1px solid var(--line);margin-top:18px;padding-top:16px}
+.feedback-salvos h3{font-size:1.05rem;margin-bottom:5px}
+.feedback-salvos>p{margin-bottom:10px}
+.feedback-lista{display:grid;gap:10px}
+.feedback-item{border:1px solid var(--line);border-radius:var(--r);padding:11px;background:var(--bg);display:grid;gap:6px}
+.feedback-item .meta{font-size:.75rem;font-family:var(--f-mono);color:var(--muted)}
+.feedback-item p{white-space:pre-wrap;overflow-wrap:anywhere;color:var(--ink)}
+.feedback-item .btn{justify-self:start;padding:4px 9px;font-size:.8rem}
 @media(min-width:1200px){body{padding-right:330px}.feedback-box{position:fixed;z-index:25;right:12px;top:14px;bottom:14px;width:300px;margin:0;overflow-y:auto}}
 @media(max-width:1199px){.feedback-box{max-width:680px;margin:24px auto}}
 @media(max-width:720px){.feedback-box{margin:16px 20px}}
@@ -564,7 +572,7 @@ html{scroll-behavior:smooth}
 <aside class="feedback-box" aria-labelledby="feedback-title">
   <div class="eyebrow">Plano em construção</div>
   <h2 id="feedback-title">Avalie este plano</h2>
-  <p>Sua opinião será guardada para a equipe estudar as sugestões e decidir o que pode entrar no plano.</p>
+  <p>Sua opinião será guardada para a equipe estudar as sugestões. Ela e seu nome, se informado, aparecerão para quem tiver este link. Qualquer leitor poderá apagar uma avaliação.</p>
   <form id="feedback-form">
     <label>Sobre qual parte?
       <select name="parte" required>
@@ -591,6 +599,11 @@ html{scroll-behavior:smooth}
     <button class="btn y" type="submit">Enviar avaliação</button>
     <p class="feedback-status" id="feedback-status" role="status" aria-live="polite"></p>
   </form>
+  <div class="feedback-salvos" aria-labelledby="feedback-salvos-title">
+    <h3 id="feedback-salvos-title">Avaliações recebidas</h3>
+    <p>Leia as opiniões já salvas ou apague uma avaliação.</p>
+    <div class="feedback-lista" id="feedback-lista" aria-live="polite"></div>
+  </div>
 </aside>
 
 <main>
@@ -1105,6 +1118,45 @@ const fmt2 = n => n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFract
 const esc = s => String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const I = (n,c='') => `<svg class="ic ${c}" aria-hidden="true"><use href="#i-${n}"/></svg>`;
 const feedbackForm=$('#feedback-form');
+const feedbackLista=$('#feedback-lista');
+let feedbackSalvos=[];
+async function chamarFeedback(dados){
+  const resposta=await fetch('/painel/api/plano-feedback.php',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(dados)});
+  const retorno=await resposta.json();
+  if(!resposta.ok)throw Object.assign(new Error(retorno.mensagem||'Não foi possível concluir.'),{status:resposta.status});
+  return retorno;
+}
+function renderFeedbackSalvos(){
+  feedbackLista.replaceChildren();
+  if(!feedbackSalvos.length){const vazio=document.createElement('p');vazio.textContent='Nenhuma avaliação recebida ainda.';feedbackLista.append(vazio);return}
+  for(const item of feedbackSalvos){
+    const card=document.createElement('article');card.className='feedback-item';
+    const meta=document.createElement('div');meta.className='meta';
+    const parte=feedbackForm.querySelector(`select[name="parte"] option[value="${item.parte}"]`);
+    const data=new Date(item.criadoEm);
+    meta.textContent=`${parte?.textContent||'Plano'} · ${item.nota}/5 · ${Number.isNaN(data.getTime())?'':data.toLocaleDateString('pt-BR')}${item.nome?' · '+item.nome:''}`;
+    const opiniao=document.createElement('p');opiniao.textContent=item.opiniao;
+    card.append(meta,opiniao);
+    if(item.melhoria){const melhoria=document.createElement('p');melhoria.textContent=`Pode melhorar: ${item.melhoria}`;card.append(melhoria)}
+    const apagar=document.createElement('button');apagar.type='button';apagar.className='btn';apagar.textContent='Apagar avaliação';
+    apagar.addEventListener('click',async()=>{
+      if(!confirm('Apagar esta avaliação? Essa ação não pode ser desfeita.'))return;
+      apagar.disabled=true;
+      try{
+        await chamarFeedback({acao:'apagar',id:item.id});
+        feedbackSalvos=feedbackSalvos.filter(f=>f.id!==item.id);renderFeedbackSalvos();
+        $('#feedback-status').textContent='Avaliação apagada.';
+      }catch(erro){apagar.disabled=false;$('#feedback-status').textContent=erro.message||'Não foi possível apagar.'}
+    });
+    card.append(apagar);feedbackLista.append(card);
+  }
+}
+async function carregarFeedbackSalvos(){
+  feedbackLista.textContent='Carregando avaliações…';
+  try{const retorno=await chamarFeedback({acao:'listar'});feedbackSalvos=retorno.feedbacks;renderFeedbackSalvos()}
+  catch(erro){feedbackLista.textContent=erro.message||'Não foi possível carregar as avaliações.'}
+}
+carregarFeedbackSalvos();
 feedbackForm.addEventListener('submit',async e=>{
   e.preventDefault();
   const botao=feedbackForm.querySelector('button[type=submit]');
@@ -1112,9 +1164,8 @@ feedbackForm.addEventListener('submit',async e=>{
   const dados=Object.fromEntries(new FormData(feedbackForm));
   botao.disabled=true;status.textContent='Salvando sua avaliação…';
   try{
-    const resposta=await fetch('/painel/api/plano-feedback.php',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(dados)});
-    const retorno=await resposta.json();
-    if(!resposta.ok)throw new Error(retorno.mensagem||'Não foi possível salvar.');
+    const retorno=await chamarFeedback(dados);
+    feedbackSalvos.unshift(retorno.feedback);renderFeedbackSalvos();
     feedbackForm.reset();status.textContent=retorno.mensagem;
   }catch(erro){status.textContent=erro.message||'Falha de conexão. Tente novamente.'}
   finally{botao.disabled=false}
