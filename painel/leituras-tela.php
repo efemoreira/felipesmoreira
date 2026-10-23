@@ -46,7 +46,7 @@ function aba_de_feedbacks_plano(): void
         <?php foreach ($feedbacks as $item): ?>
           <article class="cartao" style="margin:12px 0;padding:16px;border:1px solid #ccc;border-radius:6px">
             <h3><?= h($partes[$item['parte'] ?? ''] ?? 'Plano') ?> · <?= h($item['nota'] ?? '') ?>/5</h3>
-            <p class="dica"><?= h($item['nome'] ?: 'Pessoa anônima') ?> · <?= h(date('d/m/Y H:i', strtotime((string) ($item['criadoEm'] ?? 'now')))) ?></p>
+            <p class="dica"><?= h(($item['nome'] ?? '') ?: 'Pessoa anônima') ?> · <?= h(date('d/m/Y H:i', strtotime((string) ($item['criadoEm'] ?? 'now')))) ?></p>
             <p style="white-space:pre-wrap"><?= h($item['opiniao'] ?? '') ?></p>
             <?php if (($item['melhoria'] ?? '') !== ''): ?>
               <p style="white-space:pre-wrap"><strong>O que pode melhorar:</strong> <?= h($item['melhoria']) ?></p>
