@@ -407,11 +407,19 @@ describe("um modelo para todos: a próxima atividade é um encontro", () => {
 describe("ritmo do calendário", () => {
   test("atividade do núcleo que passou há mais de 7 dias sem registro vira pendência; com registro, some", () => {
     const passou = new Date(Date.now() - 10 * 86_400_000).toISOString();
+    /* A reserva do mês seguinte é outra pendência depois do dia 25. Se ela
+       entrar nesta fixture, empurra a entrega para fora dos seis itens da
+       capa e faz o teste falhar conforme o dia do mês. */
+    const proximoMes = new Date(`${dia(0)}T12:00:00-03:00`);
+    proximoMes.setUTCMonth(proximoMes.getUTCMonth() + 1, 1);
     painel.gravar("nucleos", [{ id: "nuc-a1b2c3", nome: "Benfica", cidade: "Fortaleza", responsavelId: ADMIN }]);
     const eventos = painel.ler("eventos");
     painel.gravar("eventos", [...eventos, {
       id: "ev-nucleo", titulo: "Escuta na praça", familia: "militancia", inicio: passou, unidadeId: "nuc-a1b2c3",
       status: "realizado", token: "c".repeat(16), tokenConfirmacao: "d".repeat(16), criadoEm: passou,
+    }, {
+      id: "ev-nucleo-reservado", titulo: "Próxima escuta", familia: "militancia", inicio: proximoMes.toISOString(), unidadeId: "nuc-a1b2c3",
+      status: "confirmado", token: "e".repeat(16), tokenConfirmacao: "f".repeat(16), criadoEm: passou,
     }]);
     assert.match(painel.abrir("index").html, /Registrar o que o núcleo Benfica fez em “Escuta na praça”/);
 

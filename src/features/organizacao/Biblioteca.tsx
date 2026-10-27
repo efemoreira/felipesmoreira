@@ -1,5 +1,6 @@
 "use client";
 import React from "react";
+import Link from "next/link";
 import { Icon } from "@/components/icons";
 import { C, FONT_ALFA, TEXTO, bordaFina } from "@/lib/theme";
 import { sinal } from "@/lib/api/sinal";
@@ -57,6 +58,14 @@ export default function Biblioteca() {
         </p>
       }
     >
+      <Secao titulo="Arquivo Iceberg" sub="Uma linha do tempo dos Icebergs de Arthur do Val, dos documentários do MBL e da formação do Missão, com verbetes interligados e fontes para consultar.">
+        <article style={cartao}>
+          <p style={{ ...rotuloPequeno, margin: 0 }}>História · Pessoas · Documentos</p>
+          <h3 style={{ fontFamily: FONT_ALFA, fontSize: 22, lineHeight: 1.3, margin: 0 }}>Quatro vídeos, uma história para explorar</h3>
+          <p style={{ margin: 0, ...TEXTO.corpo }}>Consulte os acontecimentos, conheça os personagens e navegue por imagens com legendas, créditos e links para as fontes originais.</p>
+          <Link href="/iceberg" prefetch={false} style={{ display: "inline-flex", alignItems: "center", gap: 8, minHeight: 44, fontFamily: FONT_ALFA, fontSize: 16, color: C.ink }}><Icon name="book" size={18} />Explorar o Arquivo Iceberg</Link>
+        </article>
+      </Secao>
       {estado.fase === "carregando" && <p style={{ ...TEXTO.corpo }}>Carregando a Biblioteca…</p>}
       {estado.fase === "erro" && <p style={{ ...TEXTO.corpo }}>Não consegui carregar a Biblioteca agora. Tente de novo em instantes.</p>}
       {estado.fase === "pronto" && materiais.length === 0 && (

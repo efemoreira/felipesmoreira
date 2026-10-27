@@ -1,0 +1,328 @@
+[
+  {
+    "id": "lula",
+    "src": "/iceberg/imagens/lula.webp",
+    "alt": "Retrato oficial de Lula em 2007.",
+    "caption": "Retrato oficial de Lula em 2007.",
+    "credit": "Ricardo Stuckert / Presidência da República",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Lula_-_foto_oficial_-_05_jan_2007.jpg",
+    "license": "CC BY 3.0 br",
+    "licenseUrl": "https://creativecommons.org/licenses/by/3.0/br/deed.en",
+    "people": [
+      "Lula"
+    ],
+    "eventIds": [],
+    "kind": "portrait",
+    "date": "2007-01-05",
+    "modifications": "Redimensionada e convertida para WebP; recorte de exibição possível no layout.",
+    "width": 733,
+    "height": 1100,
+    "bytes": 72520
+  },
+  {
+    "id": "dilma",
+    "src": "/iceberg/imagens/dilma.webp",
+    "alt": "Retrato oficial de Dilma Rousseff no Palácio da Alvorada, em 2011.",
+    "caption": "Retrato oficial de Dilma Rousseff no Palácio da Alvorada, em 2011.",
+    "credit": "Roberto Stuckert Filho/Presidência da República",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Dilma_Rousseff_-_foto_oficial_2011-01-09.jpg",
+    "license": "Uso livre com atribuição — Presidência da República (licença vigente na publicação de 2011)",
+    "licenseUrl": "https://commons.wikimedia.org/wiki/File:Dilma_Rousseff_-_foto_oficial_2011-01-09.jpg#Summary",
+    "people": [
+      "Dilma Rousseff"
+    ],
+    "eventIds": [],
+    "kind": "portrait",
+    "date": "2011-01-09",
+    "modifications": "Redimensionada e convertida para WebP; recorte de exibição possível no layout.",
+    "width": 733,
+    "height": 1100,
+    "bytes": 83232
+  },
+  {
+    "id": "jair-bolsonaro",
+    "src": "/iceberg/imagens/jair-bolsonaro.webp",
+    "alt": "Jair Bolsonaro em cerimônia no Palácio do Planalto, em março de 2019.",
+    "caption": "Jair Bolsonaro em cerimônia no Palácio do Planalto, em março de 2019.",
+    "credit": "Alan Santos/Presidência da República",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Jair_Bolsonaro,_Presidente_da_Rep%C3%BAblica_Federativa_do_Brasil.jpg",
+    "license": "CC BY 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+    "people": [
+      "Jair Bolsonaro"
+    ],
+    "eventIds": [],
+    "kind": "portrait",
+    "date": "2019-03-08",
+    "modifications": "Redimensionada e convertida para WebP; recorte de exibição possível no layout.",
+    "width": 733,
+    "height": 1100,
+    "bytes": 40592
+  },
+  {
+    "id": "flavio-bolsonaro",
+    "src": "/iceberg/imagens/flavio-bolsonaro.webp",
+    "alt": "Retrato oficial de Flávio Bolsonaro no Senado, em 2019.",
+    "caption": "Retrato oficial de Flávio Bolsonaro no Senado, em 2019.",
+    "credit": "Agência Senado",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Foto_oficial_do_senador_Fl%C3%A1vio_Bolsonaro_(v._AgSen).jpg",
+    "license": "Uso livre com atribuição — Agência Senado",
+    "licenseUrl": "https://commons.wikimedia.org/wiki/File:Foto_oficial_do_senador_Fl%C3%A1vio_Bolsonaro_(v._AgSen).jpg#Licensing",
+    "people": [
+      "Flávio Bolsonaro"
+    ],
+    "eventIds": [],
+    "kind": "portrait",
+    "date": "2019-02-01",
+    "modifications": "Redimensionada e convertida para WebP; recorte de exibição possível no layout.",
+    "width": 900,
+    "height": 955,
+    "bytes": 92110
+  },
+  {
+    "id": "renan-santos",
+    "src": "/iceberg/imagens/renan-santos.webp",
+    "alt": "Renan Santos durante o Congresso do Partido Missão, em agosto de 2026.",
+    "caption": "Renan Santos durante o Congresso do Partido Missão, em agosto de 2026.",
+    "credit": "Leonardo Carraro",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Renan_Santos_-_Congresso_do_Partido_Miss%C3%A3o,_2026_(cropped).jpg",
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+    "people": [
+      "Renan Santos"
+    ],
+    "eventIds": [],
+    "kind": "portrait",
+    "date": "2026-08-01",
+    "modifications": "Redimensionada e convertida para WebP; recorte de exibição possível no layout.",
+    "width": 900,
+    "height": 816,
+    "bytes": 54024
+  },
+  {
+    "id": "kim-kataguiri",
+    "src": "/iceberg/imagens/kim-kataguiri.webp",
+    "alt": "Kim Kataguiri no Senado Federal, em agosto de 2016.",
+    "caption": "Kim Kataguiri no Senado Federal, em agosto de 2016.",
+    "credit": "Fabio Rodrigues Pozzebom/Agência Brasil",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Kim_Kataguiri.jpg",
+    "license": "CC BY 3.0 br",
+    "licenseUrl": "https://creativecommons.org/licenses/by/3.0/br/deed.en",
+    "people": [
+      "Kim Kataguiri"
+    ],
+    "eventIds": [],
+    "kind": "portrait",
+    "date": "2016-08-29",
+    "modifications": "Redimensionada e convertida para WebP; recorte de exibição possível no layout.",
+    "width": 696,
+    "height": 844,
+    "bytes": 115670
+  },
+  {
+    "id": "arthur-do-val",
+    "src": "/iceberg/imagens/arthur-do-val.webp",
+    "alt": "Arthur do Val em comissão geral na Câmara dos Deputados, em maio de 2019.",
+    "caption": "Arthur do Val em comissão geral na Câmara dos Deputados, em maio de 2019.",
+    "credit": "Michel Jesus/Câmara dos Deputados",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Arthur_do_Val_(cropped).jpg",
+    "license": "CC BY 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/3.0",
+    "people": [
+      "Arthur do Val"
+    ],
+    "eventIds": [],
+    "kind": "portrait",
+    "date": "2019-05-29",
+    "modifications": "Redimensionada e convertida para WebP; recorte de exibição possível no layout.",
+    "width": 762,
+    "height": 1100,
+    "bytes": 63842
+  },
+  {
+    "id": "guto-zacarias",
+    "src": "/iceberg/imagens/guto-zacarias.webp",
+    "alt": "Retrato de Guto Zacarias disponibilizado pela Alesp.",
+    "caption": "Retrato de Guto Zacarias disponibilizado pela Alesp.",
+    "credit": "Alesp (fotógrafo não identificado na página de origem)",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Guto-zacarias.jpg",
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+    "people": [
+      "Guto Zacarias"
+    ],
+    "eventIds": [],
+    "kind": "portrait",
+    "date": "2022-05-06",
+    "modifications": "Redimensionada e convertida para WebP; recorte de exibição possível no layout.",
+    "width": 825,
+    "height": 1100,
+    "bytes": 68024
+  },
+  {
+    "id": "manifestacao-paulista-2015",
+    "src": "/iceberg/imagens/manifestacao-paulista-2015.webp",
+    "alt": "Manifestantes na Avenida Paulista em 15 de março de 2015.",
+    "caption": "Manifestantes na Avenida Paulista em 15 de março de 2015.",
+    "credit": "Webysther",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Webysther_201503151720000048_-_Manifestantes_na_Paulista.jpg",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "people": [],
+    "eventIds": [
+      "pt-1-9",
+      "doc-golpe-06"
+    ],
+    "kind": "event",
+    "date": "2015-03-15",
+    "modifications": "Redimensionada e convertida para WebP; recorte de exibição possível no layout.",
+    "width": 1500,
+    "height": 958,
+    "bytes": 228132
+  },
+  {
+    "id": "votacao-impeachment-2016",
+    "src": "/iceberg/imagens/votacao-impeachment-2016.webp",
+    "alt": "Placar da votação na Câmara sobre a autorização do processo de impeachment, em 17 de abril de 2016.",
+    "caption": "Placar da votação na Câmara sobre a autorização do processo de impeachment, em 17 de abril de 2016.",
+    "credit": "Antonio Augusto / Câmara dos Deputados",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Placar_final_impeachment.jpg",
+    "license": "CC BY 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/3.0",
+    "people": [],
+    "eventIds": [
+      "pt-1-9",
+      "doc-golpe-22"
+    ],
+    "kind": "event",
+    "date": "2016-04-17",
+    "modifications": "Redimensionada e convertida para WebP; recorte de exibição possível no layout.",
+    "width": 1500,
+    "height": 982,
+    "bytes": 46084
+  },
+  {
+    "id": "congresso-2015",
+    "src": "/iceberg/imagens/congresso-2015.webp",
+    "alt": "Vista do Congresso Nacional em Brasília, em agosto de 2015. Imagem de contexto institucional.",
+    "caption": "Congresso Nacional em agosto de 2015. Vista de contexto institucional; esta fotografia não registra o acampamento narrado no documentário.",
+    "credit": "Alex98",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Congresso_Nacional_Bras%C3%ADlia_2015.jpg",
+    "license": "CC0",
+    "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "people": [],
+    "eventIds": [
+      "doc-golpe-13"
+    ],
+    "kind": "event",
+    "date": "2015-08-19",
+    "modifications": "Redimensionada e convertida para WebP; recorte de exibição possível no layout.",
+    "width": 1333,
+    "height": 1000,
+    "bytes": 94382
+  },
+  {
+    "id": "valdemar-costa-neto",
+    "src": "/iceberg/imagens/valdemar-costa-neto.webp",
+    "alt": "Valdemar Costa Neto em imagem da Câmara dos Deputados, em fevereiro de 2011.",
+    "caption": "Valdemar Costa Neto em imagem da Câmara dos Deputados, em fevereiro de 2011.",
+    "credit": "Saulo Cruz / Câmara dos Deputados",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Dep._Valdemar_Costa_Neto.jpg",
+    "license": "CC BY 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/3.0",
+    "people": [
+      "Valdemar Costa Neto"
+    ],
+    "eventIds": [],
+    "kind": "portrait",
+    "date": "2011-02-01",
+    "downloadedFrom": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5c/Dep._Valdemar_Costa_Neto.jpg/500px-Dep._Valdemar_Costa_Neto.jpg",
+    "modifications": "Redimensionada e convertida para WebP; recorte de exibição possível no layout.",
+    "width": 801,
+    "height": 1100,
+    "bytes": 87202
+  },
+  {
+    "id": "jose-dirceu",
+    "src": "/iceberg/imagens/jose-dirceu.webp",
+    "alt": "Retrato de José Dirceu disponibilizado pela Câmara dos Deputados.",
+    "caption": "Retrato de José Dirceu disponibilizado pela Câmara dos Deputados.",
+    "credit": "Câmara dos Deputados (fotógrafo não identificado na página de origem)",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Jos%C3%A9_Dirceu74782.jpgmaior.jpg",
+    "license": "CC BY 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/3.0",
+    "people": [
+      "José Dirceu"
+    ],
+    "eventIds": [],
+    "kind": "portrait",
+    "downloadedFrom": "https://upload.wikimedia.org/wikipedia/commons/a/a2/Jos%C3%A9_Dirceu74782.jpgmaior.jpg",
+    "modifications": "Redimensionada e convertida para WebP; recorte de exibição possível no layout.",
+    "width": 354,
+    "height": 472,
+    "bytes": 15026
+  },
+  {
+    "id": "sergio-moro",
+    "src": "/iceberg/imagens/sergio-moro.webp",
+    "alt": "Sergio Moro durante visita a centro de inteligência em Curitiba, em maio de 2019.",
+    "caption": "Sergio Moro durante visita a centro de inteligência em Curitiba, em maio de 2019.",
+    "credit": "Marcos Corrêa/PR",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:S%C3%A9rgio_Moro_em_10_de_maio_de_2019.jpg",
+    "license": "CC BY 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+    "people": [
+      "Sergio Moro"
+    ],
+    "eventIds": [],
+    "kind": "portrait",
+    "date": "2019-05-10",
+    "downloadedFrom": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8a/S%C3%A9rgio_Moro_em_10_de_maio_de_2019.jpg/500px-S%C3%A9rgio_Moro_em_10_de_maio_de_2019.jpg",
+    "modifications": "Redimensionada e convertida para WebP; recorte de exibição possível no layout.",
+    "width": 500,
+    "height": 750,
+    "bytes": 32398
+  },
+  {
+    "id": "rubinho-nunes",
+    "src": "/iceberg/imagens/rubinho-nunes.webp",
+    "alt": "Rubinho Nunes em plenário, em junho de 2022.",
+    "caption": "Rubinho Nunes em plenário, em junho de 2022.",
+    "credit": "BrunoWilker",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Rubinho_Nunes.jpg",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "people": [
+      "Rubinho Nunes"
+    ],
+    "eventIds": [],
+    "kind": "portrait",
+    "date": "2022-06-08",
+    "downloadedFrom": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f2/Rubinho_Nunes.jpg/500px-Rubinho_Nunes.jpg",
+    "modifications": "Redimensionada e convertida para WebP; recorte de exibição possível no layout.",
+    "width": 500,
+    "height": 281,
+    "bytes": 17100
+  },
+  {
+    "id": "fernando-holiday",
+    "src": "/iceberg/imagens/fernando-holiday.webp",
+    "alt": "Fernando Holiday em seu gabinete na Câmara Municipal de São Paulo, em 2019.",
+    "caption": "Fernando Holiday em seu gabinete na Câmara Municipal de São Paulo, em 2019.",
+    "credit": "Fernando Holiday Silva Bispo",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Fernando_Holiday_em_seu_gabinete_(cropped).jpg",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "people": [
+      "Fernando Holiday"
+    ],
+    "eventIds": [],
+    "kind": "portrait",
+    "date": "2019-02-19",
+    "downloadedFrom": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/bc/Fernando_Holiday_em_seu_gabinete_%28cropped%29.jpg/250px-Fernando_Holiday_em_seu_gabinete_%28cropped%29.jpg",
+    "modifications": "Redimensionada e convertida para WebP; recorte de exibição possível no layout.",
+    "width": 250,
+    "height": 333,
+    "bytes": 13800
+  }
+]

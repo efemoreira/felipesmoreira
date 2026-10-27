@@ -172,7 +172,7 @@ export function Cabecalho({ sobreCena = false }: { sobreCena?: boolean }) {
         .cb a:focus-visible, .cb summary:focus-visible { outline: ${BORDA}px solid ${C.gold}; outline-offset: 2px; }
 
         /* No celular o nome cede lugar para o Participar e o Menu caberem. */
-        @media (max-width: 380px) { .cb-marca span { display: none; } }
+        @media (max-width: 500px) { .cb-marca span { display: none; } }
         @media (min-width: ${PONTOS.computador}px) {
           .cb-nav { display: flex; }
           .cb-gaveta { display: none; }

@@ -93,6 +93,16 @@ Regras:
 - Nada de nome de responsável nem número de seguidores na página pública: o porta-voz aparece com nome público, tema, lugar, nível e perfis, e só se `publicado`.
 - `/plano` é `public/plano.html`, o artefato do "Plano Missão Ceará 2026–2027" em HTML puro (noindex, fora do sitemap). Substituiu o plano da campanha em 10/10/2026 — não há rota Next em `src/app/plano`; o `.htaccess` serve `plano.html`. O progresso do desafio de 90 dias fica no `localStorage` de quem marca.
 
+### Arquivo Iceberg
+
+- `/iceberg` reúne os dois Icebergs de Arthur do Val, os documentários *Não Vai ter Golpe* e *Quem é Renan Santos* e pesquisa complementar sobre MBL/Missão. A entrada fica na Biblioteca e no rodapé, mantendo o menu curto.
+- A rota é fina; UI, dados, filtros e índices ficam em `src/features/iceberg/`. `acervo.json` conserva os 115 tópicos e referências dos dois PDFs; `documentarios.json` contém as sínteses e tempos dos documentários; `contexto.json` registra perfis, relações com fontes e acontecimentos complementares.
+- `imagens.json` é o catálogo de autoria, licença, legenda e página de origem de cada imagem em `public/iceberg/imagens/`. As cópias são WebP; os retratos identificam pessoas e não comprovam acusações. Fotos de fatos só se ligam aos verbetes do episódio correto; imagem institucional tem legenda de contexto.
+- O player usa `youtube-nocookie.com` e só carrega depois de um clique. Capítulos dos documentários são editoriais, tempos por item são aproximados e o atalho 33:30 do segundo documentário é preservado.
+- Endereços compartilháveis: `/iceberg#verbete/<id>` e `/iceberg#pessoa/<nome codificado>`. As classificações não substituem desfechos; a página declara sua hospedagem no site da Missão Ceará e a perspectiva dos documentários do movimento.
+- O material bruto de pesquisa (transcrições e PDFs) fica localmente em `sites/arquivo-iceberg/research/`, fora dos assets públicos. O site publica sínteses e links aos originais. A cópia antiga de Sites não é uma dependência da página.
+- `testes/contrato/iceberg.test.ts` confere integridade dos links internos, tempos, filtros e metadados de imagens.
+
 ### Programação
 
 - A agenda pública é derivada dos encontros do painel.

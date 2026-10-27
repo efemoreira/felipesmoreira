@@ -48,6 +48,7 @@ export const RODAPE: { titulo: string; itens: ItemNav[] }[] = [
     itens: [
       { rotulo: "O que defendemos", href: "/propostas" },
       { rotulo: "Biblioteca", href: "/biblioteca" },
+      { rotulo: "Arquivo Iceberg", href: "/iceberg" },
       { rotulo: "Heróis do Ceará", href: "/heroisdoceara" },
       { rotulo: "Candidatos de 2026", href: "/candidatos" },
     ],

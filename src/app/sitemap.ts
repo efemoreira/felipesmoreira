@@ -19,6 +19,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE}/temas`, lastModified: now, changeFrequency: "weekly", priority: 0.85 },
     { url: `${BASE}/portavozes`, lastModified: now, changeFrequency: "weekly", priority: 0.85 },
     { url: `${BASE}/biblioteca`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
+    { url: `${BASE}/iceberg`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
     { url: `${BASE}/cultura`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
     { url: `${BASE}/heroisdoceara`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
     { url: `${BASE}/privacy`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },

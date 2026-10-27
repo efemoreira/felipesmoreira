@@ -1,0 +1,747 @@
+{
+  "researchDate": "2026-10-26",
+  "methodology": "Sínteses originais. Fontes institucionais para registros e decisões; jornalismo identificado para declarações e episódios. Relações são políticas, institucionais ou históricas, sem presunção de responsabilidade conjunta. Situações processuais descritas na data de cada fonte. Material de apresentação pessoal identificado como tal.",
+  "profiles": [
+    {
+      "name": "Renan Santos",
+      "role": "Cofundador do MBL e presidente nacional do Missão",
+      "summary": "Renan Antônio Ferreira dos Santos ganhou projeção na organização do MBL e nas mobilizações pelo impeachment de Dilma Rousseff. A Agência Câmara o identificou como coordenador do movimento na entrega de um pedido de impedimento em 2015. Sua trajetória passou da articulação de candidaturas de aliados à construção de uma legenda própria. O TSE registra seu nome na presidência nacional do Partido Missão. Em 2026, disputou a Presidência pela sigla. Movimento, partido e candidatura são organizações e funções distintas, embora compartilhem dirigentes.",
+      "relationships": [
+        {
+          "target": "Movimento Brasil Livre (MBL)",
+          "relation": "Cofundador e articulador político",
+          "source": {
+            "title": "CNN — trajetória de Renan Santos",
+            "url": "https://www.cnnbrasil.com.br/eleicoes/quem-e-renan-santos-candidato-do-partido-missao-a-presidencia/"
+          }
+        },
+        {
+          "target": "Partido Missão",
+          "relation": "Presidente nacional registrado no TSE",
+          "source": {
+            "title": "TSE — Partido Missão: direção nacional e estatuto",
+            "url": "https://www.tse.jus.br/partidos/partidos-registrados-no-tse/partido-missao"
+          }
+        },
+        {
+          "target": "Dilma Rousseff",
+          "relation": "Organizou mobilização pelo impeachment; relação de oposição política",
+          "source": {
+            "title": "Agência Câmara — MBL entrega pedido de impeachment de Dilma",
+            "url": "https://www.camara.leg.br/noticias/460036-movimento-apresenta-ao-presidente-da-camara-pedido-de-impeachment-de-dilma/"
+          }
+        }
+      ],
+      "sources": [
+        {
+          "title": "Agência Brasil — Renan Santos é candidato do Missão à Presidência",
+          "url": "https://agenciabrasil.ebc.com.br/politica/noticia/2026-08/defensor-do-impeachment-em-2016-renan-santos-e-candidato-do-missao"
+        },
+        {
+          "title": "CNN — trajetória de Renan Santos",
+          "url": "https://www.cnnbrasil.com.br/eleicoes/quem-e-renan-santos-candidato-do-partido-missao-a-presidencia/"
+        },
+        {
+          "title": "TSE — Partido Missão: direção nacional e estatuto",
+          "url": "https://www.tse.jus.br/partidos/partidos-registrados-no-tse/partido-missao"
+        },
+        {
+          "title": "Agência Câmara — MBL entrega pedido de impeachment de Dilma",
+          "url": "https://www.camara.leg.br/noticias/460036-movimento-apresenta-ao-presidente-da-camara-pedido-de-impeachment-de-dilma/"
+        }
+      ]
+    },
+    {
+      "name": "Kim Kataguiri",
+      "role": "Deputado federal por São Paulo; cofundador do MBL",
+      "summary": "Kim Patroca Kataguiri é cofundador do MBL e deputado federal por São Paulo desde 2019. A Câmara registra os mandatos de 2019–2023 e 2023–2027 e sua filiação ao Missão em 2026. Em outubro de 2018, anunciou voto em Jair Bolsonaro no segundo turno, apresentando a escolha como instrumental. Em abril de 2020, participou da apresentação de um pedido de impeachment do então presidente. Essa mudança é um marco documentado da relação entre o movimento e o bolsonarismo, sem significar identidade permanente entre os dois grupos.",
+      "relationships": [
+        {
+          "target": "Movimento Brasil Livre (MBL)",
+          "relation": "Cofundador",
+          "source": {
+            "title": "UOL — Kim Kataguiri declara voto em Bolsonaro em 2018",
+            "url": "https://noticias.uol.com.br/politica/eleicoes/2018/noticias/2018/10/07/eleito-deputado-federal-kim-kataguiri-declara-voto-util-em-bolsonaro.htm"
+          }
+        },
+        {
+          "target": "Partido Missão",
+          "relation": "Filiado e representante na Câmara em 2026",
+          "source": {
+            "title": "Câmara dos Deputados — biografia de Kim Kataguiri",
+            "url": "https://www.camara.leg.br/deputados/204536/biografia"
+          }
+        },
+        {
+          "target": "Jair Bolsonaro",
+          "relation": "Apoio eleitoral em 2018 e posterior oposição",
+          "source": {
+            "title": "Poder360 — MBL protocola pedido de impeachment contra Bolsonaro",
+            "url": "https://www.poder360.com.br/governo/mbl-ira-protocolar-impeachment-de-bolsonaro/"
+          }
+        }
+      ],
+      "sources": [
+        {
+          "title": "Câmara dos Deputados — biografia de Kim Kataguiri",
+          "url": "https://www.camara.leg.br/deputados/204536/biografia"
+        },
+        {
+          "title": "UOL — Kim Kataguiri declara voto em Bolsonaro em 2018",
+          "url": "https://noticias.uol.com.br/politica/eleicoes/2018/noticias/2018/10/07/eleito-deputado-federal-kim-kataguiri-declara-voto-util-em-bolsonaro.htm"
+        },
+        {
+          "title": "Poder360 — MBL protocola pedido de impeachment contra Bolsonaro",
+          "url": "https://www.poder360.com.br/governo/mbl-ira-protocolar-impeachment-de-bolsonaro/"
+        }
+      ]
+    },
+    {
+      "name": "Arthur do Val",
+      "role": "Autor dos vídeos MamãeFalei e ex-deputado estadual",
+      "summary": "Arthur do Val é o apresentador do canal MamãeFalei e autor dos vídeos que deram origem a este arquivo. Foi deputado estadual de São Paulo e teve o mandato cassado pela Alesp em maio de 2022 por quebra de decoro, após o episódio dos áudios enviados durante viagem à Ucrânia. Em julho de 2026, o STF rejeitou uma reclamação contra a manutenção da cassação por inadequação processual. A identificação do autor contextualiza a seleção e a interpretação de suas fontes; a veracidade de cada alegação exige exame próprio.",
+      "relationships": [
+        {
+          "target": "Movimento Brasil Livre (MBL)",
+          "relation": "Atuação política e produção de conteúdo vinculadas ao movimento",
+          "source": {
+            "title": "CNN — saída dos quadros do MBL do Podemos em março de 2022",
+            "url": "https://www.cnnbrasil.com.br/politica/mbl-deixara-podemos-e-deve-embarcar-no-uniao-brasil-ou-no-patriota-diz-coordenador/"
+          }
+        },
+        {
+          "target": "Renan Santos",
+          "relation": "Atuação no mesmo movimento; vínculo político, não responsabilização conjunta",
+          "source": {
+            "title": "CNN — trajetória de Renan Santos",
+            "url": "https://www.cnnbrasil.com.br/eleicoes/quem-e-renan-santos-candidato-do-partido-missao-a-presidencia/"
+          }
+        }
+      ],
+      "sources": [
+        {
+          "title": "Alesp — cassação do mandato de Arthur do Val",
+          "url": "https://sts.al.sp.gov.br/noticia/?id=438223"
+        },
+        {
+          "title": "STF — reclamação de Arthur do Val contra cassação rejeitada",
+          "url": "https://noticias.stf.jus.br/postsnoticias/stf-rejeita-reclamacao-de-arthur-do-val-contra-cassacao-de-mandato-de-deputado-estadual/"
+        },
+        {
+          "title": "CNN — saída dos quadros do MBL do Podemos em março de 2022",
+          "url": "https://www.cnnbrasil.com.br/politica/mbl-deixara-podemos-e-deve-embarcar-no-uniao-brasil-ou-no-patriota-diz-coordenador/"
+        },
+        {
+          "title": "Arthur do Val — Iceberg dos escândalos do PT (fonte autoral)",
+          "url": "https://www.youtube.com/watch?v=ITTR_Z8flRE"
+        }
+      ]
+    },
+    {
+      "name": "Guto Zacarias",
+      "role": "Deputado estadual de São Paulo; integrante do MBL",
+      "summary": "Augusto Zacarias Corrêa Leite, conhecido como Guto Zacarias, foi eleito deputado estadual em 2022, com 152.481 votos, segundo a Alesp. O registro institucional o identifica como ligado ao MBL. Em 2026, já no Missão, enfrentou uma representação por quebra de decoro baseada em denúncia de violência psicológica contra ex-companheira. O Conselho de Ética recusou abrir o procedimento em 13 de maio. O parlamentar negou coação; a ex-companheira também contestou essa interpretação publicamente. O arquivamento parlamentar não deve ser apresentado como decisão sobre todo eventual processo judicial.",
+      "relationships": [
+        {
+          "target": "Movimento Brasil Livre (MBL)",
+          "relation": "Integrante identificado no perfil institucional da Alesp",
+          "source": {
+            "title": "Alesp — novos deputados da legislatura de 2023",
+            "url": "https://al.sp.gov.br/noticia/?id=447344"
+          }
+        },
+        {
+          "target": "Partido Missão",
+          "relation": "Filiação identificada na cobertura de maio de 2026",
+          "source": {
+            "title": "UOL — Conselho de Ética arquiva representação contra Guto Zacarias",
+            "url": "https://noticias.uol.com.br/politica/ultimas-noticias/2026/05/13/alesp-processo-cassacao-guto-zacarias-aborto.amp.htm"
+          }
+        }
+      ],
+      "sources": [
+        {
+          "title": "Alesp — novos deputados da legislatura de 2023",
+          "url": "https://al.sp.gov.br/noticia/?id=447344"
+        },
+        {
+          "title": "UOL — Conselho de Ética arquiva representação contra Guto Zacarias",
+          "url": "https://noticias.uol.com.br/politica/ultimas-noticias/2026/05/13/alesp-processo-cassacao-guto-zacarias-aborto.amp.htm"
+        },
+        {
+          "title": "Metrópoles — acusação e manifestações de defesa de Guto Zacarias",
+          "url": "https://www.metropoles.com/sao-paulo/denuncia-alesp-deputado-ex-sp"
+        }
+      ]
+    },
+    {
+      "name": "Fernando Holiday",
+      "role": "Ex-vereador de São Paulo e ex-integrante do MBL",
+      "summary": "Fernando Holiday integrou o MBL desde 2015 e formalizou sua saída em janeiro de 2021. Na entrevista ao Estadão, associou a decisão à intenção de priorizar pautas que, segundo ele, não ocupavam lugar central no movimento. Em julho de 2023, filiou-se ao PL e declarou reaproximação com Jair Bolsonaro, depois de ter criticado o ex-presidente. Sua história pertence ao percurso do MBL, mas a saída precisa acompanhar qualquer menção: posições posteriores de Holiday não podem ser automaticamente atribuídas à direção atual do movimento ou ao Missão.",
+      "relationships": [
+        {
+          "target": "Movimento Brasil Livre (MBL)",
+          "relation": "Ex-integrante; saída formalizada em janeiro de 2021",
+          "source": {
+            "title": "Estadão/UOL — Fernando Holiday explica saída do MBL",
+            "url": "https://noticias.uol.com.br/ultimas-noticias/agencia-estado/2021/01/29/o-combate-ao-aborto-e-a-causa-lgbt-nao-sao-bandeiras-do-mbl.htm"
+          }
+        },
+        {
+          "target": "Jair Bolsonaro",
+          "relation": "Reaproximação anunciada na filiação ao PL em 2023",
+          "source": {
+            "title": "CNN — Fernando Holiday se filia ao PL em julho de 2023",
+            "url": "https://www.cnnbrasil.com.br/politica/em-evento-de-filiacao-do-pl-em-sp-holiday-diz-se-sentir-como-o-filho-prodigo/"
+          }
+        },
+        {
+          "target": "Valdemar Costa Neto",
+          "relation": "Presidente do partido que o recebeu em 2023",
+          "source": {
+            "title": "CNN — Fernando Holiday se filia ao PL em julho de 2023",
+            "url": "https://www.cnnbrasil.com.br/politica/em-evento-de-filiacao-do-pl-em-sp-holiday-diz-se-sentir-como-o-filho-prodigo/"
+          }
+        }
+      ],
+      "sources": [
+        {
+          "title": "Estadão/UOL — Fernando Holiday explica saída do MBL",
+          "url": "https://noticias.uol.com.br/ultimas-noticias/agencia-estado/2021/01/29/o-combate-ao-aborto-e-a-causa-lgbt-nao-sao-bandeiras-do-mbl.htm"
+        },
+        {
+          "title": "CNN — Fernando Holiday se filia ao PL em julho de 2023",
+          "url": "https://www.cnnbrasil.com.br/politica/em-evento-de-filiacao-do-pl-em-sp-holiday-diz-se-sentir-como-o-filho-prodigo/"
+        },
+        {
+          "title": "Senado Federal — sessão de 2 de dezembro de 2025 identifica Fernando Holiday como ex-vereador",
+          "url": "https://legis.senado.leg.br/escriba-servicosweb/sessao/pdf/526714"
+        }
+      ]
+    },
+    {
+      "name": "Rubinho Nunes",
+      "role": "Vereador de São Paulo e ex-integrante do MBL",
+      "summary": "Rubens Alberto Gatti Nunes, conhecido como Rubinho Nunes, atuou como advogado e coordenador do MBL e elaborou o pedido de impeachment de Bolsonaro apresentado pelo grupo em 2020. Sua saída foi anunciada em outubro de 2022. Em episódio posterior, relacionado à divulgação de laudo falso contra Guilherme Boulos na eleição de 2024, o TRE-SP reverteu em novembro de 2025 a cassação de seu diploma: o tribunal não considerou demonstrada gravidade quantitativa suficiente para essa sanção, sem validar o documento divulgado. A decisão admitia recurso ao TSE. O caso ocorreu depois do rompimento com o MBL.",
+      "relationships": [
+        {
+          "target": "Movimento Brasil Livre (MBL)",
+          "relation": "Ex-integrante; saída anunciada em 27 de outubro de 2022",
+          "source": {
+            "title": "Poder360 — Rubinho Nunes deixa o MBL após oito anos",
+            "url": "https://www.poder360.com.br/eleicoes/rubinho-nunes-deixa-o-mbl-apos-8-anos/"
+          }
+        },
+        {
+          "target": "Jair Bolsonaro",
+          "relation": "Elaboração do pedido de impeachment do MBL em 2020",
+          "source": {
+            "title": "Poder360 — MBL protocola pedido de impeachment contra Bolsonaro",
+            "url": "https://www.poder360.com.br/governo/mbl-ira-protocolar-impeachment-de-bolsonaro/"
+          }
+        }
+      ],
+      "sources": [
+        {
+          "title": "Poder360 — Rubinho Nunes deixa o MBL após oito anos",
+          "url": "https://www.poder360.com.br/eleicoes/rubinho-nunes-deixa-o-mbl-apos-8-anos/"
+        },
+        {
+          "title": "Câmara Municipal de São Paulo — vereadores em exercício",
+          "url": "https://www.saopaulo.sp.leg.br/vereadores/membros/"
+        },
+        {
+          "title": "Poder360 — MBL protocola pedido de impeachment contra Bolsonaro",
+          "url": "https://www.poder360.com.br/governo/mbl-ira-protocolar-impeachment-de-bolsonaro/"
+        },
+        {
+          "title": "TRE-SP — reversão da cassação do diploma de Rubinho Nunes",
+          "url": "https://www.tre-sp.jus.br/comunicacao/noticias/2025/Novembro/tre-sp-reverte-decisao-que-cassava-o-diploma-do-vereador-rubinho-nunes-por-divulgacao-de-laudo-falso-nas-eleicoes-2024"
+        }
+      ]
+    },
+    {
+      "name": "Renato Battista",
+      "role": "Dirigente do MBL e candidato do Missão em 2026",
+      "summary": "Renato de Souza Battista atua na organização e na comunicação do MBL. A Folha o identificou entre os integrantes que planejavam visitar El Salvador em 2024 para produzir conteúdo sobre segurança pública. Sua apresentação pessoal informa formação em Relações Internacionais; essa informação é atribuída ao próprio político. Na eleição de 2026, concorreu a deputado estadual por São Paulo pelo Missão. O painel da CNN baseado no TSE registra 89.489 votos e condição de suplente. Candidatura e suplência não equivalem ao exercício de mandato parlamentar.",
+      "relationships": [
+        {
+          "target": "Movimento Brasil Livre (MBL)",
+          "relation": "Integrante e participante da iniciativa sobre El Salvador",
+          "source": {
+            "title": "Folha — MBL anuncia missão a El Salvador",
+            "url": "https://www1.folha.uol.com.br/colunas/painel/2024/01/mbl-enviara-missao-a-el-salvador-para-acompanhar-eleicao-e-combate-ao-crime.shtml"
+          }
+        },
+        {
+          "target": "Partido Missão",
+          "relation": "Candidato a deputado estadual em 2026",
+          "source": {
+            "title": "CNN — candidatura de Renato Battista em 2026, dados do TSE",
+            "url": "https://www.cnnbrasil.com.br/eleicoes/2026/candidatos/sp/deputado-estadual/missao/renato-battista/14000/"
+          }
+        }
+      ],
+      "sources": [
+        {
+          "title": "Folha — MBL anuncia missão a El Salvador",
+          "url": "https://www1.folha.uol.com.br/colunas/painel/2024/01/mbl-enviara-missao-a-el-salvador-para-acompanhar-eleicao-e-combate-ao-crime.shtml"
+        },
+        {
+          "title": "CNN — candidatura de Renato Battista em 2026, dados do TSE",
+          "url": "https://www.cnnbrasil.com.br/eleicoes/2026/candidatos/sp/deputado-estadual/missao/renato-battista/14000/"
+        },
+        {
+          "title": "Renato Battista — apresentação biográfica do próprio político",
+          "url": "https://renatobattista.com.br/"
+        }
+      ]
+    },
+    {
+      "name": "Movimento Brasil Livre (MBL)",
+      "role": "Movimento político e organização de mobilização",
+      "summary": "O Movimento Brasil Livre ganhou projeção a partir de 2014 e nas manifestações favoráveis ao impeachment de Dilma Rousseff. Combina mobilização de rua, comunicação digital e formação de candidaturas. Seus integrantes disputaram eleições por diferentes siglas antes da criação do Missão. O percurso inclui apoio de lideranças a Bolsonaro em 2018, oposição posterior e saídas de integrantes, como Holiday e Rubinho. O MBL é um movimento político; o Missão é um partido com registro eleitoral. Essa distinção evita confundir documentos e opiniões do grupo com atos oficiais da legenda.",
+      "relationships": [
+        {
+          "target": "Partido Missão",
+          "relation": "Origem política compartilhada e dirigentes em comum; entidades distintas",
+          "source": {
+            "title": "Agência Brasil — Renan Santos é candidato do Missão à Presidência",
+            "url": "https://agenciabrasil.ebc.com.br/politica/noticia/2026-08/defensor-do-impeachment-em-2016-renan-santos-e-candidato-do-missao"
+          }
+        },
+        {
+          "target": "Renan Santos",
+          "relation": "Cofundador e articulador",
+          "source": {
+            "title": "CNN — trajetória de Renan Santos",
+            "url": "https://www.cnnbrasil.com.br/eleicoes/quem-e-renan-santos-candidato-do-partido-missao-a-presidencia/"
+          }
+        },
+        {
+          "target": "Kim Kataguiri",
+          "relation": "Cofundador",
+          "source": {
+            "title": "UOL — Kim Kataguiri declara voto em Bolsonaro em 2018",
+            "url": "https://noticias.uol.com.br/politica/eleicoes/2018/noticias/2018/10/07/eleito-deputado-federal-kim-kataguiri-declara-voto-util-em-bolsonaro.htm"
+          }
+        }
+      ],
+      "sources": [
+        {
+          "title": "CNN — trajetória de Renan Santos",
+          "url": "https://www.cnnbrasil.com.br/eleicoes/quem-e-renan-santos-candidato-do-partido-missao-a-presidencia/"
+        },
+        {
+          "title": "Agência Câmara — MBL entrega pedido de impeachment de Dilma",
+          "url": "https://www.camara.leg.br/noticias/460036-movimento-apresenta-ao-presidente-da-camara-pedido-de-impeachment-de-dilma/"
+        },
+        {
+          "title": "UOL — Kim Kataguiri declara voto em Bolsonaro em 2018",
+          "url": "https://noticias.uol.com.br/politica/eleicoes/2018/noticias/2018/10/07/eleito-deputado-federal-kim-kataguiri-declara-voto-util-em-bolsonaro.htm"
+        },
+        {
+          "title": "Poder360 — MBL protocola pedido de impeachment contra Bolsonaro",
+          "url": "https://www.poder360.com.br/governo/mbl-ira-protocolar-impeachment-de-bolsonaro/"
+        },
+        {
+          "title": "Estadão/UOL — Fernando Holiday explica saída do MBL",
+          "url": "https://noticias.uol.com.br/ultimas-noticias/agencia-estado/2021/01/29/o-combate-ao-aborto-e-a-causa-lgbt-nao-sao-bandeiras-do-mbl.htm"
+        },
+        {
+          "title": "Poder360 — Rubinho Nunes deixa o MBL após oito anos",
+          "url": "https://www.poder360.com.br/eleicoes/rubinho-nunes-deixa-o-mbl-apos-8-anos/"
+        }
+      ]
+    },
+    {
+      "name": "Partido Missão",
+      "role": "Partido político registrado no TSE; legenda 14",
+      "summary": "O Partido Missão teve o estatuto registrado pelo TSE em 4 de novembro de 2025, por unanimidade. O tribunal informou 577.999 apoios válidos e a constituição de diretórios em pelo menos nove unidades da Federação. A organização civil antecedeu o registro eleitoral, com data de outubro de 2023. Renan Santos aparece como presidente nacional na ficha oficial. A legenda surgiu de articulação ligada ao MBL, mas sua existência jurídica e suas regras são próprias. O registro habilita participação partidária e não valida todas as declarações públicas de seus integrantes.",
+      "relationships": [
+        {
+          "target": "Renan Santos",
+          "relation": "Presidente nacional",
+          "source": {
+            "title": "TSE — Partido Missão: direção nacional e estatuto",
+            "url": "https://www.tse.jus.br/partidos/partidos-registrados-no-tse/partido-missao"
+          }
+        },
+        {
+          "target": "Kim Kataguiri",
+          "relation": "Deputado filiado em 2026",
+          "source": {
+            "title": "Câmara dos Deputados — biografia de Kim Kataguiri",
+            "url": "https://www.camara.leg.br/deputados/204536/biografia"
+          }
+        },
+        {
+          "target": "Movimento Brasil Livre (MBL)",
+          "relation": "Movimento de origem política da legenda",
+          "source": {
+            "title": "Agência Brasil — Renan Santos é candidato do Missão à Presidência",
+            "url": "https://agenciabrasil.ebc.com.br/politica/noticia/2026-08/defensor-do-impeachment-em-2016-renan-santos-e-candidato-do-missao"
+          }
+        }
+      ],
+      "sources": [
+        {
+          "title": "TSE — registro e homologação do Partido Missão",
+          "url": "https://www.tse.jus.br/comunicacao/noticias/2025/Novembro/tse-aprova-registro-e-homologa-estatuto-do-partido-missao"
+        },
+        {
+          "title": "TSE — Partido Missão: direção nacional e estatuto",
+          "url": "https://www.tse.jus.br/partidos/partidos-registrados-no-tse/partido-missao"
+        },
+        {
+          "title": "Agência Brasil — Renan Santos é candidato do Missão à Presidência",
+          "url": "https://agenciabrasil.ebc.com.br/politica/noticia/2026-08/defensor-do-impeachment-em-2016-renan-santos-e-candidato-do-missao"
+        },
+        {
+          "title": "Câmara dos Deputados — biografia de Kim Kataguiri",
+          "url": "https://www.camara.leg.br/deputados/204536/biografia"
+        }
+      ]
+    }
+  ],
+  "events": [
+    {
+      "id": "mbl-marcha-2015",
+      "series": "mbl",
+      "title": "Da marcha ao pedido de impeachment de Dilma",
+      "summary": "Em 27 de maio, integrantes do MBL protocolaram um pedido de impeachment de Dilma Rousseff na Câmara. A Agência Câmara identificou Renan Santos como coordenador. A entrega marcou a passagem da mobilização de rua à pressão institucional. O protocolo de um pedido não se confunde com o julgamento que retirou o mandato em 2016.",
+      "year": 2015,
+      "dateLabel": "27 maio 2015",
+      "people": [
+        "Movimento Brasil Livre (MBL)",
+        "Renan Santos",
+        "Dilma Rousseff",
+        "Eduardo Cunha"
+      ],
+      "status": "documentado",
+      "outcome": "Pedido protocolado; a referência cruzada explica o desfecho institucional do impeachment.",
+      "sources": [
+        {
+          "title": "Agência Câmara — MBL entrega pedido de impeachment de Dilma",
+          "url": "https://www.camara.leg.br/noticias/460036-movimento-apresenta-ao-presidente-da-camara-pedido-de-impeachment-de-dilma/"
+        }
+      ],
+      "relatedIds": [
+        "pt-1-9"
+      ]
+    },
+    {
+      "id": "mbl-kim-apoio-2018",
+      "series": "mbl",
+      "title": "Kim é eleito e anuncia voto em Bolsonaro",
+      "summary": "Após ser eleito deputado federal, Kim Kataguiri declarou ao UOL que votaria em Jair Bolsonaro no segundo turno de 2018. Apresentou a decisão como uma escolha entre os candidatos disponíveis. O registro é necessário para compreender a oposição que ele e o MBL fariam posteriormente ao governo.",
+      "year": 2018,
+      "dateLabel": "7 outubro 2018",
+      "people": [
+        "Kim Kataguiri",
+        "Jair Bolsonaro",
+        "Movimento Brasil Livre (MBL)"
+      ],
+      "status": "documentado",
+      "outcome": "Declaração pública de apoio eleitoral; não implica endosso de todos os atos posteriores.",
+      "sources": [
+        {
+          "title": "UOL — Kim Kataguiri declara voto em Bolsonaro em 2018",
+          "url": "https://noticias.uol.com.br/politica/eleicoes/2018/noticias/2018/10/07/eleito-deputado-federal-kim-kataguiri-declara-voto-util-em-bolsonaro.htm"
+        }
+      ],
+      "relatedIds": []
+    },
+    {
+      "id": "mbl-impeachment-bolsonaro",
+      "series": "mbl",
+      "title": "O MBL pede o impeachment de Bolsonaro",
+      "summary": "O movimento apresentou pedido de impeachment de Jair Bolsonaro após a saída de Sergio Moro do governo. Kim Kataguiri anunciou a iniciativa, elaborada pelo advogado Rubinho Nunes. Trata-se de um ato político e de uma acusação dirigida ao Congresso, não de uma sentença judicial.",
+      "year": 2020,
+      "dateLabel": "27 abril 2020",
+      "people": [
+        "Movimento Brasil Livre (MBL)",
+        "Kim Kataguiri",
+        "Rubinho Nunes",
+        "Jair Bolsonaro",
+        "Sergio Moro"
+      ],
+      "status": "documentado",
+      "outcome": "A iniciativa documenta a ruptura política com o governo.",
+      "sources": [
+        {
+          "title": "Poder360 — MBL protocola pedido de impeachment contra Bolsonaro",
+          "url": "https://www.poder360.com.br/governo/mbl-ira-protocolar-impeachment-de-bolsonaro/"
+        }
+      ],
+      "relatedIds": []
+    },
+    {
+      "id": "mbl-holiday-saida",
+      "series": "mbl",
+      "title": "Fernando Holiday deixa o movimento",
+      "summary": "Holiday formalizou sua saída do MBL em 28 de janeiro. Em entrevista publicada no dia seguinte, apontou divergências de prioridade em pautas de costumes. A partir desse marco, suas posições devem ser identificadas como as de um ex-integrante, evitando atribuição automática ao movimento.",
+      "year": 2021,
+      "dateLabel": "28 janeiro 2021",
+      "people": [
+        "Fernando Holiday",
+        "Movimento Brasil Livre (MBL)"
+      ],
+      "status": "documentado",
+      "outcome": "Saída anunciada e explicada pelo próprio político em entrevista.",
+      "sources": [
+        {
+          "title": "Estadão/UOL — Fernando Holiday explica saída do MBL",
+          "url": "https://noticias.uol.com.br/ultimas-noticias/agencia-estado/2021/01/29/o-combate-ao-aborto-e-a-causa-lgbt-nao-sao-bandeiras-do-mbl.htm"
+        }
+      ],
+      "relatedIds": []
+    },
+    {
+      "id": "mbl-podemos-ruptura",
+      "series": "mbl",
+      "title": "Quadros do MBL deixam o Podemos",
+      "summary": "A CNN informou que os pré-candidatos do movimento deixariam o Podemos, segundo seu então coordenador Rubinho Nunes. O episódio ocorreu após o acordo de filiação firmado no começo daquele ano e a crise envolvendo Arthur do Val. Ilustra a atuação do MBL em outras legendas antes do Missão.",
+      "year": 2022,
+      "dateLabel": "17 março 2022",
+      "people": [
+        "Movimento Brasil Livre (MBL)",
+        "Rubinho Nunes",
+        "Arthur do Val",
+        "Kim Kataguiri",
+        "Sergio Moro"
+      ],
+      "status": "documentado",
+      "outcome": "Decisão partidária anunciada; MBL ainda não era uma legenda eleitoral.",
+      "sources": [
+        {
+          "title": "CNN — saída dos quadros do MBL do Podemos em março de 2022",
+          "url": "https://www.cnnbrasil.com.br/politica/mbl-deixara-podemos-e-deve-embarcar-no-uniao-brasil-ou-no-patriota-diz-coordenador/"
+        }
+      ],
+      "relatedIds": []
+    },
+    {
+      "id": "mbl-arthur-cassacao",
+      "series": "mbl",
+      "title": "Alesp cassa Arthur do Val",
+      "summary": "A Assembleia Legislativa aprovou a cassação por quebra de decoro por 73 votos a zero. A decisão se relaciona aos áudios enviados durante viagem à Ucrânia. A sanção parlamentar constitui um fato documentado da trajetória do autor dos vídeos e deve ser separada do exame das fontes de cada episódio do arquivo.",
+      "year": 2022,
+      "dateLabel": "17 maio 2022",
+      "people": [
+        "Arthur do Val"
+      ],
+      "status": "documentado",
+      "outcome": "Cassação aprovada pela Alesp; contestação posterior é descrita em evento próprio.",
+      "sources": [
+        {
+          "title": "Alesp — cassação do mandato de Arthur do Val",
+          "url": "https://sts.al.sp.gov.br/noticia/?id=438223"
+        }
+      ],
+      "relatedIds": []
+    },
+    {
+      "id": "mbl-rubinho-saida",
+      "series": "mbl",
+      "title": "Rubinho Nunes deixa o MBL",
+      "summary": "O MBL anunciou a saída do vereador após oito anos de participação. O episódio estabelece um limite temporal para a análise de suas relações com o grupo. Sua atividade parlamentar posterior e eventuais controvérsias pessoais precisam de fontes próprias e não devem ser atribuídas ao movimento por associação histórica.",
+      "year": 2022,
+      "dateLabel": "27 outubro 2022",
+      "people": [
+        "Rubinho Nunes",
+        "Movimento Brasil Livre (MBL)"
+      ],
+      "status": "documentado",
+      "outcome": "Rompimento anunciado publicamente.",
+      "sources": [
+        {
+          "title": "Poder360 — Rubinho Nunes deixa o MBL após oito anos",
+          "url": "https://www.poder360.com.br/eleicoes/rubinho-nunes-deixa-o-mbl-apos-8-anos/"
+        }
+      ],
+      "relatedIds": []
+    },
+    {
+      "id": "mbl-guto-posse",
+      "series": "mbl",
+      "title": "Guto Zacarias integra a nova legislatura da Alesp",
+      "summary": "O registro da Alesp sobre os novos parlamentares apresenta Guto Zacarias como eleito pelo União Brasil, ligado ao MBL e com 152.481 votos em 2022. Sua entrada em 2023 mostra a continuidade da presença parlamentar do movimento por meio de outras siglas.",
+      "year": 2023,
+      "dateLabel": "2023 · início da legislatura",
+      "people": [
+        "Guto Zacarias",
+        "Movimento Brasil Livre (MBL)"
+      ],
+      "status": "contexto",
+      "outcome": "Mandato estadual identificado pela própria Assembleia.",
+      "sources": [
+        {
+          "title": "Alesp — novos deputados da legislatura de 2023",
+          "url": "https://al.sp.gov.br/noticia/?id=447344"
+        }
+      ],
+      "relatedIds": []
+    },
+    {
+      "id": "mbl-holiday-pl",
+      "series": "mbl",
+      "title": "Holiday se aproxima do PL e de Bolsonaro",
+      "summary": "Na filiação ao PL, Holiday expressou arrependimento por críticas anteriores a Jair Bolsonaro. A CNN registrou a presença de Valdemar Costa Neto e o plano de direcionar sua trajetória a uma candidatura federal. A reaproximação aconteceu depois de sua saída do MBL.",
+      "year": 2023,
+      "dateLabel": "25 julho 2023",
+      "people": [
+        "Fernando Holiday",
+        "Jair Bolsonaro",
+        "Valdemar Costa Neto"
+      ],
+      "status": "documentado",
+      "outcome": "Mudança de alinhamento declarada; não representa adesão do MBL ao PL.",
+      "sources": [
+        {
+          "title": "CNN — Fernando Holiday se filia ao PL em julho de 2023",
+          "url": "https://www.cnnbrasil.com.br/politica/em-evento-de-filiacao-do-pl-em-sp-holiday-diz-se-sentir-como-o-filho-prodigo/"
+        }
+      ],
+      "relatedIds": [
+        "bolsonaro-1-8"
+      ]
+    },
+    {
+      "id": "mbl-missao-origem",
+      "series": "mbl",
+      "title": "Começa a organização civil do Missão",
+      "summary": "Segundo o processo resumido pelo TSE, o partido foi registrado em cartório civil em 23 de outubro de 2023. Essa etapa precede a coleta e validação de apoios e o registro do estatuto pela Justiça Eleitoral. A distinção explica por que a fundação política e a habilitação eleitoral têm datas diferentes.",
+      "year": 2023,
+      "dateLabel": "23 outubro 2023",
+      "people": [
+        "Partido Missão",
+        "Renan Santos"
+      ],
+      "status": "documentado",
+      "outcome": "Organização civil anterior ao registro eleitoral de 2025.",
+      "sources": [
+        {
+          "title": "TSE — registro e homologação do Partido Missão",
+          "url": "https://www.tse.jus.br/comunicacao/noticias/2025/Novembro/tse-aprova-registro-e-homologa-estatuto-do-partido-missao"
+        }
+      ],
+      "relatedIds": []
+    },
+    {
+      "id": "mbl-salvador",
+      "series": "mbl",
+      "title": "MBL anuncia visita a El Salvador",
+      "summary": "Em janeiro, a Folha informou que Renato Battista e Gabriel Costenaro planejavam viajar em fevereiro para acompanhar a eleição e conhecer políticas de segurança do governo Bukele. A notícia registra os objetivos declarados da visita e a intenção de produzir conteúdo. A defesa do modelo pelo grupo é uma posição política, não uma avaliação independente de seus resultados.",
+      "year": 2024,
+      "dateLabel": "11 janeiro 2024 · anúncio",
+      "people": [
+        "Renato Battista",
+        "Gabriel Costenaro",
+        "Movimento Brasil Livre (MBL)",
+        "Nayib Bukele"
+      ],
+      "status": "contexto",
+      "outcome": "Viagem anunciada para 2 a 6 de fevereiro; este registro não comprova sozinho sua execução.",
+      "sources": [
+        {
+          "title": "Folha — MBL anuncia missão a El Salvador",
+          "url": "https://www1.folha.uol.com.br/colunas/painel/2024/01/mbl-enviara-missao-a-el-salvador-para-acompanhar-eleicao-e-combate-ao-crime.shtml"
+        }
+      ],
+      "relatedIds": []
+    },
+    {
+      "id": "mbl-missao-registro",
+      "series": "mbl",
+      "title": "TSE aprova o Partido Missão",
+      "summary": "O TSE deferiu por unanimidade o registro e a homologação do estatuto do Missão. A decisão informou 577.999 apoios válidos e autorizou a adoção do número 14. O partido passou a ter existência eleitoral própria, distinta do movimento que articulou sua criação.",
+      "year": 2025,
+      "dateLabel": "4 novembro 2025",
+      "people": [
+        "Partido Missão",
+        "Renan Santos",
+        "Movimento Brasil Livre (MBL)"
+      ],
+      "status": "documentado",
+      "outcome": "Registro partidário deferido pelo tribunal.",
+      "sources": [
+        {
+          "title": "TSE — registro e homologação do Partido Missão",
+          "url": "https://www.tse.jus.br/comunicacao/noticias/2025/Novembro/tse-aprova-registro-e-homologa-estatuto-do-partido-missao"
+        },
+        {
+          "title": "TSE — Partido Missão: direção nacional e estatuto",
+          "url": "https://www.tse.jus.br/partidos/partidos-registrados-no-tse/partido-missao"
+        }
+      ],
+      "relatedIds": []
+    },
+    {
+      "id": "mbl-kim-missao",
+      "series": "mbl",
+      "title": "Kim passa a representar o Missão na Câmara",
+      "summary": "A biografia parlamentar registra filiação de Kim ao Missão em 2026 e sua atuação como representante da legenda a partir de 9 de março. O vínculo anterior com DEM e União Brasil permanece no histórico dos mandatos. A mudança deve ser datada, sem aplicar a filiação atual retrospectivamente.",
+      "year": 2026,
+      "dateLabel": "9 março 2026",
+      "people": [
+        "Kim Kataguiri",
+        "Partido Missão"
+      ],
+      "status": "documentado",
+      "outcome": "Filiação e representação partidária registradas na Câmara.",
+      "sources": [
+        {
+          "title": "Câmara dos Deputados — biografia de Kim Kataguiri",
+          "url": "https://www.camara.leg.br/deputados/204536/biografia"
+        }
+      ],
+      "relatedIds": []
+    },
+    {
+      "id": "mbl-guto-representacao",
+      "series": "mbl",
+      "title": "Conselho de Ética arquiva representação contra Guto",
+      "summary": "Por quatro votos a dois, o Conselho de Ética da Alesp recusou abrir procedimento por quebra de decoro contra Guto Zacarias. A representação se baseava em denúncia de violência psicológica e alegada coação contra ex-companheira. O deputado negou coação e a ex-companheira contestou publicamente essa interpretação. O resultado descrito é parlamentar; não estabelece por si o desfecho de ação penal.",
+      "year": 2026,
+      "dateLabel": "13 maio 2026",
+      "people": [
+        "Guto Zacarias"
+      ],
+      "status": "documentado",
+      "outcome": "Representação parlamentar arquivada na admissibilidade; sem conclusão aqui sobre eventual processo judicial.",
+      "sources": [
+        {
+          "title": "UOL — Conselho de Ética arquiva representação contra Guto Zacarias",
+          "url": "https://noticias.uol.com.br/politica/ultimas-noticias/2026/05/13/alesp-processo-cassacao-guto-zacarias-aborto.amp.htm"
+        },
+        {
+          "title": "Metrópoles — acusação e manifestações de defesa de Guto Zacarias",
+          "url": "https://www.metropoles.com/sao-paulo/denuncia-alesp-deputado-ex-sp"
+        }
+      ],
+      "relatedIds": []
+    },
+    {
+      "id": "mbl-arthur-reclamacao",
+      "series": "mbl",
+      "title": "STF rejeita reclamação de Arthur contra cassação",
+      "summary": "Alexandre de Moraes rejeitou o trâmite de uma reclamação apresentada por Arthur do Val contra a decisão do TJ-SP que manteve sua cassação. Segundo o STF, ele não indicou decisão vinculante da Corte que tivesse sido descumprida. A notícia documenta a rejeição por inadequação da via processual, não um novo julgamento dos áudios.",
+      "year": 2026,
+      "dateLabel": "27 julho 2026",
+      "people": [
+        "Arthur do Val",
+        "Alexandre de Moraes"
+      ],
+      "status": "documentado",
+      "outcome": "Reclamação não admitida; a medida não reverteu a cassação.",
+      "sources": [
+        {
+          "title": "STF — reclamação de Arthur do Val contra cassação rejeitada",
+          "url": "https://noticias.stf.jus.br/postsnoticias/stf-rejeita-reclamacao-de-arthur-do-val-contra-cassacao-de-mandato-de-deputado-estadual/"
+        }
+      ],
+      "relatedIds": []
+    }
+  ]
+}
