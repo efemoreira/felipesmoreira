@@ -45,6 +45,7 @@ const ROTAS_SINAL = [
     'temas' => 'Grupos temáticos',
     'portavozes' => 'Porta-vozes',
     'biblioteca' => 'Biblioteca',
+    'iceberg' => 'Arquivo Iceberg',
     'cultura' => 'Cultura',
 ];
 
