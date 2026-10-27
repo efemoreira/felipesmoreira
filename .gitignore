@@ -52,3 +52,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Materiais brutos de consulta, preservados localmente fora da publicação.
+/originais/iceberg/*.zip

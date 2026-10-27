@@ -100,7 +100,7 @@ Regras:
 - `imagens.json` é o catálogo de autoria, licença, legenda e página de origem de cada imagem em `public/iceberg/imagens/`. As cópias são WebP; os retratos identificam pessoas e não comprovam acusações. Fotos de fatos só se ligam aos verbetes do episódio correto; imagem institucional tem legenda de contexto.
 - O player usa `youtube-nocookie.com` e só carrega depois de um clique. Capítulos dos documentários são editoriais, tempos por item são aproximados e o atalho 33:30 do segundo documentário é preservado.
 - Endereços compartilháveis: `/iceberg#verbete/<id>` e `/iceberg#pessoa/<nome codificado>`. As classificações não substituem desfechos; a página declara sua hospedagem no site da Missão Ceará e a perspectiva dos documentários do movimento.
-- O material bruto de pesquisa (transcrições e PDFs) fica localmente em `sites/arquivo-iceberg/research/`, fora dos assets públicos. O site publica sínteses e links aos originais. A cópia antiga de Sites não é uma dependência da página.
+- Os dois PDFs e as quatro transcrições originais ficam no arquivo local `originais/iceberg/fontes-originais.zip`, ignorado pelo Git e fora dos assets públicos. O catálogo versionado, os créditos e os links estão em `src/features/iceberg/`. O projeto separado foi aposentado; a página não depende de Sites.
 - `testes/contrato/iceberg.test.ts` confere integridade dos links internos, tempos, filtros e metadados de imagens.
 
 ### Programação
