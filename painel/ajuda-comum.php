@@ -32,6 +32,7 @@ const SAI_DE_AREA = [
     'leituras'   => 'Nada — Leituras só lê. É o que se manda no grupo da coordenação.',
     'oficina'    => 'Nada para fora: é a sua bancada. O que sai é a resposta de quais formatos funcionam no seu nicho.',
     'organizacao' => 'A página pública /nucleos, /temas e /portavozes — só o que está marcado para o site, sem nome de responsável — e os números do painel de comando em Leituras.',
+    'relatos'    => 'O andamento e a resposta de cada protocolo, que o Paulo repassa a quem relatou ou propôs pelo WhatsApp.',
 ];
 
 /** As telas pessoais, que não são área e não têm capacidade. */

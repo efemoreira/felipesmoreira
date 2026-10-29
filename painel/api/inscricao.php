@@ -83,120 +83,31 @@ $origem   = normalizar_origem($bruto['de'] ?? '');
    contra o que existe e está no site — nunca gravado como veio. */
 require_once __DIR__ . '/../organizacao-comum.php';
 $interesse = interesse_valido($bruto['interesse'] ?? '');
-$participacao = normalizar_participacao($bruto['participacao'] ?? []);
-if (is_array($bruto['participacao'] ?? null)) {
-    $participacao['registradoEm'] = date('c');
-}
 
-$nome = preg_replace('/\s+/u', ' ', $nome) ?? $nome;
+/* A régua e a gravação moram em `registrar_inscricao()` (inscricoes-comum.php):
+   o Paulo, no WhatsApp, inscreve pela mesma função (`api/paulo.php`). A régua
+   tem ainda um par em `src/features/inscricao/validacao.ts` — ver
+   `testes/contrato/inscricao.test.ts`. */
+$feito = registrar_inscricao([
+    'nome'      => $nome,
+    'telefone'  => $telefone,
+    'email'     => $email,
+    'cidade'    => $cidade,
+    'bairro'    => $bairro,
+    'funcoes'   => $funcoes,
+    'origem'    => $origem,
+    'interesse' => $interesse,
+    'participacao' => is_array($bruto['participacao'] ?? null) ? $bruto['participacao'] : null,
+]);
 
-/* A régua mora em `recusa_de_inscricao()` (inscricoes-comum.php), e não aqui,
-   porque ela tem um par em `src/features/inscricao/validacao.ts` que precisa
-   ser conferido — e o que está solto no meio de um endpoint não se chama de
-   fora. Ver `testes/contrato/inscricao.test.ts`. */
-if (($recusa = recusa_de_inscricao([
-    'nome'     => $nome,
-    'telefone' => $telefone,
-    'email'    => $email,
-    'cidade'   => $cidade,
-    'bairro'   => $bairro,
-])) !== '') {
-    recusar($recusa);
-}
-
-/* ---- mesmo telefone não entra duas vezes ---- */
-$ja = inscricao_por_telefone($telefone);
-if ($ja !== null) {
-    if ($ja['status'] === 'pendente') {
-        recusar('Sua inscrição já está com a gente — a coordenação vai te chamar no WhatsApp.', 409);
-    }
-    if (tem_conta($ja)) {
-        recusar('Esse número já tem acesso. Se você perdeu a senha, chame a coordenação no WhatsApp.', 409);
-    }
-    if ($ja['status'] === 'recusada') {
-        recusar('Não foi possível registrar essa inscrição. Fale com a coordenação no WhatsApp.', 409);
-    }
-    /* Já conhecida sem estar na fila: apareceu num encontro, foi cadastrada pela
-       coordenação. Ela não vira uma segunda ficha — entra na fila a ficha que já
-       existe, com o que ela acabou de dizer por cima. Antes isso criava uma
-       inscrição paralela, e a mesma pessoa passava a existir duas vezes. */
-    $gravou = com_trava(ARQ_PESSOAS, function () use ($ja, $nome, $email, $cidade, $bairro, $funcoes, $origem, $interesse, $participacao, $bruto): bool {
-        $pessoas = ler_pessoas(true);
-        foreach ($pessoas as &$p) {
-            if ($p['id'] !== $ja['id']) {
-                continue;
-            }
-            $p['nome']   = $nome;
-            $p['status'] = 'pendente';
-            $p['criadoEm'] = date('c');   // o relógio da fila começa agora
-            if (is_array($bruto['participacao'] ?? null)) {
-                $p['participacao'] = $participacao;
-            }
-            foreach (['email' => $email, 'cidade' => $cidade, 'bairro' => $bairro] as $campo => $valor) {
-                if ($valor !== '') {
-                    $p[$campo] = $valor;
-                }
-            }
-            if ($funcoes !== []) {
-                $p['funcoes'] = $funcoes;
-            }
-            if ($origem !== '' && $p['origem'] === '') {
-                $p['origem'] = $origem;
-            }
-            if ($interesse !== '') {
-                $p['interesse'] = $interesse;
-            }
-            $p['consentimentoEm'] = date('c');
-            $p['consentimentoVersao'] = VERSAO_CONSENTIMENTO;
-        }
-        unset($p);
-        return gravar_pessoas($pessoas);
-    });
-
-    if (!$gravou) {
-        recusar('Não consegui guardar sua inscrição agora. Tente de novo em alguns minutos.', 500);
-    }
-    registrar_envio();
-    responder(200, ['ok' => true]);
-}
-
-/* ---- grava ---- */
-/* Dentro da tranca, e conferindo o telefone DE NOVO lá dentro: o "já existe?"
-   de cima foi respondido antes da fila, e um clique duplo no botão mandava dois
-   POSTs que passavam os dois — duas fichas da mesma pessoa. */
-$gravou = com_trava(ARQ_PESSOAS, function () use ($nome, $telefone, $email, $cidade, $bairro, $funcoes, $origem, $interesse, $participacao): bool {
-    $pessoas = ler_pessoas(true);
-    foreach ($pessoas as $p) {
-        if ($p['telefone'] === $telefone) {
-            return true;   // a outra requisição já gravou; para quem clicou, deu certo
-        }
-    }
-    $pessoas[] = [
-        'id'       => novo_id_pessoa(),
-        'nome'     => $nome,
-        /* Entra como eleitor: militante é o que ela vira quando a coordenação
-           aprova. Chamar de militante quem ainda não foi conferido inflaria a
-           contagem do movimento com quem só preencheu um formulário. */
-        'tipo'     => 'eleitor',
-        'telefone' => $telefone,
-        'email'    => $email,
-        'cidade'   => $cidade,
-        'bairro'   => $bairro,
-        'funcoes'  => $funcoes,
-        'origem'   => $origem,
-        'interesse' => $interesse,
-        'participacao' => $participacao,
-        'status'   => 'pendente',
-        'criadoEm' => date('c'),
-        'consentimentoEm'     => date('c'),
-        'consentimentoVersao' => VERSAO_CONSENTIMENTO,
-    ];
-    return gravar_pessoas($pessoas);
-});
-
-if (!$gravou) {
-    recusar('Não consegui guardar sua inscrição agora. Tente de novo em alguns minutos.', 500);
-}
+match ($feito['estado']) {
+    'invalida'  => recusar($feito['recusa']),
+    'pendente'  => recusar('Sua inscrição já está com a gente — a coordenação vai te chamar no WhatsApp.', 409),
+    'com-conta' => recusar('Esse número já tem acesso. Se você perdeu a senha, chame a coordenação no WhatsApp.', 409),
+    'recusada'  => recusar('Não foi possível registrar essa inscrição. Fale com a coordenação no WhatsApp.', 409),
+    'erro'      => recusar('Não consegui guardar sua inscrição agora. Tente de novo em alguns minutos.', 500),
+    default     => null,
+};
 
 registrar_envio();
 responder(200, ['ok' => true]);

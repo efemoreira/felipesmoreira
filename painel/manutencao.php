@@ -24,6 +24,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/layout.php';
 require_once __DIR__ . '/backup-comum.php';
 require_once __DIR__ . '/acoes-comum.php';
+require_once __DIR__ . '/paulo-comum.php';
 exigir_admin();
 
 /* BAIXAR UM BACKUP. Vem antes de qualquer HTML: a resposta é o zip, e não uma
@@ -68,6 +69,8 @@ function grupos_de_dados(): array
                 PASTA_DADOS . '/inscricoes.php',
                 PASTA_DADOS . '/leads.php',
                 PASTA_DADOS . '/candidatos.php',
+                /* Os relatos e ideias do Paulo trazem nome e telefone de quem relatou. */
+                PASTA_DADOS . '/relatos.php',
             ],
         ],
         'encontros' => [
@@ -160,6 +163,16 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         limpar_erros();
         avisar('ok', 'Registro de erros zerado.');
         ir_para('/painel/manutencao.php');
+    }
+
+    /* Trocar o segredo do Paulo é apagá-lo: `segredo_paulo()` cria outro na
+       leitura seguinte, e o CRM para de falar com o painel até receber o novo.
+       É o que se faz se ele vazou. */
+    if (($_POST['acao'] ?? '') === 'trocar-segredo-paulo') {
+        @unlink(ARQ_SEGREDO_PAULO);
+        segredo_paulo();
+        avisar('ok', 'Segredo do Paulo trocado. Cole o novo no CRM, senão o Paulo deixa de falar com o painel.');
+        ir_para('/painel/manutencao.php#paulo');
     }
 
     if (($_POST['acao'] ?? '') === 'backup') {
@@ -334,6 +347,21 @@ abrir_pagina('Manutenção');
       </form>
     </fieldset>
   <?php endif; ?>
+
+  <fieldset id="paulo">
+    <legend>O Paulo (WhatsApp)</legend>
+    <p class="dica">
+      O Paulo, o assistente do WhatsApp, fala com o painel por <code>/painel/api/paulo.php</code>:
+      inscreve, guarda o interesse em núcleos e grupos, manda relatos e ideias e lê o degrau de quem conversa com ele.
+      Cada pedido é assinado com este segredo. Cole-o na configuração do Paulo no CRM, com o endereço do painel.
+    </p>
+    <p><code><?= h(segredo_paulo()) ?></code></p>
+    <form method="post" class="acoes" data-confirmar="Trocar o segredo? O Paulo para de falar com o painel até receber o novo.">
+      <input type="hidden" name="csrf" value="<?= h(token()) ?>">
+      <input type="hidden" name="acao" value="trocar-segredo-paulo">
+      <button class="btn" type="submit">Trocar o segredo</button>
+    </form>
+  </fieldset>
 
   <fieldset id="backup">
     <legend>Backup<?= $backups !== [] ? ' (' . count($backups) . ')' : '' ?></legend>
