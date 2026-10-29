@@ -251,6 +251,135 @@ function inscricao_por_telefone(string $telefone): ?array
     return $achadas[0] ?? null;
 }
 
+/**
+ * GRAVA UMA INSCRIÇÃO — a regra de /queroajudar, e só ela.
+ *
+ * Mora aqui, e não dentro de `api/inscricao.php`, porque a inscrição tem duas
+ * portas: o formulário do site e o Paulo no WhatsApp (`api/paulo.php`). Duas
+ * cópias desta sequência seriam duas réguas de "mesmo telefone não entra duas
+ * vezes" — e a que divergisse primeiro criaria a segunda ficha da mesma pessoa.
+ *
+ * Recebe os campos JÁ LIMPOS (cada porta limpa o que recebe) e devolve o que
+ * aconteceu, sem decidir status HTTP — isso é de quem chamou:
+ *
+ *   ['estado' => 'nova' | 'atualizada']                      gravou
+ *   ['estado' => 'pendente' | 'com-conta' | 'recusada']      número já conhecido, nada mudou
+ *   ['estado' => 'invalida', 'recusa' => '...']              `recusa_de_inscricao()` barrou
+ *   ['estado' => 'erro']                                     não conseguiu gravar
+ *
+ * `participacao` nula é "a porta não perguntou" — e não apaga o que a ficha já
+ * tinha; array (mesmo vazio) é o que a pessoa respondeu agora.
+ */
+function registrar_inscricao(array $c): array
+{
+    require_once __DIR__ . '/organizacao-comum.php';
+    $nome      = preg_replace('/\s+/u', ' ', (string) ($c['nome'] ?? '')) ?? '';
+    $telefone  = (string) ($c['telefone'] ?? '');
+    $email     = (string) ($c['email'] ?? '');
+    $cidade    = (string) ($c['cidade'] ?? '');
+    $bairro    = (string) ($c['bairro'] ?? '');
+    $funcoes   = is_array($c['funcoes'] ?? null) ? $c['funcoes'] : [];
+    $origem    = (string) ($c['origem'] ?? '');
+    $interesse = (string) ($c['interesse'] ?? '');
+    $respondeu = is_array($c['participacao'] ?? null);
+    $participacao = normalizar_participacao($respondeu ? $c['participacao'] : []);
+    if ($respondeu) {
+        $participacao['registradoEm'] = date('c');
+    }
+    $versao = (string) ($c['consentimentoVersao'] ?? VERSAO_CONSENTIMENTO);
+
+    $recusa = recusa_de_inscricao(['nome' => $nome, 'telefone' => $telefone, 'email' => $email, 'cidade' => $cidade, 'bairro' => $bairro]);
+    if ($recusa !== '') {
+        return ['estado' => 'invalida', 'recusa' => $recusa];
+    }
+
+    /* ---- mesmo telefone não entra duas vezes ---- */
+    $ja = inscricao_por_telefone($telefone);
+    if ($ja !== null) {
+        if ($ja['status'] === 'pendente') {
+            return ['estado' => 'pendente'];
+        }
+        if (tem_conta($ja)) {
+            return ['estado' => 'com-conta'];
+        }
+        if ($ja['status'] === 'recusada') {
+            return ['estado' => 'recusada'];
+        }
+        /* Já conhecida sem estar na fila: apareceu num encontro, foi cadastrada pela
+           coordenação. Ela não vira uma segunda ficha — entra na fila a ficha que já
+           existe, com o que ela acabou de dizer por cima. Antes isso criava uma
+           inscrição paralela, e a mesma pessoa passava a existir duas vezes. */
+        $gravou = com_trava(ARQ_PESSOAS, function () use ($ja, $nome, $email, $cidade, $bairro, $funcoes, $origem, $interesse, $participacao, $respondeu, $versao): bool {
+            $pessoas = ler_pessoas(true);
+            foreach ($pessoas as &$p) {
+                if ($p['id'] !== $ja['id']) {
+                    continue;
+                }
+                $p['nome']   = $nome;
+                $p['status'] = 'pendente';
+                $p['criadoEm'] = date('c');   // o relógio da fila começa agora
+                if ($respondeu) {
+                    $p['participacao'] = $participacao;
+                }
+                foreach (['email' => $email, 'cidade' => $cidade, 'bairro' => $bairro] as $campo => $valor) {
+                    if ($valor !== '') {
+                        $p[$campo] = $valor;
+                    }
+                }
+                if ($funcoes !== []) {
+                    $p['funcoes'] = $funcoes;
+                }
+                if ($origem !== '' && $p['origem'] === '') {
+                    $p['origem'] = $origem;
+                }
+                if ($interesse !== '') {
+                    $p['interesse'] = $interesse;
+                }
+                $p['consentimentoEm'] = date('c');
+                $p['consentimentoVersao'] = $versao;
+            }
+            unset($p);
+            return gravar_pessoas($pessoas);
+        });
+        return ['estado' => $gravou ? 'atualizada' : 'erro'];
+    }
+
+    /* ---- grava ---- */
+    /* Dentro da tranca, e conferindo o telefone DE NOVO lá dentro: o "já existe?"
+       de cima foi respondido antes da fila, e um clique duplo no botão mandava dois
+       POSTs que passavam os dois — duas fichas da mesma pessoa. */
+    $gravou = com_trava(ARQ_PESSOAS, function () use ($nome, $telefone, $email, $cidade, $bairro, $funcoes, $origem, $interesse, $participacao, $versao): bool {
+        $pessoas = ler_pessoas(true);
+        foreach ($pessoas as $p) {
+            if ($p['telefone'] === $telefone) {
+                return true;   // a outra requisição já gravou; para quem clicou, deu certo
+            }
+        }
+        $pessoas[] = [
+            'id'       => novo_id_pessoa(),
+            'nome'     => $nome,
+            /* Entra como eleitor: militante é o que ela vira quando a coordenação
+               aprova. Chamar de militante quem ainda não foi conferido inflaria a
+               contagem do movimento com quem só preencheu um formulário. */
+            'tipo'     => 'eleitor',
+            'telefone' => $telefone,
+            'email'    => $email,
+            'cidade'   => $cidade,
+            'bairro'   => $bairro,
+            'funcoes'  => $funcoes,
+            'origem'   => $origem,
+            'interesse' => $interesse,
+            'participacao' => $participacao,
+            'status'   => 'pendente',
+            'criadoEm' => date('c'),
+            'consentimentoEm'     => date('c'),
+            'consentimentoVersao' => $versao,
+        ];
+        return gravar_pessoas($pessoas);
+    });
+    return ['estado' => $gravou ? 'nova' : 'erro'];
+}
+
 /* ===================== limite por IP ===================== */
 
 /* segredo() mora no sessao.php: é segredo do site inteiro, não das

@@ -50,6 +50,7 @@ const ICONE_AREA = [
     'leituras'   => 'world',
     'oficina'    => 'play',
     'organizacao' => 'flag',
+    'relatos'    => 'mail',
 ];
 
 /** SVG inline, no mesmo traço do site (stroke 2, ponta e junta arredondadas). */

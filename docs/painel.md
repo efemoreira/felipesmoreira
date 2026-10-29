@@ -105,6 +105,15 @@ Se a tarefa tocar em capacidade, área, navegação ou dado pessoal, confira tam
 - Aprovar **dá conta à ficha já existente** e mostra senha provisória uma vez.
 - Recusar não apaga a pessoa nem o histórico dela.
 
+### O Paulo (WhatsApp)
+
+- O Paulo é o assistente do WhatsApp da militância; mora no CRM e fala com o painel só por `api/paulo.php`, servidor a servidor. O painel é a fonte da verdade: o Paulo não guarda militância própria.
+- Todo pedido é POST de JSON assinado: `X-Paulo-Hora` (Unix) e `X-Paulo-Assinatura` = HMAC-SHA256 de `<hora>.<corpo>` com `segredo_paulo()` (`dados/segredo-paulo.php`), válido por 5 minutos. Assinatura errada recebe 404. O segredo aparece e se troca em Manutenção › O Paulo; não é o `segredo()` do site.
+- Ações: `situacao` (status, degrau de `degraus_de_hoje()`, unidades de `vinculos_da_pessoa()` — sem telefone nem nome), `inscricao` (a mesma `registrar_inscricao()` do `/queroajudar`, origem `paulo`), `interesse` (só grava `interesse`; entrar na unidade continua sendo da coordenação, depois de a pessoa ir a um encontro), `relato` e `andamento`.
+- O celular do WhatsApp (`55`, às vezes sem o 9) passa por `telefone_canonico()` antes de comparar com a ficha: `pessoa_do_whatsapp()` é a régua, para o mesmo celular não virar duas pessoas.
+- Relatos e ideias vivem em `/painel/relatos` (Coordenação): o protocolo é a chave (reenvio não duplica), relato sem identificação chega sem nome, telefone nem ficha, a `resposta` volta para o Paulo e a `nota` nunca sai do painel. Fotos ficam no CRM; aqui só a contagem e o link.
+- `testes/acoes/paulo.test.ts` prende assinatura, ficha única, anonimato e a nota interna.
+
 ### Presença
 
 - `/presenca` usa um token para confirmação e outro para presença na porta.

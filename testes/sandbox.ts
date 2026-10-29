@@ -92,6 +92,12 @@ export interface Sandbox {
    * é assim que se testa a tranca de gravação.
    */
   postarJson(caminho: string, corpo: unknown): Promise<{ status: number; json: Registro; erros: string }>;
+  /**
+   * O mesmo POST de `api/`, com o corpo CRU e cabeçalhos próprios — o pedido de
+   * outro servidor, como o do Paulo, em que a assinatura cobre os bytes do corpo
+   * e um `JSON.stringify` a mais trocaria o que foi assinado.
+   */
+  postarApi(caminho: string, corpo: string, cabecalhos: Record<string, string>): Promise<{ status: number; json: Registro; erros: string }>;
   /** O conteúdo de `dados/<nome>.php`, já em objeto. */
   ler(nome: string): Registro[];
   /**
@@ -167,6 +173,7 @@ const DADOS = new Set([
   "biblioteca",
   "cultura",
   "plano-feedback",
+  "relatos",
   "inscricoes-limite",
   "tentativas",
   "segredo",
@@ -567,6 +574,26 @@ session_write_close();
         redirect: "manual",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(corpo),
+      });
+      const texto = await r.text();
+      let json: Registro = null;
+      try {
+        json = JSON.parse(texto);
+      } catch {
+        json = { bruto: texto };
+      }
+      const erros = desde(marca);
+      exigirSilencio(caminho, erros);
+      return { status: r.status, json, erros };
+    },
+    async postarApi(caminho, corpo, cabecalhos) {
+      await subir();
+      const marca = stderr.length;
+      const r = await fetch(`${base}/painel/${caminho}`, {
+        method: "POST",
+        redirect: "manual",
+        headers: { "content-type": "application/json", ...cabecalhos },
+        body: corpo,
       });
       const texto = await r.text();
       let json: Registro = null;

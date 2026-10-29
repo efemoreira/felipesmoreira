@@ -49,7 +49,7 @@ const VERSAO_ESTILO = '44';
 const GRUPOS_NAV = [
     'Comunicação'   => ['fatos', 'producao', 'municao', 'estudio', 'oficina'],
     'Encontros'     => ['eventos', 'agenda'],
-    'Coordenação'   => ['inscricoes', 'organizacao', 'candidatos', 'aulas', 'leituras'],
+    'Coordenação'   => ['inscricoes', 'organizacao', 'relatos', 'candidatos', 'aulas', 'leituras'],
     'Administração' => ['pessoas', 'caixa'],
 ];
 
@@ -69,6 +69,7 @@ const ROTULO_CURTO = [
     'leituras'   => 'Leituras',
     'oficina'    => 'Oficina',
     'organizacao' => 'Organização',
+    'relatos'    => 'Relatos',
 ];
 
 /** fechar_pagina() precisa saber se abriu a moldura, para não fechar div à toa. */

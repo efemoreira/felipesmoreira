@@ -7,6 +7,9 @@ declare(strict_types=1);
  * GET, sem login: alimenta /nucleos, /temas e /portavozes. Só leitura, cache
  * curto, como `api/candidatos.php` e `api/kit.php`.
  *
+ * `temResponsavel` desce só como sim/não: o Paulo (WhatsApp) só convida para
+ * unidade que tem quem receba, e para isso não precisa saber quem é.
+ *
  * O QUE NÃO DESCE, e é o motivo de este arquivo escolher campo a campo em vez
  * de devolver a ficha: nome de responsável, de substituto ou de quem registrou
  * entrega; texto das entregas; evidência de nível; quem criou e quando. O
@@ -43,6 +46,9 @@ $proxima = function (array $u): ?array {
     return ['data' => $p['data'], 'texto' => $p['texto'], 'atividade' => $publico ? $p['eventoId'] : ''];
 };
 
+/* Sim ou não, nunca o id: quem responde não desce (ver o topo). */
+$temResponsavel = fn (array $u): bool => $u['responsavelId'] !== '';
+
 $nucleos = [];
 $nomeNucleo = [];
 foreach (ler_nucleos() as $n) {
@@ -60,6 +66,7 @@ foreach (ler_nucleos() as $n) {
         'nivel'   => $n['nivel'],
         'ritmo'   => RITMOS[$n['ritmo']],
         'ativo'   => unidade_ativa($n),
+        'temResponsavel' => $temResponsavel($n),
         'contato' => $n['contato'],
         'proxima' => $proxima($n),
     ];
@@ -92,10 +99,12 @@ foreach (ler_grupos() as $g) {
     $temas[] = [
         'id'         => $g['id'],
         'tema'       => $g['tema'],
+        'nome'       => TEMAS_GRUPO[$g['tema']]['nome'],
         'finalidade' => $g['finalidade'],
         'maturidade' => $g['maturidade'],
         'ritmo'      => RITMOS[$g['ritmo']],
         'ativo'      => unidade_ativa($g),
+        'temResponsavel' => $temResponsavel($g),
         'portas'     => [
             'estudo'        => $g['portaEstudo'] ?: TEMAS_GRUPO[$g['tema']]['estudo'],
             'profissionais' => $g['portaProfissionais'] ?: TEMAS_GRUPO[$g['tema']]['profissionais'],
@@ -137,7 +146,7 @@ echo json_encode([
     'cultura' => array_values(array_map(fn ($c) => [
         'id' => $c['id'], 'nome' => $c['nome'], 'eixo' => $c['eixo'], 'nivel' => $c['nivel'],
         'cidade' => $c['cidade'], 'bairro' => $c['bairro'], 'ritmo' => RITMOS[$c['ritmo']],
-        'ativo' => unidade_ativa($c), 'contato' => $c['contato'], 'proxima' => $proxima($c),
+        'ativo' => unidade_ativa($c), 'temResponsavel' => $temResponsavel($c), 'contato' => $c['contato'], 'proxima' => $proxima($c),
     ], array_filter(ler_culturais(), fn ($c) => $c['publicado'] && $c['encerradoEm'] === ''))),
     /* A Biblioteca: só o publicado e não arquivado. */
     'biblioteca' => array_values(array_map(fn ($m) => [

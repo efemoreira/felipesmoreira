@@ -32,6 +32,7 @@ const AREAS = [
     'leituras'   => 'Leituras',
     'oficina'    => 'Oficina de formatos',
     'organizacao' => 'Núcleos, grupos e Liga',
+    'relatos'    => 'Relatos e ideias do Paulo',
 ];
 
 /**
@@ -79,7 +80,7 @@ const CAPACIDADES = [
         'resumo' => 'Quem entra no movimento, os encontros, os núcleos, os grupos temáticos, a Liga e a formação do time',
         /* Leituras é o relatório semanal — origem, território, a semana, o
            que andou acontecendo. Só lê; e lê o que a coordenação já abre. */
-        'areas'  => ['inscricoes', 'candidatos', 'aulas', 'eventos', 'agenda', 'leituras', 'organizacao'],
+        'areas'  => ['inscricoes', 'candidatos', 'aulas', 'eventos', 'agenda', 'leituras', 'organizacao', 'relatos'],
     ],
     /* NÃO ABRE TELA NENHUMA — `areas` vazio, e de propósito.
        Ela habilita um bloco no Início: a lista de quem esta pessoa acompanha.
@@ -276,6 +277,7 @@ const DESTINO_AREA = [
     'leituras'   => ['url' => '/painel/leituras.php', 'resumo' => 'A leitura da semana: o painel de comando e a escada, de onde vem a militância, onde ela mora, o que venceu e o que andou acontecendo'],
     'oficina'    => ['url' => '/painel/oficina.php', 'resumo' => 'Testar um formato de vídeo por vez e medir qual deles funciona no seu nicho'],
     'organizacao' => ['url' => '/painel/organizacao.php', 'resumo' => 'Os núcleos de cada lugar, os grupos de cada tema e a Liga dos Porta-vozes — com quem responde e o que entregou'],
+    'relatos'    => ['url' => '/painel/relatos.php', 'resumo' => 'Os relatos e as ideias que chegam pelo Paulo no WhatsApp: decidir o andamento e a resposta de cada protocolo'],
 ];
 
 /**
