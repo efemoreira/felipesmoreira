@@ -21,11 +21,21 @@ export interface Perfil {
   relationships: { target: string; relation: string; source: Fonte }[];
   sources: Fonte[];
 }
+export interface TextoBiografico { text: string; sources: Fonte[]; }
+export interface Biografia {
+  name: string;
+  role: string;
+  introduction: TextoBiografico;
+  trajectory: (TextoBiografico & { title: string })[];
+  inArchive: { title: string; text: string; verbeteIds: string[] }[];
+  facts: { label: string; value: string; sources: Fonte[] }[];
+  reviewedAt: string;
+}
 export interface Imagem {
   id: string; src: string; alt: string; caption: string; credit: string; sourceUrl: string;
   license: string; licenseUrl: string; people: string[]; eventIds: string[];
   kind: "portrait" | "event"; date?: string; modifications?: string;
 }
 export interface Referencia extends Fonte { series: Serie[]; pages?: Partial<Record<Serie, number[]>>; }
-export interface Pessoa { nome: string; verbetes: Verbete[]; perfil?: Perfil; complementos: Complemento[]; imagem?: Imagem; }
+export interface Pessoa { nome: string; slug: string; biografia?: Biografia; verbetes: Verbete[]; perfil?: Perfil; complementos: Complemento[]; imagem?: Imagem; }
 export interface Filtros { busca: string; serie: Serie | "todas"; natureza: Natureza | "todas"; periodo: string; camada: number | null; }

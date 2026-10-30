@@ -1,0 +1,1300 @@
+[
+  {
+    "name": "Luiz Inácio Lula da Silva",
+    "role": "Metalúrgico, dirigente sindical e presidente da República",
+    "introduction": {
+      "text": "Luiz Inácio Lula da Silva nasceu em Pernambuco em 1945 e construiu sua vida profissional e política no ABC paulista. Foi metalúrgico, dirigente sindical e um dos fundadores do Partido dos Trabalhadores. Sua trajetória reuniu atuação nas greves, participação na Constituinte e campanhas presidenciais.",
+      "sources": [
+        {
+          "title": "FGV — Lula, Atlas Histórico",
+          "url": "https://atlas.fgv.br/verbete/3036"
+        }
+      ]
+    },
+    "trajectory": [
+      {
+        "title": "Trajetória pública",
+        "text": "Presidiu o Sindicato dos Metalúrgicos de São Bernardo e Diadema a partir de 1975. Foi deputado constituinte, candidato derrotado à Presidência em 1989, 1994 e 1998 e presidente entre 2003 e 2010. Voltou ao cargo em janeiro de 2023. O percurso explica sua centralidade na história do PT e na oposição organizada pelo MBL.",
+        "sources": [
+          {
+            "title": "FGV — Lula, Atlas Histórico",
+            "url": "https://atlas.fgv.br/verbete/3036"
+          }
+        ]
+      }
+    ],
+    "inArchive": [
+      {
+        "title": "Trajetória e controvérsias",
+        "text": "O primeiro iceberg combina a formação sindical com acusações dirigidas ao governo, ao partido e à família. No Mensalão, Lula é contexto político: não foi réu da AP 470. Atribuições de terceiros precisam ser separadas de sua responsabilidade individual.",
+        "verbeteIds": [
+          "pt-1-1",
+          "pt-1-2",
+          "pt-1-3",
+          "pt-1-4"
+        ]
+      },
+      {
+        "title": "Prisão, anulações e absolvições",
+        "text": "No triplex e no sítio, houve condenações posteriormente anuladas. A soltura de 2019 e as nulidades reconhecidas em 2021 são acontecimentos distintos. Outras ações citadas terminaram em absolvição; nenhuma dessas categorias deve ser trocada por outra.",
+        "verbeteIds": [
+          "pt-1-6",
+          "pt-1-7",
+          "pt-1-8",
+          "pt-3-8"
+        ]
+      },
+      {
+        "title": "Boatos e oposição",
+        "text": "Nas camadas finais, Lula é alvo de hipóteses sobre DOPS, crime organizado e financiamento estrangeiro. O arquivo identifica a ausência de comprovação onde ela existe. Nos documentários do MBL, aparece como adversário político narrado pelos realizadores.",
+        "verbeteIds": [
+          "pt-5-11",
+          "pt-6-1",
+          "pt-6-2",
+          "doc-golpe-01"
+        ]
+      }
+    ],
+    "facts": [
+      {
+        "label": "Primeira posse presidencial",
+        "value": "1º de janeiro de 2003",
+        "sources": [
+          {
+            "title": "FGV — Lula, Atlas Histórico",
+            "url": "https://atlas.fgv.br/verbete/3036"
+          }
+        ]
+      }
+    ],
+    "reviewedAt": "2026-10-27"
+  },
+  {
+    "name": "Jair Bolsonaro",
+    "role": "Militar e presidente da República entre 2019 e 2022",
+    "introduction": {
+      "text": "Jair Messias Bolsonaro nasceu em Glicério, São Paulo, em 1955. Formou-se militar e entrou na política eletiva no Rio de Janeiro. Sua carreira parlamentar antecedeu em quase três décadas a chegada à Presidência e a consolidação do movimento político conhecido como bolsonarismo.",
+      "sources": [
+        {
+          "title": "Arquivo Nacional — Jair Messias Bolsonaro",
+          "url": "https://presidentes.an.gov.br/index.php/centro-de-referencia-de-acervos-presidenciais/assuntos/biografias/199-jair-messias-bolsonaro"
+        }
+      ]
+    },
+    "trajectory": [
+      {
+        "title": "Trajetória pública",
+        "text": "Depois de um mandato de vereador, foi deputado federal por sete legislaturas, de 1991 a 2018. Presidiu o país de janeiro de 2019 a janeiro de 2023. O arquivo reúne episódios desse governo, relações de seus filhos e o percurso de antigos apoiadores que passaram à oposição.",
+        "sources": [
+          {
+            "title": "Arquivo Nacional — Jair Messias Bolsonaro",
+            "url": "https://presidentes.an.gov.br/index.php/centro-de-referencia-de-acervos-presidenciais/assuntos/biografias/199-jair-messias-bolsonaro"
+          }
+        ]
+      }
+    ],
+    "inArchive": [
+      {
+        "title": "Condenação e relações familiares",
+        "text": "O vídeo distingue a condenação de Jair na trama golpista dos processos e suspeitas envolvendo Flávio. Ser pai de um investigado ou ter um aliado citado não estabelece participação nos fatos atribuídos a eles.",
+        "verbeteIds": [
+          "bolsonaro-1-9",
+          "bolsonaro-2-8",
+          "bolsonaro-1-1"
+        ]
+      },
+      {
+        "title": "Suspeitas e hipóteses descartadas",
+        "text": "Cheques de Queiroz, uso da Abin e a morte de Adriano são tratados em capítulos diferentes. O caso Marielle exige atenção especial: vizinhança, fotografias e o relato posteriormente retratado do porteiro não provam mando da família.",
+        "verbeteIds": [
+          "bolsonaro-2-4",
+          "bolsonaro-3-3",
+          "bolsonaro-6-1",
+          "bolsonaro-6-7"
+        ]
+      },
+      {
+        "title": "A relação com o MBL",
+        "text": "Kim declarou voto em Bolsonaro em 2018; o MBL apresentou pedido de impeachment em 2020. Os registros mostram mudança de aliança, e não uma posição uniforme do movimento ao longo de todo o período.",
+        "verbeteIds": [
+          "mbl-kim-apoio-2018",
+          "mbl-impeachment-bolsonaro"
+        ]
+      }
+    ],
+    "facts": [
+      {
+        "label": "Mandatos federais",
+        "value": "Sete legislaturas na Câmara, entre 1991 e 2018",
+        "sources": [
+          {
+            "title": "Arquivo Nacional — Jair Messias Bolsonaro",
+            "url": "https://presidentes.an.gov.br/index.php/centro-de-referencia-de-acervos-presidenciais/assuntos/biografias/199-jair-messias-bolsonaro"
+          }
+        ]
+      }
+    ],
+    "reviewedAt": "2026-10-27"
+  },
+  {
+    "name": "Sergio Moro",
+    "role": "Ex-juiz federal, ex-ministro e senador eleito em 2022",
+    "introduction": {
+      "text": "Sergio Fernando Moro é jurista e ex-magistrado paranaense. Tornou-se conhecido como juiz responsável por processos da Operação Lava Jato em Curitiba. Sua passagem da magistratura ao governo e depois às eleições conecta instituições que têm funções diferentes na narrativa: julgar, governar e representar eleitores.",
+      "sources": [
+        {
+          "title": "Senado — Paraná elege Sergio Moro",
+          "url": "https://www12.senado.leg.br/noticias/materias/2022/10/02/parana-elege-sergio-moro-para-o-senado-federal"
+        }
+      ]
+    },
+    "trajectory": [
+      {
+        "title": "Trajetória pública",
+        "text": "Deixou a magistratura para assumir o Ministério da Justiça no governo Bolsonaro em 2019 e saiu do cargo em 2020. Foi eleito senador pelo Paraná em outubro de 2022, iniciando o mandato em 2023. A formação e a carreira anterior ajudam a contextualizar sua projeção política.",
+        "sources": [
+          {
+            "title": "Senado — Paraná elege Sergio Moro",
+            "url": "https://www12.senado.leg.br/noticias/materias/2022/10/02/parana-elege-sergio-moro-para-o-senado-federal"
+          }
+        ]
+      }
+    ],
+    "inArchive": [
+      {
+        "title": "Juiz da Lava Jato",
+        "text": "Moro proferiu decisões contra Lula e José Dirceu. No triplex, o STF reconheceu sua suspeição. O arquivo diferencia essa decisão das discussões sobre competência de Curitiba e das críticas à divulgação de conversas entre Lula e Dilma.",
+        "verbeteIds": [
+          "pt-1-6",
+          "pt-1-8",
+          "pt-2-7",
+          "pt-2-9",
+          "pt-2-10"
+        ]
+      },
+      {
+        "title": "Do governo à disputa eleitoral",
+        "text": "Sua saída do governo integra o contexto do pedido de impeachment apresentado pelo MBL contra Bolsonaro. O apoio posterior de integrantes do movimento à sua candidatura explica a aproximação com o Podemos, sem demonstrar identidade entre todos os seus projetos.",
+        "verbeteIds": [
+          "mbl-impeachment-bolsonaro",
+          "mbl-podemos-ruptura"
+        ]
+      }
+    ],
+    "facts": [
+      {
+        "label": "Atuação",
+        "value": "Ex-juiz federal, ex-ministro e senador eleito em 2022",
+        "sources": [
+          {
+            "title": "Senado — Paraná elege Sergio Moro",
+            "url": "https://www12.senado.leg.br/noticias/materias/2022/10/02/parana-elege-sergio-moro-para-o-senado-federal"
+          }
+        ]
+      }
+    ],
+    "reviewedAt": "2026-10-27"
+  },
+  {
+    "name": "Antonio Palocci",
+    "role": "Médico, ex-prefeito e ex-ministro",
+    "introduction": {
+      "text": "Antonio Palocci Filho é médico de formação e construiu sua carreira política em Ribeirão Preto, São Paulo. Foi prefeito, deputado e integrante dos primeiros escalões dos governos Lula e Dilma, tornando-se um dos principais articuladores da política econômica petista nos anos 2000.",
+      "sources": [
+        {
+          "title": "Folha — perfil de Palocci indicado à Fazenda",
+          "url": "https://www1.folha.uol.com.br/folha/brasil/ult96u43470.shtml"
+        }
+      ]
+    },
+    "trajectory": [
+      {
+        "title": "Trajetória pública",
+        "text": "Foi prefeito de Ribeirão Preto em dois períodos e ministro da Fazenda de 2003 a 2006. Em 2011, comandou a Casa Civil de Dilma. A passagem por funções municipais e federais explica por que aparece em casos de naturezas e épocas diferentes, da quebra do sigilo de Francenildo à Lava Jato.",
+        "sources": [
+          {
+            "title": "Folha — perfil de Palocci indicado à Fazenda",
+            "url": "https://www1.folha.uol.com.br/folha/brasil/ult96u43470.shtml"
+          }
+        ]
+      }
+    ],
+    "inArchive": [
+      {
+        "title": "Francenildo e gestão pública",
+        "text": "No episódio do caseiro, Palocci aparece como autoridade contestada pelo depoimento de uma testemunha cujo sigilo bancário foi violado. O arquivo distingue a quebra efetiva do sigilo da responsabilidade penal individual e das decisões sobre a acusação.",
+        "verbeteIds": [
+          "pt-3-3"
+        ]
+      },
+      {
+        "title": "Colaborador e autor de acusações",
+        "text": "Sua colaboração com a Polícia Federal e relatos sobre Lula são fontes de alegações, não comprovação automática de cada acusação. O documento registra dificuldades de corroboração e anulações processuais posteriores contra Palocci.",
+        "verbeteIds": [
+          "pt-2-8",
+          "pt-5-4",
+          "pt-5-6",
+          "pt-5-10"
+        ]
+      }
+    ],
+    "facts": [
+      {
+        "label": "Atuação",
+        "value": "Médico, ex-prefeito e ex-ministro",
+        "sources": [
+          {
+            "title": "Folha — perfil de Palocci indicado à Fazenda",
+            "url": "https://www1.folha.uol.com.br/folha/brasil/ult96u43470.shtml"
+          }
+        ]
+      }
+    ],
+    "reviewedAt": "2026-10-27"
+  },
+  {
+    "name": "Alexandre Santos",
+    "role": "Produtor audiovisual e integrante da formação do MBL",
+    "introduction": {
+      "text": "Alexandre Santos é irmão de Renan Santos e participou da estrutura de comunicação e organização do MBL. A reportagem da piauí o identificou entre os integrantes da cúpula do movimento em 2017. No material audiovisual do arquivo, sua voz é a de um realizador e participante da história narrada.",
+      "sources": [
+        {
+          "title": "piauí — O grupo da mão invisível",
+          "url": "https://piaui.uol.com.br/web/o-grupo-da-mao-invisivel/"
+        }
+      ]
+    },
+    "trajectory": [
+      {
+        "title": "Trajetória pública",
+        "text": "A produção de vídeos, a organização de manifestações e a formação de porta-vozes marcam sua trajetória pública documentada. Codirigiu Não Vai Ter Golpe!, obra lançada em 2019 sobre o impeachment a partir da perspectiva dos organizadores do MBL. Essa dupla posição de autor e personagem é relevante para a leitura crítica do filme.",
+        "sources": [
+          {
+            "title": "piauí — O grupo da mão invisível",
+            "url": "https://piaui.uol.com.br/web/o-grupo-da-mao-invisivel/"
+          }
+        ]
+      }
+    ],
+    "inArchive": [
+      {
+        "title": "Bastidores de comunicação",
+        "text": "Alexandre relata a passagem da produção musical e audiovisual para campanhas e ativismo, incluindo a experiência com Paulo Batista e a formação de Holiday como porta-voz. São memórias dos participantes sobre a construção de linguagem política.",
+        "verbeteIds": [
+          "doc-golpe-02",
+          "doc-golpe-03",
+          "doc-golpe-07"
+        ]
+      },
+      {
+        "title": "Organizador e narrador",
+        "text": "Nos protestos, na marcha e no acampamento, descreve decisões e conflitos internos. O filme apresenta seu ponto de vista sobre o legado do movimento; esse testemunho não substitui apuração independente das intenções de adversários.",
+        "verbeteIds": [
+          "doc-golpe-04",
+          "doc-golpe-08",
+          "doc-golpe-13",
+          "doc-golpe-23"
+        ]
+      }
+    ],
+    "facts": [
+      {
+        "label": "Atuação",
+        "value": "Produtor audiovisual e integrante da formação do MBL",
+        "sources": [
+          {
+            "title": "piauí — O grupo da mão invisível",
+            "url": "https://piaui.uol.com.br/web/o-grupo-da-mao-invisivel/"
+          }
+        ]
+      }
+    ],
+    "reviewedAt": "2026-10-27"
+  },
+  {
+    "name": "Adriano da Nóbrega",
+    "role": "Ex-capitão da Polícia Militar do Rio de Janeiro",
+    "introduction": {
+      "text": "Adriano Magalhães da Nóbrega foi policial militar do Rio de Janeiro, com passagem pelo Bope. Depois da carreira policial, tornou-se alvo de investigações sobre milícias e o grupo conhecido como Escritório do Crime. Morreu numa operação policial em Esplanada, Bahia, em fevereiro de 2020.",
+      "sources": [
+        {
+          "title": "Wikipédia — Adriano da Nóbrega",
+          "url": "https://pt.wikipedia.org/wiki/Adriano_da_N%C3%B3brega"
+        }
+      ]
+    },
+    "trajectory": [
+      {
+        "title": "Trajetória pública",
+        "text": "Sua trajetória liga o universo policial às investigações sobre grupos armados que atuavam no Rio. O arquivo examina homenagens recebidas na Alerj, empregos de familiares no gabinete de Flávio e a operação que terminou em sua morte. Cada vínculo tem natureza própria e não demonstra, isoladamente, participação em outro crime.",
+        "sources": [
+          {
+            "title": "Wikipédia — Adriano da Nóbrega",
+            "url": "https://pt.wikipedia.org/wiki/Adriano_da_N%C3%B3brega"
+          }
+        ]
+      }
+    ],
+    "inArchive": [
+      {
+        "title": "Homenagens e vínculos de gabinete",
+        "text": "Adriano recebeu homenagens propostas por Flávio Bolsonaro. Sua mãe e sua ex-mulher trabalharam no gabinete do deputado. Esses vínculos são documentáveis, mas não provam que o parlamentar tenha integrado organização criminosa ou financiado imóveis ilícitos.",
+        "verbeteIds": [
+          "bolsonaro-2-1",
+          "bolsonaro-2-2",
+          "bolsonaro-5-2"
+        ]
+      },
+      {
+        "title": "Morte e teorias concorrentes",
+        "text": "A versão policial de confronto foi questionada. As hipóteses de execução política e especulações sobre celulares são apresentadas separadamente: questionar uma perícia não identifica, por si, um mandante.",
+        "verbeteIds": [
+          "bolsonaro-4-6",
+          "bolsonaro-6-1",
+          "bolsonaro-6-2"
+        ]
+      }
+    ],
+    "facts": [
+      {
+        "label": "Atuação",
+        "value": "Ex-capitão da Polícia Militar do Rio de Janeiro",
+        "sources": [
+          {
+            "title": "Wikipédia — Adriano da Nóbrega",
+            "url": "https://pt.wikipedia.org/wiki/Adriano_da_N%C3%B3brega"
+          }
+        ]
+      }
+    ],
+    "reviewedAt": "2026-10-27"
+  },
+  {
+    "name": "Marcos Valério",
+    "role": "Empresário do setor publicitário",
+    "introduction": {
+      "text": "Marcos Valério Fernandes de Souza é empresário que atuou em agências de publicidade de Minas Gerais. Tornou-se conhecido nacionalmente por sua participação no núcleo financeiro e publicitário do Mensalão, investigado a partir de 2005 e julgado pelo Supremo Tribunal Federal.",
+      "sources": [
+        {
+          "title": "STF — decisão sobre execução da pena de Marcos Valério",
+          "url": "https://portal.stf.jus.br/noticias/verNoticiaDetalhe.asp?idConteudo=457705"
+        }
+      ]
+    },
+    "trajectory": [
+      {
+        "title": "Trajetória pública",
+        "text": "Foi condenado na Ação Penal 470 por crimes como peculato, corrupção ativa e lavagem de dinheiro. Em decisão de 2020, o STF registrava pena de 37 anos, cinco meses e seis dias e manteve a execução domiciliar autorizada pela Justiça mineira. Trata-se de sua condenação, distinta das acusações que depois dirigiu a outras pessoas.",
+        "sources": [
+          {
+            "title": "STF — decisão sobre execução da pena de Marcos Valério",
+            "url": "https://portal.stf.jus.br/noticias/verNoticiaDetalhe.asp?idConteudo=457705"
+          }
+        ]
+      }
+    ],
+    "inArchive": [
+      {
+        "title": "Condenado e fonte de relatos",
+        "text": "No Mensalão, Valério é agente condenado. Nos capítulos sobre Lula, chantagem e PCC, aparece como autor de declarações que exigem corroboração própria. Sua condenação não torna verdadeira toda alegação posterior, nem transfere culpa aos citados.",
+        "verbeteIds": [
+          "pt-1-4",
+          "pt-5-8",
+          "pt-5-9",
+          "pt-5-11",
+          "bolsonaro-5-9"
+        ]
+      }
+    ],
+    "facts": [
+      {
+        "label": "Atuação",
+        "value": "Empresário do setor publicitário",
+        "sources": [
+          {
+            "title": "STF — decisão sobre execução da pena de Marcos Valério",
+            "url": "https://portal.stf.jus.br/noticias/verNoticiaDetalhe.asp?idConteudo=457705"
+          }
+        ]
+      }
+    ],
+    "reviewedAt": "2026-10-27"
+  },
+  {
+    "name": "Fernando Holiday",
+    "role": "Ex-vereador de São Paulo e ex-integrante do MBL",
+    "introduction": {
+      "text": "Fernando Holiday foi eleito vereador de São Paulo em 2016, aos 20 anos, e reeleito em 2020. Ganhou projeção nas manifestações pelo impeachment e como porta-voz do MBL, combinando comunicação em redes sociais e atuação parlamentar municipal.",
+      "sources": [
+        {
+          "title": "Câmara Municipal de São Paulo — Fernando Holiday",
+          "url": "https://www.camara.sp.gov.br/vereador/fernando-holiday/"
+        }
+      ]
+    },
+    "trajectory": [
+      {
+        "title": "Trajetória pública",
+        "text": "Exerceu os mandatos de 2017–2020 e 2021–2024. Deixou o MBL em janeiro de 2021 e se filiou ao PL em julho de 2023, reaproximando-se de Jair Bolsonaro. Essas mudanças impedem atribuir automaticamente ao movimento as posições que adotou depois do rompimento.",
+        "sources": [
+          {
+            "title": "Câmara Municipal de São Paulo — Fernando Holiday",
+            "url": "https://www.camara.sp.gov.br/vereador/fernando-holiday/"
+          }
+        ]
+      }
+    ],
+    "inArchive": [
+      {
+        "title": "Da formação à marcha",
+        "text": "Não Vai Ter Golpe! apresenta sua aproximação com os organizadores e sua projeção como porta-voz durante a marcha a Brasília. A narrativa é dos realizadores e enfatiza a construção coletiva de sua imagem pública.",
+        "verbeteIds": [
+          "doc-golpe-07",
+          "doc-golpe-08",
+          "doc-golpe-23"
+        ]
+      },
+      {
+        "title": "Ruptura e realinhamento",
+        "text": "Os complementos registram a saída do movimento e sua filiação posterior ao PL. Essa cronologia explica por que ele pode ser personagem fundador do filme e, ao mesmo tempo, ex-integrante na fase do partido Missão.",
+        "verbeteIds": [
+          "mbl-holiday-saida",
+          "mbl-holiday-pl"
+        ]
+      }
+    ],
+    "facts": [
+      {
+        "label": "Atuação",
+        "value": "Ex-vereador de São Paulo e ex-integrante do MBL",
+        "sources": [
+          {
+            "title": "Câmara Municipal de São Paulo — Fernando Holiday",
+            "url": "https://www.camara.sp.gov.br/vereador/fernando-holiday/"
+          }
+        ]
+      }
+    ],
+    "reviewedAt": "2026-10-27"
+  },
+  {
+    "name": "Sérgio Gomes da Silva",
+    "role": "Empresário conhecido como Sombra",
+    "introduction": {
+      "text": "Sérgio Gomes da Silva foi empresário ligado ao transporte público em Santo André e conhecido como Sombra. Era próximo do prefeito Celso Daniel e estava com ele na noite do sequestro, em janeiro de 2002. Essa circunstância o tornou personagem central das investigações sobre a morte do prefeito.",
+      "sources": [
+        {
+          "title": "Agência Brasil/UOL — morte de Sérgio Gomes da Silva",
+          "url": "https://noticias.uol.com.br/ultimas-noticias/agencia-brasil/2016/09/27/sombra-acusado-pela-morte-de-celso-daniel-morre-em-sao-paulo.htm"
+        }
+      ]
+    },
+    "trajectory": [
+      {
+        "title": "Trajetória pública",
+        "text": "Foi acusado pelo Ministério Público de mandar matar Celso Daniel, mas negou a acusação e não chegou a ser julgado por esse homicídio. Em 2014, o STF anulou a ação penal contra ele. Morreu em São Paulo em setembro de 2016; a morte encerrou a possibilidade de responsabilização penal pessoal.",
+        "sources": [
+          {
+            "title": "Agência Brasil/UOL — morte de Sérgio Gomes da Silva",
+            "url": "https://noticias.uol.com.br/ultimas-noticias/agencia-brasil/2016/09/27/sombra-acusado-pela-morte-de-celso-daniel-morre-em-sao-paulo.htm"
+          }
+        ]
+      }
+    ],
+    "inArchive": [
+      {
+        "title": "Acusações distintas",
+        "text": "O arquivo separa o processo do assassinato das acusações de propina no transporte de Santo André. A hipótese de Sombra como mandante não pode ser tratada como condenação por homicídio, nem prova de comando nacional do PT.",
+        "verbeteIds": [
+          "pt-2-1",
+          "pt-3-1",
+          "pt-4-2",
+          "pt-6-6"
+        ]
+      }
+    ],
+    "facts": [
+      {
+        "label": "Atuação",
+        "value": "Empresário conhecido como Sombra",
+        "sources": [
+          {
+            "title": "Agência Brasil/UOL — morte de Sérgio Gomes da Silva",
+            "url": "https://noticias.uol.com.br/ultimas-noticias/agencia-brasil/2016/09/27/sombra-acusado-pela-morte-de-celso-daniel-morre-em-sao-paulo.htm"
+          }
+        ]
+      }
+    ],
+    "reviewedAt": "2026-10-27"
+  },
+  {
+    "name": "Arthur do Val",
+    "role": "Comunicador conhecido como MamãeFalei e ex-deputado",
+    "introduction": {
+      "text": "Arthur Moledo do Val é empresário e comunicador que se tornou conhecido pelo canal MamãeFalei. Sua atuação em vídeos de confronto político se aproximou do MBL. Foi eleito deputado estadual em 2018 e disputou a Prefeitura de São Paulo em 2020 pelo Patriota.",
+      "sources": [
+        {
+          "title": "El País — entrevista e perfil de Arthur do Val em 2020",
+          "url": "https://brasil.elpais.com/brasil/2020-10-16/el-pais-e-mynews-entrevistam-arthur-do-val-candidato-do-patriota-a-prefeitura-de-sao-paulo.html?outputType=amp"
+        }
+      ]
+    },
+    "trajectory": [
+      {
+        "title": "Trajetória pública",
+        "text": "Exerceu mandato na Alesp a partir de 2019. Após a divulgação de áudios sobre mulheres ucranianas, teve a cassação aprovada em maio de 2022. Em julho de 2026, o STF rejeitou uma reclamação contra a manutenção dessa medida. Sua trajetória política é contexto para analisar sua produção, não critério suficiente para aceitar ou rejeitar uma fonte.",
+        "sources": [
+          {
+            "title": "El País — entrevista e perfil de Arthur do Val em 2020",
+            "url": "https://brasil.elpais.com/brasil/2020-10-16/el-pais-e-mynews-entrevistam-arthur-do-val-candidato-do-patriota-a-prefeitura-de-sao-paulo.html?outputType=amp"
+          }
+        ]
+      }
+    ],
+    "inArchive": [
+      {
+        "title": "Autor e personagem",
+        "text": "Arthur apresenta os dois icebergs e também surge na história posterior do MBL. O arquivo distingue suas interpretações das reportagens, documentos e decisões que ele cita. Os eventos sobre cassação descrevem sanção parlamentar e contestação processual.",
+        "verbeteIds": [
+          "doc-golpe-23",
+          "mbl-podemos-ruptura",
+          "mbl-arthur-cassacao",
+          "mbl-arthur-reclamacao"
+        ]
+      }
+    ],
+    "facts": [
+      {
+        "label": "Atuação",
+        "value": "Comunicador conhecido como MamãeFalei e ex-deputado",
+        "sources": [
+          {
+            "title": "El País — entrevista e perfil de Arthur do Val em 2020",
+            "url": "https://brasil.elpais.com/brasil/2020-10-16/el-pais-e-mynews-entrevistam-arthur-do-val-candidato-do-patriota-a-prefeitura-de-sao-paulo.html?outputType=amp"
+          }
+        ]
+      }
+    ],
+    "reviewedAt": "2026-10-27"
+  },
+  {
+    "name": "José Carlos Bumlai",
+    "role": "Engenheiro, empresário e pecuarista",
+    "introduction": {
+      "text": "José Carlos Bumlai é engenheiro e pecuarista nascido em Corumbá, em 1944. Tornou-se nacionalmente conhecido por sua amizade com Lula e pelos negócios examinados na Lava Jato. Sua atividade empresarial e a proximidade pessoal com o presidente são dimensões diferentes da apuração criminal.",
+      "sources": [
+        {
+          "title": "Wikipédia — José Carlos Bumlai",
+          "url": "https://pt.wikipedia.org/wiki/Jos%C3%A9_Carlos_Bumlai"
+        }
+      ]
+    },
+    "trajectory": [
+      {
+        "title": "Trajetória pública",
+        "text": "O empréstimo de R$ 12 milhões obtido no Banco Schahin em 2004 tornou-se objeto de processo. A Justiça Federal o condenou em 2016; esse é um marco histórico, sem afirmar aqui a situação final de todos os recursos. Sua defesa também reconheceu apoio técnico à reforma do sítio de Atibaia.",
+        "sources": [
+          {
+            "title": "Wikipédia — José Carlos Bumlai",
+            "url": "https://pt.wikipedia.org/wiki/Jos%C3%A9_Carlos_Bumlai"
+          }
+        ]
+      }
+    ],
+    "inArchive": [
+      {
+        "title": "Empréstimo, obras e hipótese de chantagem",
+        "text": "A narrativa conecta o empréstimo Schahin, a circulação de recursos e o sítio. A participação de Bumlai nesses episódios não demonstra a hipótese adicional de chantagem contra Lula, atribuída a Marcos Valério. Desfechos de outros réus não devem ser aplicados automaticamente a ele.",
+        "verbeteIds": [
+          "pt-1-7",
+          "pt-3-5",
+          "pt-5-9"
+        ]
+      }
+    ],
+    "facts": [
+      {
+        "label": "Atuação",
+        "value": "Engenheiro, empresário e pecuarista",
+        "sources": [
+          {
+            "title": "Wikipédia — José Carlos Bumlai",
+            "url": "https://pt.wikipedia.org/wiki/Jos%C3%A9_Carlos_Bumlai"
+          }
+        ]
+      }
+    ],
+    "reviewedAt": "2026-10-27"
+  },
+  {
+    "name": "Jaques Wagner",
+    "role": "Político e ex-governador da Bahia",
+    "introduction": {
+      "text": "Jaques Wagner nasceu no Rio de Janeiro em 1951 e construiu sua carreira política na Bahia, onde participou do sindicalismo do polo petroquímico. Foi deputado federal, ministro e governador do estado, antes de chegar ao Senado. Sua trajetória está vinculada ao PT.",
+      "sources": [
+        {
+          "title": "Senado — Jaques Wagner",
+          "url": "https://www12.senado.leg.br/noticias/materias/2019/01/18/jaques-wagner-pt"
+        }
+      ]
+    },
+    "trajectory": [
+      {
+        "title": "Trajetória pública",
+        "text": "Governou a Bahia entre 2007 e 2014 e assumiu mandato no Senado em 2019. Também passou pelos ministérios do Trabalho, da Defesa e da Casa Civil. A experiência em governos petistas ajuda a entender sua interlocução política, mas não comprova as suspeitas financeiras mencionadas no arquivo.",
+        "sources": [
+          {
+            "title": "Senado — Jaques Wagner",
+            "url": "https://www12.senado.leg.br/noticias/materias/2019/01/18/jaques-wagner-pt"
+          }
+        ]
+      }
+    ],
+    "inArchive": [
+      {
+        "title": "Diligências no caso Master",
+        "text": "O capítulo individual trata das suspeitas de favorecimento ao Banco Master, das diligências e das explicações de Wagner. Ele contestou irregularidades. As conexões com consultorias e encontros de outras autoridades são contexto: o material não localiza denúncia contra ele e não permite substituir investigação por condenação.",
+        "verbeteIds": [
+          "pt-2-11",
+          "pt-3-10",
+          "pt-4-10"
+        ]
+      }
+    ],
+    "facts": [
+      {
+        "label": "Atuação",
+        "value": "Político e ex-governador da Bahia",
+        "sources": [
+          {
+            "title": "Senado — Jaques Wagner",
+            "url": "https://www12.senado.leg.br/noticias/materias/2019/01/18/jaques-wagner-pt"
+          }
+        ]
+      }
+    ],
+    "reviewedAt": "2026-10-27"
+  },
+  {
+    "name": "Partido Missão",
+    "role": "Partido político com registro aprovado em 2025",
+    "introduction": {
+      "text": "O Partido Missão é uma organização partidária articulada por dirigentes ligados ao Movimento Brasil Livre. O TSE aprovou seu registro e seu estatuto em 4 de novembro de 2025, autorizando o número eleitoral 14. Movimento social e partido são organizações distintas, mesmo quando compartilham integrantes.",
+      "sources": [
+        {
+          "title": "TSE — registro do Partido Missão",
+          "url": "https://www.tse.jus.br/comunicacao/noticias/2025/Novembro/tse-aprova-registro-e-homologa-estatuto-do-partido-missao"
+        }
+      ]
+    },
+    "trajectory": [
+      {
+        "title": "Trajetória pública",
+        "text": "A organização foi registrada em cartório civil em 23 de outubro de 2023. No processo eleitoral, apresentou 577.999 apoios considerados válidos. A aprovação unânime do TSE habilitou sua atuação partidária; não é uma chancela às interpretações históricas ou propostas de seus dirigentes.",
+        "sources": [
+          {
+            "title": "TSE — registro do Partido Missão",
+            "url": "https://www.tse.jus.br/comunicacao/noticias/2025/Novembro/tse-aprova-registro-e-homologa-estatuto-do-partido-missao"
+          }
+        ]
+      }
+    ],
+    "inArchive": [
+      {
+        "title": "Da organização à representação",
+        "text": "Os eventos distinguem a criação civil, a autorização eleitoral e a entrada de Kim Kataguiri na legenda em 2026. Essa sequência complementa o relato dos fundadores nos documentários e evita atribuir ao Missão ações praticadas pelo MBL antes da existência do partido.",
+        "verbeteIds": [
+          "mbl-missao-origem",
+          "mbl-missao-registro",
+          "mbl-kim-missao"
+        ]
+      }
+    ],
+    "facts": [
+      {
+        "label": "Número eleitoral",
+        "value": "14",
+        "sources": [
+          {
+            "title": "TSE — registro do Partido Missão",
+            "url": "https://www.tse.jus.br/comunicacao/noticias/2025/Novembro/tse-aprova-registro-e-homologa-estatuto-do-partido-missao"
+          }
+        ]
+      }
+    ],
+    "reviewedAt": "2026-10-27"
+  },
+  {
+    "name": "José Genoino",
+    "role": "Ex-deputado federal e ex-presidente do PT",
+    "introduction": {
+      "text": "José Genoino é professor e político que integrou a resistência à ditadura militar e a Guerrilha do Araguaia. Preso em 1972, posteriormente participou da construção do PT e exerceu mandatos de deputado federal por São Paulo. Presidiu o partido no início do primeiro governo Lula.",
+      "sources": [
+        {
+          "title": "Congresso em Foco — perfil de José Genoino",
+          "url": "https://www.congressoemfoco.com.br/noticia/84727/jose-genoino-pt-sp"
+        }
+      ]
+    },
+    "trajectory": [
+      {
+        "title": "Trajetória pública",
+        "text": "Sua carreira reuniu militância clandestina, atividade parlamentar e direção partidária. Deixou a presidência do PT em julho de 2005, durante a crise do Mensalão. Foi condenado no julgamento da Ação Penal 470; esse processo é diferente da apreensão de dinheiro com um assessor de seu irmão.",
+        "sources": [
+          {
+            "title": "Congresso em Foco — perfil de José Genoino",
+            "url": "https://www.congressoemfoco.com.br/noticia/84727/jose-genoino-pt-sp"
+          }
+        ]
+      }
+    ],
+    "inArchive": [
+      {
+        "title": "Dois episódios que não se confundem",
+        "text": "Genoino integra o capítulo do Mensalão como dirigente condenado. No episódio dos dólares, o homem flagrado era assessor de José Guimarães, seu irmão: nem Genoino nem Guimarães foram a pessoa presa com o dinheiro. O vínculo familiar não substitui a identificação de cada conduta.",
+        "verbeteIds": [
+          "pt-1-4",
+          "pt-2-2"
+        ]
+      }
+    ],
+    "facts": [
+      {
+        "label": "Atuação",
+        "value": "Ex-deputado federal e ex-presidente do PT",
+        "sources": [
+          {
+            "title": "Congresso em Foco — perfil de José Genoino",
+            "url": "https://www.congressoemfoco.com.br/noticia/84727/jose-genoino-pt-sp"
+          }
+        ]
+      }
+    ],
+    "reviewedAt": "2026-10-27"
+  },
+  {
+    "name": "Michel Temer",
+    "role": "Ex-presidente da República e jurista",
+    "introduction": {
+      "text": "Michel Temer é advogado, professor de Direito Constitucional e político do MDB. Foi deputado federal por São Paulo e presidente da Câmara. Eleito vice-presidente na chapa de Dilma Rousseff em 2010 e 2014, assumiu definitivamente a Presidência após o impeachment, em agosto de 2016.",
+      "sources": [
+        {
+          "title": "Governo federal — Temer assume a Presidência em 2016",
+          "url": "https://www.gov.br/sri/pt-br/backup-secretaria-de-governo/assuntos/noticias/noticias-em-acervo/2016/michel-temer-assume-definitivamente-a-presidencia"
+        }
+      ]
+    },
+    "trajectory": [
+      {
+        "title": "Trajetória pública",
+        "text": "Seu governo se estendeu até o fim de 2018. A formação jurídica e a longa experiência parlamentar antecederam sua chegada ao Executivo. Nos documentários, o período Temer aparece associado à defesa de reformas por integrantes do MBL, o que deve ser distinguido da autoria formal das medidas governamentais.",
+        "sources": [
+          {
+            "title": "Governo federal — Temer assume a Presidência em 2016",
+            "url": "https://www.gov.br/sri/pt-br/backup-secretaria-de-governo/assuntos/noticias/noticias-em-acervo/2016/michel-temer-assume-definitivamente-a-presidencia"
+          }
+        ]
+      }
+    ],
+    "inArchive": [
+      {
+        "title": "Decisão de extradição e agenda de reformas",
+        "text": "No caso Battisti, Temer integra a mudança de posição do Executivo que levou à decisão de extraditar o italiano em 2018. No filme sobre Renan, funciona como referência ao governo cujas reformas o movimento apoiou; o relato não demonstra participação do MBL em cada decisão administrativa.",
+        "verbeteIds": [
+          "pt-2-4",
+          "doc-renan-06"
+        ]
+      }
+    ],
+    "facts": [
+      {
+        "label": "Atuação",
+        "value": "Ex-presidente da República e jurista",
+        "sources": [
+          {
+            "title": "Governo federal — Temer assume a Presidência em 2016",
+            "url": "https://www.gov.br/sri/pt-br/backup-secretaria-de-governo/assuntos/noticias/noticias-em-acervo/2016/michel-temer-assume-definitivamente-a-presidencia"
+          }
+        ]
+      }
+    ],
+    "reviewedAt": "2026-10-27"
+  },
+  {
+    "name": "Deltan Dallagnol",
+    "role": "Ex-procurador da República e ex-deputado",
+    "introduction": {
+      "text": "Deltan Dallagnol foi procurador da República entre 2003 e 2021 e coordenou a força-tarefa da Lava Jato em Curitiba. Depois de deixar o Ministério Público, ingressou na política eleitoral e foi eleito deputado federal pelo Paraná em 2022.",
+      "sources": [
+        {
+          "title": "Câmara dos Deputados — Deltan Dallagnol",
+          "url": "https://www.camara.leg.br/deputados/220705/biografia"
+        }
+      ]
+    },
+    "trajectory": [
+      {
+        "title": "Trajetória pública",
+        "text": "Assumiu o mandato em fevereiro de 2023. Em maio daquele ano, o TSE cassou seu registro de candidatura; a Câmara registra o encerramento do mandato em junho. Essa decisão eleitoral não é uma sentença sobre todos os atos da força-tarefa ou sobre o conteúdo das mensagens da Vaza Jato.",
+        "sources": [
+          {
+            "title": "Câmara dos Deputados — Deltan Dallagnol",
+            "url": "https://www.camara.leg.br/deputados/220705/biografia"
+          }
+        ]
+      }
+    ],
+    "inArchive": [
+      {
+        "title": "A atuação da própria Lava Jato",
+        "text": "Dallagnol é personagem dos capítulos sobre mensagens entre procuradores e Moro e sobre o acordo que previa uma fundação com recursos da Petrobras. Aqui o objeto é a conduta dos investigadores: a suspensão do acordo pelo STF deve ser diferenciada de uma condenação criminal pessoal.",
+        "verbeteIds": [
+          "pt-2-9",
+          "pt-4-7"
+        ]
+      }
+    ],
+    "facts": [
+      {
+        "label": "Atuação",
+        "value": "Ex-procurador da República e ex-deputado",
+        "sources": [
+          {
+            "title": "Câmara dos Deputados — Deltan Dallagnol",
+            "url": "https://www.camara.leg.br/deputados/220705/biografia"
+          }
+        ]
+      }
+    ],
+    "reviewedAt": "2026-10-27"
+  },
+  {
+    "name": "Dionísio de Aquino Severo",
+    "role": "Preso morto em São Paulo em 2002",
+    "introduction": {
+      "text": "Dionísio de Aquino Severo, também identificado na imprensa como Dionizio, era um preso paulista associado a crimes de sequestro. Seu nome ficou ligado à repercussão do assassinato de Celso Daniel e à discussão sobre mortes de pessoas mencionadas no entorno do caso.",
+      "sources": [
+        {
+          "title": "Folha — morte de Dionizio no CDP do Belém",
+          "url": "https://www1.folha.uol.com.br/fsp/cotidian/ff1104200205.htm"
+        }
+      ]
+    },
+    "trajectory": [
+      {
+        "title": "Trajetória pública",
+        "text": "Uma reportagem contemporânea da Folha registra sua fuga de uma prisão de Guarulhos com auxílio de helicóptero em janeiro de 2002 e sua morte, aos 37 anos, em abril, no Centro de Detenção Provisória do Belém. A documentação consultada não sustenta uma biografia pública mais ampla.",
+        "sources": [
+          {
+            "title": "Folha — morte de Dionizio no CDP do Belém",
+            "url": "https://www1.folha.uol.com.br/fsp/cotidian/ff1104200205.htm"
+          }
+        ]
+      }
+    ],
+    "inArchive": [
+      {
+        "title": "Uma morte incluída em uma hipótese",
+        "text": "Ele aparece como pessoa morta, não como autoridade ou autor dos vídeos. A reunião de seu caso com outros óbitos alimenta uma hipótese de eliminação de testemunhas; o arquivo não apresenta decisão que demonstre uma operação comum ou um mandante compartilhado.",
+        "verbeteIds": [
+          "pt-4-4",
+          "pt-6-5"
+        ]
+      }
+    ],
+    "facts": [
+      {
+        "label": "Atuação",
+        "value": "Preso morto em São Paulo em 2002",
+        "sources": [
+          {
+            "title": "Folha — morte de Dionizio no CDP do Belém",
+            "url": "https://www1.folha.uol.com.br/fsp/cotidian/ff1104200205.htm"
+          }
+        ]
+      }
+    ],
+    "reviewedAt": "2026-10-27"
+  },
+  {
+    "name": "Hélio Bicudo",
+    "role": "Jurista, promotor e defensor de direitos humanos",
+    "introduction": {
+      "text": "Hélio Bicudo foi jurista e promotor de Justiça paulista, conhecido pela investigação de grupos de extermínio durante a ditadura. Exerceu mandato de deputado federal e foi vice-prefeito de São Paulo. Sua trajetória passou pelo PT e, mais tarde, pela oposição ao partido.",
+      "sources": [
+        {
+          "title": "Câmara dos Deputados — Hélio Bicudo",
+          "url": "https://www.camara.leg.br/deputados/73453/biografia"
+        }
+      ]
+    },
+    "trajectory": [
+      {
+        "title": "Trajetória pública",
+        "text": "A biografia da Câmara registra sua carreira no Ministério Público de 1947 a 1979 e sua atuação parlamentar em defesa de direitos humanos. Em 2015, participou da formulação do pedido de impeachment de Dilma Rousseff. Morreu em 2018, aos 96 anos.",
+        "sources": [
+          {
+            "title": "Câmara dos Deputados — Hélio Bicudo",
+            "url": "https://www.camara.leg.br/deputados/73453/biografia"
+          }
+        ]
+      }
+    ],
+    "inArchive": [
+      {
+        "title": "Da apuração interna à oposição",
+        "text": "No caso CPEM, seu nome integra o contexto da apuração partidária de denúncias sobre consultorias. No documentário do impeachment, sua condição de antigo integrante do PT é mobilizada como símbolo de legitimidade da denúncia. Essa interpretação dos realizadores é distinta dos fundamentos jurídicos do processo.",
+        "verbeteIds": [
+          "pt-4-5",
+          "doc-golpe-12"
+        ]
+      }
+    ],
+    "facts": [
+      {
+        "label": "Atuação",
+        "value": "Jurista, promotor e defensor de direitos humanos",
+        "sources": [
+          {
+            "title": "Câmara dos Deputados — Hélio Bicudo",
+            "url": "https://www.camara.leg.br/deputados/73453/biografia"
+          }
+        ]
+      }
+    ],
+    "reviewedAt": "2026-10-27"
+  },
+  {
+    "name": "Michelle Bolsonaro",
+    "role": "Ex-primeira-dama do Brasil",
+    "introduction": {
+      "text": "Michelle de Paula Firmo Reinaldo Bolsonaro foi primeira-dama durante a Presidência de Jair Bolsonaro, de 2019 ao início de 2023. Sua exposição pública incluiu pautas de inclusão de pessoas com deficiência e o uso de Libras em pronunciamentos. Posteriormente passou a atuar politicamente no PL.",
+      "sources": [
+        {
+          "title": "Wikipédia — Michelle Bolsonaro",
+          "url": "https://pt.wikipedia.org/wiki/Michelle_Bolsonaro"
+        }
+      ]
+    },
+    "trajectory": [
+      {
+        "title": "Trajetória pública",
+        "text": "Antes de se tornar primeira-dama, trabalhou como assessora parlamentar na Câmara. A projeção nacional veio com a eleição presidencial de 2018. Sua participação política posterior e seu parentesco com o ex-presidente não determinam o significado jurídico das transferências bancárias discutidas no arquivo.",
+        "sources": [
+          {
+            "title": "Wikipédia — Michelle Bolsonaro",
+            "url": "https://pt.wikipedia.org/wiki/Michelle_Bolsonaro"
+          }
+        ]
+      }
+    ],
+    "inArchive": [
+      {
+        "title": "Destinatária de pagamentos citados",
+        "text": "Michelle aparece como destinatária de cheques de Fabrício Queiroz e familiares. O documento registra os pagamentos, a controvérsia sobre sua explicação e o arquivamento do pedido de investigação pelo STF. Esses elementos não permitem apresentá-la como condenada por rachadinha.",
+        "verbeteIds": [
+          "bolsonaro-1-3",
+          "bolsonaro-2-4"
+        ]
+      }
+    ],
+    "facts": [
+      {
+        "label": "Atuação",
+        "value": "Ex-primeira-dama do Brasil",
+        "sources": [
+          {
+            "title": "Wikipédia — Michelle Bolsonaro",
+            "url": "https://pt.wikipedia.org/wiki/Michelle_Bolsonaro"
+          }
+        ]
+      }
+    ],
+    "reviewedAt": "2026-10-27"
+  },
+  {
+    "name": "Alexandre Ramagem",
+    "role": "Ex-diretor da Abin e ex-deputado federal",
+    "introduction": {
+      "text": "Alexandre Ramagem é delegado de carreira da Polícia Federal que chefiou a Agência Brasileira de Inteligência entre 2019 e 2022, no governo Bolsonaro. Eleito deputado federal pelo Rio de Janeiro em 2022, tornou-se uma figura da atuação parlamentar do PL.",
+      "sources": [
+        {
+          "title": "UOL — quem é Alexandre Ramagem",
+          "url": "https://noticias.uol.com.br/politica/ultimas-noticias/2024/01/25/quem-e-alexandre-ramagem-abin-ex-delegado-policia-federal.htm"
+        }
+      ]
+    },
+    "trajectory": [
+      {
+        "title": "Trajetória pública",
+        "text": "Sua aproximação com Bolsonaro antecedeu a direção da agência, quando integrou a segurança do então candidato em 2018. Em setembro de 2025, foi condenado pelo STF no processo da tentativa de golpe. Essa condenação tem objeto próprio e não resolve automaticamente as suspeitas sobre utilização da Abin.",
+        "sources": [
+          {
+            "title": "UOL — quem é Alexandre Ramagem",
+            "url": "https://noticias.uol.com.br/politica/ultimas-noticias/2024/01/25/quem-e-alexandre-ramagem-abin-ex-delegado-policia-federal.htm"
+          }
+        ]
+      }
+    ],
+    "inArchive": [
+      {
+        "title": "Inteligência e responsabilização individual",
+        "text": "O áudio citado no arquivo situa Ramagem em discussão sobre a defesa de Flávio Bolsonaro e a possível investigação de auditores. O capítulo registra negativas institucionais e apuração. Outro verbete trata de sua condenação: estar no mesmo partido não transfere essa responsabilidade aos demais filiados.",
+        "verbeteIds": [
+          "bolsonaro-3-3",
+          "bolsonaro-2-11"
+        ]
+      }
+    ],
+    "facts": [
+      {
+        "label": "Atuação",
+        "value": "Ex-diretor da Abin e ex-deputado federal",
+        "sources": [
+          {
+            "title": "UOL — quem é Alexandre Ramagem",
+            "url": "https://noticias.uol.com.br/politica/ultimas-noticias/2024/01/25/quem-e-alexandre-ramagem-abin-ex-delegado-policia-federal.htm"
+          }
+        ]
+      }
+    ],
+    "reviewedAt": "2026-10-27"
+  },
+  {
+    "name": "Domingos Brazão",
+    "role": "Ex-deputado estadual e conselheiro do TCE-RJ",
+    "introduction": {
+      "text": "Domingos Inácio Brazão construiu sua carreira política no Rio de Janeiro. Foi deputado estadual de 1999 a 2015 e chegou ao Tribunal de Contas do Estado por escolha da Assembleia Legislativa em 2015. É irmão do também político Chiquinho Brazão.",
+      "sources": [
+        {
+          "title": "TCE-RJ — trajetória de Domingos Brazão",
+          "url": "https://portal-br.tcerj.tc.br/domingos-inacio-brazao"
+        }
+      ]
+    },
+    "trajectory": [
+      {
+        "title": "Trajetória pública",
+        "text": "A passagem da Alerj ao TCE é relevante para compreender sua influência institucional. Em fevereiro de 2026, a Primeira Turma do STF condenou os irmãos Brazão como mandantes dos assassinatos de Marielle Franco e Anderson Gomes, com pena total de 76 anos e três meses para cada um.",
+        "sources": [
+          {
+            "title": "TCE-RJ — trajetória de Domingos Brazão",
+            "url": "https://portal-br.tcerj.tc.br/domingos-inacio-brazao"
+          }
+        ]
+      }
+    ],
+    "inArchive": [
+      {
+        "title": "Voto anterior e crime posterior",
+        "text": "O arquivo menciona o apoio de Flávio à escolha de Brazão para o TCE em 2015 e depois discute o assassinato de 2018. A condenação de Brazão não transforma aquele voto em prova de participação de Flávio ou de sua família no crime.",
+        "verbeteIds": [
+          "bolsonaro-4-3",
+          "bolsonaro-6-7"
+        ]
+      }
+    ],
+    "facts": [
+      {
+        "label": "Atuação",
+        "value": "Ex-deputado estadual e conselheiro do TCE-RJ",
+        "sources": [
+          {
+            "title": "TCE-RJ — trajetória de Domingos Brazão",
+            "url": "https://portal-br.tcerj.tc.br/domingos-inacio-brazao"
+          }
+        ]
+      }
+    ],
+    "reviewedAt": "2026-10-27"
+  },
+  {
+    "name": "Carlos Sampaio",
+    "role": "Promotor de Justiça e deputado federal",
+    "introduction": {
+      "text": "Carlos Sampaio é promotor de Justiça e político de São Paulo. Foi vereador em Campinas, deputado estadual e, a partir de 2003, deputado federal. Também lecionou Direito Processual Penal e atuou na área de segurança pública municipal.",
+      "sources": [
+        {
+          "title": "Câmara dos Deputados — Carlos Sampaio",
+          "url": "https://www.camara.leg.br/deputados/74262/biografia"
+        }
+      ]
+    },
+    "trajectory": [
+      {
+        "title": "Trajetória pública",
+        "text": "A biografia parlamentar registra mandatos municipais entre 1993 e 1996 e estaduais entre 1997 e 2003. No período do impeachment de Dilma Rousseff, teve destaque na oposição do PSDB. Sua função como interlocutor parlamentar explica sua presença na narrativa dos organizadores de protestos.",
+        "sources": [
+          {
+            "title": "Câmara dos Deputados — Carlos Sampaio",
+            "url": "https://www.camara.leg.br/deputados/74262/biografia"
+          }
+        ]
+      }
+    ],
+    "inArchive": [
+      {
+        "title": "Interlocutor das negociações",
+        "text": "No documentário, integrantes do MBL relatam atritos com Sampaio e outras lideranças sobre a entrega e a unificação de pedidos de impeachment. Ele aparece como negociador político, não como acusado de um crime. As intenções atribuídas a ele são interpretações dos entrevistados.",
+        "verbeteIds": [
+          "doc-golpe-09",
+          "doc-golpe-12"
+        ]
+      }
+    ],
+    "facts": [
+      {
+        "label": "Atuação",
+        "value": "Promotor de Justiça e deputado federal",
+        "sources": [
+          {
+            "title": "Câmara dos Deputados — Carlos Sampaio",
+            "url": "https://www.camara.leg.br/deputados/74262/biografia"
+          }
+        ]
+      }
+    ],
+    "reviewedAt": "2026-10-27"
+  },
+  {
+    "name": "Duda Mendonça",
+    "role": "Publicitário e consultor de campanhas eleitorais",
+    "introduction": {
+      "text": "Duda Mendonça, nome pelo qual ficou conhecido José Eduardo Cavalcanti de Mendonça, foi um publicitário baiano. Nascido em 1944, construiu uma carreira de marketing político e dirigiu a comunicação da campanha presidencial vitoriosa de Lula em 2002. Morreu em 2021.",
+      "sources": [
+        {
+          "title": "Wikipédia — Duda Mendonça",
+          "url": "https://pt.wikipedia.org/wiki/Duda_Mendon%C3%A7a"
+        }
+      ]
+    },
+    "trajectory": [
+      {
+        "title": "Trajetória pública",
+        "text": "Sua atuação profissional incluiu candidatos de diferentes partidos. A campanha de 2002 marcou a apresentação de uma imagem mais conciliadora de Lula. Investigado por pagamentos recebidos no exterior, Duda foi absolvido pelo STF das acusações examinadas no julgamento do Mensalão.",
+        "sources": [
+          {
+            "title": "Wikipédia — Duda Mendonça",
+            "url": "https://pt.wikipedia.org/wiki/Duda_Mendon%C3%A7a"
+          }
+        ]
+      }
+    ],
+    "inArchive": [
+      {
+        "title": "Autor da comunicação da campanha",
+        "text": "No iceberg, Duda ajuda a explicar a passagem das derrotas eleitorais de Lula à vitória de 2002. A discussão sobre financiamento precisa preservar o desfecho individual: sua absolvição impede descrevê-lo como um dos condenados do Mensalão.",
+        "verbeteIds": [
+          "pt-1-3"
+        ]
+      }
+    ],
+    "facts": [
+      {
+        "label": "Atuação",
+        "value": "Publicitário e consultor de campanhas eleitorais",
+        "sources": [
+          {
+            "title": "Wikipédia — Duda Mendonça",
+            "url": "https://pt.wikipedia.org/wiki/Duda_Mendon%C3%A7a"
+          }
+        ]
+      }
+    ],
+    "reviewedAt": "2026-10-27"
+  },
+  {
+    "name": "Marisa Letícia",
+    "role": "Ex-primeira-dama e militante política",
+    "introduction": {
+      "text": "Marisa Letícia Lula da Silva nasceu em São Bernardo do Campo, em 1950. Foi operária e militante política, participou do ambiente sindical do ABC e acompanhou a formação do PT. Casou-se com Lula em 1974 e foi primeira-dama durante seus dois primeiros mandatos presidenciais.",
+      "sources": [
+        {
+          "title": "Wikipédia — Marisa Letícia Lula da Silva",
+          "url": "https://pt.wikipedia.org/wiki/Marisa_Let%C3%ADcia_Lula_da_Silva"
+        }
+      ]
+    },
+    "trajectory": [
+      {
+        "title": "Trajetória pública",
+        "text": "Seu período como primeira-dama foi de janeiro de 2003 a janeiro de 2011. Participou de campanhas e atividades políticas sem exercer mandato eletivo. Morreu em fevereiro de 2017, após sofrer um acidente vascular cerebral, antes dos principais julgamentos mencionados no capítulo sobre Atibaia.",
+        "sources": [
+          {
+            "title": "Wikipédia — Marisa Letícia Lula da Silva",
+            "url": "https://pt.wikipedia.org/wiki/Marisa_Let%C3%ADcia_Lula_da_Silva"
+          }
+        ]
+      }
+    ],
+    "inArchive": [
+      {
+        "title": "Uso do sítio pela família",
+        "text": "Marisa integra o contexto familiar do sítio de Atibaia e das alegações sobre reformas destinadas ao casal. A presença da família no imóvel não demonstra, por si, propriedade ou corrupção. O arquivo registra que condenações ligadas ao caso foram posteriormente anuladas.",
+        "verbeteIds": [
+          "pt-1-7"
+        ]
+      }
+    ],
+    "facts": [
+      {
+        "label": "Atuação",
+        "value": "Ex-primeira-dama e militante política",
+        "sources": [
+          {
+            "title": "Wikipédia — Marisa Letícia Lula da Silva",
+            "url": "https://pt.wikipedia.org/wiki/Marisa_Let%C3%ADcia_Lula_da_Silva"
+          }
+        ]
+      }
+    ],
+    "reviewedAt": "2026-10-27"
+  },
+  {
+    "name": "Antônio Carlos Camilo Antunes",
+    "role": "Empresário conhecido como Careca do INSS",
+    "introduction": {
+      "text": "Antônio Carlos Camilo Antunes é empresário e ficou nacionalmente conhecido pelo apelido Careca do INSS nas investigações sobre descontos associativos em benefícios previdenciários. Não era presidente do instituto: sua posição nas apurações é a de intermediário privado suspeito de operar pagamentos e relações com associações.",
+      "sources": [
+        {
+          "title": "CNN Brasil — quem é o Careca do INSS",
+          "url": "https://www.cnnbrasil.com.br/politica/quem-e-o-careca-do-inss-preso-em-operacao-da-pf-nesta-sexta-12/"
+        }
+      ]
+    },
+    "trajectory": [
+      {
+        "title": "Trajetória pública",
+        "text": "Foi preso preventivamente em setembro de 2025, por ordem judicial, no âmbito da Operação Sem Desconto. A investigação da Polícia Federal examinou a movimentação de suas empresas e possíveis repasses ligados às cobranças. A prisão cautelar e o posterior indiciamento são etapas processuais, não uma condenação definitiva.",
+        "sources": [
+          {
+            "title": "CNN Brasil — quem é o Careca do INSS",
+            "url": "https://www.cnnbrasil.com.br/politica/quem-e-o-careca-do-inss-preso-em-operacao-da-pf-nesta-sexta-12/"
+          }
+        ]
+      }
+    ],
+    "inArchive": [
+      {
+        "title": "Suspeita de intermediação no esquema",
+        "text": "O arquivo o situa entre os investigados pelo funcionamento das cobranças não autorizadas. O capítulo relaciona pessoas, entidades e agentes públicos, mas não permite transferir a ele automaticamente todas as condutas nem atribuir culpa presidencial somente por contatos políticos.",
+        "verbeteIds": [
+          "pt-1-10"
+        ]
+      }
+    ],
+    "facts": [
+      {
+        "label": "Atuação",
+        "value": "Empresário conhecido como Careca do INSS",
+        "sources": [
+          {
+            "title": "CNN Brasil — quem é o Careca do INSS",
+            "url": "https://www.cnnbrasil.com.br/politica/quem-e-o-careca-do-inss-preso-em-operacao-da-pf-nesta-sexta-12/"
+          }
+        ]
+      }
+    ],
+    "reviewedAt": "2026-10-27"
+  }
+]

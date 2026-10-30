@@ -44,7 +44,7 @@ export function CartaoPessoa({ pessoa, abrir }: { pessoa: Pessoa; abrir: (nome: 
   return <article className="ig-pessoa">
     <button className="ig-pessoa-abrir" onClick={() => abrir(pessoa.nome)}>
       {pessoa.imagem ? <Image src={pessoa.imagem.src} alt={pessoa.imagem.alt} width={400} height={400} loading="lazy" /> : <span className="ig-iniciais" aria-hidden>{pessoa.nome.split(" ").filter(n => n.length > 2).slice(0, 2).map(n => n[0]).join("")}</span>}
-      <span className="ig-pessoa-texto"><strong>{pessoa.nome}</strong><small>{pessoa.perfil?.role ?? `${pessoa.verbetes.length} menções no acervo`}</small><span className="ig-pessoa-series">{[...new Set(pessoa.verbetes.map(v => v.series))].map(s => <span key={s}>{SERIES[s]}</span>)}</span></span>
+      <span className="ig-pessoa-texto"><strong>{pessoa.nome}</strong><small>{pessoa.biografia?.role ?? pessoa.perfil?.role ?? `${pessoa.verbetes.length} menções no acervo`}</small>{pessoa.biografia && <span className="ig-pessoa-extrato">{pessoa.biografia.introduction.text.length > 170 ? pessoa.biografia.introduction.text.slice(0, 170).replace(/\s+\S*$/, "") + "…" : pessoa.biografia.introduction.text}</span>}<span className="ig-pessoa-series">{[...new Set(pessoa.verbetes.map(v => v.series))].map(s => <span key={s}>{SERIES[s]}</span>)}</span></span>
     </button>
     {pessoa.imagem && <p className="ig-mini-credito">Foto: {pessoa.imagem.credit}. <a href={pessoa.imagem.sourceUrl} target="_blank" rel="noopener noreferrer">Origem e licença ↗</a></p>}
   </article>;

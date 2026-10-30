@@ -93,6 +93,7 @@ export default function Estilos() {
     .ig-pessoa-series > span { font: 9px/1.4 ${FONT_ELITE}; padding: 4px; background: ${C.paper}; }
     .ig-mini-credito { font-size: 10px; line-height: 1.7; padding: 0 13px 15px; margin: 0; }
     .ig-mini-credito a { color: ${C.goldDim}; text-decoration: underline; }
+    .ig-pessoa-extrato { display: block; font: 12px/1.8 ${FONT_BITTER}; margin-top: 12px; }
     .ig-iniciais { display: grid; place-items: center; font: 38px ${FONT_ALFA}; aspect-ratio: 1/1; width: 100%; background: ${HATCH}, ${C.paper}; }
     .ig-grade-verbetes { display: grid; gap: 16px; }
     .ig-alternar { display: flex; gap: 5px; }
@@ -183,6 +184,90 @@ export default function Estilos() {
     .ig-metodo ul { padding-left: 23px; list-style: disc; }
     .ig-metodo li { font-size: 15px; line-height: 1.9; margin: 10px 0; }
     .ig-recado { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); background: ${C.gold}; color: ${C.ink}; padding: 14px 20px; border: ${borda()}; font: 14px ${FONT_BITTER}; max-width: calc(100vw - 32px); z-index: 200; }
+    .ig-pagina-pessoa { padding-bottom: 64px; }
+    .ig-pessoa-trilha { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; max-width: ${LARGURA.conteudo}px; margin: 0 auto; padding: 25px 20px; font: 11px/1.7 ${FONT_ELITE}; }
+    .ig-pessoa-trilha a { text-decoration: underline; }
+    .ig-artigo { max-width: ${LARGURA.conteudo}px; margin: 0 auto; padding: 12px 20px 40px; }
+    .ig-artigo-apresentacao { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font: 10px/1.7 ${FONT_ELITE}; letter-spacing: 1px; border-bottom: ${bordaFina()}; padding: 10px 0 18px; margin-bottom: 27px; }
+    .ig-artigo-layout { display: flex; flex-direction: column; gap: 30px; align-items: stretch; }
+    .ig-artigo-texto { display: contents; min-width: 0; }
+    .ig-artigo-lead { order: 0; }
+    .ig-artigo-lead p, .ig-janela .ig-artigo-lead p { font: 18px/1.9 ${FONT_BITTER}; margin: 0; }
+    .ig-artigo p { text-wrap: pretty; }
+    .ig-artigo p a, .ig-artigo dd a { color: ${C.goldDim}; text-decoration: underline; }
+    .ig-citacoes { white-space: normal; font: 11px/1 ${FONT_BITTER}; padding-left: 4px; }
+    .ig-citacoes sup { margin-right: 3px; }
+    .ig-citacoes a { display: inline; color: ${C.goldDim}; text-decoration: none !important; padding: 3px 1px; }
+    .ig-citacoes a:hover { text-decoration: underline !important; }
+    .ig-artigo-indice { order: 2; background: ${C.cream}; border: ${bordaFina()}; padding: 20px 24px; }
+    .ig-artigo-indice > strong { font: 13px ${FONT_ELITE}; text-transform: uppercase; letter-spacing: 1px; }
+    .ig-artigo-indice ol { list-style: decimal; padding-left: 20px; margin: 13px 0 0; }
+    .ig-artigo-indice a { display: inline-block; font: 14px/1.7 ${FONT_BITTER}; padding: 8px 0; text-decoration: underline; }
+    .ig-artigo-secao { order: 3; min-width: 0; padding-top: 8px; scroll-margin-top: 90px; }
+    .ig-artigo-secao > h2, .ig-janela .ig-artigo-secao > h2 { font: 26px/1.4 ${FONT_ALFA}; margin: 0 0 22px; border-bottom: ${bordaFina()}; padding-bottom: 14px; }
+    .ig-artigo-secao h3 { font: 18px/1.5 ${FONT_ALFA}; margin: 25px 0 13px; }
+    .ig-artigo-secao p { font: 16px/1.95 ${FONT_BITTER}; margin: 13px 0 22px; }
+    .ig-artigo-secao > div + div { margin-top: 28px; }
+    .ig-artigo-ficha { order: 1; min-width: 0; }
+    .ig-artigo-ficha-miolo { border: ${bordaFina()}; background: ${C.cream}; }
+    .ig-artigo-ficha h2, .ig-janela .ig-artigo-ficha h2 { font: 19px/1.4 ${FONT_ALFA}; background: ${C.gold}; color: ${C.ink}; margin: 0; padding: 15px 18px; border-bottom: ${bordaFina()}; }
+    .ig-artigo-ficha .ig-foto, .ig-janela .ig-artigo-ficha .ig-retrato { border: 0; margin: 0; max-width: none; }
+    .ig-artigo-ficha .ig-foto img { aspect-ratio: 1/1; object-position: center 25%; }
+    .ig-artigo-ficha dl { padding: 8px 18px 18px; margin: 0; }
+    .ig-artigo-ficha dl > div { padding: 14px 0; border-bottom: ${bordaFina(C.paper)}; }
+    .ig-artigo-ficha dt { font: 10px/1.7 ${FONT_ELITE}; text-transform: uppercase; letter-spacing: .6px; margin-bottom: 7px; }
+    .ig-artigo-ficha dd { font: 13px/1.8 ${FONT_BITTER}; margin: 0; }
+    .ig-artigo .ig-artigo-contexto { font: 12px/1.85 ${FONT_BITTER}; opacity: .85; }
+    .ig-artigo-ficha .ig-artigo-contexto { padding: 0 18px 18px; margin: 0; }
+    .ig-artigo-relato + .ig-artigo-relato { margin-top: 32px; }
+    .ig-artigo-evidencias { background: ${C.cream}; border-left: ${borda(C.goldDim)}; padding: 9px 15px; margin: 18px 0 24px; }
+    .ig-artigo-evidencias > div { display: flex; flex-wrap: wrap; align-items: center; gap: 5px 16px; padding: 4px 0; }
+    .ig-artigo-evidencias a { display: inline-flex; align-items: center; min-height: 44px; font: 11px/1.8 ${FONT_BITTER}; text-decoration: underline; }
+    .ig-artigo-evidencias a:first-child { font-weight: 600; flex-basis: 100%; font-size: 12px; }
+    .ig-artigo-registro { background: ${C.cream}; border: ${bordaFina()}; padding: 20px; margin: 20px 0; }
+    .ig-artigo-registro .ig-kicker { font-size: 10px; margin: 0; }
+    .ig-artigo-registro h3 { margin-top: 12px; }
+    .ig-artigo-registro p:last-child { margin-bottom: 0; }
+    .ig-artigo-relacoes { margin: 0; }
+    .ig-artigo-relacoes > div { padding: 20px 0; border-bottom: ${bordaFina()}; }
+    .ig-artigo-relacoes dt { font: 17px/1.5 ${FONT_ALFA}; margin-bottom: 10px; }
+    .ig-artigo-relacoes dt a { text-decoration: underline; }
+    .ig-artigo-relacoes dd { font: 15px/1.85 ${FONT_BITTER}; margin: 0; }
+    .ig-artigo-origem { display: block; font-size: 12px; padding-top: 10px; }
+    .ig-artigo-trecho { margin-bottom: 28px; }
+    .ig-artigo-trecho .ig-kicker { font: 11px/1.8 ${FONT_ELITE}; }
+    .ig-artigo-cronologia { border: ${bordaFina()}; background: ${C.cream}; }
+    .ig-artigo-cronologia > summary { display: flex; align-items: center; justify-content: space-between; gap: 14px; min-height: 56px; padding: 16px 20px; cursor: pointer; list-style: none; font-size: 14px; }
+    .ig-artigo-cronologia > ol { list-style: none; margin: 0; padding: 0 20px; }
+    .ig-artigo-cronologia > ol > li { padding: 20px 0 28px; border-top: ${bordaFina(C.paper)}; }
+    .ig-artigo-cronologia h3 { margin-top: 8px; }
+    .ig-artigo-cronologia p { font-size: 14px; }
+    .ig-artigo-cronologia .ig-kicker { font: 10px/1.8 ${FONT_ELITE}; }
+    .ig-artigo-cronologia a { display: inline-flex; align-items: center; min-height: 44px; font-size: 13px; color: ${C.goldDim}; text-decoration: underline; }
+    .ig-artigo-fontes { list-style: decimal; padding-left: 23px; margin: 0; }
+    .ig-artigo-fontes > li { padding-left: 8px; scroll-margin-top: 95px; }
+    .ig-artigo-fontes .ig-fonte { padding: 11px 0; }
+    .ig-artigo-fontes .ig-fonte strong { font-size: 13px; }
+    .ig-artigo-resumido { padding: 0; }
+    .ig-artigo-resumido .ig-artigo-ficha { max-width: 360px; }
+    @media (min-width: ${PONTOS.computador}px) {
+      .ig-artigo-layout { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 42px; align-items: start; }
+      .ig-artigo-texto { display: block; }
+      .ig-artigo-ficha { position: sticky; top: 90px; }
+      .ig-artigo-indice { margin: 30px 0 38px; }
+      .ig-artigo-secao { margin-top: 44px; }
+      .ig-artigo-resumido .ig-artigo-layout { display: flex; }
+      .ig-artigo-resumido .ig-artigo-texto { display: contents; }
+      .ig-artigo-resumido .ig-artigo-ficha { position: static; }
+      .ig-artigo-lead p { font-size: 19px; }
+    }
+    @media (max-width: 420px) {
+      .ig-artigo { padding-left: 15px; padding-right: 15px; }
+      .ig-artigo-resumido { padding: 0; }
+      .ig-artigo-secao > h2, .ig-janela .ig-artigo-secao > h2 { font-size: 22px; }
+      .ig-artigo-lead p, .ig-janela .ig-artigo-lead p { font-size: 16px; }
+      .ig-artigo-secao p { font-size: 15px; }
+    }
     @media (min-width: ${PONTOS.tablet}px) {
       .ig-abertura { grid-template-columns: 1fr 1fr; gap: 35px; padding-top: 55px; padding-bottom: 50px; }
       .ig-abertura h2 { font-size: 36px; }

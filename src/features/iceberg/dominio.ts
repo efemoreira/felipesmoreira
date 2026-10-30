@@ -3,6 +3,8 @@ import type { Filtros, Verbete } from "./tipos";
 export const normalizar = (texto: string) => texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 export const tempo = (segundos: number) => `${Math.floor(segundos / 60)}:${String(Math.floor(segundos % 60)).padStart(2, "0")}`;
 export const nomeCanonico = (nome: string) => ({ Lula: "Luiz Inácio Lula da Silva", "Renan Antônio Ferreira dos Santos": "Renan Santos", "Renan Antônio dos Santos": "Renan Santos", "Renan dos Santos": "Renan Santos", "Mamãe Falei": "Arthur do Val" }[nome] ?? nome);
+export const slugPessoa = (nome: string) => normalizar(nomeCanonico(nome)).replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+export const enderecoPessoa = (nome: string) => `/iceberg/pessoas/${slugPessoa(nome)}`;
 export function filtrar(verbetes: Verbete[], filtros: Filtros): Verbete[] {
   const busca = normalizar(filtros.busca.trim());
   return verbetes.filter(v => {
