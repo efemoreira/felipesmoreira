@@ -1,0 +1,1 @@
+self.__SSG_MANIFEST=new Set(["\u002Ficeberg\u002Fpessoas\u002F[pessoa]","\u002Fpitch\u002F[projeto]"]);self.__SSG_MANIFEST_CB&&self.__SSG_MANIFEST_CB()
