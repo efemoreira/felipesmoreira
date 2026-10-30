@@ -1,7 +1,9 @@
 "use client";
 import React from "react";
 import { FONT_DADOS, PAINEL_DADOS as P, fileteDados } from "@/lib/theme";
-import type { Resumo } from "../dados";
+import { useRecurso, type Resumo } from "../dados";
+import { num } from "../formato";
+import { carregarContagemResumo } from "../segundoTurnoDados";
 import { GLOSSARIO, LIMITES } from "../explicacoes";
 import { Secao, cartao } from "../pecas";
 
@@ -29,8 +31,11 @@ const POR_QUE: string[] = [
 
 const caixa: React.CSSProperties = { ...cartao, padding: "12px 14px" };
 
+const carregar2t = () => carregarContagemResumo();
+
 export default function Sobre({ resumo }: { resumo: Resumo }) {
   const fontes = resumo.fontes ?? [];
+  const segundo = useRecurso("contagem", carregar2t).dado;
   return (
     <>
       <Secao titulo="Por que olhar até o bairro">
@@ -74,6 +79,34 @@ export default function Sobre({ resumo }: { resumo: Resumo }) {
           </div>
         )}
       </Secao>
+
+      {segundo && (
+        <Secao titulo="O 2º turno" sub={`Contagem dos RDVs gerada em ${new Date(segundo.geradoEm).toLocaleString("pt-BR", { timeZone: "America/Fortaleza" })}, horário de Fortaleza. ${num(Number(segundo.brasil.secoes_lidas))} de ${num(Number(segundo.brasil.secoes_esperadas))} RDVs esperados lidos · ${segundo.brasil.situacao}.`}>
+          <p style={{ fontSize: 14.5, lineHeight: 1.5 }}>
+            Em cada urna, o RDV registra o que foi digitado em cada voto, embaralhado e sem quem votou. Contamos os nulos com digitação exatamente 14 e conferimos município a município contra a totalização oficial. Cada local de votação vai para o bairro dele no 1º turno pelo número do local; o código que faz isso está em <code>tools/resultados/</code>.
+          </p>
+          {segundo.fidelidade && segundo.fidelidade.referencia.length > 0 && (
+            <p style={{ fontSize: 14.5, lineHeight: 1.5 }}>
+              A régua: a cada 100 votos no 1º turno, quantos digitaram o número no 2º, quando ele já não estava na urna —{" "}
+              {segundo.fidelidade.referencia.map((r) => `${r.numero} (${r.nome.toLowerCase()}) ${num(r.por100, 2)}`).join("; ")}. Ajuste de cidade e bairro: peso de {num(segundo.fidelidade.k_cidade ?? NaN)} e {num(segundo.fidelidade.k_bairro ?? NaN)} votos.
+            </p>
+          )}
+          <div style={{ display: "grid", gap: 8 }}>
+            {segundo.fontes.map((f) => (
+              <div key={f.url} style={{ ...caixa, border: fileteDados(), fontSize: 14.5, lineHeight: 1.45 }}>
+                <b>{f.nome}</b>
+                <br />
+                <span style={{ overflowWrap: "anywhere", opacity: 0.8 }}>{f.url}</span>
+              </div>
+            ))}
+          </div>
+          <p>
+            <a href="/contagem-2026-2t/conferencia.json" download>
+              Baixar a conferência por município e as seções pendentes (JSON)
+            </a>
+          </p>
+        </Secao>
+      )}
 
       <Secao titulo="Glossário">
         <dl style={{ margin: 0, display: "grid", gap: 10, maxWidth: "75ch" }}>

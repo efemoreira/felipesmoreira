@@ -27,6 +27,9 @@ import {
   type Coluna,
 } from "../pecas";
 import type { IdExplicacao } from "../explicacoes";
+import { conversaoReferencia, derivar } from "../leitura";
+import { Leitura } from "./Leitura";
+import { ContagemLocais } from "./ContagemLocais";
 import { NOME_ORIGEM, PORTES, ladoTexto } from "../apoio";
 import { NOME_REGIAO, REGIOES, linhasRegioes, ufsDaRegiao } from "../regioes";
 import {
@@ -156,6 +159,8 @@ export default function Explorador({
   const mapaB = chaveB ? mapaBRec.dado : null;
 
   const regioes = useMemo(() => linhasRegioes(resumo.ufs), [resumo.ufs]);
+  /* a régua de conversão do estado: o cenário central de 2028 e a ação de cada cidade e bairro */
+  const convRef = useMemo(() => conversaoReferencia(cidades), [cidades]);
   const linhaUf = uf ? resumo.ufs.find((u) => u.uf === uf) : undefined;
   const linhaRegiao = caminho.regiao
     ? regioes.find((r) => r.regiao === caminho.regiao)
@@ -250,7 +255,7 @@ export default function Explorador({
       cidades.map((c) => ({
         id: t(c, "codigo_ibge"),
         nome: titulo(t(c, "municipio_nome")),
-        linha: { ...c, nome: titulo(t(c, "municipio_nome")) },
+        linha: derivar({ ...c, nome: titulo(t(c, "municipio_nome")) }, "cidade", { convRef, irmaos: cidades }),
         areas: [t(c, "codigo_ibge")],
         caminho: {
           regiao: caminho.regiao,
@@ -310,7 +315,7 @@ export default function Explorador({
           tipo: `Cidade · ${UF_NOMES[uf!]}`,
           nome: nomeCidade,
           sub: `${compacto(n(cidade, "eleitorado"))} eleitores · ${t(cidade, "porte")}`,
-          linha: cidade,
+          linha: derivar(cidade, "cidade", { convRef, irmaos: cidades }),
           pai: paiEstado,
           tipoFilho: "cidade",
           rotuloFilhos: `Cidades de ${UF_NOMES[uf!]}`,
@@ -331,7 +336,7 @@ export default function Explorador({
       const filhos: Filho[] = bairros.map((b) => ({
         id: t(b, "bairro_chave"),
         nome: t(b, "bairro"),
-        linha: {
+        linha: derivar({
           ...b,
           nome: t(b, "bairro"),
           origem: NOME_ORIGEM[t(b, "bairro_origem")] ?? t(b, "bairro_origem"),
@@ -340,7 +345,7 @@ export default function Explorador({
           pct_renan: n(b, "missao_pres") / n(b, "validos_pres"),
           pct_mdf: n(b, "missao_df") / n(b, "validos_df"),
           pct_dir_de: n(b, "direita_de") / n(b, "validos_de"),
-        },
+        }, "bairro", { convRef, irmaos: bairros }),
         areas: [t(b, "bairro_chave")],
         caminho: {
           regiao: caminho.regiao,
@@ -383,7 +388,7 @@ export default function Explorador({
           tipo: `Bairro · ${nomeCidade}`,
           nome: t(bairro, "bairro"),
           sub: `${num(n(bairro, "eleitorado"))} eleitores · ${num(n(bairro, "locais"))} locais de votação · ${ladoTexto(n(bairro, "lado_pres")).toLowerCase()}`,
-          linha: bairro,
+          linha: filhos.find((f) => f.id === t(bairro, "bairro_chave"))?.linha ?? bairro,
           pai: { nome: nomeCidade, linha: cidade },
           rotuloFilhos: `Bairros de ${nomeCidade}`,
           ativo: t(bairro, "bairro_chave"),
@@ -394,7 +399,7 @@ export default function Explorador({
         tipo: `Cidade · ${UF_NOMES[uf!]}`,
         nome: nomeCidade,
         sub: `${compacto(n(cidade, "eleitorado"))} eleitores · ${t(cidade, "porte")} · ${num(bairros.length)} bairros`,
-        linha: cidade,
+        linha: derivar(cidade, "cidade", { convRef, irmaos: cidades }),
         pai: paiEstado,
         rotuloFilhos: "Bairros",
       };
@@ -432,6 +437,7 @@ export default function Explorador({
     bairrosRec.erro,
     mapaBRec.erro,
     uf,
+    convRef,
   ]);
 
   /* ----- áreas do mapa ----- */
@@ -731,6 +737,7 @@ export default function Explorador({
                 pontos={vista.pontos}
                 modo={como}
                 divergente={ind.divergente}
+                categorias={ind.categorias}
                 formato={ind.formato}
                 ativo={vista.ativo}
                 aoEntrar={entrar}
@@ -814,6 +821,7 @@ export default function Explorador({
                 </div>
                 <Explica id={explicaTabela} />
                 <Tabela
+                  enxugar
                   key={`${nivel}-${vista.tipoFilho}-${todasColunas}`}
                   linhas={linhasTabela}
                   colunas={colunasTabela}
@@ -852,6 +860,22 @@ export default function Explorador({
           )}
         </aside>
       </div>
+
+      {vista.linha && (
+        <Leitura
+          key={`${nivel}-${vista.nome}`}
+          nivel={nivel}
+          nome={vista.nome}
+          linha={vista.linha}
+          pai={vista.pai}
+          resumo={resumo}
+          cidades={cidades}
+          irmaos={nivel === "bairro" ? (dadosB?.bairros ?? []) : nivel === "cidade" ? cidades : []}
+          filhosUf={nivel === "regiao" && caminho.regiao ? ufsDaRegiao(resumo.ufs, caminho.regiao) : resumo.ufs}
+          caminho={caminho}
+          ir={ir}
+        />
+      )}
 
       {/* o detalhe do lugar */}
       <div style={{ marginTop: 22 }}>
@@ -894,6 +918,31 @@ export default function Explorador({
             bairro={vista.linha}
             dados={dadosB}
           />
+        )}
+        {(nivel === "cidade" || nivel === "bairro") && cidade && chaveB && (
+          <details className="mx-gaveta" style={{ ...cartao, padding: "0 14px", margin: "10px 0 0" }}>
+            <summary style={{ cursor: "pointer", minHeight: 52, display: "flex", alignItems: "center", gap: 10, fontSize: 16, fontWeight: 700 }}>
+              <span className="mx-seta" aria-hidden="true" style={{ display: "inline-block", width: 14 }}>
+                ›
+              </span>
+              <span style={{ flex: 1 }}>
+                2º turno local por local
+                <span style={{ display: "block", fontSize: 13, fontWeight: 400, color: P.tintaSuave }}>Quem digitou 14 em cada local de votação{nivel === "bairro" ? " do bairro" : ""}, com a conferência do RDV.</span>
+              </span>
+            </summary>
+            <div style={{ paddingBottom: 14 }}>
+              <Explica id="contagem-segundo-turno" />
+              {nivel === "cidade" && (dadosB?.t2VotosFora ?? 0) > 0 && (
+                <p style={{ fontSize: 13, color: P.tintaSuave }}>{num(dadosB!.t2VotosFora!)} votos do 2º turno estão em locais sem par no 1º turno: contam na cidade e ficam fora dos bairros.</p>
+              )}
+              <ContagemLocais
+                uf={uf!}
+                cidade={caminho.cidade!}
+                bairro={nivel === "bairro" ? caminho.bairro : undefined}
+                nomes={new Map((dadosB?.bairros ?? []).map((b) => [t(b, "bairro_chave"), t(b, "bairro")]))}
+              />
+            </div>
+          </details>
         )}
         {nivel === "bairro" && cidade && linhaUf && dadosUf.dado && (
           <details

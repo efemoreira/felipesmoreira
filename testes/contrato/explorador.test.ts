@@ -41,7 +41,10 @@ describe("explorador: endereço", () => {
     assert.deepEqual(lerEndereco("#regiao/ce").caminho, { regiao: "nordeste" });
     assert.deepEqual(lerEndereco("#municipio/rs").caminho, { regiao: "sul", uf: "rs" });
     assert.deepEqual(lerEndereco("#bairros/ce/13897/ALDEOTA").caminho, { regiao: "nordeste", uf: "ce", cidade: "13897", bairro: "ALDEOTA" });
-    for (const h of ["#brasil", "#estado/sp", "#bairros/ce/13897"]) assert.equal(lerEndereco(h).aba, "explorar", h);
+    /* a aba do 2º turno virou parte do Explorador; o bairro dela tinha outra chave, então abre a cidade */
+    assert.deepEqual(lerEndereco("#segundo-turno/ce/13897/2304400002").caminho, { regiao: "nordeste", uf: "ce", cidade: "13897" });
+    assert.deepEqual(lerEndereco("#segundo-turno/zz").caminho, { regiao: "exterior" });
+    for (const h of ["#brasil", "#estado/sp", "#bairros/ce/13897", "#segundo-turno/ce"]) assert.equal(lerEndereco(h).aba, "explorar", h);
   });
 
   test("as abas de análise continuam com o estado no endereço", () => {

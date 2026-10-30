@@ -130,7 +130,7 @@ export default function ResultadosClient() {
               <Icon name="arrowLeft" size={15} />
               Voltar ao site
             </Link>
-            <p style={{ ...kicker, margin: 0 }}>Eleições 2026 · 1º turno · uso interno</p>
+            <p style={{ ...kicker, margin: 0 }}>Eleições 2026 · 1º e 2º turno · uso interno</p>
             <h1 style={{ fontFamily: FONT_DADOS, fontWeight: 800, fontSize: "clamp(24px, 5.5vw, 32px)", lineHeight: 1.1, margin: "2px 0 0" }}>Resultados do Missão</h1>
           </div>
           {r && (

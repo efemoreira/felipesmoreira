@@ -1,6 +1,7 @@
 import { n, type Linha } from "../dados";
-import { pct } from "../formato";
+import { num, pct } from "../formato";
 import { pontos } from "../apoio";
+import { baseFiel, fidelidade } from "../leitura";
 
 /**
  * O que pintar no mapa, agrupado pela pergunta que responde. `pct` é a fração
@@ -10,7 +11,7 @@ import { pontos } from "../apoio";
  */
 
 export type TipoFilho = "regiao" | "uf" | "cidade" | "bairro";
-export type Pergunta = "forca" | "converter" | "terreno";
+export type Pergunta = "forca" | "converter" | "agir" | "terreno";
 
 export type IndicadorMapa = {
   id: string;
@@ -25,11 +26,14 @@ export type IndicadorMapa = {
   /** só nestes tipos de área (padrão: todos) */
   so?: TipoFilho[];
   motivo?: string;
+  /** valor inteiro 1…k com nome: a legenda vira uma faixa por categoria */
+  categorias?: string[];
 };
 
 export const PERGUNTAS: [Pergunta, string][] = [
   ["forca", "Onde o Missão é forte"],
   ["converter", "Onde falta converter"],
+  ["agir", "O que fazer e 2028"],
   ["terreno", "O terreno"],
 ];
 
@@ -40,6 +44,24 @@ export const INDICADORES_MAPA: IndicadorMapa[] = [
   { id: "renan", rotulo: "Renan", pergunta: "forca", pct: (l) => razao(n(l, "missao_pres"), n(l, "validos_pres")), votos: (l) => n(l, "missao_pres"), unidade: "dos válidos para Presidente", formato: (x) => pct(x, 2) },
   { id: "df", rotulo: "Missão Dep. Federal", pergunta: "forca", pct: (l) => razao(n(l, "missao_df"), n(l, "validos_df")), votos: (l) => n(l, "missao_df"), unidade: "dos válidos para Dep. Federal", formato: (x) => pct(x, 2) },
   { id: "de", rotulo: "Missão Dep. Estadual", pergunta: "forca", pct: (l) => razao(n(l, "missao_de"), n(l, "validos_de")), votos: (l) => n(l, "missao_de"), unidade: "dos válidos para Dep. Estadual", formato: (x) => pct(x, 2) },
+  {
+    id: "fieis",
+    rotulo: "Base fiel (2º turno)",
+    pergunta: "forca",
+    pct: baseFiel,
+    votos: (l) => n(l, "t2_nulos14"),
+    unidade: "dos votos para Presidente no 2º turno foram 14 digitado sabendo que anulava",
+    formato: (x) => (Number.isFinite(x) ? `${num(x * 1000, 2)} por mil` : "—"),
+  },
+  {
+    id: "fidelidade",
+    rotulo: "Fidelidade ao 14",
+    pergunta: "forca",
+    pct: fidelidade,
+    votos: (l) => n(l, "t2_nulos14"),
+    unidade: "nulos com 14 no 2º turno a cada 100 votos do 14 no 1º (cidade e bairro ajustados pelo pouco voto)",
+    formato: (x) => (Number.isFinite(x) ? num(x * 100, 1) : "—"),
+  },
   {
     id: "aproveitamento",
     rotulo: "Do Renan para deputado",
@@ -68,6 +90,27 @@ export const INDICADORES_MAPA: IndicadorMapa[] = [
     formato: (x) => pct(x, 0),
     so: ["bairro"],
     motivo: "Só existe por bairro: abra uma cidade.",
+  },
+  {
+    id: "prioridade",
+    rotulo: "Prioridade",
+    pergunta: "agir",
+    pct: (l) => 4 - n(l, "_prioridade"),
+    unidade: "a ação da regra (Leitura do lugar): 3 = alta, 1 = baixa",
+    formato: (x) => (["—", "Baixa", "Média", "Alta"][Math.round(x)] ?? "—"),
+    categorias: ["Baixa", "Média", "Alta"],
+    so: ["cidade", "bairro"],
+    motivo: "A ação é por cidade e bairro: abra um estado.",
+  },
+  {
+    id: "ver28",
+    rotulo: "Vereador 2028 (central)",
+    pergunta: "agir",
+    pct: (l) => n(l, "_cen_central"),
+    unidade: "do QE de vereador de 2028, convertendo o voto do Renan como o quartil de cima do estado",
+    formato: (x) => (Number.isFinite(x) ? `${num(x, 2)} QE` : "—"),
+    so: ["cidade", "bairro"],
+    motivo: "Vereador é por cidade: abra um estado.",
   },
   { id: "direita", rotulo: "Direita sem o Missão", pergunta: "terreno", pct: (l) => razao(n(l, "direita_df"), n(l, "validos_df")), votos: (l) => n(l, "direita_df"), unidade: "dos válidos para Dep. Federal", formato: (x) => pct(x, 0) },
   { id: "lado", rotulo: "Pende para", pergunta: "terreno", pct: lado, unidade: "(Missão + direita − esquerda) ÷ válidos, Presidente", divergente: true, formato: pontos },

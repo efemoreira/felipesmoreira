@@ -1,6 +1,16 @@
 import { n, t } from "../dados";
 import { pctDe, pontos } from "../apoio";
 import type { Coluna } from "../pecas";
+import { fidelidade } from "../leitura";
+
+/* O 2º turno e a leitura (ação, 2028) nas três tabelas. `_` = derivado em `leitura.ts`. */
+const FIEIS: Coluna = { chave: "t2_nulos14", rotulo: "Fiéis 2º turno", ajuda: "eleitores que digitaram 14 para Presidente no 2º turno, sabendo que anulava" };
+const FIDELIDADE: Coluna = { chave: "_fiel", rotulo: "Fidelidade", tipo: "dec", valor: (l) => fidelidade(l) * 100, ajuda: "fiéis a cada 100 votos do 14 no 1º turno (cidade e bairro ajustados pelo pouco voto)" };
+const LEITURA: Coluna[] = [
+  { chave: "_acao", rotulo: "O que fazer", tipo: "txt" },
+  { chave: "_prioridade_txt", rotulo: "Prioridade", tipo: "txt" },
+  { chave: "_cen_central", rotulo: "2028 central (QE)", tipo: "dec", ajuda: "chapa de vereador convertendo o voto do Renan como o quartil de cima do estado, em quocientes de 2028" },
+];
 
 /**
  * As colunas das tabelas do Explorador. `COLUNAS_*` são as completas — as
@@ -24,6 +34,8 @@ export const COLUNAS_UF: Coluna[] = [
   { chave: "qe_df", rotulo: "QE DF" },
   { chave: "qe_atingidos_df", rotulo: "QE atingidos DF", tipo: "dec" },
   { chave: "eleitos_df", rotulo: "Eleitos DF" },
+  FIEIS,
+  FIDELIDADE,
 ];
 
 export const COLUNAS_REGIAO: Coluna[] = [{ ...COLUNAS_UF[0], rotulo: "Região" }, ...COLUNAS_UF.slice(1).filter((c) => !["qe_df", "qe_atingidos_df"].includes(c.chave))];
@@ -47,6 +59,9 @@ export const COLUNAS_CIDADE: Coluna[] = [
   { chave: "vagas_ver", rotulo: "Vagas vereador" },
   { chave: "qe_ver_2028_est", rotulo: "QE vereador 2028" },
   { chave: "situacao_vereador", rotulo: "Vereador", tipo: "txt" },
+  FIEIS,
+  FIDELIDADE,
+  ...LEITURA,
 ];
 
 export const COLUNAS_BAIRRO: Coluna[] = [
@@ -62,10 +77,13 @@ export const COLUNAS_BAIRRO: Coluna[] = [
   { chave: "pct_dir_de", rotulo: "Direita DE", tipo: "pct" },
   { chave: "oportunidade", rotulo: "Oportunidade" },
   { chave: "missao_em_qe_ver", rotulo: "Missão em QE ver.", tipo: "dec", ajuda: "melhor votação de deputado do Missão no bairro ÷ QE de vereador estimado da cidade" },
-  { chave: "origem", rotulo: "Nome vem de", tipo: "txt" },
+  { chave: "origem", rotulo: "Nome vem de", tipo: "txt", fixavel: true },
+  FIEIS,
+  FIDELIDADE,
+  ...LEITURA,
 ];
 
 /** As poucas colunas que a tabela abre mostrando, mais a do indicador pintado (`Explorador` acrescenta). */
-const ENXUTAS = ["nome", "eleitorado", "missao_pres", "pct_missao_pres", "pct_renan", "missao_df", "pct_missao_df", "pct_mdf", "aproveitamento_df", "situacao_vereador", "oportunidade"];
+const ENXUTAS = ["nome", "eleitorado", "missao_pres", "pct_missao_pres", "pct_renan", "missao_df", "pct_missao_df", "pct_mdf", "aproveitamento_df", "situacao_vereador", "oportunidade", "t2_nulos14", "_acao"];
 
 export const enxutas = (cols: Coluna[]) => cols.filter((c) => ENXUTAS.includes(c.chave));

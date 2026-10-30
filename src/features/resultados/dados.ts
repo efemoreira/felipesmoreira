@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api/client";
+import { carregarContagemExplorar, carregarContagemResumo, carregarContagemUf, type Fidelidade } from "@/features/resultados/segundoTurnoDados";
 
 /**
  * Os dados de /resultados: JSON estático em `public/resultados-2026/`, gerado
@@ -43,6 +44,8 @@ export type Resumo = {
   efeitoNumero?: Linha[];
   /** candidatos do movimento antes do partido existir (2022, 2024): trajetória, herança e futuro */
   movimento?: Movimento[];
+  /** 2º turno: peso do ajuste da fidelidade e a régua dos outros eliminados (junto em `carregarResumo`) */
+  fidelidade?: Fidelidade;
 };
 
 export type Movimento = {
@@ -115,16 +118,67 @@ function buscar<T>(caminho: string, transformar: (bruto: unknown) => T = (b) => 
   return cache.get(caminho) as Promise<T>;
 }
 
-export const carregarResumo = () => buscar<Resumo>("resumo.json");
+/* ---------- o 2º turno nas mesmas linhas ---------- */
+
+/*
+ * A contagem dos RDVs do 2º turno (`public/contagem-2026-2t/`) entra nas
+ * linhas do 1º com prefixo `t2_`: Brasil e estados pela UF, cidades pelo
+ * código TSE, bairros pela `bairro_chave` (o export já põe cada local de
+ * votação no bairro dele no 1º turno). Sem o 2º turno, a página segue só
+ * com o 1º.
+ */
+const CAMPOS_2T: [string, string][] = [
+  ["t2_votos", "votos_1"],
+  ["t2_nulos", "nulos_1"],
+  ["t2_nulos14", "nulos14_1"],
+  ["t2_base14", "votos14_1t"],
+  ["t2_votos_gov", "votos_3"],
+  ["t2_nulos14_gov", "nulos14_3"],
+  ["t2_fiel_aj", "t2_fiel_aj"],
+];
+export const do2t = (c: Linha | undefined): Linha => {
+  const o: Linha = {};
+  if (c) for (const [k, de] of CAMPOS_2T) if (typeof c[de] === "number") o[k] = c[de];
+  return o;
+};
+const semFalha = <T,>(p: Promise<T>) => p.catch(() => null);
+const juntos = new Map<string, Promise<unknown>>();
+function junto<T>(chave: string, fazer: () => Promise<T>): Promise<T> {
+  if (!juntos.has(chave))
+    juntos.set(
+      chave,
+      fazer().catch((e) => {
+        juntos.delete(chave);
+        throw e;
+      }),
+    );
+  return juntos.get(chave) as Promise<T>;
+}
+
+export const carregarResumo = () =>
+  junto("resumo", async () => {
+    const [r, c] = await Promise.all([buscar<Resumo>("resumo.json"), semFalha(carregarContagemResumo())]);
+    if (!c) return r;
+    const porUf = new Map(c.ufs.map((u) => [String(u.uf), u]));
+    return { ...r, fidelidade: c.fidelidade, brasil: { ...r.brasil, ...do2t(c.brasil) }, ufs: r.ufs.map((u) => ({ ...u, ...do2t(porUf.get(String(u.uf))) })) };
+  });
 
 export const carregarUf = (uf: string) =>
-  buscar<DadosUf>(`uf/${uf}.json`, (bruto) => {
-    const b = bruto as { cidades: Tabela; votos: Tabela; proprio?: Tabela | null };
-    return {
-      cidades: deTabela<Linha>(b.cidades),
-      votos: deTabela<VotoNaCidade>(b.votos),
-      proprio: b.proprio ? deTabela<ProprioNaCidade>(b.proprio) : [],
-    };
+  junto(`uf/${uf}`, async () => {
+    const [d, c] = await Promise.all([
+      buscar<DadosUf>(`uf/${uf}.json`, (bruto) => {
+        const b = bruto as { cidades: Tabela; votos: Tabela; proprio?: Tabela | null };
+        return {
+          cidades: deTabela<Linha>(b.cidades),
+          votos: deTabela<VotoNaCidade>(b.votos),
+          proprio: b.proprio ? deTabela<ProprioNaCidade>(b.proprio) : [],
+        };
+      }),
+      semFalha(carregarContagemUf(uf)),
+    ]);
+    if (!c) return d;
+    const porCodigo = new Map(c.map((x) => [String(x.municipio), x]));
+    return { ...d, cidades: d.cidades.map((x) => ({ ...x, ...do2t(porCodigo.get(String(x.municipio_codigo))) })) };
   });
 
 export const carregarMapa = (nome: string) => buscar<Mapa>(`mapa/${nome}.json`);
@@ -156,6 +210,8 @@ export type DadosBairros = {
   /** perfil do voto dos partidos no bairro (os 8 maiores e o Missão, por cargo) */
   partidos: Linha[];
   pessoas: Linha[];
+  /** votos do 2º turno em locais sem par no 1º turno: ficam fora dos bairros */
+  t2VotosFora?: number;
 };
 /** Bairros oficiais e distritos (`areas`, pela chave do bairro) sobre o fundo da sede; locais em x/y no mesmo desenho. */
 export type MapaBairros = { largura: number; altura: number; fundo: Record<string, string>; areas: Record<string, string> };
@@ -164,6 +220,14 @@ const lista = <T,>(t: Tabela | null | undefined): T[] => (t ? deTabela<T>(t) : [
 
 /** `chave` = `<uf>/<município>` */
 export const carregarBairros = (chave: string) =>
+  junto(`bairros/${chave}`, async () => {
+    const [d, c] = await Promise.all([lerBairros(chave), semFalha(carregarContagemExplorar(chave))]);
+    if (!c) return d;
+    const porChave = new Map(c.bairros.map((b) => [String(b.bairro_chave), b]));
+    return { ...d, t2VotosFora: c.t2_votos_fora ?? 0, bairros: d.bairros.map((b) => ({ ...b, ...porChave.get(String(b.bairro_chave)) })) };
+  });
+
+const lerBairros = (chave: string) =>
   buscar<DadosBairros>(`bairros/${chave}.json`, (bruto) => {
     const b = bruto as Record<string, Tabela | null>;
     return {
@@ -212,19 +276,21 @@ type Estado<T> = { dado: T | null; erro: string | null };
 
 /** Carrega e acompanha um recurso. `chave` null = não carregar ainda. */
 export function useRecurso<T>(chave: string | null, carregar: (chave: string) => Promise<T>): Estado<T> {
-  const [estado, setEstado] = useState<Estado<T>>({ dado: null, erro: null });
+  const [estado, setEstado] = useState<Estado<T> & { chave: string | null }>({ chave: null, dado: null, erro: null });
   useEffect(() => {
     if (chave === null) return;
     let vivo = true;
-    setEstado({ dado: null, erro: null });
+    setEstado({ chave, dado: null, erro: null });
     carregar(chave)
-      .then((dado) => vivo && setEstado({ dado, erro: null }))
-      .catch((e: Error) => vivo && setEstado({ dado: null, erro: e.message }));
+      .then((dado) => vivo && setEstado({ chave, dado, erro: null }))
+      .catch((e: Error) => vivo && setEstado({ chave, dado: null, erro: e.message }));
     return () => {
       vivo = false;
     };
   }, [chave, carregar]);
-  return estado;
+  // A renderização já recebe a chave nova antes de o efeito rodar. Não mostra
+  // os números do município anterior sob o nome do município recém-escolhido.
+  return chave !== null && estado.chave === chave ? estado : { dado: null, erro: null };
 }
 
 /* ---------- leitura segura de uma linha ---------- */

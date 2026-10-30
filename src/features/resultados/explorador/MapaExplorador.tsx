@@ -43,6 +43,7 @@ export function MapaExplorador({
   pontos = [],
   modo,
   divergente = false,
+  categorias,
   formato,
   ativo,
   aoEntrar,
@@ -59,6 +60,8 @@ export function MapaExplorador({
   pontos?: PontoMapa[];
   modo: "pct" | "votos";
   divergente?: boolean;
+  /** valores inteiros 1…k com nome (Baixa, Média, Alta): uma faixa por categoria, sem quantil */
+  categorias?: string[];
   formato: (x: number) => string;
   /** área marcada (o lugar aberto) */
   ativo?: string | null;
@@ -74,7 +77,10 @@ export function MapaExplorador({
   const vb = caixa ?? { x: 0, y: 0, largura, altura };
   const escala = vb.largura / 1000;
 
-  const faixas = useMemo(() => faixasQuantil(areas.map((a) => a.valor), divergente ? 7 : 5, divergente), [areas, divergente]);
+  const faixas = useMemo(
+    () => (categorias ? { cortes: categorias.slice(1).map((_, i) => i + 1.5), divergente: false } : faixasQuantil(areas.map((a) => a.valor), divergente ? 7 : 5, divergente)),
+    [areas, divergente, categorias],
+  );
   const tons = useMemo(() => (divergente ? [...DADO.lado] : tonsPara(DADO.rampa, faixas.cortes.length + 1)), [divergente, faixas]);
   const centros = useMemo(() => new Map(areas.map((a) => [a.id, centroDoPath(a.d)])), [areas]);
   const maiorVoto = useMemo(() => Math.max(1, ...areas.map((a) => (Number.isFinite(a.votos) ? (a.votos as number) : 0))), [areas]);
@@ -271,7 +277,7 @@ export function MapaExplorador({
       {semDado ? (
         vazio && <p style={{ fontSize: 14, color: P.tintaSuave, margin: "8px 0 0" }}>{vazio}</p>
       ) : modo === "pct" ? (
-        <Faixas faixas={faixas.cortes} tons={tons} divergente={divergente} formato={formato} acesa={faixaAcesa} aoAcender={setFaixaAcesa} />
+        <Faixas faixas={faixas.cortes} tons={tons} divergente={divergente} formato={formato} categorias={categorias} acesa={faixaAcesa} aoAcender={setFaixaAcesa} />
       ) : (
         <p style={{ fontSize: 13, color: P.tintaSuave, margin: "8px 0 0", display: "flex", alignItems: "center", gap: 6 }}>
           <span aria-hidden="true" style={{ width: 12, height: 12, borderRadius: "50%", background: DADO.missao, opacity: 0.6 }} />
@@ -289,6 +295,7 @@ function Faixas({
   tons,
   divergente,
   formato,
+  categorias,
   acesa,
   aoAcender,
 }: {
@@ -296,15 +303,18 @@ function Faixas({
   tons: string[];
   divergente: boolean;
   formato: (x: number) => string;
+  categorias?: string[];
   acesa: number | null;
   aoAcender: (i: number | null) => void;
 }) {
   /* cortes perto demais (1,52% e 1,58%) saem iguais com uma casa: aí a legenda ganha mais uma */
   const repete = faixas.some((c, i) => i > 0 && formato(c) === formato(faixas[i - 1]));
   const f = repete && !divergente ? (x: number) => `${num(x * 100, 2)}%` : formato;
-  const rotulos = Array.from({ length: faixas.length + 1 }, (_, i) =>
-    i === 0 ? `até ${f(faixas[0])}` : i === faixas.length ? `${f(faixas[i - 1])} ou mais` : `${f(faixas[i - 1])} a ${f(faixas[i])}`,
-  );
+  const rotulos =
+    categorias ??
+    Array.from({ length: faixas.length + 1 }, (_, i) =>
+      i === 0 ? `até ${f(faixas[0])}` : i === faixas.length ? `${f(faixas[i - 1])} ou mais` : `${f(faixas[i - 1])} a ${f(faixas[i])}`,
+    );
   if (!faixas.length) return null;
   return (
     <div style={{ margin: "8px 0 0" }}>
@@ -339,7 +349,7 @@ function Faixas({
         ))}
       </div>
       <p style={{ fontSize: 12.5, color: P.tintaSuave, margin: "2px 0 0" }}>
-        {divergente ? "Vermelho = pende à esquerda · azul = pende à direita." : "Cada faixa tem mais ou menos o mesmo número de áreas."} Toque numa faixa para ver só as áreas dela.
+        {divergente ? "Vermelho = pende à esquerda · azul = pende à direita." : categorias ? "Uma cor por categoria." : "Cada faixa tem mais ou menos o mesmo número de áreas."} Toque numa faixa para ver só as áreas dela.
       </p>
     </div>
   );

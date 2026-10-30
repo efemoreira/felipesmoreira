@@ -4,6 +4,7 @@ import { C, FONT_DADOS, PAINEL_DADOS as P, RAIO_DADOS, fileteDados } from "@/lib
 import { compacto, num, pct, UF_NOMES } from "./formato";
 import type { Linha } from "./dados";
 import { EXPLICACOES, type IdExplicacao } from "./explicacoes";
+import { compararValores, enxugarColunas, gerarCsv } from "./tabelaDados";
 
 /*
  * As peças de /resultados, na superfície de dados (`PAINEL_DADOS`): fundo
@@ -156,7 +157,7 @@ export function Escolha<T extends string>({
   return (
     <label style={{ display: "block", flex: "1 1 220px", minWidth: 0 }}>
       <span style={{ ...kicker, display: "block" }}>{rotulo}</span>
-      <select value={valor} onChange={(e) => aoMudar(e.target.value as T)} style={campo}>
+      <select aria-label={rotulo} value={valor} onChange={(e) => aoMudar(e.target.value as T)} style={campo}>
         {opcoes.map((o) => (
           <option key={o} value={o}>
             {nome(o)}
@@ -257,17 +258,13 @@ export type Coluna = {
   max?: number;
   ajuda?: string;
   valor?: (l: Linha) => number | string;
+  /** metadado (conferência, fonte): com `enxugar`, se for igual em todas as linhas sai da grade e vira frase */
+  fixavel?: boolean;
 };
 
 /** CSV que o Excel em português abre direto: `;` como separador, vírgula decimal e BOM para o acento. */
 function baixarCsv(linhas: Linha[], colunas: Coluna[], nome: string) {
-  const campoCsv = (v: unknown) => {
-    if (v === undefined || v === null || (typeof v === "number" && !Number.isFinite(v))) return "";
-    const s = typeof v === "number" ? String(v).replace(".", ",") : String(v);
-    return /[;"\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-  };
-  const corpo = [colunas.map((c) => campoCsv(c.rotulo)).join(";"), ...linhas.map((l) => colunas.map((c) => campoCsv(c.valor ? c.valor(l) : l[c.chave])).join(";"))];
-  const url = URL.createObjectURL(new Blob(["﻿" + corpo.join("\r\n")], { type: "text/csv;charset=utf-8" }));
+  const url = URL.createObjectURL(new Blob([gerarCsv(linhas, colunas)], { type: "text/csv;charset=utf-8" }));
   const a = document.createElement("a");
   a.href = url;
   a.download = `${nome}.csv`;
@@ -277,14 +274,17 @@ function baixarCsv(linhas: Linha[], colunas: Coluna[], nome: string) {
 
 export function Tabela({
   linhas,
-  colunas,
+  colunas: todas,
   ordem: ordemInicial,
   teto = 150,
   arquivo,
   aoEscolher,
+  enxugar,
 }: {
   linhas: Linha[];
   colunas: Coluna[];
+  /** tira coluna sem dado e põe numa frase a coluna `fixavel` que não varia */
+  enxugar?: boolean;
   ordem?: string;
   teto?: number;
   /** nome do CSV ("bairros-fortaleza"); sem ele, a tabela não oferece download */
@@ -292,26 +292,27 @@ export function Tabela({
   /** a linha vira botão (o Explorador desce no lugar) */
   aoEscolher?: (l: Linha) => void;
 }) {
-  const [ordem, setOrdem] = useState<{ chave: string; desc: boolean }>({ chave: ordemInicial ?? colunas[0].chave, desc: true });
+  const { colunas, fixas } = useMemo(() => (enxugar ? enxugarColunas(linhas, todas) : { colunas: todas, fixas: [] }), [enxugar, linhas, todas]);
+  const inicial = colunas.find((c) => c.chave === ordemInicial) ?? colunas[0];
+  const [ordem, setOrdem] = useState<{ chave: string; desc: boolean }>({ chave: inicial?.chave ?? "", desc: inicial?.tipo !== "txt" });
   const [mostrar, setMostrar] = useState(teto);
+  const colunaOrdenada = colunas.find((c) => c.chave === ordem.chave) ?? colunas.find((c) => c.chave === ordemInicial) ?? colunas[0];
   const valorDe = (l: Linha, c: Coluna) => (c.valor ? c.valor(l) : l[c.chave]);
 
   const ordenadas = useMemo(() => {
-    const col = colunas.find((c) => c.chave === ordem.chave) ?? colunas[0];
+    const col = colunaOrdenada;
+    if (!col) return linhas;
     const v = (l: Linha) => (col.valor ? col.valor(l) : l[col.chave]);
     return [...linhas].sort((a, b) => {
       const x = v(a);
       const y = v(b);
-      if (x === undefined || (typeof x === "number" && Number.isNaN(x))) return 1;
-      if (y === undefined || (typeof y === "number" && Number.isNaN(y))) return -1;
-      const r = typeof x === "number" && typeof y === "number" ? x - y : String(x).localeCompare(String(y), "pt-BR");
-      return ordem.desc ? -r : r;
+      return compararValores(x, y, ordem.desc);
     });
-  }, [linhas, colunas, ordem]);
+  }, [linhas, colunaOrdenada, ordem.desc]);
 
   const celula = (l: Linha, c: Coluna) => {
     const v = valorDe(l, c);
-    if (v === undefined || v === null || v === "") return "—";
+    if (v === undefined || v === null || v === "" || (typeof v === "number" && !Number.isFinite(v))) return "—";
     if (typeof v !== "number") return String(v);
     switch (c.tipo) {
       case "pct":
@@ -338,12 +339,17 @@ export function Tabela({
 
   return (
     <div>
+      {fixas.length > 0 && (
+        <p style={{ fontSize: 13, margin: "0 0 6px", color: P.tintaSuave }}>
+          Igual em todas as linhas: {fixas.map((f) => `${f.rotulo}: ${f.valor}`).join(" · ")}
+        </p>
+      )}
       <div style={{ ...cartao, overflow: "auto", maxHeight: 560 }}>
         <table style={{ borderCollapse: "separate", borderSpacing: 0, width: "100%", fontSize: 14, fontFamily: FONT_DADOS, color: P.tinta }}>
           <thead>
             <tr>
               {colunas.map((c, i) => {
-                const ativa = ordem.chave === c.chave;
+                const ativa = colunaOrdenada?.chave === c.chave;
                 return (
                   <th
                     key={c.chave}
@@ -361,7 +367,7 @@ export function Tabela({
                   >
                     <button
                       type="button"
-                      onClick={() => setOrdem((o) => ({ chave: c.chave, desc: o.chave === c.chave ? !o.desc : true }))}
+                      onClick={() => setOrdem((o) => ({ chave: c.chave, desc: colunaOrdenada?.chave === c.chave ? !o.desc : c.tipo !== "txt" }))}
                       style={{
                         all: "unset",
                         boxSizing: "border-box",
@@ -369,7 +375,7 @@ export function Tabela({
                         width: "100%",
                         cursor: "pointer",
                         padding: "10px 10px",
-                        minHeight: 40,
+                        minHeight: 44,
                         fontSize: 12,
                         fontWeight: 700,
                         color: ativa ? P.tinta : P.tintaSuave,
@@ -386,6 +392,7 @@ export function Tabela({
             </tr>
           </thead>
           <tbody>
+            {ordenadas.length === 0 && <tr><td colSpan={colunas.length} style={{ padding: 16 }}>Nenhum registro neste recorte.</td></tr>}
             {ordenadas.slice(0, mostrar).map((l, r) => (
               <tr
                 key={r}
@@ -403,14 +410,21 @@ export function Tabela({
                       textAlign: c.tipo === "txt" ? "left" : "right",
                       padding: "8px 10px",
                       borderBottom: fileteDados(),
-                      whiteSpace: "nowrap",
+                      whiteSpace: i === 0 ? "normal" : "nowrap",
+                      minWidth: i === 0 ? 140 : undefined,
+                      maxWidth: i === 0 ? 240 : undefined,
+                      overflowWrap: i === 0 ? "anywhere" : undefined,
                       fontVariantNumeric: "tabular-nums",
                       fontWeight: i === 0 ? 600 : 400,
                       textDecoration: i === 0 && aoEscolher ? "underline" : undefined,
                       textUnderlineOffset: 3,
                     }}
                   >
-                    {celula(l, c)}
+                    {i === 0 && aoEscolher ? (
+                      <button type="button" onClick={(e) => { e.stopPropagation(); aoEscolher(l); }} style={{ ...linkBotao, textAlign: "left", padding: 0, fontWeight: 600, maxWidth: "min(42vw, 240px)", whiteSpace: "normal", overflowWrap: "anywhere" }}>
+                        {celula(l, c)}
+                      </button>
+                    ) : celula(l, c)}
                   </td>
                 ))}
               </tr>
@@ -419,7 +433,7 @@ export function Tabela({
         </table>
       </div>
       <p style={{ fontSize: 13, margin: "4px 0 0", color: P.tintaSuave }}>
-        {num(ordenadas.length)} linhas · toque no título da coluna para ordenar
+        {num(Math.min(mostrar, ordenadas.length))} de {num(ordenadas.length)} linhas · toque no título da coluna para ordenar
         {ordenadas.length > mostrar && (
           <>
             {" · "}

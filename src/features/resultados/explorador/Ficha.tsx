@@ -7,6 +7,7 @@ import { BarrasGrupos } from "../graficos";
 import { Chips, Legenda, cartao, kicker } from "../pecas";
 import { GRUPOS, linhasGrupos } from "../apoio";
 import type { IndicadorMapa } from "./indicadores";
+import { fidelidade } from "../leitura";
 
 /**
  * A ficha do lugar, ao lado do mapa: quem é, o número do que está pintado com
@@ -100,6 +101,13 @@ export function Ficha({
             rotulo={distrital ? "Dep. Distrital" : "Dep. Estadual"}
             valor={`${pct(razao(n(linha, "missao_de"), n(linha, "validos_de")), 2)} · ${compacto(n(linha, "missao_de"))}`}
           />
+          {Number.isFinite(n(linha, "t2_nulos14")) && (
+            <Par
+              rotulo="2º turno: digitaram 14"
+              valor={`${num(n(linha, "t2_nulos14"))} · ${num(fidelidade(linha) * 100, 1)}/100`}
+              nota={`sabendo que anulava · a cada 100 votos do 14 no 1º turno${pai && Number.isFinite(fidelidade(pai.linha)) ? ` (${pai.nome}: ${num(fidelidade(pai.linha) * 100, 1)})` : ""}`}
+            />
+          )}
         </dl>
         {Number.isFinite(aprov) && renan > 0 && (
           <p style={{ fontSize: 14, lineHeight: 1.45, margin: "8px 0 0", color: P.tinta }}>

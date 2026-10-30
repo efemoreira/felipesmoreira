@@ -55,3 +55,7 @@ next-env.d.ts
 
 # Materiais brutos de consulta, preservados localmente fora da publicação.
 /originais/iceberg/*.zip
+
+# Cache reproduzível da coleta pública de RDVs; não vai para o site.
+/.cache-resultados/
+__pycache__/

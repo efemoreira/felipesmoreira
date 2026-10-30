@@ -19,6 +19,7 @@ import { num, pct, titulo } from "../formato";
 import { QUADRANTES, Quadrantes } from "../graficos";
 import { Carregando, Chips, Escolha, Filtros, Kpis, Legenda, Nota, Secao, SeletorUf, Tabela } from "../pecas";
 import { pontos } from "../apoio";
+import { NOME_PRIORIDADE, acaoDe, conversaoReferencia, fidelidade } from "../leitura";
 
 /**
  * Decisões: em que situação o Missão está em cada lugar e de quem é o voto ali.
@@ -27,9 +28,10 @@ import { pontos } from "../apoio";
  * quanto disso já vira voto no deputado do Missão (conversão). Separa o lugar
  * JÁ CONVERTIDO do lugar com POTENCIAL — o eleitor do 14 que ainda não votou
  * no deputado. Por candidato: o voto que o 14 do lugar explica (puxado) e o
- * que é dele (próprio). Nada aqui recomenda: é regra numérica, à vista
- * (forca.py no projeto de análise), cruzada com o adversário que caiu ali e
- * com a gente que já temos.
+ * que é dele (próprio). A situação é regra numérica, à vista (forca.py no
+ * projeto de análise), cruzada com o adversário que caiu ali, com a base fiel
+ * do 2º turno e com a gente que já temos. "O que fazer" é a mesma regra da
+ * Leitura do Explorador (`leitura.ts`), aqui somada à gente do painel.
  */
 
 const SITUACOES = ["Potencial", "Convertido", "Base de candidato", "Fora da base"] as const;
@@ -55,6 +57,8 @@ export default function Decisoes({ resumo, uf, setUf }: { resumo: Resumo; uf: st
 
   const nomeCand = useMemo(() => new Map(resumo.candidatos.map((c) => [String(c.candidato_sq), t(c, "candidato_urna")])), [resumo.candidatos]);
   const genteCidade = useMemo(() => indiceGente(gente.dado), [gente.dado]);
+  const convRef = useMemo(() => conversaoReferencia(cidades), [cidades]);
+  const comGente = gente.dado?.permitido === true;
 
   /* uma linha por lugar, com o mesmo formato nos dois recortes */
   const linhas: Linha[] = useMemo(() => {
@@ -68,7 +72,13 @@ export default function Decisoes({ resumo, uf, setUf }: { resumo: Resumo; uf: st
       espaco: n(l, "espaco"),
       renan: n(l, "missao_pres"),
       melhor_proprio: n(l, "melhor_proprio"),
+      fieis: n(l, "t2_nulos14"),
+      fiel: fidelidade(l) * 100,
     });
+    const agir = (l: Linha, nivel: "cidade" | "bairro", irmaos: Linha[], g: number | null) => {
+      const a = acaoDe(l, nivel, { convRef, irmaos, gente: comGente ? g : null });
+      return a ? { acao: a.acao, prioridade: NOME_PRIORIDADE[a.prioridade], porque: a.porque } : {};
+    };
     if (modo === "cidades") {
       const tempo = new Map((adv.dado?.cidades ?? []).map((c) => [String(c.municipio_codigo), c]));
       return cidades.map((c) => {
@@ -84,6 +94,7 @@ export default function Decisoes({ resumo, uf, setUf }: { resumo: Resumo; uf: st
           andou: n(tp, "var_lado_pres"),
           gente: g?.total ?? 0,
           gente_militantes: (g?.porTipo.militante ?? 0) + (g?.porTipo.coordenador ?? 0),
+          ...agir(c, "cidade", cidades, g?.total ?? 0),
         } as Linha;
       });
     }
@@ -102,9 +113,10 @@ export default function Decisoes({ resumo, uf, setUf }: { resumo: Resumo; uf: st
         andou: n(b, "var_lado_pres"),
         gente: g?.total ?? 0,
         gente_militantes: (g?.porTipo.militante ?? 0) + (g?.porTipo.coordenador ?? 0),
+        ...agir(b, "bairro", d.bairros, g?.total ?? 0),
       } as Linha;
     });
-  }, [modo, cidades, adv.dado, bairros.dado, genteCidade, nomeCand, cidadeEscolhida]);
+  }, [modo, cidades, adv.dado, bairros.dado, genteCidade, nomeCand, cidadeEscolhida, convRef, comGente]);
 
   const visiveis = filtro === "todos" ? linhas : linhas.filter((l) => l.situacao === filtro);
   const temGente = gente.dado?.permitido === true;
@@ -207,10 +219,14 @@ export default function Decisoes({ resumo, uf, setUf }: { resumo: Resumo; uf: st
               colunas={[
                 { chave: "lugar", rotulo: modo === "cidades" ? "Cidade" : "Bairro", tipo: "txt" },
                 { chave: "situacao", rotulo: "Situação", tipo: "txt" },
+                { chave: "acao", rotulo: "O que fazer", tipo: "txt" },
+                { chave: "prioridade", rotulo: "Prioridade", tipo: "txt" },
                 { chave: "eleitorado", rotulo: "Eleitores" },
                 { chave: "i14", rotulo: "Propensão ao 14", tipo: "dec", ajuda: `fatia do Renan ali ÷ a ${regua}` },
                 { chave: "conversao", rotulo: "Chapa ÷ Renan", tipo: "pct", ajuda: "melhor chapa do Missão (DF ou DE) ÷ votos do Renan ali" },
                 { chave: "a_converter", rotulo: "Renan sem voto na chapa" },
+                { chave: "fieis", rotulo: "Fiéis 2º turno", ajuda: "digitaram 14 para Presidente no 2º turno, sabendo que anulava" },
+                { chave: "fiel", rotulo: "Fidelidade", tipo: "dec", ajuda: "fiéis a cada 100 votos do 14 no 1º turno, ajustada pelo pouco voto" },
                 { chave: "melhor", rotulo: "Mais voto próprio", tipo: "txt" },
                 { chave: "melhor_proprio", rotulo: "Votos próprios dele" },
                 { chave: "oportunidade", rotulo: "Votos em disputa", ajuda: "direita fora do Missão (Dep. Estadual) + Renan não convertido" },
@@ -235,6 +251,11 @@ export default function Decisoes({ resumo, uf, setUf }: { resumo: Resumo; uf: st
 
           {lugar && (
             <Secao titulo={`${t(lugar, "lugar")}: de quem é o voto`} sub="Puxado = o que o 14 deste lugar daria a cada nome pela taxa típica dele. Próprio = o que ele fez além disso." explica="voto-puxado">
+              {t(lugar, "acao") && (
+                <Nota>
+                  <b>{t(lugar, "acao")}</b> · prioridade {t(lugar, "prioridade").toLowerCase()}. {t(lugar, "porque")}
+                </Nota>
+              )}
               <Kpis
                 itens={[
                   { rotulo: "Situação", valor: t(lugar, "situacao") || "—", missao: true },

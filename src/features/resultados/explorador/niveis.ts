@@ -50,7 +50,7 @@ export type Opcoes = { pintar?: string; como?: "pct" | "votos" };
 export type Endereco = { aba: string; caminho: Caminho; opcoes: Opcoes; uf?: string; resto: string[] };
 
 /** As abas que viraram o Explorador: o link antigo abre o mesmo lugar. */
-const ANTIGAS = ["brasil", "regiao", "estado", "municipio", "bairros"];
+const ANTIGAS = ["brasil", "regiao", "estado", "municipio", "bairros", "segundo-turno"];
 const CODIGOS_REGIAO: string[] = ["nordeste", "norte", "centro-oeste", "sudeste", "sul", "exterior"];
 
 export function lerEndereco(hash: string): Endereco {
@@ -79,6 +79,8 @@ export function lerEndereco(hash: string): Endereco {
     if (aba === "regiao") caminho = uf ? { regiao: regiaoDe(uf) } : {};
     else if (aba === "estado" || aba === "municipio") caminho = uf ? normalizar({ uf }) : {};
     else if (aba === "bairros") caminho = uf ? normalizar({ uf, cidade, bairro }) : {};
+    /* o bairro da antiga aba do 2º turno tinha outra chave: abre a cidade */
+    else if (aba === "segundo-turno") caminho = uf ? normalizar({ uf, cidade }) : {};
     return { aba: "explorar", caminho, opcoes, uf, resto: [] };
   }
 
