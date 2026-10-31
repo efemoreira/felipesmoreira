@@ -7,10 +7,13 @@ import { Carregando, Chips, Filtros, Kpis, Nota, Secao, SeletorUf, Tabela } from
 import { PORTES } from "../apoio";
 import { chapaVereador } from "../chapa";
 
+import ResumoVereadores from "../ResumoVereadores";
+import type { ResumoVereadores as TotaisVereadores } from "../vereadores";
+
 type Cargo = "df" | "de";
 const SITUACOES = ["Missão já faria vereador", "Missão perto (80% do QE)", "Só com os votos do Renan", "Abaixo do quociente"];
 
-export default function Cadeiras({ resumo, uf, setUf }: { resumo: Resumo; uf: string; setUf: (u: string) => void }) {
+export default function Cadeiras({ resumo, uf, setUf, vereadoresBrasil }: { vereadoresBrasil: TotaisVereadores; resumo: Resumo; uf: string; setUf: (u: string) => void }) {
   const [vista, setVista] = useState<"dep" | "ver" | "regras">("dep");
   const [cargo, setCargo] = useState<Cargo>("df");
   const [porte, setPorte] = useState("Todos");
@@ -93,6 +96,7 @@ export default function Cadeiras({ resumo, uf, setUf }: { resumo: Resumo; uf: st
 
       {vista === "ver" && (
         <>
+          <ResumoVereadores resumo={vereadoresBrasil} />
           <Filtros>
             <SeletorUf uf={ufVer} opcoes={opcoes} aoMudar={setUf} />
           </Filtros>

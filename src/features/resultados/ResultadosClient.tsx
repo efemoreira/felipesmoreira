@@ -12,6 +12,8 @@ import Legenda from "./abas/Legenda";
 import Cadeiras from "./abas/Cadeiras";
 import Candidatos from "./abas/Candidatos";
 import Adversarios from "./abas/Adversarios";
+import ResumoVereadores from "./ResumoVereadores";
+import type { ResumoVereadores as TotaisVereadores } from "./vereadores";
 import Sobre from "./abas/Sobre";
 import Decisoes from "./abas/Decisoes";
 import Partidos from "./abas/Partidos";
@@ -44,7 +46,7 @@ const ehAba = (a: string): a is Aba => a === "explorar" || ANALISES.some(([k]) =
 const carregar = () => carregarResumo();
 const enderecoAba = (a: string, u: string, r: string[] = []) => `#${[a, u, ...r].map(encodeURIComponent).join("/")}`;
 
-export default function ResultadosClient() {
+export default function ResultadosClient({ vereadoresBrasil }: { vereadoresBrasil: TotaisVereadores }) {
   const resumo = useRecurso("resumo", carregar);
   const [aba, setAba] = useState<Aba>("explorar");
   const [uf, setUfEstado] = useState("ce");
@@ -163,10 +165,11 @@ export default function ResultadosClient() {
           <Carregando erro={resumo.erro} />
         ) : (
           <main style={{ marginTop: 10 }}>
+            {aba === "explorar" && !caminho.regiao && !caminho.uf && <ResumoVereadores resumo={vereadoresBrasil} />}
             {aba === "explorar" && <Explorador resumo={r} caminho={caminho} opcoes={opcoes} ir={irPara} mudarOpcoes={mudarOpcoes} />}
             {aba === "conversao" && <Conversao resumo={r} uf={uf} setUf={setUf} />}
             {aba === "legenda" && <Legenda resumo={r} uf={uf} setUf={setUf} />}
-            {aba === "cadeiras" && <Cadeiras resumo={r} uf={uf} setUf={setUf} />}
+            {aba === "cadeiras" && <Cadeiras vereadoresBrasil={vereadoresBrasil} resumo={r} uf={uf} setUf={setUf} />}
             {aba === "decisoes" && <Decisoes resumo={r} uf={ufAnalise} setUf={setUf} />}
             {aba === "candidatos" && <Candidatos resumo={r} />}
             {aba === "partidos" && <Partidos resumo={r} uf={ufAnalise} setUf={setUf} />}
