@@ -22,8 +22,8 @@ declare(strict_types=1);
  * um segredo a mais para vazar.
  *
  * A LISTA É UM `glob`, AO CONTRÁRIO DA MANUTENÇÃO. Lá a lista é explícita
- * porque varrer a pasta apagaria o que não devia; aqui varrer a pasta copia o
- * que não devia — e copiar demais é o lado certo de errar num backup.
+ * porque varrer a pasta apagaria o que não devia. O acervo exclusivo do dono
+ * tem cópia própria na central Ação: não acompanha um zip acessível aos demais administradores.
  */
 
 require_once __DIR__ . '/sessao.php';
@@ -46,7 +46,7 @@ function arquivos_para_backup(): array
 {
     $lista = [];
     foreach (glob(PASTA_DADOS . '/*.{php,json}', GLOB_BRACE) ?: [] as $arquivo) {
-        if (is_file($arquivo)) {
+        if (is_file($arquivo) && !in_array(basename($arquivo), ['acao.php', 'acao-progresso.php'], true)) {
             $lista[] = $arquivo;
         }
     }

@@ -91,6 +91,8 @@ Regras:
 
 ### Organização: /nucleos, /temas, /portavozes
 
+- `/acao` é uma central exclusiva do dono, fora da navegação pública. A interface é estática; os documentos vêm da API autenticada e ficam fora do Git. Operação e limites em `docs/acao-privada.md`.
+
 - As três páginas moram em `src/features/organizacao/` com uma moldura comum (`Moldura.tsx`). A parte fixa (o que é, as portas, os níveis) sai do catálogo `catalogo.ts` e vai no HTML do build; a lista vem de `api/organizacao.php` via `obterOrganizacao()` (`src/lib/api/organizacao.ts`).
 - `catalogo.ts` é par de `organizacao-comum.php` (`testes/contrato/organizacao.test.ts`). Mudou um piso da Liga ou uma porta de tema? Mude nos dois.
 - Nada de nome de responsável nem número de seguidores na página pública: o porta-voz aparece com nome público, tema, lugar, nível e perfis, e só se `publicado`.

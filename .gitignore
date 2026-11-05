@@ -25,6 +25,9 @@
 # senha. Versionar por engano é vazamento, não bagunça.
 /public/dados/
 
+# Pacotes e rascunhos privados para importação autenticada; nunca entram no build.
+/.local/
+
 # Cópias locais dos catálogos que o publish.yml gera em out/ (funcoes.json,
 # municipios-ce.json e dados-semente.json — `npm run painel:local` as refaz).
 # Quem roda o PHP local precisa delas ao lado do painel, mas a fonte é
