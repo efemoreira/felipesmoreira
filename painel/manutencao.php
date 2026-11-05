@@ -277,7 +277,7 @@ abrir_pagina('Manutenção');
       ['url' => '/painel/conta.php', 'texto' => 'Minha conta'],
       null,
       [
-          'O backup é um zip de /dados inteiro: cadastro, presenças, fatos, caixa, imagens. Fica na hospedagem, fechado para a web; baixe e guarde fora dela.',
+          'O backup reúne os dados operacionais: cadastro, presenças, fatos, caixa e imagens. Fica na hospedagem, fechado para a web; baixe e guarde fora dela. O acervo privado do dono tem cópia própria na central Ação.',
           'Um cron pode gravar o backup todo dia chamando backup.php pela linha de comando. O botão aqui faz o mesmo na hora.',
           'Zerar serve para sair da fase de teste: apaga o que foi cadastrado para experimentar. Marque só os grupos que quer — cada um é independente.',
           'Zerar “Pessoas e contas” apaga os outros logins; só a sua conta fica, para o painel não voltar a aceitar que qualquer visitante crie um administrador.',
