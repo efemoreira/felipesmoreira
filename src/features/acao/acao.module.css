@@ -50,10 +50,19 @@
 .tituloSecao>small{font-size:11px;opacity:.7;max-width:280px;text-align:right}
 .tarefas{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border-top:var(--acao-border)}
 .tarefa{display:flex;gap:8px;align-items:flex-start;border-bottom:var(--acao-border);padding:18px 16px 18px 0;min-width:0}
-.tarefa>input{width:24px;height:24px;flex-shrink:0;margin:8px 10px 0 4px;accent-color:var(--acao-ink)}
+.controleCheck{width:44px;height:44px;flex:0 0 44px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
+.controleCheck>input{width:24px;height:24px;margin:0;accent-color:var(--acao-ink);cursor:pointer}
 .tarefa>button{border:0;background:transparent;color:inherit;text-align:left;padding:4px;flex:1;min-height:44px;min-width:0}
-.tarefa span{display:block;font-size:13px;line-height:1.5}
+.tarefa span{display:block;font-size:13px;line-height:1.5;overflow-wrap:anywhere}
 .tarefa small{display:block;font-size:10px;opacity:.65;margin-top:8px}
+.secaoConcluidas{scroll-margin-top:24px;margin:38px 0}
+.checkConcluida{color:var(--acao-gold-dim);font-family:var(--acao-body);font-size:.85em}
+.totalConcluidas{font-family:var(--acao-body);font-size:.65em;font-weight:400}
+.tarefaConcluida{background:var(--acao-cream)}
+.tarefaConcluida>button>span{opacity:.85}
+.tarefaConcluida small{opacity:1}
+.statusConcluida{color:var(--acao-gold-dim);font-weight:600}
+.secaoConcluidas>.botao{margin-top:18px}
 .cartoes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
 .cartaoDocumento{text-align:left;padding:24px;background:var(--acao-cream);color:inherit;border:var(--acao-border);display:flex;align-items:flex-start;flex-direction:column;min-width:0;transition:transform .15s}
 .cartaoDocumento:hover{transform:translateY(-3px);box-shadow:var(--acao-shadow)}

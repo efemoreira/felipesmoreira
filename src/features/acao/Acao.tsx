@@ -34,6 +34,7 @@ export default function Acao() {
   const [categoria, setCategoria] = useState("");
   const [tipo, setTipo] = useState("");
   const [limite, setLimite] = useState(24);
+  const [limiteConcluidas, setLimiteConcluidas] = useState(12);
   const [salvando, setSalvando] = useState<Set<string>>(new Set());
   const [importando, setImportando] = useState(false);
   const [erro, setErro] = useState("");
@@ -131,7 +132,9 @@ export default function Acao() {
   const visiveis = documentos.filter((d) => (!categoria || d.categoria === categoria) && (!pesquisa || normalizarBusca(`${d.titulo} ${d.resumo} ${d.conteudo}`).includes(pesquisa)));
   const categorias = [...new Set(documentos.map((d) => d.categoria))];
   const todasTarefas = documentos.flatMap((d) => d.tarefas.map((t) => ({ ...t, documento: d })));
-  const concluidas = todasTarefas.filter((t) => tarefaConcluida(t, progresso)).length;
+  const tarefasConcluidas = todasTarefas.filter((t) => tarefaConcluida(t, progresso));
+  const concluidas = tarefasConcluidas.length;
+  const concluidasVisiveis = tarefasConcluidas.filter((t) => !pesquisa || normalizarBusca(`${t.texto} ${t.documento.titulo}`).includes(pesquisa));
   const proximas = todasTarefas.filter((t) => !tarefaConcluida(t, progresso)).slice(0, 6);
   const secoes = useMemo(() => documento ? secoesDoDocumento(documento.conteudo) : [], [documento]);
   const destinos = acervo?.diretorio ?? [];
@@ -169,7 +172,7 @@ export default function Acao() {
         <div className={styles.abas} role="tablist" aria-label="Central de ação">
           {([['inicio', 'Visão geral'], ['documentos', 'Documentos'], ['estrutura', 'Estrutura']] as const).map(([id, nome]) => <button key={id} id={`aba-${id}`} role="tab" aria-selected={aba === id} aria-controls="conteudo-acao" onClick={() => { setAba(id); setBusca(""); setLimite(24); }}>{nome}</button>)}
         </div>
-        <label className={styles.busca}><span>Buscar</span><input type="search" value={busca} onChange={(e) => { setBusca(e.target.value); setLimite(24); }} placeholder={aba === "estrutura" ? "Cidade, instituição ou frente…" : "Nos seus documentos…"} /></label>
+        <label className={styles.busca}><span>Buscar</span><input type="search" value={busca} onChange={(e) => { setBusca(e.target.value); setLimite(24); setLimiteConcluidas(12); }} placeholder={aba === "estrutura" ? "Cidade, instituição ou frente…" : "Nos seus documentos…"} /></label>
         <input ref={upload} className={styles.upload} type="file" accept=".md,.json" multiple onChange={(e) => void importar(Array.from(e.target.files ?? []))} />
         <button className={styles.botao} type="button" disabled={importando} onClick={() => upload.current?.click()}>{importando ? "Importando…" : "Adicionar / atualizar"}</button>
       </div>
@@ -180,7 +183,7 @@ export default function Acao() {
         {aba === "inicio" && <>
           <div className={styles.indicadores}>
             <div><span>Acervo</span><strong>{documentos.length}</strong><small>documentos reunidos</small></div>
-            <div><span>Execução</span><strong>{concluidas}<em> / {todasTarefas.length}</em></strong><small>itens de checklist concluídos</small></div>
+            <div><span>Execução</span><strong>{concluidas}<em> / {todasTarefas.length}</em></strong><small><a href="#tarefas-concluidas">itens concluídos · ver lista ↓</a></small></div>
             <div><span>Estrutura</span><strong>{destinos.length}</strong><small>destinos e modelos de implantação</small></div>
           </div>
           {!documentos.length ? <div className={styles.vazio}><h2>Sua central está pronta para receber os planos.</h2><p>Use “Adicionar / atualizar” para escolher seus arquivos Markdown ou o pacote de Ação preparado para esta página.</p></div> : <>
@@ -188,10 +191,24 @@ export default function Acao() {
             <div className={styles.tituloSecao}><div><p className={styles.legenda}>CONTINUAR O TRABALHO</p><h2>Próximas tarefas</h2></div><small>Na ordem dos documentos · marcações salvas na sua conta</small></div>
             <div className={styles.tarefas}>
               {proximas.length ? proximas.map((t) => <div key={t.id} className={styles.tarefa}>
-                <input type="checkbox" aria-label={`Concluir: ${t.texto.replace(/[*`]/g, "")}`} checked={false} disabled={salvando.has(t.id)} onChange={() => void alternar(t.documento.id, t.id, true)} />
+                <label className={styles.controleCheck}><input type="checkbox" aria-label={`Concluir: ${t.texto.replace(/[*`]/g, "")}`} checked={false} disabled={salvando.has(t.id)} onChange={() => void alternar(t.documento.id, t.id, true)} /></label>
                 <button type="button" onClick={() => abrirDocumento(t.documento.id)}><span>{t.texto.replace(/[*`]/g, "")}</span><small>{t.documento.titulo}</small></button>
               </div>) : <p>Os checklists atuais estão concluídos. Os documentos continuam disponíveis para consulta.</p>}
             </div>
+            <section id="tarefas-concluidas" className={styles.secaoConcluidas} aria-labelledby="titulo-concluidas">
+              <div className={styles.tituloSecao}>
+                <div><p className={styles.legenda}>TRABALHO CONCLUÍDO</p><h2 id="titulo-concluidas"><span className={styles.checkConcluida} aria-hidden="true">✓</span> Concluídas <span className={styles.totalConcluidas}>({concluidas})</span></h2></div>
+                <small>Os itens permanecem visíveis. Desmarque a caixa para voltar às pendentes.</small>
+              </div>
+              <div className={styles.tarefas}>
+                {concluidasVisiveis.slice(0, limiteConcluidas).map((t) => <div key={t.id} className={`${styles.tarefa} ${styles.tarefaConcluida}`}>
+                  <label className={styles.controleCheck}><input type="checkbox" aria-label={`Marcar como pendente: ${t.texto.replace(/[*`]/g, "")}`} checked disabled={salvando.has(t.id)} onChange={() => void alternar(t.documento.id, t.id, false)} /></label>
+                  <button type="button" onClick={() => abrirDocumento(t.documento.id)}><span>{t.texto.replace(/[*`]/g, "")}</span><small><b className={styles.statusConcluida}>✓ Concluída</b> · {t.documento.titulo}</small></button>
+                </div>)}
+              </div>
+              {!concluidasVisiveis.length && <p className={styles.nota}>{concluidas ? "Nenhum item concluído corresponde à busca." : "Os itens que você concluir aparecerão aqui com um ✓."}</p>}
+              {concluidasVisiveis.length > limiteConcluidas && <button className={styles.botao} type="button" onClick={() => setLimiteConcluidas((l) => l + 12)}>Mostrar mais concluídas</button>}
+            </section>
             <div className={styles.tituloSecao}><div><p className={styles.legenda}>CONSULTAR E EXECUTAR</p><h2>Seus documentos</h2></div></div>
             <div className={styles.cartoes}>{visiveis.map((d) => <CartaoDocumento key={d.id} documento={d} progresso={progresso} abrir={() => abrirDocumento(d.id)} />)}</div>
             {!visiveis.length && <p className={styles.vazio}>Nenhum documento corresponde à busca.</p>}
