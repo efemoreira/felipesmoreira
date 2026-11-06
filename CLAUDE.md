@@ -57,7 +57,8 @@ Regras:
 - Não crie nova paleta local nem escreva `2px solid` à mão. Linha é `borda()` (1 px); `bordaFina()` (2 px) é só para o que precisa marcar.
 - Cartão em repouso não tem sombra: `sombra()` responde ao ponteiro e levanta o que flutua. A escala é `SOMBRA` (`rente`, `cartao`, `alto`), com uma tinta só (`C.sombra`).
 - `/resultados` usa a superfície `PAINEL_DADOS`/`FONT_DADOS`/`fileteDados()` do mesmo `theme.ts`. Ver `docs/site-publico.md`.
-- As artes em canvas (`poster.ts`, `colinha.ts`, `kit/cartao.ts`) seguem o mesmo visual claro, com os traços de `src/lib/cordelCanvas.ts`. Special Elite e Bitter só existem para o Estúdio. O `public/painel/painel.css` ainda tem a linguagem antiga.
+- As artes em canvas (`poster.ts`, `colinha.ts`, `kit/cartao.ts`) seguem o mesmo visual claro, com os traços de `src/lib/cordelCanvas.ts`. Special Elite e Bitter só existem para o Estúdio.
+- **O painel segue a mesma linguagem** (`public/painel/painel.css`, com tokens que repetem os valores de `theme.ts`, e `testes/contrato/tema.test.ts` prende o par): claro para todo mundo, sem tema escuro. Só o Estúdio tem tema. No painel o ouro também é do que é principal: em linha de tabela o botão sai contornado.
 
 ## Contrato Next ↔ PHP
 

@@ -65,7 +65,7 @@ function tela_da_unidade(array $eu, array $unidade, array $cuidadas, ?string $er
 
   <fieldset>
     <legend>Agora</legend>
-    <dl class="resumo-numeros">
+    <dl class="ficha-dados ficha-contato">
       <div><dt>Situação</dt><dd><?php selo_da_unidade($unidade); ?></dd></div>
       <div><dt>Próxima</dt><dd><?= proxima_da_unidade($unidade) ?></dd></div>
       <div><dt>Fazem parte</dt><dd><?= count($membros) ?></dd></div>

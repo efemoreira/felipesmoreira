@@ -21,7 +21,7 @@ prefira os docs temáticos (e `docs/comece-aqui.md` no primeiro dia):
 | WhatsApp, grupo, e-mail | Os canais de contato |
 | pessoas, capacidades, duplicatas, migração antiga | Uma pessoa, e não quatro cadastros |
 | inscrição, Dia 0, presença, os 4 obrigatórios, origem | Fluxo de entrada de militante |
-| celular, três temas, navegação do painel | Responsividade · Visual do painel |
+| celular, tema, navegação do painel | Responsividade · Visual do painel |
 | onde fica a trava de editar/remover, linha do tempo sem log | Visual do painel (permissões) |
 | a forma de um fluxo público | Como um fluxo público se divide |
 | slug, acento, nome de arquivo | Convenção de nomes |
@@ -147,8 +147,7 @@ definidos nos três estados de tema. **Cor cravada na classe**
 antes e é o que os tokens resolvem. Exceções de propósito: o ouro em `background`,
 `border` e `ring` (funciona nos dois) e o `bg-black/70` dos véus de modal.
 
-**O Estúdio segue o tema do painel, mas o entorno do palco é cinza neutro, não
-o papel do cordel.** A percepção de cor muda com o brilho e a temperatura do que
+**O Estúdio tem tema próprio, e o entorno do palco é cinza neutro.** A percepção de cor muda com o brilho e a temperatura do que
 está em volta: sobre o creme quente do painel, a arte pareceria mais fria do que
 vai parecer no feed. É por isso que Figma e Canva usam cinza atrás da prancheta.
 Ali a identidade é carregada pela **forma** — canto reto, borda grossa, sombra
@@ -1041,58 +1040,53 @@ link de WhatsApp. O que já está resolvido e não deve regredir:
   e `<select>` em tema escuro.
 - `public/painel/painel.css`: ao acrescentar um `type` de input novo, inclua no
   seletor de estilo (linha dos `input[type=...]`) — type fora da lista vira
-  caixa branca no fundo escuro. E **suba `VERSAO_ESTILO` em `layout.php`**, que
+  caixa crua do navegador. E **suba `VERSAO_ESTILO` em `layout.php`**, que
   o `.htaccess` põe cache imutável de 1 ano em `.css`.
 
 ## Visual do painel
 
-O painel usa a **mesma linguagem do site público**: bordas grossas, sombra dura
-deslocada, nada arredondado. Militante entra nos dois, e não pode parecer que
-trocou de produto.
+O painel usa a **mesma linguagem do site público** (`src/lib/theme.ts`): branco,
+tinta e o ouro como cor de sol, linha fina, canto macio, sombra só no que flutua.
+Militante entra nos dois, e não pode parecer que trocou de produto. Até 11/2026
+os dois eram cordel, com borda grossa e sombra dura; o site saiu dessa linguagem
+quando o Felipe achou o visual sujo, e o painel foi junto.
 
-- **Fontes:** Alfa Slab One (títulos), Special Elite (rótulos, botões, navegação)
-  e Bitter (texto). Ficam em `public/painel/fontes/`, servidas do próprio
-  domínio — ver o `LEIA-ME.md` de lá para licenças e como atualizar. Não troque
-  por CDN de terceiro: a Política de Privacidade promete que nada do visitante
-  vai para fora.
+- **Fontes:** Alfa Slab One em título grande (24 px ou mais; a exceção é a marca
+  escrita) e Figtree no resto. Ficam em `public/painel/fontes/`, servidas do
+  próprio domínio — ver o `LEIA-ME.md` de lá para licenças e como atualizar. Não
+  troque por CDN de terceiro: a Política de Privacidade promete que nada do
+  visitante vai para fora.
 - **Ícones:** `public/painel/icones.php`, com os mesmos traçados de
   `src/components/icons.tsx`. Ícone novo entra nos dois para não divergir.
 - **Tokens** ficam no `:root` do `painel.css`. Use-os em vez de repetir cor ou
-  família na regra — e leia a regra dos temas, logo abaixo, antes de criar um.
+  família na regra. Os de cor têm os valores de `theme.ts`, e
+  `testes/contrato/tema.test.ts` prende o par.
 
-### Os três temas
+### Um tema só
 
-O painel tem **claro, escuro e sistema**. A escolha vive num cookie que o
-`layout.php` lê e estampa como `data-tema` no `<html>` **antes** de mandar a
-página — é isso, e não JavaScript, que impede a piscada de tema errado. Em
-`sistema` não estampa nada e quem decide é o `@media (prefers-color-scheme)`.
-O seletor fica no pé da lateral e posta em `public/painel/tema.php`; funciona
-sem JavaScript, e com ele troca sem recarregar.
+As telas do painel são **claras para todo mundo**: não há seletor de tema nem
+"seguir o sistema". Quem usa o aparelho no modo escuro vê o mesmo painel. Só o
+Estúdio tem tema (é um produto à parte, e o entorno do palco tem outra razão de
+ser): o seletor mora na barra dele, grava o cookie `painel_tema`, e quem carimba o
+`data-tema` é o `estudio.php`.
 
-> **Cor nova entra como token definido nos dois temas** (`:root`, o bloco da
-> media query e o `[data-tema="escuro"]`). Cor literal dentro de uma regra
-> quebra um dos dois lados e ninguém percebe até alguém reclamar.
+> **Cor nova entra como token**, com o mesmo valor de `theme.ts`. Cor literal
+> dentro de uma regra é uma segunda paleta que ninguém vê nascer.
 
-**O ouro não é cor de texto no tema claro.** `#FFCB05` sobre o papel `#F3ECDA`
-dá 1,29:1 de contraste, e a WCAG pede 4,5:1. No claro o ouro é **preenchimento e
-borda**; quem escreve é a tinta. Por isso existem tokens separados: `--titulo`,
-`--elo` e `--acento` são o ouro no escuro e o ouro escurecido (ou a tinta) no
-claro. Escrever `color:var(--ouro)` faz o texto sumir no papel — `--ouro` só
-entra em `background` e `border`.
+**O ouro não é cor de texto.** `#FFCB05` sobre branco dá 1,5:1 de contraste, e a
+WCAG pede 4,5:1. O ouro é **preenchimento**, e quem escreve é a tinta. Texto
+dourado é `--acento` (`#856006`, 5,72:1 no branco). Escrever `color:var(--ouro)`
+faz o texto sumir. **Texto secundário é `--texto-fraco`, nunca `opacity`.**
 
-> **4,5:1 é sobre o fundo REAL, não sobre o papel.** `--acento` era `#8A6508`,
-> que dá 4,52:1 sobre `--fundo` — passa raspando, e só ali: dentro da pílula do
-> contador (fundo `--realce-3`, mais escuro que o papel) o mesmo tom caía para
-> 3,36:1, e o número da aba era o que menos se lia numa tela feita de números.
-> Hoje é `#6B4E06`: 6,56:1 no papel, 4,88:1 na pílula, e continua sendo ouro
-> queimado. Ao criar um par cor/fundo novo, meça no fundo em que ele vai cair.
+> **4,5:1 é sobre o fundo REAL.** O `--acento` antigo dava 4,52:1 sobre o papel e
+> caía para 3,36:1 dentro da pílula do contador, onde o número da aba era o que
+> menos se lia numa tela feita de números. Ao criar um par cor/fundo novo, meça
+> no fundo em que ele vai cair.
 
-> **Meça com o painel renderizado.** Ler o CSS não pega isto: o fundo efetivo é
-> a pilha de translúcidos composta até o `body`, e a cor que vence é a da regra
-> mais específica *depois de o HTML existir*. Uma sonda `getComputedStyle()`
-> rodando em cima das telas de verdade, nos dois temas, achou em minutos o que
-> passou por todas as leituras anteriores — inclusive o ouro sobre ouro da
-> gaveta, logo abaixo. É o mesmo espírito do `httpd -f` para o `.htaccess`.
+> **Meça com o painel renderizado.** Ler o CSS não pega isto: a cor que vence é a
+> da regra mais específica *depois de o HTML existir*. Uma sonda
+> `getComputedStyle()` rodando em cima das telas de verdade acha em minutos o que
+> passa por todas as leituras. É o mesmo espírito do `httpd -f` para o `.htaccess`.
 
 ### A navegação
 
@@ -1508,9 +1502,10 @@ o mesmo desenho, e **tela nova grande deve seguir também**:
 
 **JavaScript longo dentro do PHP vira arquivo servido.** O `agenda.php` tinha
 **351 das 684 linhas num `<script>` só** — a prévia do cartão, a imagem, o
-reordenar e o aviso de trabalho não salvo. Virou `agenda-previa.js`, servido do
+reordenar e o aviso de trabalho não salvo. Virou um arquivo `.js` servido do
 próprio domínio como as fontes e o desenhador de QR (a Política de Privacidade
-promete que nada do visitante vai para fora).
+promete que nada do visitante vai para fora). Quando a agenda passou a espelhar
+os encontros, esse editor saiu da tela, e o arquivo foi apagado em 11/2026.
 
 > **O que o servidor sabe vai por `window.__X__`, antes da tag.** Eram três
 > constantes interpoladas (o teto de upload, os rótulos de plataforma, as cores

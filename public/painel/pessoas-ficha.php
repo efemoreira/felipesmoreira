@@ -373,7 +373,7 @@ function tela_da_ficha(array $aberta, ?array $editando, ?string $erro, ?string $
       </p>
 
 
-      <dl class="resumo-numeros">
+      <dl class="ficha-dados ficha-contato">
         <div><dt>WhatsApp</dt><dd>
           <?php if ($aberta['telefone'] !== ''): ?>
             <?php links_whatsapp($aberta['telefone'], telefone_bonito($aberta['telefone'])); ?>

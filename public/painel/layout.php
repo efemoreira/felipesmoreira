@@ -25,7 +25,7 @@ require_once __DIR__ . '/agora.php';
 require_once __DIR__ . '/componentes.php';  // barra_abas(), barra_busca(), modal, menu_acoes(), links_whatsapp(), recado()…
 
 /** Versão do CSS — muda junto com o painel.css para furar o cache do navegador. */
-const VERSAO_ESTILO = '44';
+const VERSAO_ESTILO = '45';
 
 /**
  * Os grupos da navegação, na ordem em que aparecem.
@@ -80,20 +80,14 @@ function abrir_pagina(string $titulo, bool $comNav = true): void
     $u = usuario_atual();
     $comMoldura = $comNav && $u !== null;
     $GLOBALS['painel_com_moldura'] = $comMoldura;
-
-    /* O tema sai do cookie e é estampado no <html> antes de o navegador
-       desenhar qualquer coisa — é isso, e não o JavaScript, que impede a
-       piscada de tema errado. Em "sistema" não estampa nada: quem decide é o
-       @media (prefers-color-scheme) do painel.css. */
-    $tema = tema_atual();
     ?>
 <!doctype html>
-<html lang="pt-BR"<?= $tema !== 'sistema' ? ' data-tema="' . h($tema) . '"' : '' ?>>
+<html lang="pt-BR">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<meta name="color-scheme" content="light dark">
+<meta name="color-scheme" content="light">
 <title><?= h($titulo) ?> — Painel Missão Ceará</title>
 <link rel="stylesheet" href="/painel/painel.css?v=<?= VERSAO_ESTILO ?>">
 </head>
@@ -107,7 +101,7 @@ function abrir_pagina(string $titulo, bool $comNav = true): void
 <div class="painel-layout">
 
   <aside class="lateral">
-    <a class="marca" href="/painel/">Missão Ceará</a>
+    <a class="marca" href="/painel/"><img src="/image/icone-192.png" alt="" width="34" height="34">Missão Ceará</a>
     <?php desenhar_procurar($aqui); ?>
     <?php desenhar_menu($menu, $aqui, 'lateral'); ?>
     <?php desenhar_utilidades($u, $aqui, 'lateral'); ?>
@@ -252,27 +246,12 @@ function desenhar_menu(array $menu, string $aqui, string $onde): void
     echo '</nav>';
 }
 
-/** Quem sou eu, senha, tema, site e saída. No pé, longe da navegação. */
+/** Quem sou eu, senha, site e saída. No pé, longe da navegação. */
 function desenhar_utilidades(array $u, string $aqui, string $onde): void
 {
-    $tema = tema_atual();
-    $volta = caminho_interno_seguro($_SERVER['REQUEST_URI'] ?? '/painel/');
-    $temas = ['claro' => ['sol', 'Claro'], 'escuro' => ['lua', 'Escuro'], 'sistema' => ['dispositivo', 'Sistema']];
     ?>
     <div class="lateral-pe">
       <p class="quem"><strong><?= h($u['nome']) ?></strong><span><?= h(rotulo_do_acesso($u)) ?></span></p>
-
-      <form class="tema" method="post" action="/painel/tema.php">
-        <input type="hidden" name="csrf" value="<?= h(token()) ?>">
-        <input type="hidden" name="volta" value="<?= h($volta) ?>">
-        <?php foreach ($temas as $chave => [$icone, $rotulo]): ?>
-          <button type="submit" name="tema" value="<?= h($chave) ?>"
-                  aria-pressed="<?= $tema === $chave ? 'true' : 'false' ?>"
-                  title="Tema <?= h(mb_strtolower($rotulo)) ?>">
-            <?= icone($icone, 17) ?><span><?= h($rotulo) ?></span>
-          </button>
-        <?php endforeach; ?>
-      </form>
 
       <a class="pe-link<?= $aqui === 'ajuda.php' ? ' atual' : '' ?>" href="/painel/ajuda.php">Ajuda</a>
       <a class="pe-link<?= $aqui === 'conta.php' ? ' atual' : '' ?>" href="/painel/conta.php">Minha senha</a>

@@ -354,9 +354,9 @@ function Conta() {
 
   if (!eu) return null;
 
-  /* O mesmo cookie que o layout.php lê: trocar aqui vale para o painel inteiro,
-     e o data-tema muda na hora, sem recarregar o editor e perder o que está
-     na tela. */
+  /* O cookie que o estudio.php lê: o data-tema muda na hora, sem recarregar o
+     editor e perder o que está na tela. Só o Estúdio tem tema; as telas do painel
+     são claras para todo mundo. */
   const trocarTema = (novo: Tema) => {
     const seguro = location.protocol === "https:" ? ";secure" : "";
     document.cookie = `painel_tema=${novo};path=/painel;max-age=31536000;samesite=lax${seguro}`;

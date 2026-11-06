@@ -48,7 +48,14 @@ function tela_de_login(bool $primeiroAcesso, ?string $aviso, ?string $sucesso): 
             <button class="btn btn-ouro" type="submit">Criar administrador</button>
           </form>
         <?php else: ?>
-          <div class="caixa-selo" aria-hidden="true">✦</div>
+          <div class="caixa-selo" aria-hidden="true">
+            <svg viewBox="-100 -100 200 200" focusable="false">
+              <?php for ($i = 0; $i < 24; $i++): ?>
+                <polygon points="<?= $i % 2 === 0 ? '-5.6,-60 5.6,-60 0,-98' : '-4.4,-60 4.4,-60 0,-84' ?>" transform="rotate(<?= $i * 15 ?>)" fill="#FFCB05"/>
+              <?php endfor; ?>
+            </svg>
+            <img src="/image/icone-192.png" alt="" width="64" height="64">
+          </div>
           <h1>Missão Ceará</h1>
           <p class="sub">
             A área de trabalho da militância. Entre com a senha que a coordenação

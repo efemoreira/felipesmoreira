@@ -34,10 +34,12 @@
 
 ## Temas e visual
 
-- O painel ainda usa a linguagem antiga do site: borda grossa, sombra dura, nada arredondado. O site público saiu dela em 11/2026 (ver `docs/site-publico.md`).
-- Há três temas: claro, escuro e sistema.
-- Cor nova entra como token nos dois temas.
-- O ouro não vira texto no tema claro; ele é bloco, fundo ou borda.
+- O painel usa a linguagem do site público desde 11/2026: branco, tinta, ouro como cor de sol, linha de 1 px, canto macio, sombra só no que flutua. Alfa Slab em título de 24 px ou mais, Figtree no resto, nada de caixa-alta espaçada em rótulo.
+- O painel é claro para todo mundo. Só o Estúdio tem tema, com seletor próprio.
+- Cor nova entra como token no `:root` do `painel.css`, com o valor de `src/lib/theme.ts`; `testes/contrato/tema.test.ts` prende o par.
+- O ouro não vira texto: é fundo. Texto dourado é `--acento`, texto secundário é `--texto-fraco`, nunca `opacity`.
+- O ouro é do que é principal: em linha de tabela o botão sai contornado.
+- No celular o `fieldset` perde a caixa (`max-width:700px`), porque caixa dentro de caixa come a largura do conteúdo; o que é item continua cartão.
 
 ## Áreas e capacidades
 

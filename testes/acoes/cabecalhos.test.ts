@@ -43,7 +43,7 @@ describe("cabeçalhos: a Content-Security-Policy", () => {
   });
 
   test("todo <script> inline leva o nonce que a CSP anuncia", async () => {
-    for (const [tela, qs] of [["agenda", ""], ["eventos", "e=ev-teste&aba=dados"], ["eventos", "e=ev-teste&aba=pessoas"]] as const) {
+    for (const [tela, qs] of [["eventos", "e=ev-teste&aba=dados"], ["eventos", "e=ev-teste&aba=pessoas"]] as const) {
       const r = await painel.buscar(tela, qs);
       const nonce = r.cabecalhos?.["content-security-policy"]?.match(/'nonce-([^']+)'/)?.[1] ?? "";
       assert.ok(nonce, `${tela} sem nonce`);

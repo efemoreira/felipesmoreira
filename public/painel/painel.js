@@ -7,8 +7,7 @@
  * `?v=VERSAO_ESTILO` como o `painel.css`: muda o arquivo, sobe a versão.
  *
  * Tudo aqui degrada sem JavaScript: modal via `?novo=1` + `<dialog open>`,
- * tema via POST em `tema.php`, gaveta via `<details>`. O que o JS faz é só
- * encurtar o caminho.
+ * gaveta via `<details>`. O que o JS faz é só encurtar o caminho.
  */
 /* COPIAR TEXTO — um ouvinte só, para o painel inteiro.
    `data-copiar` aparece na fila de inscrições e na escala do encontro, e
@@ -56,29 +55,7 @@ document.addEventListener('click', function (ev) {
   }
 });
 
-/* O tema já veio certo do servidor. Este script só existe para a troca
-   ser instantânea em vez de recarregar a página — sem ele o formulário
-   posta em tema.php e funciona igual, só que com um pisca de recarga. */
 (function () {
-  var seguro = location.protocol === 'https:' ? ';secure' : '';
-  document.querySelectorAll('form.tema button').forEach(function (botao) {
-    botao.addEventListener('click', function (e) {
-      e.preventDefault();
-      var escolhido = botao.value;
-      document.cookie = 'painel_tema=' + escolhido +
-        ';path=/painel;max-age=31536000;samesite=lax' + seguro;
-      if (escolhido === 'sistema') {
-        delete document.documentElement.dataset.tema;
-      } else {
-        document.documentElement.dataset.tema = escolhido;
-      }
-      // as duas cópias do seletor (lateral e gaveta) acompanham
-      document.querySelectorAll('form.tema button').forEach(function (outro) {
-        outro.setAttribute('aria-pressed', outro.value === escolhido ? 'true' : 'false');
-      });
-    });
-  });
-
   /* Modal: um link com data-modal="id" vira caixa de diálogo.
      O link continua sendo um LINK de verdade — sem JavaScript, ou em
      navegador sem <dialog>, o href leva a `?novo=1` e a página volta com

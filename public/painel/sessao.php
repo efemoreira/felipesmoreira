@@ -42,7 +42,7 @@ const PASTA_BACKUP   = PASTA_DADOS . '/backups';
 const PASTA_IMAGENS  = PASTA_DADOS . '/imagens';
 const URL_IMAGENS    = '/dados/imagens';  // como a página enxerga a pasta
 
-/** Nome do cookie do tema. Não é segredo: só diz se a pessoa quer claro ou escuro. */
+/** Nome do cookie do tema do Estúdio. Não é segredo: só diz se a pessoa quer claro ou escuro. */
 const COOKIE_TEMA    = 'painel_tema';
 
 const MAX_TENTATIVAS = 5;
@@ -523,40 +523,22 @@ function limpar_falhas(string $usuario): void
 
 /* ===================== tema (claro / escuro / sistema) ===================== */
 
-/** Os três estados. 'sistema' não estampa nada e deixa o CSS decidir.
+/** Os três estados do Estúdio. 'sistema' não estampa nada e deixa o CSS dele decidir.
     TEMAS_PAINEL, e não TEMAS: o agenda.php já usa TEMAS para as cores do cartão. */
 const TEMAS_PAINEL = ['claro', 'escuro', 'sistema'];
 
 /**
- * O tema escolhido, vindo do cookie.
+ * O tema escolhido no Estúdio, vindo do cookie.
  *
- * Lido antes de a página ser desenhada, para o <html> já sair com data-tema — é
- * isso que impede a piscada de tema errado no carregamento. Cookie, e não
- * sessão, porque a escolha é do aparelho: a mesma pessoa pode querer claro no
- * computador do trabalho e escuro no celular.
+ * Só o Estúdio tem tema: as telas do painel são claras para todo mundo. Lido
+ * antes de a página ser desenhada, para o <html> já sair com data-tema — é isso
+ * que impede a piscada de tema errado no carregamento. Quem grava o cookie é a
+ * barra do próprio Estúdio (`BarraSuperior.tsx`).
  */
 function tema_atual(): string
 {
     $t = (string) ($_COOKIE[COOKIE_TEMA] ?? 'sistema');
     return in_array($t, TEMAS_PAINEL, true) ? $t : 'sistema';
-}
-
-function gravar_tema(string $tema): void
-{
-    if (!in_array($tema, TEMAS_PAINEL, true)) {
-        return;
-    }
-    $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
-        || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
-
-    setcookie(COOKIE_TEMA, $tema, [
-        'expires'  => time() + 31536000,   // um ano
-        'path'     => '/painel',
-        'httponly' => false,               // o botão troca na hora pelo JS também
-        'secure'   => $https,
-        'samesite' => 'Lax',
-    ]);
-    $_COOKIE[COOKIE_TEMA] = $tema;
 }
 
 function token(): string
