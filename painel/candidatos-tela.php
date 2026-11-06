@@ -272,8 +272,7 @@ abrir_pagina('Candidatos');
                              quebra de linha solta aqui, o cartão ganharia um
                              buraco de 12px onde não há foto nenhuma. */ ?>
                     <td><?php if ($c['imagem'] !== ''): ?>
-                      <img src="<?= h($c['imagem']) ?>" alt="" width="52" height="52"
-                           style="width:52px;height:52px;object-fit:cover;border:2px solid var(--linha-2)">
+                      <img class="foto-lista" src="<?= h($c['imagem']) ?>" alt="" width="52" height="52">
                     <?php endif; ?></td>
                     <td>
                       <strong><?= h($c['urna'] !== '' ? $c['urna'] : $c['nome']) ?></strong><br>

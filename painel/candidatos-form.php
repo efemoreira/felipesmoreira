@@ -114,7 +114,7 @@ function formulario_candidato(?array $editando, string $rotulo = ''): void
       <div class="campo">
         <label for="c-img<?= $editando ? '-e' : '' ?>">Foto <span class="dica">— opcional</span></label>
         <?php if ($editando && $editando['imagem'] !== ''): ?>
-          <p><img src="<?= h($editando['imagem']) ?>" alt="" style="max-width:180px;border:3px solid var(--linha-2)"></p>
+          <p><img class="foto-form" src="<?= h($editando['imagem']) ?>" alt=""></p>
           <label class="check">
             <input type="checkbox" name="tirarImagem" value="1"> Remover esta foto
           </label>
