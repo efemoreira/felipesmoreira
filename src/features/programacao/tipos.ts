@@ -1,7 +1,7 @@
 /* Tipos e temas compartilhados entre a página e o gerador de PNG */
-import { C, BORDA, sombra, sombraErguida, sombraAfundada } from "@/lib/theme";
+import { C } from "@/lib/theme";
 
-export { C, BORDA, sombra, sombraErguida, sombraAfundada };
+export { C };
 
 export type CorCartao = "ouro" | "milho" | "azul" | "escuro" | "papel";
 
@@ -164,7 +164,7 @@ export interface Agenda {
 }
 
 export interface Tema {
-  /** fundo no HTML (aceita gradiente CSS) */
+  /** o fundo do cartão no pôster */
   bg: string;
   /** paradas de cor do mesmo fundo no canvas (1 = sólido, 2 = gradiente) */
   canvas: string[];
@@ -205,16 +205,16 @@ export const TEMAS: Record<CorCartao, Tema> = {
     bg: "linear-gradient(105deg, #1B4FD8 0%, #2E7BE8 100%)",
     canvas: ["#1B4FD8", "#2E7BE8"],
     fg: C.cream,
-    sub: "rgba(246,245,239,.82)",
+    sub: "rgba(255,255,255,.84)",
     badge: C.ink,
     badgeFg: C.cream,
     claro: true,
   },
   escuro: {
-    bg: "#1C1710",
-    canvas: ["#1C1710"],
+    bg: C.ink,
+    canvas: [C.ink],
     fg: C.cream,
-    sub: "rgba(246,245,239,.72)",
+    sub: "rgba(255,255,255,.76)",
     badge: C.gold,
     badgeFg: C.ink,
     claro: true,

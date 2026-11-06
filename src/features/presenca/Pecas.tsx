@@ -2,7 +2,7 @@
 import React from "react";
 import Link from "next/link";
 import { Icon } from "@/components/icons";
-import { C, FONT_ALFA, FONT_ELITE, FONT_BITTER, borda, sombra, bordaFina } from "@/lib/theme";
+import { C, FONT_ALFA, FONT_TEXTO, RAIO, borda, sombra } from "@/lib/theme";
 import { filtroDaImagem } from "./filtro";
 
 /**
@@ -24,15 +24,16 @@ import { filtroDaImagem } from "./filtro";
 
 export const botaoOuro: React.CSSProperties = {
   width: "100%",
-  minHeight: 52,
+  minHeight: 56,
   padding: "14px 20px",
   cursor: "pointer",
-  fontFamily: FONT_ALFA,
-  fontSize: 17,
+  fontFamily: FONT_TEXTO,
+  fontSize: 18,
+  fontWeight: 700,
   background: C.gold,
   color: C.ink,
-  border: borda(),
-  boxShadow: sombra(),
+  border: 0,
+  borderRadius: RAIO.m,
 };
 
 export const botaoEscolha: React.CSSProperties = {
@@ -40,19 +41,21 @@ export const botaoEscolha: React.CSSProperties = {
   padding: "14px 18px",
   cursor: "pointer",
   textAlign: "left",
-  fontFamily: FONT_BITTER,
-  fontSize: 16.5,
-  color: C.cream,
-  background: "rgba(255,203,5,.08)",
-  border: borda(C.gold),
+  fontFamily: FONT_TEXTO,
+  fontSize: 17,
+  fontWeight: 600,
+  color: C.ink,
+  background: C.paper,
+  border: borda(C.linhaForte),
+  borderRadius: RAIO.m,
 };
 
 export const botaoEscolhaFraco: React.CSSProperties = {
   ...botaoEscolha,
-  color: "#b9b3a5",
-  background: "transparent",
-  border: borda("rgba(255,203,5,.25)"),
-  fontSize: 15,
+  color: C.suave,
+  border: borda(),
+  fontSize: 16,
+  fontWeight: 500,
 };
 
 /**
@@ -81,14 +84,12 @@ export const Modo: React.FC<{ confirmando: boolean }> = ({ confirmando }) => (
       alignItems: "center",
       gap: 9,
       margin: "0 0 16px",
-      padding: "9px 14px",
-      background: confirmando ? "rgba(255,203,5,.12)" : C.gold,
-      color: confirmando ? C.gold : C.ink,
-      border: borda(confirmando ? C.gold : C.ink),
-      fontFamily: FONT_ELITE,
-      fontSize: 12,
-      letterSpacing: 1.8,
-      textTransform: "uppercase",
+      padding: "8px 14px",
+      background: confirmando ? C.ouroClaro : C.gold,
+      color: C.ink,
+      borderRadius: RAIO.pilula,
+      fontSize: 16,
+      fontWeight: 700,
     }}
   >
     <Icon name={confirmando ? "calendar" : "flag"} size={16} />
@@ -106,7 +107,7 @@ export const Modo: React.FC<{ confirmando: boolean }> = ({ confirmando }) => (
  * que encurtou foi a explicação em volta dela, não ela.
  */
 export const ModoExplica: React.FC<{ confirmando: boolean }> = ({ confirmando }) => (
-  <p style={{ ...textoP, margin: "0 0 20px", fontSize: 14.5, opacity: 0.85 }}>
+  <p style={{ ...textoP, margin: "0 0 20px", fontSize: 16, color: C.suave }}>
     {confirmando ? (
       <>
         Aqui você avisa que <strong>pretende ir</strong> — é o que a gente usa para
@@ -126,16 +127,7 @@ export const Quando: React.FC<{ detalhes: { data: string; hora: string; local: s
   detalhes,
 }) =>
   detalhes ? (
-    <p
-      style={{
-        fontFamily: FONT_ELITE,
-        fontSize: 12,
-        letterSpacing: 1.6,
-        textTransform: "uppercase",
-        color: "#8e877a",
-        margin: "0 0 22px",
-      }}
-    >
+    <p style={{ fontSize: 16, fontWeight: 600, color: C.suave, margin: "0 0 22px" }}>
       {[dataBonita(detalhes.data), detalhes.hora, detalhes.local].filter(Boolean).join(" · ")}
     </p>
   ) : null;
@@ -176,8 +168,8 @@ export const CaixaEuVou: React.FC<{
       alignItems: "flex-start",
       minHeight: 44,
       cursor: "pointer",
-      border: borda(C.gold),
-      background: "rgba(255,203,5,.08)",
+      background: C.ouroClaro,
+      borderRadius: RAIO.m,
       padding: "12px 14px",
       margin: "0 0 18px",
     }}
@@ -187,9 +179,9 @@ export const CaixaEuVou: React.FC<{
       type="checkbox"
       checked={marcado}
       onChange={(e) => aoMudar(e.target.checked)}
-      style={{ width: 22, height: 22, flex: "0 0 auto", marginTop: 2, accentColor: C.gold }}
+      style={{ width: 24, height: 24, flex: "0 0 auto", marginTop: 1, accentColor: C.ink }}
     />
-    <span style={{ fontSize: 15, lineHeight: 1.6 }}>
+    <span style={{ fontSize: 16.5, lineHeight: 1.5 }}>
       <strong>Confirmo que vou a este encontro.</strong>
     </span>
   </label>
@@ -199,12 +191,14 @@ export const Erro: React.FC<{ texto: string }> = ({ texto }) => (
   <p
     role="alert"
     style={{
-      border: borda(C.erroBorda),
-      background: "rgba(194,84,63,.12)",
-      color: C.erro,
+      background: C.erroFundo,
+      color: C.erroTinta,
+      fontSize: 16,
+      fontWeight: 600,
+      borderRadius: RAIO.m,
       padding: "12px 14px",
       margin: "0 0 18px",
-      lineHeight: 1.6,
+      lineHeight: 1.5,
     }}
   >
     {texto}
@@ -214,8 +208,8 @@ export const Erro: React.FC<{ texto: string }> = ({ texto }) => (
 export const textoP: React.CSSProperties = {
   maxWidth: 420,
   margin: "0 auto 22px",
-  fontSize: 15.5,
-  lineHeight: 1.7,
+  fontSize: 17,
+  lineHeight: 1.55,
 };
 
 export const Painel: React.FC<{ children?: React.ReactNode }> = ({ children }) => (
@@ -225,10 +219,9 @@ export const Painel: React.FC<{ children?: React.ReactNode }> = ({ children }) =
       margin: "0 auto 22px",
       padding: "18px 18px 20px",
       textAlign: "left",
-      background: "rgba(7,7,8,.42)",
-      border: borda("rgba(255,203,5,.35)"),
-      boxShadow: sombra("alto"),
-      backdropFilter: "blur(2px)",
+      background: C.paper,
+      border: borda(),
+      borderRadius: RAIO.g,
     }}
   >
     {children}
@@ -246,16 +239,13 @@ export const HeroDoEncontro: React.FC<{
   filtro?: string;
   confirmando: boolean;
 }> = ({ titulo, subtitulo, data, hora, local, imagem, filtro, confirmando }) => {
-  const textura =
-    "radial-gradient(circle at 18% 20%, rgba(255,203,5,.22), transparent 0 22%), " +
-    "radial-gradient(circle at 82% 28%, rgba(255,203,5,.14), transparent 0 18%), " +
-    "repeating-linear-gradient(135deg, rgba(255,203,5,.12) 0 8px, transparent 8px 16px), " +
-    "linear-gradient(180deg, rgba(14,12,8,.94), rgba(14,12,8,.72))";
   /* TRÊS CAMADAS, e não um `background` só, porque o desfoque é da IMAGEM: um
      `filter` no bloco borraria junto o nome do encontro, que é o que se está
      tentando deixar legível. Então a foto vai numa camada própria, o véu em
      outra, e o texto por cima das duas. */
   const veu = filtroDaImagem(filtro);
+  /* Sem foto o bloco é de ouro, com tinta; com foto, o texto claro sobre o véu. */
+  const tintaTexto = imagem ? C.paper : C.ink;
 
   return (
     <section
@@ -263,10 +253,9 @@ export const HeroDoEncontro: React.FC<{
         maxWidth: 460,
         margin: "0 auto 20px",
         textAlign: "left",
-        border: borda(C.gold),
-        boxShadow: sombra("alto"),
+        borderRadius: RAIO.g,
+        boxShadow: sombra("cartao"),
         overflow: "hidden",
-        background: "rgba(10,9,7,.6)",
       }}
     >
       <div
@@ -278,10 +267,7 @@ export const HeroDoEncontro: React.FC<{
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-between",
-          backgroundImage: imagem ? undefined : textura,
-          backgroundSize: imagem ? undefined : "auto, auto, auto, cover",
-          backgroundPosition: "center",
-          backgroundColor: "#0e0c08",
+          backgroundColor: imagem ? C.ink : C.gold,
         }}
       >
         {imagem ? (
@@ -308,15 +294,13 @@ export const HeroDoEncontro: React.FC<{
               display: "inline-flex",
               alignItems: "center",
               gap: 8,
-              minHeight: 38,
-              padding: "6px 12px",
-              background: confirmando ? "rgba(255,203,5,.16)" : C.gold,
-              color: confirmando ? C.gold : C.ink,
-              border: borda(confirmando ? C.gold : C.ink),
-              fontFamily: FONT_ELITE,
-              fontSize: 11,
-              letterSpacing: 1.7,
-              textTransform: "uppercase",
+              minHeight: 36,
+              padding: "6px 14px",
+              background: imagem ? C.gold : C.paper,
+              color: C.ink,
+              borderRadius: RAIO.pilula,
+              fontSize: 15.5,
+              fontWeight: 700,
             }}
           >
             <Icon name={confirmando ? "calendar" : "flag"} size={15} />
@@ -329,10 +313,10 @@ export const HeroDoEncontro: React.FC<{
             style={{
               margin: "0 0 6px",
               fontFamily: FONT_ALFA,
-              fontSize: "clamp(24px, 5vw, 32px)",
-              lineHeight: 1.15,
-              color: C.cream,
-              textShadow: "3px 3px 0 rgba(24,18,3,.55)",
+              fontWeight: 400,
+              fontSize: "clamp(28px, 6vw, 34px)",
+              lineHeight: 1.12,
+              color: tintaTexto,
             }}
           >
             {titulo}
@@ -341,9 +325,9 @@ export const HeroDoEncontro: React.FC<{
             <p
               style={{
                 margin: "0 0 10px",
-                fontSize: 14.5,
-                lineHeight: 1.55,
-                color: "rgba(246,245,239,.88)",
+                fontSize: 16.5,
+                lineHeight: 1.45,
+                color: tintaTexto,
                 maxWidth: 380,
               }}
             >
@@ -353,11 +337,9 @@ export const HeroDoEncontro: React.FC<{
           <p
             style={{
               margin: 0,
-              fontFamily: FONT_ELITE,
-              fontSize: 11,
-              letterSpacing: 1.6,
-              textTransform: "uppercase",
-              color: "rgba(246,245,239,.78)",
+              fontSize: 16,
+              fontWeight: 600,
+              color: tintaTexto,
             }}
           >
             {[data, hora, local].filter(Boolean).join(" · ")}
@@ -378,39 +360,28 @@ export const Casca: React.FC<{ titulo: string; children?: React.ReactNode }> = (
   <div
     style={{
       minHeight: "100dvh",
-      background:
-        "radial-gradient(circle at top, rgba(255,203,5,.08), transparent 0 26%), " +
-        "repeating-linear-gradient(135deg, rgba(255,203,5,.028) 0 8px, transparent 8px 16px), " +
-        C.night,
-      color: C.cream,
-      fontFamily: FONT_BITTER,
-      padding: "38px 20px 70px",
+      background: C.paper,
+      color: C.ink,
+      fontFamily: FONT_TEXTO,
+      padding: "24px 20px 64px",
     }}
   >
     <div style={{ maxWidth: 460, margin: "0 auto", textAlign: "center" }}>
-      <p
-        style={{
-          display: "inline-block",
-          fontFamily: FONT_ELITE,
-          letterSpacing: 4,
-          fontSize: 12,
-          textTransform: "uppercase",
-          color: C.ink,
-          background: C.gold,
-          padding: "4px 14px",
-          boxShadow: sombra("rente"),
-          marginBottom: 18,
-        }}
-      >
+      <p style={{ display: "inline-flex", alignItems: "center", gap: 10, margin: "0 0 18px", fontFamily: FONT_ALFA, fontSize: 19 }}>
+        <picture>
+          <img src="/image/icone-192.png" alt="" width={36} height={36} style={{ display: "block", borderRadius: "50%" }} />
+        </picture>
         Missão Ceará
       </p>
       <h1
         style={{
           fontFamily: FONT_ALFA,
-          fontSize: "clamp(26px, 6.5vw, 38px)",
-          lineHeight: 1.2,
+          fontWeight: 400,
+          fontSize: "clamp(30px, 7vw, 40px)",
+          lineHeight: 1.12,
           margin: "0 0 16px",
-          color: C.gold,
+          color: C.ink,
+          textWrap: "balance",
         }}
       >
         {titulo}
@@ -426,17 +397,18 @@ export const Voltar: React.FC = () => (
     style={{
       display: "inline-flex",
       alignItems: "center",
-      gap: 10,
-      minHeight: 44,
+      justifyContent: "center",
+      gap: 8,
+      minHeight: 50,
       textDecoration: "none",
-      border: borda("rgba(255,203,5,.4)"),
-      color: C.gold,
+      border: borda(C.linhaForte),
+      borderRadius: RAIO.m,
+      color: C.ink,
       padding: "12px 20px",
-      fontFamily: FONT_ALFA,
-      fontSize: 15,
+      fontSize: 16.5,
+      fontWeight: 700,
     }}
   >
-    <Icon name="arrowLeft" size={18} />
     Ir para o site
   </Link>
 );
@@ -445,13 +417,13 @@ export const Voltar: React.FC = () => (
 export const molduraDoCampo = (erro: string): React.CSSProperties => ({
   width: "100%",
   /* 16px é o mínimo: abaixo disso o Safari do iPhone dá zoom ao focar */
-  font: `16px/1.5 ${FONT_BITTER}`,
-  minHeight: 50,
+  font: `17px/1.5 ${FONT_TEXTO}`,
+  minHeight: 52,
   padding: "12px 14px",
-  color: C.cream,
-  background: "rgba(0,0,0,.35)",
-  border: bordaFina(erro !== "" ? C.erroBorda : "rgba(255,203,5,.3)"),
-  borderRadius: 0,
+  color: C.ink,
+  background: C.paper,
+  border: borda(erro !== "" ? C.erroBorda : C.linhaForte),
+  borderRadius: RAIO.p + 2,
 });
 
 export const Campo: React.FC<{
@@ -485,11 +457,9 @@ export const Campo: React.FC<{
       htmlFor={id}
       style={{
         display: "block",
-        fontFamily: FONT_ELITE,
-        fontSize: 12,
-        letterSpacing: 1.4,
-        textTransform: "uppercase",
-        color: C.gold,
+        fontSize: 16,
+        fontWeight: 700,
+        color: C.ink,
         margin: "0 0 6px",
       }}
     >
@@ -497,7 +467,7 @@ export const Campo: React.FC<{
       {/* Campo opcional tem que PARECER opcional: com quatro obrigatórios e
           dois opcionais na mesma tela, marcar só os de cima não basta. */}
       {opcional && (
-        <span style={{ color: "#8e877a", letterSpacing: 1 }}> (opcional)</span>
+        <span style={{ color: C.suave, fontWeight: 400 }}> (opcional)</span>
       )}
     </label>
     {lista ? (
@@ -537,12 +507,12 @@ export const Campo: React.FC<{
       />
     )}
     {erro !== "" ? (
-      <p id={`${id}-erro`} role="alert" style={{ margin: "6px 0 0", fontSize: 13.5, color: C.erro }}>
+      <p id={`${id}-erro`} role="alert" style={{ margin: "6px 0 0", fontSize: 15, fontWeight: 600, color: C.erroTinta }}>
         {erro}
       </p>
     ) : (
       dica && (
-        <p id={`${id}-dica`} style={{ margin: "6px 0 0", fontSize: 13, color: "#8e877a" }}>
+        <p id={`${id}-dica`} style={{ margin: "6px 0 0", fontSize: 15, color: C.suave }}>
           {dica}
         </p>
       )

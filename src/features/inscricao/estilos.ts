@@ -1,351 +1,175 @@
-import { BORDA, C, FONT_ALFA, FONT_ELITE, FONT_BITTER, sombra, sombraErguida, sombraAfundada, HATCH, bordaFina, borda } from "@/lib/theme";
+import { C, FOCO, FONT_ALFA, FONT_TEXTO, RAIO, TITULO, borda, bordaFina, sombra } from "@/lib/theme";
 
 /**
  * A folha de estilo do formulário de `/queroajudar`, num arquivo só.
  *
- * Eram trezentas e trinta linhas de CSS penduradas no fim do componente que
- * cuida do fluxo de três passos — e quem ia mexer numa regra de cor rolava por
- * todo o fluxo para chegar nela, ou pior, achava que tinha chegado ao fim do
- * arquivo. Aqui não há React nenhum.
- *
  * Continua sendo uma string injetada num `<style>`, e não Tailwind nem CSS
  * Module: a identidade do site sai dos tokens de `@/lib/theme` (ver o CLAUDE.md),
  * e é justamente essa interpolação que uma folha estática não faria.
+ *
+ * É a tela mais importante do site, e tudo aqui serve a uma coisa: quem chegou
+ * até o formulário não pode ter dúvida de onde escrever nem do que vem depois.
+ * Uma coluna estreita, rótulo legível, campo grande e um botão de ouro por tela.
  */
 
-
 export const css = `
-  .in-fundo {
-    min-height: 100dvh;
-    background: ${HATCH}, ${C.paper};
-    color: ${C.ink};
-    font-family: ${FONT_BITTER};
-    /* o layout declara color-scheme: dark; aqui o fundo é papel claro, e sem
-       isto o navegador desenha caixa e seta dos controles em tema escuro */
-    color-scheme: light;
-  }
-  /* ...menos no bloco de LGPD, que é o único em fundo noite */
-  .in-lgpd { color-scheme: dark; }
-  .in-main { max-width: 760px; margin: 0 auto; padding: 22px 18px 64px; }
+  .in-fundo { min-height: 70dvh; background: ${C.paper}; color: ${C.ink}; font-family: ${FONT_TEXTO}; }
+  .in-main { max-width: 640px; margin: 0 auto; padding: clamp(24px, 5vw, 48px) 20px clamp(48px, 7vw, 80px); }
 
   .in-sr {
     position: absolute; width: 1px; height: 1px; overflow: hidden;
     clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap;
   }
-  .in-armadilha {
-    position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0;
-  }
-  .in-cabecalho { margin-bottom: 26px; }
-  .in-chip {
-    display: inline-block; font-family: ${FONT_ELITE};
-    letter-spacing: 4px; font-size: 12px; text-transform: uppercase;
-    color: ${C.ink}; background: ${C.gold};
-    padding: 4px 14px; box-shadow: ${sombra("rente")};
-    margin: 0 0 12px;
-  }
-  .in-titulo {
-    font-family: ${FONT_ALFA}; font-size: clamp(30px, 8vw, 46px);
-    letter-spacing: 1; line-height: 1.06; margin: 0 0 10px;
-    text-shadow: 3px 3px 0 ${C.gold};
-  }
-  .in-linha { font-size: 15.5px; line-height: 1.55; max-width: 560px; margin: 0; }
+  .in-armadilha { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+  .in-cabecalho { margin-bottom: 28px; }
+  .in-titulo { font-family: ${FONT_ALFA}; font-weight: 400; font-size: ${TITULO.pagina}; line-height: 1.06; margin: 0 0 12px; outline: none; text-wrap: balance; }
+  .in-linha { font-size: 18px; line-height: 1.55; margin: 0; color: ${C.suave}; text-wrap: pretty; }
 
   /* ---- progresso ---- */
-  .in-progresso { display: flex; gap: 8px; margin: 26px 0 6px; }
-  .in-passo-marca {
-    flex: 1 1 0; display: flex; align-items: center; gap: 8px;
-    border-top: 5px solid rgba(24,18,3,.2); padding-top: 8px;
-  }
-  .in-passo-marca.ativo { border-top-color: ${C.ink}; }
-  .in-passo-marca b {
-    width: 26px; height: 26px; flex: 0 0 auto; display: grid; place-items: center;
-    font-family: ${FONT_ALFA}; font-size: 13px;
-    background: rgba(24,18,3,.14); color: rgba(24,18,3,.55); border: ${bordaFina("transparent")};
-  }
-  .in-passo-marca.ativo b { background: ${C.gold}; color: ${C.ink}; border-color: ${C.ink}; }
-  .in-passo-marca i {
-    font-family: ${FONT_ELITE}; font-style: normal; font-size: 11px;
-    letter-spacing: 1.2px; text-transform: uppercase; opacity: .75;
-  }
+  .in-progresso { display: flex; gap: 6px; margin: 0 0 6px; }
+  .in-passo-marca { flex: 1 1 0; display: flex; align-items: center; gap: 8px; padding-top: 10px; border-top: 4px solid ${C.linha}; color: ${C.suave}; }
+  .in-passo-marca.ativo { border-top-color: ${C.gold}; color: ${C.ink}; }
+  .in-passo-marca b { width: 24px; height: 24px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 50%; font-size: 13.5px; font-weight: 800; background: ${C.fundo}; }
+  .in-passo-marca.ativo b { background: ${C.gold}; }
+  .in-passo-marca i { font-style: normal; font-size: 14.5px; line-height: 1.25; font-weight: 600; }
 
-  .in-passo-titulo {
-    font-family: ${FONT_ALFA}; font-size: clamp(21px, 5vw, 27px);
-    margin: 22px 0 14px; outline: none;
-  }
-  .in-passo-titulo:focus-visible { outline: ${BORDA}px solid ${C.goldDim}; outline-offset: 4px; }
+  .in-passo-titulo { font-family: ${FONT_TEXTO}; font-size: 24px; line-height: 1.25; font-weight: 800; letter-spacing: -.01em; margin: 24px 0 14px; outline: none; }
+  .in-passo-titulo:focus-visible { outline: ${FOCO}; outline-offset: 4px; }
 
-  .in-ajuda {
-    font-size: 14.5px; line-height: 1.6; margin: 0 0 18px;
-    background: ${C.cream}; border-left: 5px solid ${C.gold};
-    padding: 12px 14px;
-  }
+  .in-ajuda { font-size: 16px; line-height: 1.55; margin: 0 0 20px; color: ${C.suave}; }
 
-  .in-erro-geral {
-    display: flex; align-items: flex-start; gap: 9px;
-    font-size: 14.5px; line-height: 1.5; margin: 0 0 16px;
-    background: ${C.erroFundo}; border: ${bordaFina(C.erroTinta)}; color: ${C.erroTinta};
-    padding: 12px 14px;
-  }
+  .in-erro-geral { display: flex; align-items: flex-start; gap: 9px; font-size: 16px; line-height: 1.5; font-weight: 600; margin: 0 0 16px; background: ${C.erroFundo}; color: ${C.erroTinta}; padding: 12px 14px; border-radius: ${RAIO.p + 2}px; }
   .in-erro-geral svg { flex: 0 0 auto; margin-top: 2px; }
 
-  /* ---- passo 1: funções ---- */
+  /* ---- funções ---- */
   .in-grupos { outline: none; }
-  .in-grupo { border: 0; padding: 0; margin: 0 0 28px; }
-  .in-grupo-nome {
-    font-family: ${FONT_ALFA}; font-size: 19px; padding: 0;
-    background: ${C.gold}; border: ${BORDA}px solid ${C.ink};
-    box-shadow: ${sombra("rente")};
-    padding: 5px 13px; margin-bottom: 10px;
-  }
-  .in-grupo-resumo { font-size: 14px; line-height: 1.55; opacity: .8; margin: 0 0 14px; }
-  .in-cartoes { display: grid; gap: 12px; }
+  .in-grupo { border: 0; padding: 0; margin: 0 0 24px; }
+  .in-grupo-nome { font-size: 18px; font-weight: 800; padding: 0; margin-bottom: 4px; }
+  .in-grupo-resumo { font-size: 15.5px; line-height: 1.5; color: ${C.suave}; margin: 0 0 12px; }
+  .in-cartoes { display: grid; gap: 10px; }
 
-  .in-cartao {
-    background: ${C.cream}; border: ${BORDA}px solid ${C.ink};
-    box-shadow: ${sombra()};
-    padding: 12px 14px 10px;
-    transition: box-shadow .12s ease, transform .12s ease;
-  }
-  .in-cartao.marcado {
-    background: #FFF6D4;
-    box-shadow: ${sombra("cartao", C.goldDim)};
-  }
-  .in-cartao-topo {
-    display: flex; align-items: flex-start; gap: 11px; cursor: pointer;
-    min-height: 44px;
-  }
-  .in-cartao-topo input {
-    width: 24px; height: 24px; flex: 0 0 auto; margin: 2px 0 0;
-    accent-color: ${C.goldDim}; cursor: pointer;
-  }
-  .in-cartao-icone {
-    width: 40px; height: 40px; flex: 0 0 auto; display: grid; place-items: center;
-    background: ${C.gold}; border: ${bordaFina(C.ink)}; color: ${C.ink};
-  }
+  .in-cartao { background: ${C.paper}; border: ${borda(C.linhaForte)}; border-radius: ${RAIO.m}px; padding: 12px 14px; transition: border-color .15s ease, background-color .15s ease; }
+  .in-cartao.marcado { background: ${C.ouroClaro}; border-color: ${C.goldDim}; }
+  .in-cartao-topo { display: flex; align-items: flex-start; gap: 11px; cursor: pointer; min-height: 44px; }
+  .in-cartao-topo input { width: 24px; height: 24px; flex: 0 0 auto; margin: 2px 0 0; accent-color: ${C.ink}; cursor: pointer; }
+  .in-cartao-icone { width: 40px; height: 40px; flex: 0 0 auto; display: grid; place-items: center; background: ${C.gold}; border-radius: ${RAIO.p + 2}px; color: ${C.ink}; }
   .in-cartao-texto { flex: 1; min-width: 0; }
-  .in-cartao-nome {
-    display: block; font-family: ${FONT_ALFA}; font-size: 17px;
-    letter-spacing: .3px; line-height: 1.2; margin-bottom: 3px;
-  }
-  .in-cartao-resumo { display: block; font-size: 14px; line-height: 1.5; opacity: .85; }
-
-  .in-cartao-ritmo {
-    display: flex; align-items: center; gap: 7px;
-    font-family: ${FONT_ELITE}; font-size: 12px; letter-spacing: .6px;
-    opacity: .75; margin: 10px 0 0; padding-left: 35px;
-  }
-  .in-cartao-ritmo svg { flex: 0 0 auto; }
-
-  .in-cartao-mais {
-    display: inline-flex; align-items: center; min-height: 44px;
-    font-family: ${FONT_ELITE}; font-size: 12px; letter-spacing: 1.4px;
-    text-transform: uppercase; text-decoration: underline;
-    background: none; border: 0; color: ${C.ink}; cursor: pointer;
-    padding: 6px 0 2px; margin-left: 35px;
-  }
-  .in-cartao-detalhe {
-    border-top: 2px dashed rgba(24,18,3,.3); margin-top: 6px; padding-top: 11px;
-    font-size: 14px; line-height: 1.6;
-  }
+  .in-cartao-nome { display: block; font-size: 17.5px; font-weight: 800; line-height: 1.25; margin-bottom: 2px; }
+  .in-cartao-resumo { display: block; font-size: 15.5px; line-height: 1.45; color: ${C.suave}; }
+  .in-cartao-ritmo { display: flex; align-items: flex-start; gap: 7px; font-size: 15px; line-height: 1.4; color: ${C.suave}; margin: 8px 0 0; padding-left: 35px; }
+  .in-cartao-ritmo svg { flex: 0 0 auto; margin-top: 2px; }
+  .in-cartao-mais { display: inline-flex; align-items: center; min-height: 44px; font-family: ${FONT_TEXTO}; font-size: 15.5px; font-weight: 700; text-decoration: underline; text-decoration-color: ${C.gold}; text-decoration-thickness: 2px; text-underline-offset: 3px; background: none; border: 0; color: ${C.ink}; cursor: pointer; padding: 4px 0 0; margin-left: 35px; }
+  .in-cartao-detalhe { border-top: ${borda()}; margin-top: 6px; padding-top: 11px; font-size: 15.5px; line-height: 1.55; }
   .in-detalhe-entrega { margin: 0 0 10px; }
-  .in-detalhe-rotulo {
-    font-family: ${FONT_ELITE}; font-size: 11px; letter-spacing: 1.5px;
-    text-transform: uppercase; opacity: .7; margin: 0 0 5px;
-  }
-  .in-cartao-detalhe ul { margin: 0; padding-left: 19px; display: flex; flex-direction: column; gap: 5px; }
+  .in-detalhe-rotulo { font-size: 15px; font-weight: 700; margin: 0 0 4px; }
+  .in-cartao-detalhe ul { margin: 0; padding-left: 19px; list-style: disc; display: flex; flex-direction: column; gap: 5px; }
+  .in-contagem { text-align: center; font-size: 15.5px; font-weight: 600; margin: 14px 0 0; color: ${C.suave}; }
 
-  .in-contagem {
-    text-align: center; font-family: ${FONT_ELITE}; font-size: 12.5px;
-    letter-spacing: 1.5px; margin: 14px 0 0; opacity: .8;
-  }
-
-  /* ---- passo 2: campos ---- */
-  .in-campos { display: flex; flex-direction: column; gap: 4px; }
-  .in-linha-dupla { display: grid; gap: 4px; grid-template-columns: 1fr 1fr; }
-  .in-campo { margin-bottom: 16px; }
-  .in-campo label {
-    display: block; font-family: ${FONT_ELITE}; font-size: 12px;
-    letter-spacing: 1.6px; text-transform: uppercase; margin-bottom: 5px;
-  }
-  .in-opcional {
-    font-size: 10.5px; letter-spacing: 1px; opacity: .6;
-    margin-left: 7px; text-transform: none;
-  }
+  /* ---- campos ---- */
+  .in-campos { display: flex; flex-direction: column; gap: 2px; }
+  .in-linha-dupla { display: grid; gap: 2px 14px; grid-template-columns: 1fr 1fr; }
+  .in-campo { margin-bottom: 16px; min-width: 0; }
+  .in-campo label { display: block; font-size: 16px; line-height: 1.3; font-weight: 700; margin-bottom: 6px; }
+  .in-opcional { font-size: 15px; font-weight: 400; color: ${C.suave}; margin-left: 6px; }
   .in-campo input, .in-campo select, .in-campo textarea {
-    box-sizing: border-box;
-    width: 100%; font-family: ${FONT_BITTER}; font-size: 16px;
-    min-height: 48px; padding: 11px 13px;
-    background: ${C.cream}; color: ${C.ink};
-    border: ${BORDA}px solid ${C.ink}; border-radius: 0;
-    box-shadow: ${sombra("rente")};
+    box-sizing: border-box; width: 100%; font-family: ${FONT_TEXTO}; font-size: 17px;
+    min-height: 52px; padding: 12px 14px; background: ${C.paper}; color: ${C.ink};
+    border: ${borda(C.linhaForte)}; border-radius: ${RAIO.p + 2}px; transition: border-color .15s ease, box-shadow .15s ease;
   }
-  .in-campo input:focus-visible, .in-campo select:focus-visible, .in-campo textarea:focus-visible { outline: ${BORDA}px solid ${C.goldDim}; outline-offset: 2px; }
-  .in-campo input.com-erro, .in-campo select.com-erro { border-color: ${C.erroTinta}; box-shadow: ${sombra("rente", C.sombraErro)}; }
-  .in-dica { font-size: 13px; line-height: 1.45; opacity: .7; margin: 6px 0 0; }
-  .in-erro {
-    font-size: 13.5px; line-height: 1.45; margin: 6px 0 0;
-    color: ${C.erroTinta}; font-weight: 600;
-  }
+  .in-campo input:hover, .in-campo select:hover, .in-campo textarea:hover { border-color: ${C.ink}; }
+  .in-campo input:focus, .in-campo select:focus, .in-campo textarea:focus { outline: none; border-color: ${C.ink}; box-shadow: 0 0 0 3px ${C.gold}; }
+  .in-campo input.com-erro, .in-campo select.com-erro { border-color: ${C.erroTinta}; box-shadow: 0 0 0 3px ${C.erroFundo}; }
+  .in-campo textarea { resize: vertical; }
+  .in-dica { font-size: 15px; line-height: 1.45; color: ${C.suave}; margin: 6px 0 0; }
+  .in-erro { font-size: 15px; line-height: 1.45; margin: 6px 0 0; color: ${C.erroTinta}; font-weight: 600; }
 
-  /* ---- passo 3: confirmação ---- */
+  /* ---- confirmação ---- */
   .in-confirma { display: flex; flex-direction: column; gap: 16px; }
-  .in-resumo {
-    background: ${C.cream}; border: ${BORDA}px solid ${C.ink};
-    box-shadow: ${sombra()}; padding: 15px 16px;
-  }
-  .in-resumo-titulo {
-    display: flex; align-items: center; gap: 8px;
-    font-family: ${FONT_ALFA}; font-size: 17px; margin: 0 0 11px;
-  }
+  .in-resumo { background: ${C.paper}; border: ${borda()}; border-radius: ${RAIO.g}px; padding: 18px; }
+  .in-resumo-titulo { display: flex; align-items: center; gap: 8px; font-size: 18px; line-height: 1.3; font-weight: 800; margin: 0 0 11px; }
   .in-resumo-funcoes { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
-  .in-resumo-funcoes li {
-    display: inline-flex; align-items: center; gap: 7px;
-    font-size: 14px; background: ${C.gold}; color: ${C.ink};
-    border: ${bordaFina(C.ink)}; padding: 6px 11px;
-  }
+  .in-resumo-funcoes li { display: inline-flex; align-items: center; gap: 7px; font-size: 15px; font-weight: 600; background: ${C.ouroClaro}; color: ${C.ink}; padding: 5px 12px; border-radius: ${RAIO.pilula}px; }
   .in-resumo-dados { margin: 0; display: flex; flex-direction: column; gap: 9px; }
-  .in-resumo-dados div { display: flex; gap: 10px; flex-wrap: wrap; font-size: 14.5px; }
-  .in-resumo-dados dt {
-    font-family: ${FONT_ELITE}; font-size: 11.5px; letter-spacing: 1.3px;
-    text-transform: uppercase; opacity: .7; min-width: 108px;
-  }
+  .in-resumo-dados div { display: flex; gap: 10px; flex-wrap: wrap; font-size: 16px; }
+  .in-resumo-dados dt { color: ${C.suave}; min-width: 120px; }
   .in-resumo-dados dd { margin: 0; font-weight: 600; }
   /* A faixa "Você quer entrar em…": o núcleo ou tema escolhido antes. */
-  .in-interesse {
-    display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px;
-    margin: 0 0 22px; padding: 12px 14px; font-size: 15.5px; line-height: 1.5;
-    background: ${C.gold}; color: ${C.ink}; border: ${borda()};
-  }
-  .in-editar {
-    display: inline-flex; align-items: center; min-height: 44px;
-    font-family: ${FONT_ELITE}; font-size: 12px; letter-spacing: 1.4px;
-    text-transform: uppercase; text-decoration: underline;
-    background: none; border: 0; color: ${C.ink}; cursor: pointer;
-    padding: 8px 0 0;
-  }
+  .in-interesse { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin: 0 0 22px; padding: 12px 16px; font-size: 16px; line-height: 1.5; background: ${C.ouroClaro}; color: ${C.ink}; border-radius: ${RAIO.m}px; }
+  .in-editar { display: inline-flex; align-items: center; min-height: 44px; font-family: ${FONT_TEXTO}; font-size: 15.5px; font-weight: 700; text-decoration: underline; text-decoration-color: ${C.gold}; text-decoration-thickness: 2px; text-underline-offset: 3px; background: none; border: 0; color: ${C.ink}; cursor: pointer; padding: 6px 0 0; }
 
-  .in-lgpd {
-    background: ${C.night}; color: ${C.cream};
-    border: ${BORDA}px solid ${C.ink}; box-shadow: ${sombra()};
-    padding: 16px;
-  }
-  .in-lgpd .in-resumo-titulo { color: ${C.gold}; }
-  .in-lgpd-lista {
-    list-style: none; margin: 0 0 12px; padding: 0;
-    display: flex; flex-direction: column; gap: 10px;
-    font-size: 14px; line-height: 1.6;
-  }
-  .in-lgpd-lista strong { color: ${C.gold2}; }
-  .in-lgpd a { color: ${C.gold}; }
-  .in-lgpd-link { font-size: 13.5px; margin: 0 0 15px; opacity: .9; }
-
-  .in-consentimento {
-    display: flex; align-items: flex-start; gap: 12px; cursor: pointer;
-    background: rgba(255,203,5,.1); border: ${bordaFina(C.gold)};
-    padding: 13px; font-size: 14.5px; line-height: 1.55;
-  }
-  .in-consentimento input {
-    width: 26px; height: 26px; flex: 0 0 auto; margin: 0;
-    accent-color: ${C.gold}; cursor: pointer;
-  }
+  .in-lgpd { background: ${C.fundo}; color: ${C.ink}; border-radius: ${RAIO.g}px; padding: 18px; }
+  .in-lgpd-lista { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-direction: column; gap: 10px; font-size: 15.5px; line-height: 1.55; color: ${C.suave}; }
+  .in-lgpd-lista strong { color: ${C.ink}; }
+  .in-lgpd a { color: ${C.ink}; font-weight: 700; }
+  .in-lgpd-link { font-size: 15.5px; margin: 0 0 15px; color: ${C.suave}; }
+  .in-consentimento { display: flex; align-items: flex-start; gap: 12px; cursor: pointer; background: ${C.paper}; border: ${borda(C.linhaForte)}; border-radius: ${RAIO.m}px; padding: 14px; font-size: 16px; line-height: 1.5; }
+  .in-consentimento input { width: 26px; height: 26px; flex: 0 0 auto; margin: 0; accent-color: ${C.ink}; cursor: pointer; }
 
   /* ---- navegação ---- */
-  .in-acoes { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 26px; }
+  .in-acoes { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
   .in-btn {
-    flex: 1 1 190px; min-height: 52px; cursor: pointer;
-    display: inline-flex; align-items: center; justify-content: center; gap: 10px;
-    font-family: ${FONT_ALFA}; font-size: 16px; letter-spacing: .4px;
-    text-decoration: none; text-align: center;
-    border: ${BORDA}px solid ${C.ink}; padding: 13px 20px;
-    transition: transform .12s ease, box-shadow .12s ease;
+    flex: 1 1 190px; min-height: 56px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    font-family: ${FONT_TEXTO}; font-size: 18px; font-weight: 700; line-height: 1.2; text-decoration: none; text-align: center;
+    border: 1px solid transparent; border-radius: ${RAIO.m}px; padding: 13px 20px; transition: background-color .15s ease, border-color .15s ease, transform .15s ease, box-shadow .15s ease;
   }
   .in-btn svg { flex: 0 0 auto; }
-  .in-btn-principal { background: ${C.gold}; color: ${C.ink}; box-shadow: ${sombra()}; }
-  .in-btn-fantasma { background: ${C.cream}; color: ${C.ink}; box-shadow: ${sombra()}; flex: 0 1 150px; }
-  .in-btn:hover { transform: translate(-2px,-2px); box-shadow: ${sombraErguida("cartao")}; }
-  .in-btn:active { transform: translate(2px,2px); box-shadow: ${sombraAfundada("cartao")}; }
+  .in-btn-principal svg { order: 1; }
+  .in-btn-principal { background: ${C.gold}; color: ${C.ink}; }
+  .in-btn-principal:hover { background: ${C.gold2}; box-shadow: ${sombra("cartao", "rgba(133,96,6,.22)")}; transform: translateY(-1px); }
+  .in-btn-fantasma { background: ${C.paper}; color: ${C.ink}; border-color: ${C.linhaForte}; flex: 0 1 150px; }
+  .in-btn-fantasma:hover { border-color: ${C.ink}; }
+  .in-btn:active { transform: translateY(0); }
   .in-btn:disabled { opacity: .6; cursor: progress; transform: none; }
-  .in-btn:focus-visible { outline: ${BORDA}px solid ${C.goldDim}; outline-offset: 4px; }
+  .in-btn:focus-visible { outline: ${FOCO}; outline-offset: 3px; }
 
   /* ---- sucesso ---- */
   .in-sucesso { text-align: center; padding-top: 48px; }
-  .in-sucesso-selo {
-    width: 84px; height: 84px; margin: 0 auto 20px;
-    display: grid; place-items: center;
-    background: ${C.gold}; color: ${C.ink};
-    border: 4px solid ${C.ink}; border-radius: 50%;
-    box-shadow: ${sombra("alto")};
-  }
+  .in-sucesso-selo { width: 84px; height: 84px; margin: 0 auto 20px; display: grid; place-items: center; background: ${C.gold}; color: ${C.ink}; border-radius: 50%; }
   .in-sucesso .in-linha { margin: 0 auto; }
-  .in-proximos {
-    list-style: none; margin: 28px 0 0; padding: 0;
-    display: flex; flex-direction: column; gap: 11px; text-align: left;
-  }
-  .in-proximos li {
-    display: flex; align-items: flex-start; gap: 13px;
-    background: ${C.cream}; border: ${BORDA}px solid ${C.ink};
-    box-shadow: ${sombra()};
-    padding: 13px 15px; font-size: 14.5px; line-height: 1.55;
-  }
-  .in-proximos b {
-    width: 32px; height: 32px; flex: 0 0 auto; display: grid; place-items: center;
-    font-family: ${FONT_ALFA}; font-size: 15px;
-    background: ${C.gold}; color: ${C.ink}; border: ${bordaFina(C.ink)};
-  }
-  .in-agora-titulo {
-    font-family: ${FONT_ELITE}; font-size: 11.5px; letter-spacing: 2.2px;
-    text-transform: uppercase; opacity: .7; text-align: left;
-    margin: 30px 0 0;
-  }
+  .in-proximos { list-style: none; margin: 28px 0 0; padding: 0; display: flex; flex-direction: column; gap: 11px; text-align: left; }
+  .in-proximos li { display: flex; align-items: flex-start; gap: 13px; background: ${C.paper}; border: ${borda()}; border-radius: ${RAIO.m}px; padding: 13px 15px; font-size: 16px; line-height: 1.5; }
+  .in-proximos b { width: 32px; height: 32px; flex: 0 0 auto; display: grid; place-items: center; font-size: 15px; font-weight: 800; background: ${C.gold}; color: ${C.ink}; border-radius: 50%; }
+  .in-agora-titulo { font-size: 16px; font-weight: 700; color: ${C.ink}; text-align: left; margin: 30px 0 0; }
   /* display:flex, e não inline-flex: o link tem que cair na própria linha,
-     depois do texto. Com inline-flex ele emendaria no fim do parágrafo — e
-     transformar o span em coluna de flex, que foi a primeira tentativa, jogava
-     cada palavra em negrito para uma linha só dela.
+     depois do texto. Com inline-flex ele emendaria no fim do parágrafo.
      (Nada de crase neste bloco: ele mora dentro de um template literal.) */
-  .in-passo-link {
-    display: flex; width: fit-content; align-items: center; gap: 7px;
-    min-height: 44px; margin-top: 6px; font-family: ${FONT_ELITE}; font-size: 12px;
-    letter-spacing: 1.2px; text-transform: uppercase;
-    color: ${C.ink}; text-decoration: underline; text-underline-offset: 3px;
-  }
-  /* O passo 4 é <button> (chama a Web Share API), os outros são <a>. Sem este
-     reset o navegador desenha caixa cinza de botão no meio de três links. */
-  button.in-passo-link {
-    background: none; border: 0; padding: 0; cursor: pointer; text-align: left;
-  }
-  .in-aviso { font-size: 14px; line-height: 1.6; opacity: .8; margin: 20px 0 0; }
+  .in-passo-link { display: flex; width: fit-content; align-items: center; gap: 7px; min-height: 44px; margin-top: 6px; font-size: 15.5px; font-weight: 700; color: ${C.ink}; text-decoration: underline; text-decoration-color: ${C.gold}; text-decoration-thickness: 2px; text-underline-offset: 3px; }
+  /* O passo 4 é <button> (chama a Web Share API), os outros são <a>. */
+  button.in-passo-link { background: none; border: 0; padding: 0; cursor: pointer; text-align: left; font-family: ${FONT_TEXTO}; }
+  .in-aviso { font-size: 15.5px; line-height: 1.55; color: ${C.suave}; margin: 20px 0 0; }
   .in-sucesso .in-acoes { justify-content: center; }
 
   .in-sem-borda { border: 0; margin: 0; padding: 0; min-width: 0; }
-  .in-detalhes { margin: 0 0 18px; padding: 12px; border: ${bordaFina(C.ink)}; background: ${C.cream}; }
-  .in-detalhes summary { min-height: 44px; font-family: ${FONT_BITTER}; font-weight: 700; cursor: pointer; }
-  .in-detalhes[open] summary { margin-bottom: 12px; }
+  .in-detalhes { margin: 0 0 18px; padding: 4px 16px; border: ${borda()}; border-radius: ${RAIO.m}px; background: ${C.paper}; }
+  .in-detalhes summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 52px; font-size: 16.5px; font-weight: 700; cursor: pointer; line-height: 1.3; list-style: none; }
+  /* A setinha: sem ela a linha não parece que abre. */
+  .in-detalhes summary::after { content: ""; flex: 0 0 auto; width: 9px; height: 9px; margin-right: 4px; border-right: ${bordaFina(C.ink)}; border-bottom: ${bordaFina(C.ink)}; transform: rotate(-45deg); transition: transform .15s ease; }
+  .in-detalhes[open] summary::after { transform: rotate(45deg); }
+  .in-detalhes[open] summary { margin-bottom: 8px; }
   .in-escolhas { border: 0; margin: 0 0 20px; padding: 0; min-width: 0; }
-  .in-escolhas legend { font-family: ${FONT_ALFA}; font-size: 18px; margin-bottom: 12px; }
+  .in-escolhas legend { font-size: 18px; font-weight: 800; margin-bottom: 10px; }
   .in-opcoes { display: grid; gap: 8px; }
-  .in-opcao { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 10px 12px; border: ${bordaFina(C.ink)}; background: ${C.paper}; cursor: pointer; line-height: 1.5; }
-  .in-opcao.selecionada { background: ${C.gold}; }
+  .in-opcao { display: flex; align-items: center; gap: 12px; min-height: 50px; padding: 10px 14px; border: ${borda(C.linhaForte)}; border-radius: ${RAIO.p + 2}px; background: ${C.paper}; cursor: pointer; font-size: 16.5px; line-height: 1.4; transition: border-color .15s ease, background-color .15s ease; }
+  .in-opcao:hover { border-color: ${C.ink}; }
+  .in-opcao.selecionada { background: ${C.ouroClaro}; border-color: ${C.goldDim}; font-weight: 600; }
   .in-opcao input { width: 22px; height: 22px; flex-shrink: 0; accent-color: ${C.ink}; }
-  .in-campo textarea { resize: vertical; }
   .in-proximo-passo { margin-top: 26px; text-align: left; line-height: 1.6; }
   .in-proximo-passo .in-btn { box-sizing: border-box; width: 100%; }
   .in-sucesso .in-btn-fantasma { flex: 1 1 230px; }
 
   /* ---- telas pequenas ---- */
   @media (max-width: 620px) {
-    .in-main { padding: 16px 14px 56px; }
     .in-linha-dupla { grid-template-columns: 1fr; }
-    .in-passo-marca i { display: none; }
-    .in-passo-marca { gap: 0; justify-content: center; }
     .in-resumo-dados div { flex-direction: column; gap: 2px; }
     .in-btn { flex: 1 1 100%; }
     .in-btn-fantasma { flex: 1 1 100%; order: 2; }
   }
-
-  @media (hover: none) {
-    .in-btn:hover { transform: none; box-shadow: ${sombra("cartao")}; }
+  @media (max-width: 460px) {
+    .in-passo-marca i { font-size: 13.5px; }
+    .in-passo-marca b { display: none; }
   }
+
   @media (prefers-reduced-motion: reduce) {
-    .in-btn, .in-cartao { transition: none !important; }
+    .in-btn, .in-cartao, .in-opcao, .in-campo input, .in-campo select, .in-campo textarea { transition: none !important; }
   }
 `;

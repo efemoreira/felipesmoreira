@@ -8,8 +8,8 @@ export default function manifest(): MetadataRoute.Manifest {
       "A militância da Missão no Ceará: núcleos, grupos por tema, porta-vozes, agenda e formação.",
     start_url: "/",
     display: "standalone",
-    background_color: "#14110C",
-    theme_color: "#181203",
+    background_color: "#FFFFFF",
+    theme_color: "#FFFFFF",
     lang: "pt-BR",
     /* A marca das onças, não o retrato: ícone de app precisa ser quadrado e
        legível a 48 px. O 512 é o `src/app/icon.png`, que o Next publica na

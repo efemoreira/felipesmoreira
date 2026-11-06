@@ -1,25 +1,20 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { bordaFina } from "@/lib/theme";
+import { C, FOCO, FONT_ALFA, LARGURA, PONTOS, RAIO, borda, sombra } from "@/lib/theme";
 import Link from "next/link";
 import { PaginaDoSite } from "@/components/site/PaginaDoSite";
+import { AberturaPagina } from "@/components/site/AberturaPagina";
 import { sinal } from "@/lib/api/sinal";
 import { Icon, IconName } from "@/components/icons";
 import CompartilharClient from "./CompartilharClient";
 import DetalheEncontro from "./DetalheEncontro";
 import {
-  C,
-  BORDA,
   sigla,
-  temaDe,
   NOMES_FAMILIA,
   type Agenda,
   type Familia,
   type ItemAgenda,
-  sombra,
-  sombraErguida,
-  sombraAfundada,
   vouDoItem,
 } from "./tipos";
 import { CAMINHO_AGENDA_AO_VIVO, normalizarAgenda } from "./dados";
@@ -37,10 +32,6 @@ import {
   type Estado,
   type Recorte,
 } from "./tempo";
-
-const FONT_ALFA = "var(--font-alfa), serif";
-const FONT_ELITE = "var(--font-elite), monospace";
-const FONT_BITTER = "var(--font-bitter), serif";
 
 /* Ícones aceitos no JSON — evita quebrar a página com um nome inválido */
 const ICONES_VALIDOS: IconName[] = [
@@ -317,111 +308,25 @@ const ProgramacaoClient: React.FC<{ semente: Agenda }> = ({ semente }) => {
   const aberto = abertoId ? ordenados.find((i) => i.id === abertoId) ?? todos.find((i) => i.id === abertoId) ?? null : null;
 
   return (
-    <PaginaDoSite fundo="livre">
-    <div style={{ position: "relative", minHeight: "100dvh", background: C.night }}>
+    <PaginaDoSite
+      fundo="livre"
+      abertura={
+        <AberturaPagina
+          trilha="Agenda"
+          kicker={(agora ? periodoDoRecorte(agenda, recorte, agora) : agenda.periodo) || undefined}
+          titulo={agenda.titulo}
+          icone="calendar"
+          intro={agenda.chamada ? <p>{agenda.chamada}</p> : undefined}
+        />
+      }
+    >
+    <div className="s-largura ag-miolo">
       {schemaEventos && (
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: schemaEventos }} />
       )}
 
-      {/* ===== Fundo animado: cena do cordel ===== */}
-      <iframe
-        src="/cordel-bg.html#bg"
-        title="Cena animada de cordel — sertão do Ceará com montanhas, mar e vida da caatinga"
-        aria-hidden="true"
-        tabIndex={-1}
-        style={{
-          position: "fixed",
-          inset: 0,
-          width: "100%",
-          height: "100%",
-          border: 0,
-          pointerEvents: "none",
-          zIndex: 0,
-        }}
-      />
-      <div
-        aria-hidden="true"
-        style={{
-          position: "fixed",
-          inset: 0,
-          zIndex: 1,
-          pointerEvents: "none",
-          background:
-            "linear-gradient(180deg, rgba(12,12,14,.72) 0%, rgba(12,12,14,.5) 40%, rgba(12,12,14,.78) 100%)",
-        }}
-      />
-
-      <div
-        style={{
-          position: "relative",
-          zIndex: 2,
-          maxWidth: 880,
-          margin: "0 auto",
-          padding: "28px 18px 56px",
-          fontFamily: FONT_BITTER,
-          color: C.cream,
-        }}
-      >
-        {/* ===== Topo: onde assistir (a volta ao Início é a barra do site) ===== */}
-        <div className="ag-topo">
-
-          {agenda.disponivelEm && agenda.disponivelEm.length > 0 && (
-            <div className="ag-canais">
-              <span className="ag-canais-label">Disponível em</span>
-              <nav aria-label="Onde assistir" className="ag-canais-lista">
-                {agenda.disponivelEm.map((c) => (
-                  <a
-                    key={c.nome}
-                    href={c.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={`Assistir no ${c.nome}`}
-                    title={`Assistir no ${c.nome}`}
-                    className="ag-canal"
-                  >
-                    <Icon name={iconeSeguro(c.icone, "play")} size={16} />
-                  </a>
-                ))}
-              </nav>
-            </div>
-          )}
-        </div>
-
-        {/* ===== Cabeçalho ===== */}
-        <header className="ag-header">
-          <h1 className="ag-titulo">
-            <span className="ag-titulo-ouro">{primeiraPalavra(agenda.titulo)}</span>
-            {restoDoTitulo(agenda.titulo) && (
-              <span className="ag-titulo-claro"> {restoDoTitulo(agenda.titulo)}</span>
-            )}
-          </h1>
-
-          {/* A DATA ACOMPANHA O RECORTE. Em "esta semana" ela segue o relógio
-              quando a coordenação não escreveu um período — digitado à mão ele
-              envelhecia sozinho, e o campo do painel só ganha enquanto for da
-              semana em que foi escrito. Em "próxima semana" é a semana seguinte
-              por extenso; em "hoje" é o dia; em "tudo" é "a partir de hoje".
-              Dizer sempre a semana corrente em cima de uma lista que ia até o
-              mês que vem deixava a pessoa sem saber em qual dos dois acreditar. */}
-          {(agenda.periodo || agora) && (
-            <p className="ag-periodo">
-              <Icon name="calendar" size={14} />
-              {/* Antes do relógio acordar sai o que veio no arquivo, para o HTML
-                  do build e o primeiro render baterem; depois quem decide é
-                  `periodoDoRecorte()`. */}
-              <span>{agora ? periodoDoRecorte(agenda, recorte, agora) : agenda.periodo}</span>
-            </p>
-          )}
-
-          {agenda.chamada && <p className="ag-chamada">{agenda.chamada}</p>}
-
-          {/* Gera o PNG da agenda no próprio navegador — com o recorte que
-              está apertado: o que se vê é o que se compartilha. */}
-          <div className="ag-compartilhar">
-            <CompartilharClient agenda={agenda} recorte={recorte} />
-          </div>
-        </header>
-
+      {/* ===== Os filtros, numa faixa só: quando, o quê, onde ===== */}
+      <div className="ag-filtros">
         {/* ===== O recorte de período =====
             Só depois de o relógio acordar: sem ele os três botões não teriam o
             que recortar, e o HTML do build sairia com um estado marcado que o
@@ -453,7 +358,7 @@ const ProgramacaoClient: React.FC<{ semente: Agenda }> = ({ semente }) => {
             Só quando o recorte atual tem mais de uma família — um só botão
             marcado sozinho não é filtro, é decoração. */}
         {agora && familiasPresentes.length > 1 && (
-          <div className="ag-recorte" role="group" aria-label="Categoria">
+          <div className="ag-recorte ag-recorte-leve" role="group" aria-label="Categoria">
             <button
               type="button"
               className={familia === "todas" ? "ag-recorte-on" : undefined}
@@ -478,7 +383,7 @@ const ProgramacaoClient: React.FC<{ semente: Agenda }> = ({ semente }) => {
 
         {/* ===== Onde e como ===== */}
         {agora && (cidadesPresentes.length > 0 || (temOnline && temPresencial)) && (
-          <div className="ag-filtros">
+          <div className="ag-onde">
             {cidadesPresentes.length > 0 && (
               <label className="ag-cidade">
                 <span>Cidade</span>
@@ -491,7 +396,7 @@ const ProgramacaoClient: React.FC<{ semente: Agenda }> = ({ semente }) => {
               </label>
             )}
             {temOnline && temPresencial && (
-              <div className="ag-recorte" role="group" aria-label="Formato">
+              <div className="ag-recorte ag-recorte-leve" role="group" aria-label="Formato">
                 {([["", "Tudo"], ["presencial", "Presencial"], ["online", "On-line"]] as const).map(([v, r]) => (
                   <button key={v} type="button" className={formato === v ? "ag-recorte-on" : undefined} aria-pressed={formato === v} onClick={() => setFormato(v)}>
                     {r}
@@ -502,6 +407,8 @@ const ProgramacaoClient: React.FC<{ semente: Agenda }> = ({ semente }) => {
           </div>
         )}
 
+      </div>
+
         {/* ===== Lista da programação ===== */}
         {itens.length === 0 ? (
           <div className="ag-vazio">
@@ -511,11 +418,11 @@ const ProgramacaoClient: React.FC<{ semente: Agenda }> = ({ semente }) => {
             {todos.length === 0 && (
               <p className="ag-vazio-acoes">
                 {agenda.disponivelEm?.[0] && (
-                  <a className="ag-btn" href={agenda.disponivelEm[0].url} target="_blank" rel="noopener noreferrer">
+                  <a className="s-btn s-btn-linha s-btn-peq" href={agenda.disponivelEm[0].url} target="_blank" rel="noopener noreferrer">
                     Ver o canal no {agenda.disponivelEm[0].nome}
                   </a>
                 )}
-                <Link className="ag-btn ag-btn-ouro" href="/queroajudar">
+                <Link className="s-btn s-btn-ouro s-btn-peq" href="/queroajudar" prefetch={false}>
                   Quero ajudar
                 </Link>
               </p>
@@ -524,7 +431,7 @@ const ProgramacaoClient: React.FC<{ semente: Agenda }> = ({ semente }) => {
         ) : (
           <ol className="ag-lista">
             {ordenados.map((item, i) => (
-              <li key={item.id ?? i} className="ag-item" style={{ "--i": i } as React.CSSProperties}>
+              <li key={item.id ?? i} className="ag-item">
                 <Cartao
                   item={item}
                   estado={agora ? estadoDe(item, agora) : "sem-horario"}
@@ -550,11 +457,11 @@ const ProgramacaoClient: React.FC<{ semente: Agenda }> = ({ semente }) => {
                   if (!vou) return null;
                   return (
                     <a
-                      className="ag-vou"
+                      className="s-btn s-btn-ouro s-btn-peq ag-vou"
                       href={vou.href}
                       {...(vou.grupo ? { target: "_blank", rel: "noopener noreferrer" } : {})}
                     >
-                      <Icon name={vou.grupo ? "whatsapp" : "flag"} size={15} />
+                      {vou.grupo && <Icon name="whatsapp" size={18} />}
                       {/* A mesma palavra da tela para onde ele leva: quem toca
                           aqui sabe o que vai acontecer antes de a página abrir. */}
                       <span>{vou.rotulo}</span>
@@ -576,14 +483,29 @@ const ProgramacaoClient: React.FC<{ semente: Agenda }> = ({ semente }) => {
               <strong>Quer ajudar na organização?</strong> Quem monta os encontros
               combina tudo num grupo — entre e diga em que pode ajudar.
             </p>
-            <a className="ag-btn ag-btn-ouro" href={agenda.grupo} target="_blank" rel="noopener noreferrer">
-              <Icon name="whatsapp" size={16} />
+            <a className="s-btn s-btn-ouro s-btn-peq" href={agenda.grupo} target="_blank" rel="noopener noreferrer">
+              <Icon name="whatsapp" size={18} />
               <span>Entrar no grupo</span>
             </a>
           </aside>
         )}
 
         <footer className="ag-rodape">
+          {/* Gera o PNG da agenda no próprio navegador — com o recorte que
+              está apertado: o que se vê é o que se compartilha. */}
+          <CompartilharClient agenda={agenda} recorte={recorte} />
+          {agenda.disponivelEm && agenda.disponivelEm.length > 0 && (
+            <div className="ag-canais">
+              <span>Acompanhe em</span>
+              <nav aria-label="Onde assistir" className="ag-canais-lista">
+                {agenda.disponivelEm.map((c) => (
+                  <a key={c.nome} href={c.url} target="_blank" rel="noopener noreferrer" aria-label={`Assistir no ${c.nome}`} title={`Assistir no ${c.nome}`} className="ag-canal">
+                    <Icon name={iconeSeguro(c.icone, "play")} size={20} />
+                  </a>
+                ))}
+              </nav>
+            </div>
+          )}
           {passados > 0 && (
             <p>
               {passados === 1
@@ -592,11 +514,10 @@ const ProgramacaoClient: React.FC<{ semente: Agenda }> = ({ semente }) => {
             </p>
           )}
           <p>
-            Horários de Brasília · sujeito a mudança de última hora — confirme nos
+            Horários de Brasília. Pode mudar de última hora: confirme nos
             perfis <strong>@moreiramissao</strong>.
           </p>
         </footer>
-      </div>
 
       {aberto && (
         <DetalheEncontro
@@ -613,6 +534,8 @@ const ProgramacaoClient: React.FC<{ semente: Agenda }> = ({ semente }) => {
   );
 };
 
+const MESES = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+
 /* ===== Cartão de um dia da programação ===== */
 const Cartao: React.FC<{
   item: ItemAgenda;
@@ -621,8 +544,6 @@ const Cartao: React.FC<{
   aoVivoAgora: boolean;
   onAbrir: (item: ItemAgenda, origem: HTMLElement) => void;
 }> = ({ item, estado, destaque, aoVivoAgora, onAbrir }) => {
-  const tema = temaDe(item.cor);
-
   /* A etiqueta obedece o relógio: "Ao vivo" só enquanto está acontecendo, e o
      que já passou diz que passou em vez de fingir que ainda vem. */
   const etiqueta =
@@ -634,374 +555,142 @@ const Cartao: React.FC<{
       : destaque ? "É o próximo"
       : item.etiqueta ?? null;
 
-  const vars = {
-    "--bg": tema.bg,
-    "--fg": tema.fg,
-    "--sub": tema.sub,
-    "--badge": tema.badge,
-    "--badge-fg": tema.badgeFg,
-  } as React.CSSProperties;
-
-  const classe =
-    `ag-cartao ag-clicavel${tema.claro ? " ag-cartao-claro" : ""}` +
-    `${estado === "passado" ? " ag-passou" : ""}` +
-    `${destaque ? " ag-destaque" : ""}`;
-
+  const classe = `ag-cartao${estado === "passado" ? " ag-passou" : ""}`;
   const rotulo = `${item.dia}, ${item.data}${item.hora ? ` às ${item.hora}` : ""} — ${item.titulo}`;
+  const [dd, mm] = item.data.split("/");
+  const mes = MESES[Number(mm) - 1];
+  const onde = item.local || (item.plataforma ? NOME_CANAL[item.plataforma] : "");
 
-  /* O CARTÃO INTEIRO ABRE A FICHA. Antes ele era um link para o `link` do
-     encontro quando havia um, e não fazia nada quando não havia — o lugar, a
-     categoria e a imagem inteira ficavam sem onde aparecer. Agora tudo o que a
-     coordenação preencheu abre no modal, e o link vira um botão lá dentro.
+  /* O CARTÃO INTEIRO ABRE A FICHA: tudo o que a coordenação preencheu abre no
+     modal, e o link vira um botão lá dentro.
 
      O botão é um filho esticado por cima do cartão, e não o cartão virado
      `<button>`: botão só aceita conteúdo de frase, e aqui há `<h2>`. O rótulo
      dele é a linha inteira — dia, data, hora e título — para o leitor de tela
      dizer o que vai abrir. */
   return (
-    <article className={classe} style={vars}>
+    <article className={classe}>
       <button
         type="button"
         className="ag-abrir"
         aria-label={`Ver detalhes: ${rotulo}`}
         onClick={(e) => onAbrir(item, e.currentTarget)}
       />
-      {/* Miniatura — a primeira coluna do grid é dela, sempre.
-          O cartão é `176px | 1fr | auto | auto` e a maioria dos eventos não tem
-          imagem. Quando este bloco deixava de ser desenhado, os outros filhos
-          escorregavam uma coluna: o título caía nos 176px (e quebrava em duas
-          linhas) e a data, que se alinha à direita do `1fr`, ia parar do outro
-          lado do cartão. Era esse o vão entre o título e a data — e some no
-          celular, onde o cartão é de uma coluna só. */}
-      <div className={`ag-thumb${item.imagem ? "" : " ag-thumb-reserva"}`}>
-        {item.imagem ? (
-          <img src={item.imagem} alt="" loading="lazy" decoding="async" />
+      {/* A data é o que se procura primeiro numa agenda: ela abre o cartão. */}
+      <div className="ag-data" aria-hidden="true">
+        {mes ? (
+          <>
+            <strong>{dd}</strong>
+            <span>{mes}</span>
+          </>
         ) : (
-          <span className="ag-reserva-sigla" aria-hidden="true">
-            {sigla(item.dia)}
-          </span>
+          <strong className="ag-data-sigla">{sigla(item.dia)}</strong>
         )}
+      </div>
+
+      <div className="ag-texto">
         {etiqueta && (
-          <span className="ag-etiqueta">
+          <p className={`ag-etiqueta${aoVivoAgora ? " ag-etiqueta-viva" : ""}`}>
             {aoVivoAgora && <span className="ag-ponto" aria-hidden="true" />}
             {etiqueta}
-          </span>
+          </p>
         )}
-      </div>
-
-      {/* Título + subtítulo */}
-      <div className="ag-texto">
         <h2 className="ag-item-titulo">{item.titulo}</h2>
-        {item.subtitulo && <p className="ag-item-sub">{item.subtitulo}</p>}
+        <p className="ag-item-quando">
+          {item.dia}
+          {item.hora && `, ${item.hora.toLowerCase()}`}
+          {onde && ` · ${onde}`}
+        </p>
+        {item.subtitulo && item.subtitulo !== item.local && <p className="ag-item-sub">{item.subtitulo}</p>}
       </div>
 
-      {/* Data / dia da semana */}
-      <div className="ag-meta">
-        <span className="ag-meta-data">
-          {item.data}
-          {item.hora && <span className="ag-meta-sep"> · </span>}
-          {item.hora}
-        </span>
-        <span className="ag-meta-dia">{item.dia}</span>
-      </div>
-
-      {/* Selo da plataforma */}
-      <span className="ag-selo" aria-hidden="true">
-        <Icon name={iconeSeguro(item.plataforma, "play")} size={20} />
-      </span>
+      {item.imagem && (
+        <div className="ag-thumb">
+          <img src={item.imagem} alt="" loading="lazy" decoding="async" />
+        </div>
+      )}
     </article>
   );
 };
 
-/* ===== utilidades de texto ===== */
-const primeiraPalavra = (t: string) => t.split(" ")[0] ?? t;
-const restoDoTitulo = (t: string) => t.split(" ").slice(1).join(" ");
+/* O nome de cada canal, para a linha do cartão. */
+const NOME_CANAL: Record<string, string> = { youtube: "YouTube", instagram: "Instagram", twitch: "Twitch", kick: "Kick", tiktok: "TikTok", x: "X", video: "On-line", whatsapp: "WhatsApp", play: "On-line", broadcast: "Ao vivo" };
 
 /* ===== estilos ===== */
 const css = `
-  /* o único botão de confirmar presença, abaixo do cartão */
-  .ag-vou {
-    display: inline-flex; align-items: center; gap: 7px;
-    min-height: 44px; margin: 8px 8px 0 0; padding: 0 16px;
-    font-family: ${FONT_ELITE}; font-size: 12px; letter-spacing: 1.6px; text-transform: uppercase;
-    color: ${C.ink}; background: ${C.gold2};
-    border: ${BORDA}px solid ${C.ink}; box-shadow: ${sombra("rente", C.ink)};
-    text-decoration: none;
-  }
-  .ag-vou:hover { background: ${C.gold}; }
-  .ag-vou:active { transform: translate(2px, 2px); box-shadow: ${sombraAfundada("rente", C.ink)}; }
+  .ag-miolo { padding-block: 12px clamp(48px, 7vw, 80px); }
 
-  .ag-topo {
-    display: flex; align-items: center; justify-content: space-between;
-    gap: 12px; flex-wrap: wrap; margin-bottom: 26px;
-  }; font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
-    color: ${C.ink}; background: ${C.gold}; text-decoration: none;
-    padding: 11px 16px; min-height: 44px; border: ${bordaFina(C.ink)};
-    box-shadow: ${sombra("rente")};
-    transition: transform .12s ease, box-shadow .12s ease;
-  }; }; }
-
-  .ag-canais { display: flex; align-items: center; gap: 10px; }
-  .ag-canais-label {
-    font-family: ${FONT_ELITE}; font-size: 10px; letter-spacing: 2.5px; text-transform: uppercase;
-    color: ${C.cream}; opacity: .8; text-shadow: 0 1px 6px rgba(0,0,0,.7);
-  }
-  .ag-canais-lista { display: flex; gap: 7px; }
-  .ag-canal {
-    width: 44px; height: 44px; display: grid; place-items: center;
-    color: ${C.gold}; background: rgba(24,18,3,.85);
-    border: ${bordaFina(C.gold)}; border-radius: 50%; text-decoration: none;
-    transition: transform .12s ease, background .12s ease, color .12s ease;
-  }
-  .ag-canal:hover { background: ${C.gold}; color: ${C.ink}; transform: translateY(-2px); }
-
-  .ag-header { text-align: center; margin-bottom: 30px; }
-  .ag-titulo {
-    font-family: ${FONT_ALFA};
-    font-size: clamp(26px, 6.4vw, 44px);
-    line-height: 1.06;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    margin: 0 0 12px;
-    text-shadow: 3px 3px 0 ${C.ink}, 0 2px 18px rgba(0,0,0,.6);
-  }
-  .ag-titulo-ouro { color: ${C.gold}; }
-  .ag-titulo-claro { color: ${C.cream}; }
-
-  .ag-periodo {
-    display: inline-flex; align-items: center; gap: 7px;
-    font-family: ${FONT_ELITE}; font-size: 12px; letter-spacing: 2.5px; text-transform: uppercase;
-    color: ${C.ink}; background: ${C.gold};
-    padding: 4px 13px; margin: 0 0 12px;
-    box-shadow: ${sombra("rente")};
-  }
-  .ag-chamada {
-    max-width: 520px; margin: 0 auto;
-    font-size: 15px; line-height: 1.5; color: ${C.cream};
-    text-shadow: 0 1px 6px rgba(0,0,0,.7);
-  }
-
-  .ag-compartilhar { margin-top: 22px; }
-
-  /* O recorte de período. Três alvos de 44px, como o resto do site: quem lê
-     esta página está no celular, em pé, e o dedo é o mouse. */
-  .ag-filtros { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; margin: 0 0 18px; }
-  .ag-filtros .ag-recorte { margin: 0; }
-  .ag-cidade { display: flex; flex-direction: column; gap: 4px; font-family: ${FONT_ELITE}; font-size: 11.5px; letter-spacing: 1.6px; text-transform: uppercase; color: ${C.gold}; }
-  .ag-cidade select {
-    min-height: 44px; min-width: 220px; padding: 0 12px; font-size: 16px; font-family: ${FONT_BITTER};
-    color: ${C.ink}; background: ${C.cream}; border: ${BORDA}px solid ${C.ink}; box-shadow: ${sombra("rente", C.sombraNoite)};
-  }
-  .ag-recorte {
-    display: flex; justify-content: center; flex-wrap: wrap;
-    gap: 8px; margin: 0 0 22px;
-  }
+  /* ---------- filtros ---------- */
+  .ag-filtros { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
+  .ag-recorte { display: flex; flex-wrap: wrap; gap: 6px; }
   .ag-recorte button {
-    font-family: ${FONT_ELITE}; font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
-    color: ${C.cream}; background: rgba(24,18,3,.85);
-    padding: 11px 16px; min-height: 44px; cursor: pointer;
-    border: ${bordaFina(C.gold)};
-    box-shadow: ${sombra("rente", C.sombraNoite)};
-    transition: transform .12s ease, box-shadow .12s ease, background .12s ease, color .12s ease;
+    min-height: 44px; padding: 8px 16px; cursor: pointer; border: ${borda(C.linhaForte)}; border-radius: ${RAIO.pilula}px;
+    background: ${C.paper}; color: ${C.ink}; font-size: 16px; font-weight: 600; line-height: 1.2; transition: background-color .15s ease, border-color .15s ease;
   }
-  .ag-recorte button:hover { transform: translate(-2px,-2px); box-shadow: ${sombraErguida("rente", C.sombraNoite)}; }
-  .ag-recorte button:active { transform: translate(2px,2px); box-shadow: ${sombraAfundada("rente", C.sombraNoite)}; }
-  /* O escolhido é ouro cheio: num grupo de três, "qual está ligado" precisa se
-     ler antes do texto, e não depender de uma borda um pouco mais grossa. */
-  .ag-recorte .ag-recorte-on {
-    color: ${C.ink}; background: ${C.gold};
-  }
+  .ag-recorte button:hover { border-color: ${C.ink}; }
+  .ag-recorte .ag-recorte-on, .ag-recorte .ag-recorte-on:hover { background: ${C.gold}; border-color: ${C.gold}; font-weight: 700; }
+  .ag-recorte-leve button { font-size: 15.5px; min-height: 40px; padding: 6px 14px; border-color: ${C.linha}; }
+  .ag-recorte-leve .ag-recorte-on, .ag-recorte-leve .ag-recorte-on:hover { background: ${C.ouroClaro}; border-color: ${C.goldDim}; }
+  .ag-onde { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+  .ag-cidade { display: inline-flex; align-items: center; gap: 8px; font-size: 15.5px; font-weight: 600; }
+  .ag-cidade select { min-height: 44px; padding: 8px 12px; font-size: 16px; color: ${C.ink}; background: ${C.paper}; border: ${borda(C.linhaForte)}; border-radius: ${RAIO.p + 2}px; }
+  .ag-recorte button:focus-visible, .ag-cidade select:focus-visible, .ag-canal:focus-visible { outline: ${FOCO}; outline-offset: 2px; }
 
-  .ag-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 16px; }
-  .ag-item { animation: agIn .5s ease-out backwards; animation-delay: calc(.06s * var(--i, 0)); }
+  /* ---------- lista ---------- */
+  .ag-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+  .ag-item { display: flex; flex-direction: column; background: ${C.paper}; border: ${borda()}; border-radius: ${RAIO.g}px; transition: border-color .16s ease, box-shadow .16s ease; }
+  .ag-item:hover { border-color: ${C.linhaForte}; box-shadow: ${sombra("cartao")}; }
+  .ag-cartao { position: relative; flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 16px; padding: 14px 16px; }
+  .ag-passou { opacity: .6; }
+  .ag-abrir { position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; border: 0; border-radius: ${RAIO.g}px; background: transparent; cursor: pointer; }
+  .ag-abrir:focus-visible { outline: ${FOCO}; outline-offset: -3px; }
+  .ag-data { flex: 0 0 auto; width: 68px; height: 72px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: ${RAIO.m}px; background: ${C.gold}; color: ${C.ink}; line-height: 1; }
+  .ag-data strong { font-family: ${FONT_ALFA}; font-weight: 400; font-size: 30px; }
+  .ag-data span { margin-top: 4px; font-size: 14.5px; font-weight: 700; }
+  .ag-data .ag-data-sigla { font-size: 19px; }
+  .ag-texto { flex: 1 1 auto; min-width: 0; }
+  .ag-etiqueta { display: inline-flex; align-items: center; gap: 6px; margin: 0 0 3px; font-size: 14.5px; line-height: 1.3; font-weight: 700; color: ${C.goldDim}; }
+  .ag-etiqueta-viva { color: ${C.aoVivo}; }
+  .ag-ponto { width: 8px; height: 8px; border-radius: 50%; background: ${C.aoVivo}; animation: agPulse 1.6s ease-in-out infinite; }
+  .ag-item-titulo { margin: 0; font-size: 19px; line-height: 1.3; font-weight: 800; letter-spacing: -.01em; overflow-wrap: anywhere; }
+  .ag-item-quando { margin: 3px 0 0; font-size: 16px; line-height: 1.4; color: ${C.ink}; }
+  .ag-item-sub { margin: 2px 0 0; font-size: 15.5px; line-height: 1.4; color: ${C.suave}; }
+  .ag-thumb { flex: 0 0 auto; width: 132px; aspect-ratio: 4 / 3; overflow: hidden; border-radius: ${RAIO.p + 2}px; background: ${C.fundo}; }
+  .ag-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .ag-vou { margin: 0 12px 12px; }
 
-  .ag-cartao {
-    position: relative;
-    display: grid;
-    grid-template-columns: 176px minmax(0, 1fr) auto auto;
-    align-items: center;
-    gap: 18px;
-    padding: 12px 14px 12px 12px;
-    background: var(--bg);
-    color: var(--fg);
-    border: ${BORDA}px solid ${C.ink};
-    box-shadow: ${sombra("alto")};
-    text-decoration: none;
-    transition: transform .14s ease, box-shadow .14s ease;
-  }
-  .ag-clicavel { cursor: pointer; }
-  .ag-clicavel:hover { transform: translate(-2px,-2px); box-shadow: ${sombraErguida("alto")}; }
-  .ag-clicavel:active { transform: translate(2px,2px); box-shadow: ${sombraAfundada("alto")}; }
-  /* O botão que abre a ficha cobre o cartão inteiro, invisível; quem desenha
-     o foco é o cartão, porque é ele que a pessoa vê. */
-  .ag-abrir {
-    position: absolute; inset: 0; z-index: 1;
-    background: transparent; border: 0; padding: 0; margin: 0; cursor: pointer;
-    -webkit-appearance: none; appearance: none;
-  }
-  .ag-abrir:focus { outline: none; }
-  .ag-cartao:has(.ag-abrir:focus-visible) { outline: ${BORDA}px solid ${C.gold}; outline-offset: 4px; }
-
-  .ag-thumb {
-    position: relative;
-    aspect-ratio: 16 / 9;
-    overflow: hidden;
-    background: ${C.night};
-    border: ${bordaFina(C.ink)};
-  }
-  .ag-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  /* Sem imagem — que é a maioria dos eventos: a hachura do cordel com a sigla
-     do dia, o mesmo desenho que o pôster usa na linha do evento, para quem vê
-     os dois reconhecer a mesma peça. Ela existe antes de tudo para **ocupar a
-     coluna reservada**: cartão com a coluna vazia desmonta o grid. */
-  .ag-thumb-reserva {
-    display: grid; place-items: center;
-    background:
-      repeating-linear-gradient(135deg, rgba(255,203,5,.16) 0 8px, transparent 8px 16px),
-      ${C.night};
-  }
-  .ag-reserva-sigla {
-    font-family: ${FONT_ALFA}; font-size: clamp(20px, 2.6vw, 30px);
-    letter-spacing: 2px; color: ${C.gold}; text-shadow: 2px 2px 0 rgba(0,0,0,.6);
-  }
-
-  /* Já passou: continua na lista, porque a semana se lê inteira, mas recua
-     para o que ainda vai acontecer ficar na frente do olho. */
-  .ag-passou { opacity: .55; box-shadow: ${sombra("rente")}; }
-
-  /* O próximo (ou o que está rolando) ganha o anel de ouro. */
-  .ag-destaque { box-shadow: ${sombra("alto")}, 0 0 0 3px ${C.gold}; }
-
-  .ag-etiqueta {
-    position: absolute; top: 6px; left: 6px;
-    display: inline-flex; align-items: center; gap: 5px;
-    font-family: ${FONT_ELITE}; font-size: 9px; letter-spacing: 1.6px; text-transform: uppercase;
-    color: ${C.gold}; background: ${C.ink};
-    padding: 3px 8px; border: 1px solid ${C.gold};
-  }
-  .ag-ponto {
-    width: 6px; height: 6px; border-radius: 50%; background: #FF3B30;
-    box-shadow: 0 0 0 2px rgba(255,59,48,.3);
-    animation: agPulse 1.6s ease-in-out infinite;
-  }
-
-  .ag-texto { min-width: 0; }
-  .ag-item-titulo {
-    font-family: ${FONT_ALFA};
-    font-size: clamp(17px, 2.4vw, 23px);
-    line-height: 1.12; letter-spacing: .4px; text-transform: uppercase;
-    margin: 0 0 5px; color: var(--fg);
-  }
-  .ag-item-sub { margin: 0; font-size: 13.5px; line-height: 1.4; color: var(--sub); }
-
-  .ag-meta {
-    display: flex; flex-direction: column; align-items: flex-end; gap: 2px;
-    padding-left: 18px; border-left: ${bordaFina("rgba(24,18,3,.3)")};
-    text-align: right; white-space: nowrap;
-  }
-  .ag-cartao-claro .ag-meta { border-left-color: rgba(246,245,239,.3); }
-  .ag-meta-data {
-    font-family: ${FONT_ELITE}; font-size: 12.5px; letter-spacing: 1.4px;
-    color: var(--fg); opacity: .95;
-  }
-  .ag-meta-sep { opacity: .55; }
-  .ag-meta-dia {
-    font-family: ${FONT_ALFA}; font-size: clamp(15px, 2vw, 20px);
-    letter-spacing: 1.5px; text-transform: uppercase; color: var(--fg);
-  }
-
-  .ag-selo {
-    width: 42px; height: 42px; flex: 0 0 auto;
-    display: grid; place-items: center;
-    background: var(--badge); color: var(--badge-fg);
-    border: ${bordaFina(C.ink)}; border-radius: 10px;
-    box-shadow: ${sombra("rente")};
-  }
-
-  .ag-vazio {
-    text-align: center; font-family: ${FONT_ELITE}; letter-spacing: 1.5px;
-    color: ${C.cream}; background: rgba(20,17,12,.6);
-    border: ${bordaFina(C.ink)}; padding: 26px 18px;
-  }
+  /* ---------- vazio ---------- */
+  .ag-vazio { padding: clamp(28px, 5vw, 44px) 20px; text-align: center; font-size: 18px; line-height: 1.5; color: ${C.suave}; background: ${C.fundo}; border-radius: ${RAIO.g}px; }
   .ag-vazio p { margin: 0; }
   .ag-vazio-acoes { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 18px !important; }
-  .ag-btn {
-    display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px;
-    font-family: ${FONT_ELITE}; font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase;
-    color: ${C.cream}; text-decoration: none; border: ${BORDA}px solid ${C.ink};
-    background: rgba(20,17,12,.8); box-shadow: ${sombra("rente", C.sombraNoite)};
-  }
-  .ag-btn-ouro { background: ${C.gold}; color: ${C.ink}; }
 
-  /* O convite do grupo: uma faixa de papel entre a lista e o rodapé, com a
-     mesma moldura dura do resto — é a única coisa clara da página, e é para
-     ser. */
-  .ag-grupo {
-    display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
-    margin: 28px 0 0; padding: 18px 20px;
-    background: ${C.paper}; color: ${C.ink};
-    border: ${BORDA}px solid ${C.ink}; box-shadow: ${sombra("cartao")};
-  }
-  .ag-grupo-texto { margin: 0; flex: 1 1 260px; font-size: 15px; line-height: 1.5; }
-  .ag-grupo-texto strong { font-family: ${FONT_ALFA}; letter-spacing: 1px; text-transform: uppercase; font-weight: 400; display: block; margin-bottom: 2px; }
+  /* ---------- convite do grupo ---------- */
+  .ag-grupo { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-top: 24px; padding: 18px 20px; background: ${C.ouroClaro}; border-radius: ${RAIO.g}px; }
+  .ag-grupo-texto { margin: 0; flex: 1 1 260px; font-size: 16.5px; line-height: 1.5; }
+  .ag-grupo-texto strong { display: block; margin-bottom: 2px; font-size: 18px; font-weight: 800; }
 
-  .ag-rodape {
-    margin-top: 30px; text-align: center;
-    font-family: ${FONT_ELITE}; font-size: 11.5px; letter-spacing: 1.2px; line-height: 1.7;
-    color: ${C.cream}; opacity: .85; text-shadow: 0 1px 6px rgba(0,0,0,.7);
-  }
+  /* ---------- rodapé da lista ---------- */
+  .ag-rodape { display: flex; flex-direction: column; gap: 12px; align-items: flex-start; max-width: ${LARGURA.texto}; margin-top: 28px; font-size: 15.5px; line-height: 1.5; color: ${C.suave}; }
   .ag-rodape p { margin: 0; }
+  .ag-rodape strong { color: ${C.ink}; }
+  .ag-canais { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-weight: 600; color: ${C.ink}; }
+  .ag-canais-lista { display: flex; gap: 2px; }
+  .ag-canal { width: 44px; height: 44px; display: grid; place-items: center; border-radius: ${RAIO.p + 2}px; color: ${C.ink}; }
+  .ag-canal:hover { background: ${C.gold}; }
 
-  @keyframes agIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
   @keyframes agPulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
 
-  /* ===== Tablet ===== */
-  @media (max-width: 860px) {
-    .ag-cartao { grid-template-columns: 140px minmax(0, 1fr) auto; gap: 14px; }
-    .ag-selo { display: none; }
+  @media (min-width: ${PONTOS.tablet}px) {
+    .ag-item { flex-direction: row; align-items: center; }
+    .ag-cartao { padding: 16px 18px; }
+    .ag-vou { flex: 0 0 auto; margin: 0 18px 0 0; }
+    .ag-item-titulo { font-size: 20px; }
   }
-
-  /* ===== Celular ===== */
-  @media (max-width: 620px) {
-    .ag-cartao {
-      grid-template-columns: 1fr;
-      gap: 0;
-      padding: 10px;
-    }
-    /* miniatura vira faixa: mantém o ritmo da lista sem esticar o cartão */
-    .ag-thumb { width: 100%; margin-bottom: 12px; aspect-ratio: 5 / 2; max-height: 150px; }
-    /* No celular o cartão é de uma coluna só: não há coluna reservada para
-       preencher, e a faixa hachurada custaria de volta a altura que o conserto
-       da agenda devolveu — era um evento e meio por tela. Aqui sobra só a
-       etiqueta, como selo no topo do cartão.
-       Precisa estar DENTRO da media query: a regra do .ag-thumb acima tem a
-       mesma especificidade e vem depois no arquivo, então venceria o que está
-       declarado lá em cima. (E nada de crase aqui: isto mora dentro de um
-       template literal.) */
-    .ag-thumb-reserva {
-      aspect-ratio: auto; max-height: none; margin-bottom: 0;
-      background: none; border: 0;
-      display: flex; align-items: flex-start;
-    }
-    .ag-thumb-reserva .ag-reserva-sigla { display: none; }
-    .ag-thumb-reserva .ag-etiqueta { position: static; margin-bottom: 10px; }
-    .ag-texto { padding: 0 2px; }
-    .ag-meta {
-      flex-direction: row; align-items: baseline; justify-content: space-between;
-      gap: 10px; width: 100%; text-align: left;
-      padding: 10px 2px 2px; margin-top: 10px;
-      border-left: 0; border-top: ${bordaFina("rgba(24,18,3,.3)")};
-      /* solta o nowrap: data/hora longa vinda do painel empurrava a coluna
-         e gerava rolagem horizontal na página inteira */
-      white-space: normal;
-    }
-    .ag-cartao-claro .ag-meta { border-top-color: rgba(246,245,239,.3); }
-    .ag-titulo { letter-spacing: 1.5px; }
+  @media (max-width: ${PONTOS.tablet - 1}px) {
+    .ag-thumb { display: none; }
   }
-
   @media (prefers-reduced-motion: reduce) {
-    .ag-item { animation: none; }
-    .ag-cartao, .ag-canal { transition: none !important; }
+    .ag-item, .ag-recorte button { transition: none; }
     .ag-ponto { animation: none; }
   }
 `;

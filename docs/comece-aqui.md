@@ -77,6 +77,11 @@ git push origin main
 
 - Se `npm test` falhar, nada é publicado.
 - `public_html/dados/` **não** faz parte do deploy — é o que o painel gravou.
+- **Hoje o GitHub Actions está desligado neste repositório**, e o `push` sozinho
+  não publica. O deploy é manual: repita os passos acima à mão e empurre `out/`
+  para a branch `build`, com o commit `Build manual: (sha) … [skip ci]`. Sempre
+  num worktree limpo do commit, nunca na pasta de trabalho: o `next build` copia
+  `public/dados/` local (pessoas, segredo) para `out/`, e o repositório é público.
 - Não mexa sem alinhar: `next.config.ts`, `publish.yml`, os `.htaccess`
   gerados, `conceito.html`.
 

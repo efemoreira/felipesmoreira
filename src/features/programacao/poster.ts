@@ -14,6 +14,7 @@ import {
   icone,
   pilula,
   quebrar,
+  retangulo,
 } from "@/lib/cordelCanvas";
 import { CHAPA } from "@/features/missao/data";
 import { dataPorExtenso, faseEm } from "@/lib/eleicao";
@@ -32,7 +33,6 @@ export const FORMATOS: Record<Formato, { altura: number; rotulo: string }> = {
 
 const W = 1080; // largura fixa; a altura vem do formato escolhido
 const PAD = 64; // margem interna do conteúdo
-const MOLDURA = 22; // recuo da moldura dourada
 
 const GAPS = [24, 18]; // aperta o respiro entre cartões antes de esticar o poster
 const LINHA_MIN = 108; // cabe título + linha fina com margem
@@ -74,46 +74,21 @@ const carregarImagem = (src: string): Promise<HTMLImageElement | null> =>
     img.src = src;
   });
 
-/* ===== fundo ===== */
+/** O fundo das artes: o branco do site com a luz do sol vindo do alto. */
 function fundo(ctx: CanvasRenderingContext2D, h: number) {
-  // base noite
-  ctx.fillStyle = C.night;
+  ctx.fillStyle = C.paper;
   ctx.fillRect(0, 0, W, h);
 
-  // brilho quente no topo (dá profundidade sem competir com os cartões)
-  const brilho = ctx.createRadialGradient(W / 2, h * 0.06, 40, W / 2, h * 0.06, W * 0.9);
-  brilho.addColorStop(0, "rgba(255,203,5,.20)");
-  brilho.addColorStop(0.45, "rgba(184,134,11,.07)");
-  brilho.addColorStop(1, "rgba(20,17,12,0)");
+  const brilho = ctx.createRadialGradient(W / 2, 0, 60, W / 2, 0, W * 1.05);
+  brilho.addColorStop(0, "rgba(255,203,5,.34)");
+  brilho.addColorStop(0.55, "rgba(255,203,5,.08)");
+  brilho.addColorStop(1, "rgba(255,203,5,0)");
   ctx.fillStyle = brilho;
   ctx.fillRect(0, 0, W, h);
 
-  // hachura diagonal discreta (xilogravura)
-  ctx.save();
-  ctx.strokeStyle = "rgba(255,203,5,.05)";
-  ctx.lineWidth = 3;
-  for (let i = -h; i < W + h; i += 26) {
-    ctx.beginPath();
-    ctx.moveTo(i, 0);
-    ctx.lineTo(i + h, h);
-    ctx.stroke();
-  }
-  ctx.restore();
-
-  // vinheta inferior
-  const vinheta = ctx.createLinearGradient(0, h * 0.6, 0, h);
-  vinheta.addColorStop(0, "rgba(12,12,14,0)");
-  vinheta.addColorStop(1, "rgba(12,12,14,.55)");
-  ctx.fillStyle = vinheta;
-  ctx.fillRect(0, h * 0.6, W, h * 0.4);
-
-  // moldura dupla de cordel
-  ctx.strokeStyle = C.gold;
-  ctx.lineWidth = 5;
-  ctx.strokeRect(MOLDURA, MOLDURA, W - MOLDURA * 2, h - MOLDURA * 2);
-  ctx.strokeStyle = "rgba(255,203,5,.35)";
-  ctx.lineWidth = 2;
-  ctx.strokeRect(MOLDURA + 12, MOLDURA + 12, W - (MOLDURA + 12) * 2, h - (MOLDURA + 12) * 2);
+  // a faixa de ouro no pé: a assinatura da peça
+  ctx.fillStyle = C.gold;
+  ctx.fillRect(0, h - 22, W, 22);
 }
 
 /* ===== poster ===== */
@@ -127,8 +102,7 @@ export async function gerarPoster(
   const H_MIN = (FORMATOS[formato] ?? FORMATOS["9:16"]).altura;
 
   const ALFA = familia("--font-alfa", "serif");
-  const ELITE = familia("--font-elite", "monospace");
-  const BITTER = familia("--font-bitter", "serif");
+  const TEXTO = familia("--font-texto", "sans-serif");
 
   /* O MESMO RECORTE DA PÁGINA — hoje, esta semana, próxima semana ou tudo —
      e, dentro dele, só o que ainda vem. O cartaz é para circular no grupo
@@ -146,7 +120,7 @@ export async function gerarPoster(
   // medidor temporário para calcular a altura antes de criar o canvas final
   const regua = document.createElement("canvas").getContext("2d")!;
 
-  const fonteChamada = `32px ${BITTER}`;
+  const fonteChamada = `500 32px ${TEXTO}`;
   const linhasChamada = agenda.chamada
     ? quebrar(regua, agenda.chamada, W - PAD * 2 - 80, fonteChamada, 2)
     : [];
@@ -220,7 +194,7 @@ export async function gerarPoster(
   const cx = W / 2;
 
   y += pilula(ctx, "MISSÃO CEARÁ", cx, y, {
-    font: `24px ${ELITE}`,
+    font: `700 24px ${TEXTO}`,
     fundo: C.gold,
     cor: C.ink,
     espaco: 6,
@@ -229,7 +203,7 @@ export async function gerarPoster(
   });
   y += 28;
 
-  // título: primeira palavra em ouro, resto em creme — encolhe até caber
+  // título em tinta, encolhe até caber
   const partes = agenda.titulo.trim().split(" ");
   const t1 = (partes[0] ?? agenda.titulo).toUpperCase();
   const t2 = partes.slice(1).join(" ").toUpperCase();
@@ -249,24 +223,19 @@ export async function gerarPoster(
   const larg2 = t2 ? medir(ctx, t2, fonteTitulo, espTitulo) : 0;
   const inicio = cx - (larg1 + (t2 ? largEspaco + larg2 : 0)) / 2;
 
-  ctx.save();
-  ctx.shadowColor = "rgba(0,0,0,.55)";
-  ctx.shadowOffsetX = 5;
-  ctx.shadowOffsetY = 5;
-  escrever(ctx, t1, inicio, y, { font: fonteTitulo, cor: C.gold, espaco: espTitulo });
+  escrever(ctx, t1, inicio, y, { font: fonteTitulo, cor: C.ink, espaco: espTitulo });
   if (t2) {
     escrever(ctx, t2, inicio + larg1 + largEspaco, y, {
       font: fonteTitulo,
-      cor: C.cream,
+      cor: C.ink,
       espaco: espTitulo,
     });
   }
-  ctx.restore();
   y += tamTitulo + 26;
 
   if (periodo) {
     y += pilula(ctx, periodo.toUpperCase(), cx, y, {
-      font: `26px ${ELITE}`,
+      font: `700 26px ${TEXTO}`,
       fundo: C.gold,
       cor: C.ink,
       espaco: 5,
@@ -277,7 +246,7 @@ export async function gerarPoster(
   }
 
   for (const linha of linhasChamada) {
-    escrever(ctx, linha, cx, y, { font: fonteChamada, cor: "rgba(246,245,239,.88)", align: "center" });
+    escrever(ctx, linha, cx, y, { font: fonteChamada, cor: C.suave, align: "center" });
     y += 42;
   }
   if (linhasChamada.length) y += 14;
@@ -288,27 +257,27 @@ export async function gerarPoster(
 
   if (!itens.length) {
     escrever(ctx, "AGENDA EM BREVE", cx, y + 30, {
-      font: `34px ${ELITE}`,
-      cor: C.cream,
+      font: `700 34px ${TEXTO}`,
+      cor: C.ink,
       align: "center",
       espaco: 4,
     });
   }
 
   itens.forEach((item, i) => {
-    desenharCartao(ctx, item, imagens[i], PAD, y, W - PAD * 2, LINHA_H, { ALFA, ELITE, BITTER });
+    desenharCartao(ctx, item, imagens[i], PAD, y, W - PAD * 2, LINHA_H, { ALFA, TEXTO });
     y += LINHA_H + LINHA_GAP;
   });
 
   /* ----- selo da eleição ----- */
   if (alturaSelo && selo) {
     const fimDaLista = n ? y - LINHA_GAP : y + 120;
-    desenharSelo(ctx, selo, PAD, fimDaLista + respiro, W - PAD * 2, alturaSelo, { ALFA, ELITE });
+    desenharSelo(ctx, selo, PAD, fimDaLista + respiro, W - PAD * 2, alturaSelo, { ALFA, TEXTO });
   }
 
   /* ----- rodapé ----- */
   const rodapeY = H - alturaRodape + 40;
-  ctx.strokeStyle = "rgba(255,203,5,.45)";
+  ctx.strokeStyle = C.linha;
   ctx.lineWidth = 3;
   ctx.beginPath();
   ctx.moveTo(PAD + 60, rodapeY);
@@ -316,8 +285,8 @@ export async function gerarPoster(
   ctx.stroke();
 
   escrever(ctx, ASSINATURA.toUpperCase(), cx, rodapeY + 30, {
-    font: `30px ${ELITE}`,
-    cor: C.gold,
+    font: `700 30px ${TEXTO}`,
+    cor: C.ink,
     align: "center",
     espaco: 4,
   });
@@ -351,9 +320,9 @@ function textoDoSelo(): { data: string; voto: string; cargos: string } | null {
 }
 
 /**
- * Tinta com borda de ouro, e não ouro cheio — os cartões da agenda são
- * dourados, e um bloco dourado do mesmo tamanho logo abaixo deles brigaria pelo
- * olho com o conteúdo que o poster existe para mostrar. O número fica em ouro,
+ * Ouro claro, e não ouro cheio — os cartões da agenda são dourados, e um bloco
+ * dourado do mesmo tamanho logo abaixo deles brigaria pelo olho com o conteúdo
+ * que o poster existe para mostrar. O número fica em tinta,
  * que é onde o destaque tem que estar. É a mesma decisão da faixa do site.
  */
 function desenharSelo(
@@ -363,9 +332,9 @@ function desenharSelo(
   y: number,
   w: number,
   h: number,
-  f: { ALFA: string; ELITE: string },
+  f: { ALFA: string; TEXTO: string },
 ) {
-  bloco(ctx, x, y, w, h, C.ink, { sombra: 11, borda: C.gold, espessura: 5 });
+  bloco(ctx, x, y, w, h, C.ouroClaro);
 
   /* `escrever` desenha com `textBaseline = "top"`: o y é o topo da caixa do
      texto, não a linha de base. As três linhas são empilhadas somando a altura
@@ -375,8 +344,8 @@ function desenharSelo(
   let ty = y + 34;
 
   escrever(ctx, txt.data, cx, ty, {
-    font: `26px ${f.ELITE}`,
-    cor: C.gold2,
+    font: `700 26px ${f.TEXTO}`,
+    cor: C.goldDim,
     align: "center",
     espaco: 5,
   });
@@ -384,15 +353,15 @@ function desenharSelo(
 
   escrever(ctx, txt.voto, cx, ty, {
     font: `76px ${f.ALFA}`,
-    cor: C.gold,
+    cor: C.ink,
     align: "center",
     espaco: 1,
   });
   ty += 76 + 16;
 
   escrever(ctx, txt.cargos, cx, ty, {
-    font: `26px ${f.ELITE}`,
-    cor: C.cream,
+    font: `700 26px ${f.TEXTO}`,
+    cor: C.ink,
     align: "center",
     espaco: 4,
   });
@@ -406,9 +375,9 @@ function desenharCartao(
   y: number,
   w: number,
   h: number,
-  fontes: { ALFA: string; ELITE: string; BITTER: string },
+  fontes: { ALFA: string; TEXTO: string },
 ) {
-  const { ALFA, ELITE, BITTER } = fontes;
+  const { ALFA, TEXTO } = fontes;
   const tema = temaDe(item.cor);
 
   let preenchimento: string | CanvasGradient = tema.canvas[0];
@@ -419,7 +388,7 @@ function desenharCartao(
     preenchimento = g;
   }
 
-  bloco(ctx, x, y, w, h, preenchimento, { sombra: 11, espessura: 5 });
+  bloco(ctx, x, y, w, h, preenchimento, tema.bg === C.paper ? { borda: C.linha, espessura: 2 } : {});
 
   /* escala tipográfica acompanha a altura da linha */
   const g = h >= 180 ? 1.12 : 1;
@@ -429,37 +398,23 @@ function desenharCartao(
   const THUMB_W = Math.round((THUMB_H * 16) / 9);
   const tX = x + 16;
   const tY = y + (h - THUMB_H) / 2;
-  ctx.fillStyle = C.night;
-  ctx.fillRect(tX, tY, THUMB_W, THUMB_H);
-
   if (img) {
-    cobrir(ctx, img, tX, tY, THUMB_W, THUMB_H);
-  } else {
-    // mesmo placeholder hachurado da página, com a sigla do dia
     ctx.save();
-    ctx.beginPath();
-    ctx.rect(tX, tY, THUMB_W, THUMB_H);
+    retangulo(ctx, tX, tY, THUMB_W, THUMB_H, 14);
     ctx.clip();
-    ctx.strokeStyle = "rgba(255,203,5,.18)";
-    ctx.lineWidth = 8;
-    for (let i = -THUMB_H; i < THUMB_W + THUMB_H; i += 16) {
-      ctx.beginPath();
-      ctx.moveTo(tX + i, tY);
-      ctx.lineTo(tX + i - THUMB_H, tY + THUMB_H);
-      ctx.stroke();
-    }
+    cobrir(ctx, img, tX, tY, THUMB_W, THUMB_H);
     ctx.restore();
+  } else {
+    // sem imagem, a sigla do dia numa plaquinha
+    bloco(ctx, tX, tY, THUMB_W, THUMB_H, tema.bg === C.paper ? C.gold : C.paper, { raio: 14 });
     const corpoSigla = Math.round(Math.min(44 * g, THUMB_H * 0.62));
     escrever(ctx, sigla(item.dia), tX + THUMB_W / 2, tY + (THUMB_H - corpoSigla * 1.2) / 2, {
       font: `${corpoSigla}px ${ALFA}`,
-      cor: C.gold,
+      cor: C.ink,
       align: "center",
       espaco: 3,
     });
   }
-  ctx.strokeStyle = C.ink;
-  ctx.lineWidth = 3;
-  ctx.strokeRect(tX, tY, THUMB_W, THUMB_H);
 
   /* a etiqueta "AO VIVO" fica só na página — no PNG ela roubava a miniatura */
 
@@ -469,7 +424,7 @@ function desenharCartao(
   const seloX = dirFim - seloL;
   const temSelo = !!item.plataforma && !!(iconPaths as Record<string, string[]>)[item.plataforma];
 
-  const fonteData = `${Math.round(22 * g)}px ${ELITE}`;
+  const fonteData = `700 ${Math.round(22 * g)}px ${TEXTO}`;
   const fonteDia = `${Math.round(34 * g)}px ${ALFA}`;
   const dataTxt = item.hora ? `${item.data} · ${item.hora}` : item.data;
   const diaTxt = item.dia.toUpperCase();
@@ -501,7 +456,7 @@ function desenharCartao(
   /* selo da plataforma */
   if (temSelo) {
     const sY = y + (h - seloL) / 2;
-    bloco(ctx, seloX, sY, seloL, seloL, tema.badge, { sombra: 5, espessura: 3, raio: 14 });
+    bloco(ctx, seloX, sY, seloL, seloL, tema.badge, { raio: 14 });
     icone(ctx, item.plataforma!, seloX + 14, sY + 14, 30, tema.badgeFg);
   }
 
@@ -531,12 +486,12 @@ function desenharCartao(
     nLinhas * alturaLinha + (comSub ? alturaSub : 0) <= disponivel;
 
   let corpoSub = 22;
-  let sub = item.subtitulo ? quebrar(ctx, item.subtitulo, txtW, `${corpoSub}px ${BITTER}`, 1) : [];
+  let sub = item.subtitulo ? quebrar(ctx, item.subtitulo, txtW, `500 ${corpoSub}px ${TEXTO}`, 1) : [];
   while (item.subtitulo && corpoSub > 17 && cortado(sub)) {
     corpoSub -= 1;
-    sub = quebrar(ctx, item.subtitulo, txtW, `${corpoSub}px ${BITTER}`, 1);
+    sub = quebrar(ctx, item.subtitulo, txtW, `500 ${corpoSub}px ${TEXTO}`, 1);
   }
-  const fonteSub = `${corpoSub}px ${BITTER}`;
+  const fonteSub = `500 ${corpoSub}px ${TEXTO}`;
 
   if (!cabe(linhas.length, sub.length > 0)) {
     if (cabe(linhas.length, false)) {

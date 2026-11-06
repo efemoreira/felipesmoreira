@@ -3,9 +3,9 @@
 import { feriadoEm } from "@/lib/feriados";
 import React, { useEffect, useRef } from "react";
 import Link from "next/link";
-import { bordaFina, FONT_ALFA, FONT_ELITE } from "@/lib/theme";
+import { C, FOCO, FONT_ALFA, PONTOS, RAIO, borda, sombra } from "@/lib/theme";
 import { Icon, type IconName } from "@/components/icons";
-import { C, BORDA, NOMES_FAMILIA, sombra, vouDoItem, type ItemAgenda } from "./tipos";
+import { NOMES_FAMILIA, vouDoItem, type ItemAgenda } from "./tipos";
 import type { Estado } from "./tempo";
 
 /**
@@ -220,89 +220,58 @@ const DetalheEncontro: React.FC<{
 
 const css = `
   .dt-overlay {
-    position: fixed; inset: 0; z-index: 50;
-    display: grid; place-items: center; padding: 16px;
-    background: rgba(8,7,5,.82); backdrop-filter: blur(3px);
-    animation: dtFade .18s ease-out;
+    position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 16px;
+    background: rgba(24,18,3,.3); animation: dtFade .18s ease-out;
   }
   .dt-modal {
-    width: min(520px, 100%); max-width: 100%; box-sizing: border-box;
-    max-height: 92dvh; overflow: auto;
-    background: ${C.night}; color: ${C.cream};
-    border: ${BORDA}px solid ${C.gold}; box-shadow: ${sombra("alto", C.sombraNoite)};
-    padding: 16px;
-    animation: dtUp .22s ease-out;
+    width: min(540px, 100%); max-width: 100%; box-sizing: border-box; max-height: 92dvh; overflow: auto;
+    background: ${C.paper}; color: ${C.ink}; border-radius: ${RAIO.xg}px; box-shadow: ${sombra("alto")};
+    padding: 20px 22px 22px; animation: dtUp .22s ease-out;
   }
-  .dt-topo { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
-  .dt-selos { display: flex; flex-wrap: wrap; gap: 6px; padding-top: 6px; }
-  .dt-selo {
-    display: inline-flex; align-items: center; gap: 5px;
-    font-family: ${FONT_ELITE}; font-size: 10px; letter-spacing: 1.8px; text-transform: uppercase;
-    color: ${C.gold}; background: rgba(255,203,5,.1);
-    padding: 5px 9px; border: 1px solid ${C.gold};
-  }
-  .dt-selo-vivo { color: ${C.ink}; background: ${C.gold}; }
-  .dt-ponto {
-    width: 6px; height: 6px; border-radius: 50%; background: #FF3B30;
-    box-shadow: 0 0 0 2px rgba(255,59,48,.3);
-    animation: dtPulse 1.6s ease-in-out infinite;
-  }
-  .dt-fechar {
-    flex: 0 0 auto; width: 44px; height: 44px; display: grid; place-items: center; cursor: pointer;
-    background: transparent; color: ${C.cream}; border: ${bordaFina("rgba(246,245,239,.35)")};
-  }
-  .dt-fechar:hover { background: ${C.gold}; color: ${C.ink}; border-color: ${C.gold}; }
+  .dt-topo { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+  .dt-selos { display: flex; flex-wrap: wrap; gap: 6px; padding-top: 8px; }
+  .dt-selo { display: inline-flex; align-items: center; gap: 6px; min-height: 26px; padding: 2px 10px; font-size: 14px; font-weight: 600; color: ${C.ink}; background: ${C.fundo}; border-radius: ${RAIO.pilula}px; }
+  .dt-selo-vivo { background: ${C.gold}; font-weight: 700; }
+  .dt-ponto { width: 8px; height: 8px; border-radius: 50%; background: ${C.aoVivo}; animation: dtPulse 1.6s ease-in-out infinite; }
+  .dt-fechar { flex: 0 0 auto; width: 44px; height: 44px; margin: -2px -8px 0 0; display: grid; place-items: center; cursor: pointer; background: transparent; color: ${C.ink}; border: 0; border-radius: ${RAIO.p + 2}px; }
+  .dt-fechar:hover { background: ${C.fundo}; }
 
-  .dt-imagem {
-    aspect-ratio: 16 / 9; overflow: hidden; margin-bottom: 14px;
-    background: ${C.ink}; border: ${bordaFina(C.ink)};
-  }
+  .dt-imagem { aspect-ratio: 16 / 9; overflow: hidden; margin-bottom: 14px; background: ${C.fundo}; border-radius: ${RAIO.m}px; }
   .dt-imagem img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
-  .dt-titulo {
-    font-family: ${FONT_ALFA}; font-size: clamp(20px, 4.6vw, 26px);
-    line-height: 1.12; letter-spacing: .6px; text-transform: uppercase;
-    color: ${C.gold}; margin: 0 0 6px;
-  }
-  .dt-sub { margin: 0 0 14px; font-size: 15px; line-height: 1.5; color: ${C.cream}; opacity: .9; }
+  .dt-titulo { margin: 0 0 6px; font-family: ${FONT_ALFA}; font-weight: 400; font-size: clamp(26px, 5vw, 30px); line-height: 1.12; color: ${C.ink}; text-wrap: balance; }
+  .dt-sub { margin: 0 0 8px; font-size: 16.5px; line-height: 1.5; color: ${C.suave}; }
 
-  .dt-lista { margin: 14px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
-  .dt-linha {
-    display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 10px; align-items: baseline;
-    padding-top: 10px; border-top: ${bordaFina("rgba(246,245,239,.18)")};
-  }
-  .dt-linha dt {
-    display: inline-flex; align-items: center; gap: 6px;
-    font-family: ${FONT_ELITE}; font-size: 10.5px; letter-spacing: 2px; text-transform: uppercase;
-    color: ${C.gold};
-  }
+  .dt-lista { margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; }
+  .dt-linha { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 10px; align-items: baseline; padding-block: 11px; border-top: ${borda()}; }
+  .dt-linha dt { display: inline-flex; align-items: center; gap: 6px; font-size: 15px; font-weight: 600; color: ${C.suave}; }
   .dt-linha dt svg { flex: 0 0 auto; }
-  .dt-linha dd { margin: 0; font-size: 15px; line-height: 1.5; overflow-wrap: anywhere; }
-  .dt-linha dd strong { font-family: ${FONT_ALFA}; font-weight: 400; letter-spacing: .8px; text-transform: uppercase; }
+  .dt-linha dd { margin: 0; font-size: 16.5px; line-height: 1.5; overflow-wrap: anywhere; }
+  .dt-linha dd strong { font-weight: 700; }
+  .dt-linha dd a { color: ${C.ink}; font-weight: 600; }
   .dt-quem { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
-  .dt-peca {
-    font-family: ${FONT_ELITE}; font-size: 11px; letter-spacing: 1.4px; text-transform: uppercase;
-    color: ${C.gold}; margin-right: 4px;
-  }
+  .dt-peca { font-weight: 600; color: ${C.suave}; margin-right: 4px; }
 
-  .dt-acoes { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+  .dt-acoes { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
   .dt-btn {
-    flex: 1 1 160px; cursor: pointer;
-    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-    font-family: ${FONT_ELITE}; font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
-    color: ${C.cream}; background: transparent; text-decoration: none; text-align: center;
-    min-height: 44px; padding: 12px 14px; border: ${bordaFina(C.gold)};
-    transition: background .12s ease, color .12s ease;
+    flex: 1 1 160px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    font-size: 16.5px; font-weight: 700; line-height: 1.2; color: ${C.ink}; background: ${C.paper}; text-decoration: none; text-align: center;
+    min-height: 50px; padding: 12px 16px; border: ${borda(C.linhaForte)}; border-radius: ${RAIO.m}px; transition: background-color .15s ease, border-color .15s ease;
   }
   .dt-btn svg { flex: 0 0 auto; }
-  .dt-btn:hover { background: rgba(255,203,5,.16); }
-  .dt-btn-principal { background: ${C.gold}; color: ${C.ink}; border-color: ${C.ink}; }
-  .dt-btn-principal:hover { background: #ffd93d; }
-  .dt-btn:focus-visible, .dt-fechar:focus-visible { outline: ${BORDA}px solid ${C.gold}; outline-offset: 3px; }
+  .dt-btn:hover { border-color: ${C.ink}; }
+  .dt-btn-principal { background: ${C.gold}; border-color: ${C.gold}; }
+  .dt-btn-principal:hover { background: ${C.gold2}; border-color: ${C.gold2}; }
+  .dt-btn:focus-visible, .dt-fechar:focus-visible { outline: ${FOCO}; outline-offset: 2px; }
 
   @keyframes dtFade { from { opacity: 0; } to { opacity: 1; } }
   @keyframes dtUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
   @keyframes dtPulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+  /* No celular a ficha sobe de baixo, como toda folha de aplicativo. */
+  @media (max-width: ${PONTOS.tablet - 1}px) {
+    .dt-overlay { place-items: end center; padding: 0; }
+    .dt-modal { width: 100%; border-radius: ${RAIO.xg}px ${RAIO.xg}px 0 0; padding-bottom: max(22px, env(safe-area-inset-bottom)); }
+  }
   @media (prefers-reduced-motion: reduce) {
     .dt-overlay, .dt-modal { animation: none; }
     .dt-ponto { animation: none; }

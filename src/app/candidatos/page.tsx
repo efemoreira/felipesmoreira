@@ -4,19 +4,18 @@ import CandidatosClient from "@/features/candidatos/CandidatosClient";
 /* Indexável, ao contrário da Munição: "em que número votar" é a pergunta que o
    eleitor digita no buscador, e a resposta tem de estar aqui quando ele digitar. */
 export const metadata: Metadata = {
-  title: "Nossos candidatos — em que número votar",
+  title: "Candidatos de 2026 — quem disputou pela Missão no Ceará",
   description:
-    "Os candidatos da Missão no Ceará: nome de urna, cargo, número e perfil de cada um. "
-    + "Monte a colinha e leve o número para a urna.",
+    "Quem disputou pela Missão no Ceará em 2026: nome de urna, cargo, número e perfil de cada um.",
   alternates: { canonical: "https://felipesmoreira.com/candidatos" },
   openGraph: {
-    title: "Em que número votar — os candidatos da Missão no Ceará",
-    description: "Nome de urna, cargo e número de cada candidato. Monte a colinha e leve para a urna.",
+    title: "Candidatos de 2026 — quem disputou pela Missão no Ceará",
+    description: "Nome de urna, cargo e número de cada candidato da Missão no Ceará na eleição de 2026.",
   },
   /* O X não herda do openGraph: sem isto o cartão dele mostra o título da raiz. */
   twitter: {
-    title: "Em que número votar — os candidatos da Missão no Ceará",
-    description: "Nome de urna, cargo e número de cada candidato. Monte a colinha e leve para a urna.",
+    title: "Candidatos de 2026 — quem disputou pela Missão no Ceará",
+    description: "Nome de urna, cargo e número de cada candidato da Missão no Ceará na eleição de 2026.",
   },
 };
 

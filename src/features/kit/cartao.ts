@@ -22,27 +22,22 @@ export const FORMATOS: Record<Formato, { altura: number; rotulo: string }> = {
 
 const W = 1080;
 const PAD = 84;
-const MOLDURA = 26;
 
-/** Fundo noite com o brilho quente do cordel, igual ao do pôster. */
+/** O fundo das artes: o branco do site com a luz do sol vindo do alto. */
 function fundo(ctx: CanvasRenderingContext2D, h: number) {
-  ctx.fillStyle = C.night;
+  ctx.fillStyle = C.paper;
   ctx.fillRect(0, 0, W, h);
 
-  const brilho = ctx.createRadialGradient(W / 2, h * 0.28, 60, W / 2, h * 0.28, W * 1.05);
-  brilho.addColorStop(0, "rgba(255,203,5,.22)");
-  brilho.addColorStop(0.45, "rgba(184,134,11,.08)");
-  brilho.addColorStop(1, "rgba(20,17,12,0)");
+  const brilho = ctx.createRadialGradient(W / 2, 0, 60, W / 2, 0, W * 1.05);
+  brilho.addColorStop(0, "rgba(255,203,5,.34)");
+  brilho.addColorStop(0.55, "rgba(255,203,5,.08)");
+  brilho.addColorStop(1, "rgba(255,203,5,0)");
   ctx.fillStyle = brilho;
   ctx.fillRect(0, 0, W, h);
 
-  // moldura dupla: ouro por fora, tinta por dentro
-  ctx.strokeStyle = C.gold;
-  ctx.lineWidth = 6;
-  ctx.strokeRect(MOLDURA, MOLDURA, W - MOLDURA * 2, h - MOLDURA * 2);
-  ctx.strokeStyle = C.ink;
-  ctx.lineWidth = 3;
-  ctx.strokeRect(MOLDURA + 13, MOLDURA + 13, W - (MOLDURA + 13) * 2, h - (MOLDURA + 13) * 2);
+  // a faixa de ouro no pé: a assinatura da peça
+  ctx.fillStyle = C.gold;
+  ctx.fillRect(0, h - 22, W, 22);
 }
 
 export async function gerarCartao(peca: Peca, formato: Formato = "9:16"): Promise<HTMLCanvasElement> {
@@ -50,8 +45,7 @@ export async function gerarCartao(peca: Peca, formato: Formato = "9:16"): Promis
 
   const H = FORMATOS[formato].altura;
   const ALFA = familia("--font-alfa", "serif");
-  const ELITE = familia("--font-elite", "monospace");
-  const BITTER = familia("--font-bitter", "serif");
+  const TEXTO = familia("--font-texto", "sans-serif");
 
   const canvas = document.createElement("canvas");
   canvas.width = W;
@@ -72,7 +66,7 @@ export async function gerarCartao(peca: Peca, formato: Formato = "9:16"): Promis
   }
 
   /* ---- a frase, medida antes pra centralizar o conjunto ---- */
-  const fonteFrase = `46px ${BITTER}`;
+  const fonteFrase = `500 46px ${TEXTO}`;
   const linhasFrase = quebrar(ctx, peca.frase, larguraUtil, fonteFrase, 6);
   const alturaFrase = linhasFrase.length * 62;
 
@@ -89,7 +83,7 @@ export async function gerarCartao(peca: Peca, formato: Formato = "9:16"): Promis
 
   /* ---- pílula do tema ---- */
   pilula(ctx, peca.tema.toUpperCase(), centro, y, {
-    font: `26px ${ELITE}`,
+    font: `700 26px ${TEXTO}`,
     fundo: C.gold,
     cor: C.ink,
     espaco: 6,
@@ -104,36 +98,36 @@ export async function gerarCartao(peca: Peca, formato: Formato = "9:16"): Promis
 
   /* ---- a frase ---- */
   for (const linha of linhasFrase) {
-    escrever(ctx, linha, centro, y, { font: fonteFrase, cor: C.cream, align: "center" });
+    escrever(ctx, linha, centro, y, { font: fonteFrase, cor: C.ink, align: "center" });
     y += 62;
   }
   y += 46;
 
   /* ---- a fonte ---- */
-  bloco(ctx, PAD, y, larguraUtil, alturaFonte, "rgba(255,203,5,.10)", {
+  bloco(ctx, PAD, y, larguraUtil, alturaFonte, C.ouroClaro, {
     sombra: 0,
     borda: C.gold2,
     espessura: 3,
   });
-  const larguraFonte = medirCom(ctx, peca.fonte, `28px ${ELITE}`) + 28 * 2 + 52;
+  const larguraFonte = medirCom(ctx, peca.fonte, `700 28px ${TEXTO}`) + 28 * 2 + 52;
   const xFonte = centro - larguraFonte / 2;
-  icone(ctx, "book", xFonte + 8, y + alturaFonte / 2 - 16, 32, C.gold2);
+  icone(ctx, "book", xFonte + 8, y + alturaFonte / 2 - 16, 32, C.goldDim);
   escrever(ctx, peca.fonte, xFonte + 60, y + alturaFonte / 2 - 17, {
-    font: `28px ${ELITE}`,
-    cor: C.gold2,
+    font: `700 28px ${TEXTO}`,
+    cor: C.goldDim,
     espaco: 2,
   });
 
   /* ---- assinatura, no pé ---- */
   escrever(ctx, "felipesmoreira.com/propostas", centro, H - PAD - 80, {
-    font: `28px ${ELITE}`,
-    cor: C.cream,
+    font: `700 28px ${TEXTO}`,
+    cor: C.ink,
     align: "center",
     espaco: 3,
   });
   escrever(ctx, "MISSÃO CEARÁ", centro, H - PAD - 36, {
-    font: `24px ${ELITE}`,
-    cor: C.gold2,
+    font: `700 24px ${TEXTO}`,
+    cor: C.goldDim,
     align: "center",
     espaco: 7,
   });

@@ -1,10 +1,10 @@
 "use client";
-import React, { useState } from "react";
-import Link from "next/link";
+import React, { useEffect, useState } from "react";
 import { PaginaDoSite } from "@/components/site/PaginaDoSite";
 import { AberturaPagina } from "@/components/site/AberturaPagina";
+import { Convite } from "@/components/site/Convite";
 import { Icon } from "@/components/icons";
-import { BORDA, C, FONT_ALFA, FONT_ELITE, borda, TEXTO, sombra, bordaFina } from "@/lib/theme";
+import { C, FOCO, FONT_ALFA, PONTOS, RAIO, TITULO, borda } from "@/lib/theme";
 import {
   CHAPA,
   CITACOES,
@@ -17,6 +17,15 @@ import {
 import { FaixaEleicao } from "@/components/FaixaEleicao";
 import type { Compromisso } from "./tipos";
 
+/**
+ * /propostas — o plano de governo, por compromisso.
+ *
+ * Eram 20 mil pixels de rolagem no celular: oito caixas abertas, uma atrás da
+ * outra. Agora cada compromisso mostra o que está em jogo e os números que se
+ * cobram, e as propostas, o recurso e o prazo ficam na gaveta. No computador o
+ * índice acompanha a leitura ao lado. Quem chega por `/propostas#<id>` encontra
+ * o compromisso já aberto.
+ */
 
 /* Curto de propósito: com o intervalo de páginas ao lado, um rótulo mais longo
    quebra em duas linhas a 390px e desalinha o número do título. */
@@ -28,245 +37,87 @@ const MOVIMENTO_ROTULO: Record<Compromisso["movimento"], string> = {
 
 /* ===================== peças ===================== */
 
-const Selo: React.FC<{ n: number }> = ({ n }) => (
-  <span
-    aria-hidden="true"
-    style={{
-      flex: "0 0 auto",
-      width: 40,
-      height: 40,
-      display: "grid",
-      placeItems: "center",
-      background: C.ink,
-      color: C.gold,
-      border: borda(),
-      fontFamily: FONT_ALFA,
-      fontSize: 18,
-      lineHeight: 1,
-    }}
-  >
-    {n}
-  </span>
-);
-
 /** O número que se cobra. Tabular para as colunas não dançarem. */
-const CartaoMeta: React.FC<{ numero: string; oQue: string; pagina: string }> = ({
-  numero,
-  oQue,
-  pagina,
-}) => (
-  <div
-    style={{
-      background: C.cream,
-      border: borda(),
-      boxShadow: sombra(),
-      padding: "12px 14px",
-      display: "flex",
-      flexDirection: "column",
-      gap: 4,
-    }}
-  >
-    <b
-      style={{
-        fontFamily: FONT_ALFA,
-        fontSize: "clamp(19px, 4.4vw, 24px)",
-        lineHeight: 1.05,
-        fontWeight: 400,
-        fontVariantNumeric: "tabular-nums",
-        color: C.ink,
-      }}
-    >
-      {numero}
-    </b>
-    <span style={{ fontSize: 13.5, lineHeight: 1.4, color: C.ink }}>{oQue}</span>
-    <span style={{ fontFamily: FONT_ELITE, fontSize: 11, letterSpacing: 1, opacity: 0.6 }}>
-      {pagina}
-    </span>
+const CartaoMeta: React.FC<{ numero: string; oQue: string; pagina: string }> = ({ numero, oQue, pagina }) => (
+  <div className="pr-meta">
+    <b>{numero}</b>
+    <span>{oQue}</span>
+    <small>{pagina}</small>
   </div>
 );
 
 const BlocoCompromisso: React.FC<{ c: Compromisso }> = ({ c }) => {
   const [aberto, setAberto] = useState(false);
 
+  /* Quem chega por um link para este compromisso quer ler as propostas dele. */
+  useEffect(() => {
+    const ver = () => {
+      if (window.location.hash === `#${c.id}`) setAberto(true);
+    };
+    ver();
+    window.addEventListener("hashchange", ver);
+    return () => window.removeEventListener("hashchange", ver);
+  }, [c.id]);
+
   return (
-    <article
-      id={c.id}
-      style={{
-        background: C.paper,
-        border: borda(),
-        boxShadow: sombra("alto"),
-        padding: "22px 20px",
-        display: "flex",
-        flexDirection: "column",
-        gap: 18,
-        scrollMarginTop: 20,
-      }}
-    >
-      <header style={{ display: "flex", alignItems: "center", gap: 13 }}>
-        <Selo n={c.numero} />
+    <article id={c.id} className="pr-bloco">
+      <header className="pr-cabeca">
+        <span aria-hidden="true" className="s-selo pr-num">{c.numero}</span>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <p
-            style={{
-              fontFamily: FONT_ELITE,
-              fontSize: 11,
-              letterSpacing: 2,
-              textTransform: "uppercase",
-              opacity: 0.7,
-              margin: "0 0 3px",
-            }}
-          >
+          <p className="s-rotulo">
             {MOVIMENTO_ROTULO[c.movimento]} · {c.paginas}
           </p>
-          <h2
-            style={{
-              fontFamily: FONT_ALFA,
-              fontSize: "clamp(20px, 5vw, 27px)",
-              lineHeight: 1.1,
-              letterSpacing: 0.3,
-              margin: 0,
-              textWrap: "balance",
-            }}
-          >
-            {c.titulo}
-          </h2>
+          <h2 className="pr-titulo">{c.titulo}</h2>
         </div>
-        <span
-          aria-hidden="true"
-          style={{
-            flex: "0 0 auto",
-            width: 42,
-            height: 42,
-            display: "grid",
-            placeItems: "center",
-            background: C.gold,
-            border: borda(),
-            color: C.ink,
-          }}
-        >
-          <Icon name={c.icone} size={22} />
-        </span>
       </header>
 
-      {/* O que está em jogo */}
-      <div>
-        <p style={rotuloSecao}>O que está em jogo</p>
-        <p style={{ margin: 0, ...TEXTO.corpoSolto }}>{c.emJogo}</p>
+      <p className="pr-jogo">{c.emJogo}</p>
+
+      {/* Onde queremos chegar: os números ficam sempre à vista */}
+      <div className="pr-metas">
+        {c.metas.map((m) => (
+          <CartaoMeta key={m.oQue} {...m} />
+        ))}
       </div>
 
-      {/* Onde queremos chegar — os números */}
-      <div>
-        <p style={rotuloSecao}>Onde queremos chegar</p>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
-            gap: 10,
-          }}
-        >
-          {c.metas.map((m) => (
-            <CartaoMeta key={m.oQue} {...m} />
-          ))}
-        </div>
-      </div>
+      {/* Com oito compromissos abertos de uma vez a página vira um paredão. */}
+      <details className="pr-mais" open={aberto} onToggle={(e) => setAberto((e.currentTarget as HTMLDetailsElement).open)}>
+        <summary>
+          {aberto ? "Fechar" : "As propostas, o recurso e o prazo"}
+          <span className="pr-seta" aria-hidden="true"><Icon name="chevronRight" size={20} /></span>
+        </summary>
 
-      {/* O que vamos fazer */}
-      <div>
-        <p style={rotuloSecao}>O que vamos fazer</p>
-        <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 14 }}>
+        <h3>O que vamos fazer</h3>
+        <ul className="pr-propostas">
           {c.propostas.map((p) => (
-            <li key={p.titulo} style={{ borderLeft: `4px solid ${C.gold}`, paddingLeft: 13 }}>
-              <b style={{ display: "block", fontSize: 15.5, lineHeight: 1.3, marginBottom: 3 }}>
-                {p.titulo}{" "}
-                <span style={{ fontFamily: FONT_ELITE, fontSize: 11, letterSpacing: 1, opacity: 0.55, fontWeight: 400 }}>
-                  {p.pagina}
-                </span>
+            <li key={p.titulo}>
+              <b>
+                {p.titulo} <small>{p.pagina}</small>
               </b>
-              <span style={{ display: "block", fontSize: 15, lineHeight: 1.6 }}>{p.texto}</span>
+              <span>{p.texto}</span>
             </li>
           ))}
         </ul>
-      </div>
 
-      {/* Recurso e prazo ficam recolhidos: com 8 compromissos abertos de uma vez,
-          a página vira um paredão. Mesma razão do <details> das inscrições. */}
-      <details
-        open={aberto}
-        onToggle={(e) => setAberto((e.currentTarget as HTMLDetailsElement).open)}
-        style={{ borderTop: bordaFina("rgba(24,18,3,.2)"), paddingTop: 14 }}
-      >
-        <summary
-          style={{
-            cursor: "pointer",
-            listStyle: "none",
-            fontFamily: FONT_ELITE,
-            fontSize: 12.5,
-            letterSpacing: 1.5,
-            textTransform: "uppercase",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 8,
-            background: C.ink,
-            color: C.gold,
-            padding: "8px 14px",
-            minHeight: 44,
-            boxSizing: "border-box",
-          }}
-        >
-          <Icon name={aberto ? "close" : "search"} size={15} />
-          {aberto ? "Fechar" : "De onde vem o recurso e quando entrega"}
-        </summary>
+        <h3>De onde vem o recurso</h3>
+        <ul className="pr-recurso">
+          {c.recurso.map((r) => (
+            <li key={r}>{r}</li>
+          ))}
+        </ul>
 
-        <div style={{ paddingTop: 16, display: "flex", flexDirection: "column", gap: 16 }}>
-          <div>
-            <p style={rotuloSecao}>De onde vem o recurso</p>
-            <ul style={{ margin: 0, paddingLeft: 18, listStyle: "disc", display: "flex", flexDirection: "column", gap: 7 }}>
-              {c.recurso.map((r) => (
-                <li key={r} style={{ ...TEXTO.nota }}>
-                  {r}
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div>
-            <p style={rotuloSecao}>Quando entrega</p>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {c.prazos.map((p) => (
-                <div key={p.quando} style={{ display: "flex", gap: 11, alignItems: "flex-start" }}>
-                  <span
-                    style={{
-                      flex: "0 0 auto",
-                      minWidth: 82,
-                      textAlign: "center",
-                      fontFamily: FONT_ELITE,
-                      fontSize: 11,
-                      letterSpacing: 1,
-                      textTransform: "uppercase",
-                      background: C.gold,
-                      color: C.ink,
-                      border: bordaFina(C.ink),
-                      padding: "3px 8px",
-                    }}
-                  >
-                    {p.quando}
-                  </span>
-                  <span style={{ fontSize: 14.5, lineHeight: 1.5 }}>{p.entrega}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+        <h3>Quando entrega</h3>
+        <ul className="pr-prazos">
+          {c.prazos.map((p) => (
+            <li key={p.quando}>
+              <span className="s-etiqueta s-etiqueta-ouro">{p.quando}</span>
+              <span>{p.entrega}</span>
+            </li>
+          ))}
+        </ul>
       </details>
     </article>
   );
-};
-
-const rotuloSecao: React.CSSProperties = {
-  fontFamily: FONT_ELITE,
-  fontSize: 11.5,
-  letterSpacing: 2.2,
-  textTransform: "uppercase",
-  opacity: 0.65,
-  margin: "0 0 8px",
 };
 
 /* ===================== página ===================== */
@@ -283,8 +134,8 @@ export default function PropostasClient() {
           intro={
             <>
               <p>{TESE}</p>
-              <p style={{ marginTop: 12, fontFamily: FONT_ELITE, fontSize: 13, letterSpacing: 0.5, opacity: 0.85 }}>
-                {CHAPA.governador}, governador · {CHAPA.vice}, vice · Partido {CHAPA.partido} — eleição de 2026
+              <p style={{ marginTop: 10, fontSize: 16 }}>
+                {CHAPA.governador}, governador · {CHAPA.vice}, vice · Partido {CHAPA.partido}, eleição de 2026
               </p>
             </>
           }
@@ -292,237 +143,140 @@ export default function PropostasClient() {
         />
       }
     >
-      <div style={{ maxWidth: 780, margin: "0 auto" }}>
-        {/* ===== como ler ===== */}
-        <section
-          style={{
-            background: C.ink,
-            color: C.cream,
-            border: borda(),
-            boxShadow: sombra("alto"),
-            padding: "22px 20px",
-            marginBottom: 34,
-          }}
-        >
-          <h2
-            style={{
-              fontFamily: FONT_ALFA,
-              fontSize: 21,
-              lineHeight: 1.15,
-              color: C.gold,
-              margin: "0 0 12px",
-            }}
-          >
-            Como ler este plano
-          </h2>
-          <p style={{ margin: "0 0 16px", ...TEXTO.corpoSolto }}>
-            Ele não é organizado por secretaria, e sim por compromissos — porque os problemas do
-            cearense não respeitam a divisão de pastas do governo. Cada um responde sempre às
-            mesmas seis perguntas:
-          </p>
-          <ol
-            style={{
-              margin: "0 0 16px",
-              padding: 0,
-              listStyle: "none",
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
-              gap: 8,
-            }}
-          >
-            {SEIS_PERGUNTAS.map((p, i) => (
-              <li
-                key={p}
-                style={{
-                  fontFamily: FONT_ELITE,
-                  fontSize: 12.5,
-                  letterSpacing: 0.8,
-                  display: "flex",
-                  gap: 8,
-                  alignItems: "baseline",
-                }}
-              >
-                <b style={{ color: C.gold, fontWeight: 400 }}>{i + 1}.</b>
-                {p}
-              </li>
-            ))}
-          </ol>
-          <p style={{ margin: 0, fontSize: 15, lineHeight: 1.6, fontStyle: "italic", opacity: 0.9 }}>
-            {METODO_FRASE}
-          </p>
-        </section>
-
-        {/* ===== princípios ===== */}
-        <section style={{ marginBottom: 34 }}>
-          <p style={rotuloSecao}>Os cinco princípios</p>
-          <ul
-            style={{
-              margin: 0,
-              padding: 0,
-              listStyle: "none",
-              display: "flex",
-              flexWrap: "wrap",
-              gap: 8,
-            }}
-          >
-            {PRINCIPIOS.map((p) => (
-              <li
-                key={p}
-                style={{
-                  fontFamily: FONT_ELITE,
-                  fontSize: 12.5,
-                  letterSpacing: 0.6,
-                  background: C.cream,
-                  border: bordaFina(C.ink),
-                  boxShadow: sombra("rente"),
-                  padding: "6px 11px",
-                }}
-              >
-                {p}
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        {/* ===== sumário navegável ===== */}
-        <nav aria-label="Os compromissos" style={{ marginBottom: 34 }}>
-          <p style={rotuloSecao}>Os compromissos</p>
-          <ol style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 6 }}>
+      <div className="pr-grade">
+        {/* ===== o índice ===== */}
+        <nav aria-label="Os compromissos" className="pr-indice">
+          <p className="pr-indice-titulo">Os compromissos</p>
+          <ol>
             {compromissos.map((c) => (
               <li key={c.id}>
-                <a
-                  href={`#${c.id}`}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 11,
-                    minHeight: 44,
-                    padding: "6px 12px",
-                    background: C.cream,
-                    border: bordaFina(C.ink),
-                    color: C.ink,
-                    textDecoration: "none",
-                    fontSize: 15,
-                  }}
-                >
-                  <b
-                    style={{
-                      fontFamily: FONT_ALFA,
-                      fontWeight: 400,
-                      fontSize: 15,
-                      minWidth: 16,
-                      textAlign: "center",
-                    }}
-                  >
-                    {c.numero}
-                  </b>
-                  <span style={{ flex: 1 }}>{c.titulo}</span>
-                  <Icon name="chevronRight" size={17} style={{ opacity: 0.5 }} />
+                <a href={`#${c.id}`}>
+                  <b>{c.numero}</b>
+                  <span>{c.titulo}</span>
                 </a>
               </li>
             ))}
           </ol>
         </nav>
 
-        {/* ===== os compromissos ===== */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 26 }}>
+        <div className="pr-miolo">
+          {/* ===== como ler ===== */}
+          <section className="pr-como" aria-labelledby="pr-como">
+            <h2 id="pr-como">Como ler este plano</h2>
+            <p>
+              Ele não é organizado por secretaria, e sim por compromissos, porque os problemas do
+              cearense não respeitam a divisão de pastas do governo. Cada um responde sempre às
+              mesmas seis perguntas:
+            </p>
+            <ol>
+              {SEIS_PERGUNTAS.map((p, i) => (
+                <li key={p}>
+                  <b>{i + 1}</b>
+                  {p}
+                </li>
+              ))}
+            </ol>
+            <p className="pr-frase">{METODO_FRASE}</p>
+          </section>
+
+          {/* ===== princípios ===== */}
+          <section className="pr-principios" aria-labelledby="pr-principios">
+            <h2 id="pr-principios">Os cinco princípios</h2>
+            <ul>
+              {PRINCIPIOS.map((p) => (
+                <li key={p} className="s-etiqueta">{p}</li>
+              ))}
+            </ul>
+          </section>
+
+          {/* ===== os compromissos ===== */}
           {compromissos.map((c) => (
             <BlocoCompromisso key={c.id} c={c} />
           ))}
-        </div>
 
-        {/* ===== a carta ===== */}
-        <section style={{ marginTop: 40 }}>
-          <p style={rotuloSecao}>Da carta ao povo cearense</p>
-          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          {/* ===== a carta ===== */}
+          <section className="pr-carta" aria-labelledby="pr-carta">
+            <h2 id="pr-carta" className="s-titulo">Da carta ao povo cearense</h2>
             {CITACOES.map((q) => (
-              <blockquote
-                key={q.pagina + q.texto.slice(0, 20)}
-                style={{
-                  margin: 0,
-                  borderLeft: `5px solid ${C.gold}`,
-                  background: C.cream,
-                  border: borda(),
-                  borderLeftWidth: 7,
-                  borderLeftColor: C.gold,
-                  boxShadow: sombra(),
-                  padding: "16px 18px",
-                }}
-              >
-                <p style={{ margin: 0, fontSize: 16, lineHeight: 1.6, fontStyle: "italic" }}>
-                  “{q.texto}”
-                </p>
-                <cite
-                  style={{
-                    display: "block",
-                    marginTop: 8,
-                    fontFamily: FONT_ELITE,
-                    fontSize: 11.5,
-                    letterSpacing: 1.4,
-                    fontStyle: "normal",
-                    opacity: 0.65,
-                  }}
-                >
-                  {CHAPA.documento}, {q.pagina}
-                </cite>
+              <blockquote key={q.pagina + q.texto.slice(0, 20)}>
+                <p>“{q.texto}”</p>
+                <cite>{CHAPA.documento}, {q.pagina}</cite>
               </blockquote>
             ))}
-          </div>
-        </section>
+          </section>
 
-        <div style={{ marginTop: 34 }}>
           <FaixaEleicao />
         </div>
-
-        {/* ===== chamada ===== */}
-        <section
-          style={{
-            marginTop: 34,
-            background: C.gold,
-            border: borda(),
-            boxShadow: sombra("alto"),
-            padding: "22px 20px",
-            textAlign: "center",
-          }}
-        >
-          <h2 style={{ fontFamily: FONT_ALFA, fontSize: 23, lineHeight: 1.15, margin: "0 0 10px" }}>
-            Cobrar é bom. Construir é melhor.
-          </h2>
-          <p style={{ margin: "0 0 18px", ...TEXTO.corpoSolto }}>
-            Este plano só sai do papel se tiver gente. Entre na militância da Missão Ceará e
-            escolha por onde começar.
-          </p>
-          <Link
-            href="/queroajudar"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 9,
-              minHeight: 48,
-              padding: "12px 22px",
-              background: C.ink,
-              color: C.gold,
-              border: borda(),
-              boxShadow: sombra(),
-              fontFamily: FONT_ALFA,
-              fontSize: 16,
-              textDecoration: "none",
-            }}
-          >
-            <Icon name="flag" size={19} />
-            Quero ajudar
-          </Link>
-        </section>
       </div>
 
+      <Convite
+        titulo="Cobrar é bom. Construir é melhor."
+        texto="Este plano só sai do papel se tiver gente. Entre na militância da Missão Ceará e escolha por onde começar."
+        acao="Quero ajudar"
+        agenda={false}
+      />
+
       <style>{`
-        #${compromissos.map((c) => c.id).join(", #")} { scroll-margin-top: 80px; }
-        summary::-webkit-details-marker { display: none; }
-        a:focus-visible, summary:focus-visible {
-          outline: ${BORDA}px solid ${C.ink};
-          outline-offset: 3px;
+        .pr-grade { display: grid; gap: 32px; margin-bottom: clamp(32px, 5vw, 56px); }
+        .pr-miolo { min-width: 0; }
+
+        .pr-indice-titulo { margin: 0 0 8px; font-size: 16px; font-weight: 800; }
+        .pr-indice ol { list-style: none; margin: 0; padding: 0; border-top: ${borda()}; }
+        .pr-indice a { display: flex; align-items: flex-start; gap: 10px; min-height: 44px; padding: 10px 0; border-bottom: ${borda()}; color: ${C.ink}; text-decoration: none; font-size: 15.5px; line-height: 1.35; }
+        .pr-indice a:hover { color: ${C.goldDim}; }
+        .pr-indice b { flex: 0 0 18px; font-weight: 800; color: ${C.goldDim}; }
+
+        .pr-como { padding: clamp(20px, 3.4vw, 28px); margin-bottom: 28px; background: ${C.fundo}; border-radius: ${RAIO.g}px; }
+        .pr-como h2, .pr-principios h2 { margin: 0 0 8px; font-size: 21px; line-height: 1.3; font-weight: 800; letter-spacing: -.01em; }
+        .pr-como p { margin: 0 0 14px; font-size: 17px; line-height: 1.6; color: ${C.suave}; }
+        .pr-como ol { list-style: none; margin: 0 0 14px; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 8px 16px; }
+        .pr-como li { display: flex; gap: 8px; align-items: baseline; font-size: 16px; line-height: 1.4; }
+        .pr-como li b { color: ${C.goldDim}; font-weight: 800; }
+        .pr-como .pr-frase { margin: 0; font-size: 16px; font-style: italic; }
+        .pr-principios { margin-bottom: 32px; }
+        .pr-principios ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+        .pr-principios .s-etiqueta { white-space: normal; font-size: 15px; min-height: 34px; padding: 4px 14px; }
+
+        .pr-bloco { padding-block: clamp(24px, 4vw, 36px); border-top: ${borda()}; scroll-margin-top: 80px; }
+        .pr-cabeca { display: flex; align-items: flex-start; gap: 14px; }
+        .pr-num { border-radius: 50%; font-size: 18px; font-weight: 800; }
+        .pr-cabeca .s-rotulo { margin: 0 0 2px; }
+        .pr-titulo { margin: 0; font-family: ${FONT_ALFA}; font-weight: 400; font-size: ${TITULO.bloco}; line-height: 1.14; text-wrap: balance; }
+        .pr-jogo { margin: 14px 0 18px; font-size: 17.5px; line-height: 1.6; color: ${C.suave}; text-wrap: pretty; }
+        .pr-metas { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); gap: 12px; }
+        .pr-meta { display: flex; flex-direction: column; gap: 3px; padding: 14px 16px; background: ${C.fundo}; border-radius: ${RAIO.m}px; }
+        .pr-meta b { font-size: 24px; line-height: 1.15; font-weight: 800; letter-spacing: -.01em; font-variant-numeric: tabular-nums; }
+        .pr-meta span { font-size: 15.5px; line-height: 1.4; color: ${C.ink}; }
+        .pr-meta small { font-size: 14px; color: ${C.suave}; }
+
+        .pr-mais { margin-top: 14px; border: ${borda()}; border-radius: ${RAIO.m}px; padding-inline: 16px; }
+        .pr-mais summary { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 52px; font-size: 16.5px; font-weight: 700; cursor: pointer; list-style: none; }
+        .pr-mais summary::-webkit-details-marker { display: none; }
+        .pr-seta { display: grid; transition: transform .15s ease; }
+        .pr-mais[open] .pr-seta { transform: rotate(90deg); }
+        .pr-mais h3 { margin: 8px 0 8px; font-size: 16px; font-weight: 800; }
+        .pr-propostas, .pr-prazos { list-style: none; margin: 0 0 16px; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+        .pr-propostas b { display: block; margin-bottom: 2px; font-size: 16.5px; line-height: 1.35; font-weight: 700; }
+        .pr-propostas small { font-size: 14px; font-weight: 400; color: ${C.suave}; }
+        .pr-propostas span { display: block; font-size: 16px; line-height: 1.55; color: ${C.suave}; }
+        .pr-recurso { margin: 0 0 16px; padding-left: 20px; list-style: disc; display: flex; flex-direction: column; gap: 6px; font-size: 16px; line-height: 1.5; color: ${C.suave}; }
+        .pr-prazos { gap: 10px; margin-bottom: 18px; }
+        .pr-prazos li { display: flex; align-items: flex-start; gap: 10px; font-size: 16px; line-height: 1.5; color: ${C.suave}; }
+        .pr-prazos .s-etiqueta { flex: 0 0 auto; color: ${C.ink}; }
+
+        .pr-carta { padding-block: clamp(28px, 4vw, 40px); border-top: ${borda()}; }
+        .pr-carta blockquote { margin: 18px 0 0; padding-left: 16px; border-left: 4px solid ${C.gold}; }
+        .pr-carta p { margin: 0; font-size: 18px; line-height: 1.55; }
+        .pr-carta cite { display: block; margin-top: 6px; font-size: 15px; font-style: normal; color: ${C.suave}; }
+
+        .pr-indice a:focus-visible, .pr-mais summary:focus-visible { outline: ${FOCO}; outline-offset: 2px; }
+
+        @media (min-width: ${PONTOS.computador}px) {
+          .pr-grade { grid-template-columns: 280px minmax(0, 1fr); gap: 56px; align-items: start; }
+          .pr-indice { position: sticky; top: 88px; max-height: calc(100dvh - 104px); overflow-y: auto; }
+          .pr-bloco:first-of-type { border-top: 0; }
         }
+        @media (prefers-reduced-motion: reduce) { .pr-seta { transition: none; } }
       `}</style>
     </PaginaDoSite>
   );

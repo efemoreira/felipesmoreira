@@ -15,7 +15,6 @@ import catalogo from "@/data/funcoes.json";
 
 export const marca = {
   nome: "Missão Ceará",
-  kicker: "Militância organizada no Ceará",
   chamada: "Da urna à organização permanente",
   bio: "Em 2026, mais de 107 mil cearenses votaram na Missão para presidente. Faltou quem levasse esse voto adiante. Agora é hora de casa: núcleos nos bairros, grupos por tema, porta-vozes nas redes e na rua — e lugar para você.",
   /* A marca das onças, a mesma do ícone do app (512 px em src/app/icon.png). */

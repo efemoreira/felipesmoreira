@@ -1,17 +1,16 @@
 import { cartaoOG, TAMANHO_OG } from "@/lib/ogCard";
-import { CHAPA } from "@/features/missao/data";
 
-export const alt = "Nossos candidatos — em que número votar";
+export const alt = "Quem disputou pela Missão no Ceará em 2026";
 export const size = TAMANHO_OG;
 export const contentType = "image/png";
 export const dynamic = "force-static";
 
-/* É a rota que mais circula na reta final, e a prévia genérica não dizia o
-   número. O da chapa sai de `CHAPA.numero`, a fonte única. */
+/* Depois da eleição a página é registro de quem disputou; pedir voto na prévia
+   do link desmentiria a própria página. */
 export default function OpengraphImage() {
   return cartaoOG({
-    kicker: "Em que número votar",
-    titulo: `Vote ${CHAPA.numero}`,
-    linha: `${CHAPA.governador} governador · ${CHAPA.vice} vice · os candidatos da Missão no Ceará`,
+    kicker: "Eleição 2026",
+    titulo: "Quem disputou pela Missão",
+    linha: "Os candidatos da Missão no Ceará",
   });
 }

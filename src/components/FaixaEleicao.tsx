@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { C, FONT_ALFA, FONT_ELITE, borda, sombra } from "@/lib/theme";
+import { C, FONT_ALFA, RAIO } from "@/lib/theme";
 import { dataPorExtenso, diasAteVotacao, faseEm, type Fase } from "@/lib/eleicao";
 import { CHAPA } from "@/features/missao/data";
 
@@ -45,61 +45,31 @@ export const FaixaEleicao: React.FC<{ compacta?: boolean }> = ({ compacta = fals
   return (
     <aside
       aria-label="Quando é a eleição"
-      /* Tinta, e não ouro: no site inteiro o ouro cheio significa "aperte
-         aqui", e a faixa fica logo acima do cartão de entrar no grupo, que é
-         ouro. Dois blocos dourados empilhados disputam o mesmo clique — e esta
-         faixa não é um botão, é um carimbo. O número continua em ouro, que é
-         onde o destaque tem que estar. */
       style={{
-        background: C.ink,
-        color: C.cream,
-        border: borda(C.gold),
-        boxShadow: sombra(),
-        padding: compacta ? "13px 15px" : "17px 19px",
+        background: C.ouroClaro,
+        color: C.ink,
+        borderRadius: RAIO.g,
+        padding: compacta ? "14px 16px" : "20px 22px",
         display: "flex",
         flexDirection: "column",
-        gap: 7,
+        gap: 6,
         textAlign: "center",
       }}
     >
-      <p
-        style={{
-          fontFamily: FONT_ELITE,
-          fontSize: 11,
-          letterSpacing: 2.4,
-          textTransform: "uppercase",
-          margin: 0,
-          color: C.gold2,
-        }}
-      >
+      <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: C.goldDim }}>
         {acabou ? "Eleição 2026" : `Eleição · ${dataPorExtenso()}`}
       </p>
 
       {/* O número entra no HTML: é o que o buscador precisa achar. */}
       {temNumero && !acabou && (
-        <p
-          style={{
-            fontFamily: FONT_ALFA,
-            fontSize: compacta ? 20 : "clamp(21px, 5.4vw, 28px)",
-            lineHeight: 1.12,
-            margin: 0,
-            color: C.gold,
-          }}
-        >
-          Vote <strong>{CHAPA.numero}</strong> presidente e governador
+        <p style={{ fontFamily: FONT_ALFA, fontSize: compacta ? 24 : "clamp(26px, 5vw, 32px)", lineHeight: 1.12, margin: 0 }}>
+          Vote <strong style={{ fontWeight: 400 }}>{CHAPA.numero}</strong> presidente e governador
         </p>
       )}
 
       {/* A contagem chega depois — ela muda todo dia e não pode vir do build. */}
       {chamada && (
-        <p
-          style={{
-            fontFamily: temNumero && !acabou ? undefined : FONT_ALFA,
-            fontSize: temNumero && !acabou ? 15 : compacta ? 19 : "clamp(20px, 5vw, 26px)",
-            lineHeight: temNumero && !acabou ? 1.5 : 1.12,
-            margin: 0,
-          }}
-        >
+        <p style={{ fontSize: temNumero && !acabou ? 16 : 18, lineHeight: 1.45, fontWeight: temNumero && !acabou ? 400 : 600, margin: 0 }}>
           {chamada}
         </p>
       )}

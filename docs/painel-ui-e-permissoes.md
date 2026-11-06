@@ -34,7 +34,7 @@
 
 ## Temas e visual
 
-- O painel compartilha a linguagem do site: borda grossa, sombra dura, nada arredondado.
+- O painel ainda usa a linguagem antiga do site: borda grossa, sombra dura, nada arredondado. O site público saiu dela em 11/2026 (ver `docs/site-publico.md`).
 - Há três temas: claro, escuro e sistema.
 - Cor nova entra como token nos dois temas.
 - O ouro não vira texto no tema claro; ele é bloco, fundo ou borda.

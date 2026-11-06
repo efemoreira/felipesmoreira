@@ -3,6 +3,7 @@ import { Sinal } from "@/components/Sinal";
 import {
   Geist_Mono,
   Alfa_Slab_One,
+  Figtree,
   Special_Elite,
   Bitter,
 } from "next/font/google";
@@ -17,7 +18,7 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-/* Fontes do cordel — auto-hospedadas pelo Next (sem render-blocking externo) */
+/* As duas vozes do site — auto-hospedadas pelo Next (sem render-blocking externo) */
 const alfaSlab = Alfa_Slab_One({
   weight: "400",
   variable: "--font-alfa",
@@ -25,11 +26,21 @@ const alfaSlab = Alfa_Slab_One({
   display: "swap",
 });
 
+const figtree = Figtree({
+  variable: "--font-texto",
+  subsets: ["latin"],
+  display: "swap",
+});
+
+/* Só para o Estúdio, que as oferece como opção de texto: nenhuma página as
+   escreve, então não vale pré-carregar. `fontesProntas()` baixa as duas na hora
+   de desenhar. */
 const specialElite = Special_Elite({
   weight: "400",
   variable: "--font-elite",
   subsets: ["latin"],
   display: "swap",
+  preload: false,
 });
 
 const bitter = Bitter({
@@ -37,6 +48,7 @@ const bitter = Bitter({
   variable: "--font-bitter",
   subsets: ["latin"],
   display: "swap",
+  preload: false,
 });
 
 export const metadata: Metadata = {
@@ -110,8 +122,8 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#181203",
-  colorScheme: "dark",
+  themeColor: "#FFFFFF",
+  colorScheme: "light",
   width: "device-width",
   initialScale: 1,
 };
@@ -175,7 +187,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${geistMono.variable} ${alfaSlab.variable} ${specialElite.variable} ${bitter.variable} antialiased`}
+        className={`${geistMono.variable} ${alfaSlab.variable} ${figtree.variable} ${specialElite.variable} ${bitter.variable} antialiased`}
       >
         {children}
         <Sinal />

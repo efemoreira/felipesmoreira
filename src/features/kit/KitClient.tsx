@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { sinal } from "@/lib/api/sinal";
 import Link from "next/link";
 import { Icon } from "@/components/icons";
-import { BORDA, C, FONT_ALFA, FONT_ELITE, FONT_BITTER, borda, TEXTO, bordaFina } from "@/lib/theme";
+import { C, FOCO, FONT_ALFA, FONT_TEXTO, RAIO, TEXTO, borda } from "@/lib/theme";
 import { canvasParaBlob } from "@/lib/cordelCanvas";
 import { entregarArte } from "@/lib/compartilhar";
 import { faseEm } from "@/lib/eleicao";
@@ -136,9 +136,9 @@ export default function KitClient() {
     <div
       style={{
         colorScheme: "dark",
-        background: C.night,
-        color: C.cream,
-        fontFamily: FONT_BITTER,
+        background: C.paper,
+        color: C.ink,
+        fontFamily: FONT_TEXTO,
         minHeight: "100dvh",
         overflowX: "clip",
       }}
@@ -157,14 +157,13 @@ export default function KitClient() {
               fontSize: "clamp(30px, 8vw, 46px)",
               lineHeight: 1.04,
               margin: "0 0 14px",
-              color: C.cream,
-              textShadow: `3px 3px 0 ${C.ink}`,
+              color: C.ink,
               textWrap: "balance",
             }}
           >
             Munição
           </h1>
-          <p style={{ fontSize: 16.5, lineHeight: 1.6, margin: 0, maxWidth: "58ch", opacity: 0.92 }}>
+          <p style={{ fontSize: 16.5, lineHeight: 1.6, margin: 0, maxWidth: "58ch", color: C.suave }}>
             {recado?.bloqueiaPecas ? (
               <>
                 As peças continuam aqui para consulta — cada número com a página do plano. O que
@@ -184,7 +183,8 @@ export default function KitClient() {
             role={recado.trava ? "alert" : "status"}
             style={{
               border: borda(recado.trava ? C.erroBorda : C.gold),
-              background: recado.trava ? "rgba(194,84,63,.14)" : "rgba(255,203,5,.08)",
+              borderRadius: RAIO.m,
+              background: recado.trava ? C.erroFundo : C.ouroClaro,
               padding: "18px 18px",
               marginBottom: 28,
               display: "flex",
@@ -196,7 +196,7 @@ export default function KitClient() {
               style={{
                 ...kicker,
                 margin: 0,
-                color: recado.trava ? C.erro : C.gold2,
+                color: recado.trava ? C.erroTinta : C.goldDim,
                 display: "flex",
                 alignItems: "center",
                 gap: 8,
@@ -206,10 +206,10 @@ export default function KitClient() {
               <Icon name={recado.icone} size={15} />
               {recado.fase}
             </p>
-            <p style={{ margin: 0, fontFamily: FONT_ALFA, fontSize: 19, lineHeight: 1.2 }}>
+            <p style={{ margin: 0, fontWeight: 800, fontSize: 19, lineHeight: 1.2 }}>
               {recado.titulo}
             </p>
-            <p style={{ margin: 0, ...TEXTO.corpoSolto, opacity: 0.92 }}>
+            <p style={{ margin: 0, ...TEXTO.corpoSolto, color: C.suave }}>
               {recado.texto}
             </p>
           </section>
@@ -218,13 +218,14 @@ export default function KitClient() {
         {/* ===== o link de indicação ===== */}
         <section
           style={{
-            background: "rgba(246,245,239,.06)",
-            border: borda(C.gold),
+            background: C.fundo,
+            border: borda(),
+            borderRadius: RAIO.m,
             padding: "18px 18px",
             marginBottom: 28,
           }}
         >
-          <label htmlFor="kit-nome" style={{ ...kicker, display: "block", color: C.gold2 }}>
+          <label htmlFor="kit-nome" style={{ ...kicker, display: "block", color: C.goldDim }}>
             Seu nome (pra você levar o crédito)
           </label>
           <input
@@ -238,19 +239,20 @@ export default function KitClient() {
               width: "100%",
               minHeight: 48,
               padding: "10px 12px",
-              background: C.night,
-              color: C.cream,
-              border: bordaFina(C.goldDim),
-              fontFamily: FONT_BITTER,
+              background: C.paper,
+              color: C.ink,
+              border: borda(C.linhaForte),
+              borderRadius: RAIO.m,
+              fontFamily: FONT_TEXTO,
               fontSize: 16,
               marginTop: 8,
             }}
           />
-          <p style={{ margin: "10px 0 0", ...TEXTO.nota, opacity: 0.85 }}>
+          <p style={{ margin: "10px 0 0", ...TEXTO.nota, color: C.suave }}>
             {slug ? (
               <>
                 Quem se inscrever pelo seu link vai aparecer pra coordenação como{" "}
-                <b style={{ color: C.gold2, fontFamily: FONT_ELITE }}>{slug}</b>. É assim que o
+                <b style={{ color: C.goldDim, fontWeight: 600 }}>{slug}</b>. É assim que o
                 movimento sabe quem trouxe quem.
               </>
             ) : (
@@ -280,12 +282,12 @@ export default function KitClient() {
                 minHeight: 44,
                 padding: "8px 15px",
                 cursor: "pointer",
-                fontFamily: FONT_ELITE,
-                fontSize: 13,
-                letterSpacing: 1.2,
-                background: formato === f ? C.gold : "transparent",
-                color: formato === f ? C.ink : C.cream,
-                border: bordaFina(formato === f ? C.gold : C.goldDim),
+                fontWeight: 600,
+                fontSize: 14.5,
+                background: formato === f ? C.gold : C.paper,
+                color: C.ink,
+                border: borda(formato === f ? C.gold : C.goldDim),
+                borderRadius: RAIO.m,
               }}
             >
               {FORMATOS[f].rotulo}
@@ -300,6 +302,7 @@ export default function KitClient() {
               background: C.erro,
               color: C.ink,
               border: borda(C.erroBorda),
+              borderRadius: RAIO.m,
               padding: "11px 14px",
               margin: "0 0 20px",
               fontSize: 15,
@@ -315,8 +318,9 @@ export default function KitClient() {
             <article
               key={p.id}
               style={{
-                background: "rgba(246,245,239,.05)",
-                border: borda(C.goldDim),
+                background: C.paper,
+                border: borda(),
+                borderRadius: RAIO.g,
                 padding: "18px 17px",
                 display: "flex",
                 flexDirection: "column",
@@ -334,7 +338,7 @@ export default function KitClient() {
                     placeItems: "center",
                     background: C.gold,
                     color: C.ink,
-                    border: borda(),
+                    borderRadius: RAIO.m,
                   }}
                 >
                   <Icon name={p.icone} size={21} />
@@ -344,9 +348,10 @@ export default function KitClient() {
                   <p
                     style={{
                       fontFamily: FONT_ALFA,
-                      fontSize: "clamp(22px, 5.5vw, 30px)",
+                      fontWeight: 400,
+                      fontSize: "clamp(26px, 5.5vw, 32px)",
                       lineHeight: 1,
-                      color: C.gold,
+                      color: C.ink,
                       margin: 0,
                       fontVariantNumeric: "tabular-nums",
                     }}
@@ -361,10 +366,9 @@ export default function KitClient() {
               <p
                 style={{
                   margin: 0,
-                  fontFamily: FONT_ELITE,
-                  fontSize: 12,
-                  letterSpacing: 1.2,
-                  color: C.gold2,
+                  fontWeight: 600,
+                  fontSize: 14.5,
+                  color: C.goldDim,
                   display: "flex",
                   alignItems: "center",
                   gap: 7,
@@ -374,16 +378,14 @@ export default function KitClient() {
                 {p.fonte}
               </p>
 
-              <details style={{ borderTop: `1px solid rgba(246,245,239,.16)`, paddingTop: 12 }}>
+              <details style={{ borderTop: borda(), paddingTop: 12 }}>
                 <summary
                   style={{
                     cursor: "pointer",
                     listStyle: "none",
-                    fontFamily: FONT_ELITE,
-                    fontSize: 12.5,
-                    letterSpacing: 1.2,
-                    textTransform: "uppercase",
-                    color: C.gold2,
+                    fontWeight: 600,
+                    fontSize: 14.5,
+                    color: C.goldDim,
                     minHeight: 44,
                     display: "flex",
                     alignItems: "center",
@@ -397,11 +399,12 @@ export default function KitClient() {
                   style={{
                     whiteSpace: "pre-wrap",
                     wordBreak: "break-word",
-                    fontFamily: FONT_BITTER,
+                    fontFamily: FONT_TEXTO,
                     fontSize: 15,
                     lineHeight: 1.55,
-                    background: "rgba(20,17,12,.6)",
-                    border: `1px solid rgba(246,245,239,.14)`,
+                    background: C.fundo,
+                    border: borda(),
+                    borderRadius: RAIO.m,
                     padding: "12px 13px",
                     margin: "10px 0 0",
                   }}
@@ -415,7 +418,7 @@ export default function KitClient() {
                   contraditória — e a peça continua legível acima, para quem só
                   quer conferir o número. */}
               {recado?.bloqueiaPecas ? (
-                <p style={{ margin: 0, fontFamily: FONT_ELITE, fontSize: 12, letterSpacing: 1.2, textTransform: "uppercase", color: C.gold2, opacity: 0.8 }}>
+                <p style={{ margin: 0, fontWeight: 600, fontSize: 15, color: C.suave }}>
                   Peça fechada hoje
                 </p>
               ) : (
@@ -437,11 +440,12 @@ export default function KitClient() {
         <section
           style={{
             marginTop: 30,
-            border: borda(C.goldDim),
+            border: borda(),
+            borderRadius: RAIO.m,
             padding: "18px 17px",
           }}
         >
-          <h2 style={{ fontFamily: FONT_ALFA, fontSize: 20, margin: "0 0 10px", color: C.gold }}>
+          <h2 style={{ fontWeight: 800, fontSize: 20, margin: "0 0 10px", color: C.ink }}>
             Como o mutirão funciona
           </h2>
           <ol style={{ margin: 0, paddingLeft: 20, listStyle: "decimal", display: "flex", flexDirection: "column", gap: 8 }}>
@@ -463,7 +467,7 @@ export default function KitClient() {
         {/* A Munição é a ferramenta do militante; o painel é a casa dele. O
             caminho de um para o outro estava só na URL. */}
         <p style={{ marginTop: 30, textAlign: "center" }}>
-          <a href="/painel/" style={{ ...voltar, color: C.gold2 }}>
+          <a href="/painel/" style={{ ...voltar, color: C.ink }}>
             <Icon name="users" size={16} />
             Área do militante
           </a>
@@ -473,7 +477,7 @@ export default function KitClient() {
       <style>{`
         summary::-webkit-details-marker { display: none; }
         button:focus-visible, a:focus-visible, summary:focus-visible, input:focus-visible {
-          outline: ${BORDA}px solid ${C.gold}; outline-offset: 2px;
+          outline: ${FOCO}; outline-offset: 2px;
         }
         button[disabled] { opacity: .6; cursor: progress; }
       `}</style>
@@ -482,11 +486,9 @@ export default function KitClient() {
 }
 
 const kicker: React.CSSProperties = {
-  fontFamily: FONT_ELITE,
-  fontSize: 11.5,
-  letterSpacing: 2.2,
-  textTransform: "uppercase",
-  opacity: 0.75,
+  fontWeight: 600,
+  fontSize: 14.5,
+  color: C.suave,
   margin: "0 0 8px",
 };
 
@@ -495,11 +497,9 @@ const voltar: React.CSSProperties = {
   alignItems: "center",
   gap: 7,
   minHeight: 44,
-  fontFamily: FONT_ELITE,
-  fontSize: 12.5,
-  letterSpacing: 1.5,
-  textTransform: "uppercase",
-  color: C.cream,
+  fontWeight: 600,
+  fontSize: 14.5,
+  color: C.ink,
   textDecoration: "none",
 };
 
@@ -511,10 +511,8 @@ const botaoBase: React.CSSProperties = {
   minHeight: 48,
   padding: "11px 17px",
   cursor: "pointer",
-  fontFamily: FONT_ELITE,
-  fontSize: 13,
-  letterSpacing: 1.2,
-  textTransform: "uppercase",
+  fontWeight: 700,
+  fontSize: 16,
   flex: "1 1 auto",
 };
 
@@ -522,12 +520,14 @@ const botaoOuro: React.CSSProperties = {
   ...botaoBase,
   background: C.gold,
   color: C.ink,
-  border: borda(C.gold),
+  border: 0,
+  borderRadius: RAIO.m,
 };
 
 const botaoVazado: React.CSSProperties = {
   ...botaoBase,
-  background: "transparent",
-  color: C.cream,
-  border: borda(C.goldDim),
+  background: C.paper,
+  color: C.ink,
+  border: borda(C.linhaForte),
+  borderRadius: RAIO.m,
 };

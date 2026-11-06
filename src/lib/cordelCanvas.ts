@@ -1,6 +1,6 @@
 /**
- * Os traços do cordel no canvas — borda grossa, sombra dura deslocada, pílula
- * de caixa-alta espaçada, ícone em Path2D.
+ * Os traços das artes em canvas — bloco de canto redondo, pílula, ícone em
+ * Path2D. O mesmo visual claro do site: nada de borda grossa nem sombra dura.
  *
  * Nasceu dentro do pôster da programação. Mudou de casa quando o kit de
  * compartilhamento passou a desenhar as mesmas peças: duas cópias do mesmo
@@ -105,11 +105,17 @@ export function bloco(
   preenchimento: string | CanvasGradient,
   opcoes: { sombra?: number; borda?: string; espessura?: number; raio?: number } = {},
 ) {
-  const { sombra = 10, borda = C.ink, espessura = 5, raio = 0 } = opcoes;
+  const { sombra = 0, borda = C.ink, espessura = 0, raio = 22 } = opcoes;
   if (sombra > 0) {
-    ctx.fillStyle = "rgba(0,0,0,.45)";
-    retangulo(ctx, x + sombra, y + sombra, w, h, raio);
+    /* luz macia, e não decalque: a mesma sombra do site, em escala de imagem */
+    ctx.save();
+    ctx.shadowColor = C.sombra;
+    ctx.shadowBlur = sombra * 3;
+    ctx.shadowOffsetY = sombra;
+    ctx.fillStyle = preenchimento;
+    retangulo(ctx, x, y, w, h, raio);
     ctx.fill();
+    ctx.restore();
   }
   ctx.fillStyle = preenchimento;
   retangulo(ctx, x, y, w, h, raio);
@@ -133,8 +139,8 @@ export function pilula(
   const larguraTexto = medir(ctx, txt, o.font, o.espaco);
   const w = larguraTexto + o.padX * 2;
   const x = cx - w / 2;
-  bloco(ctx, x, y, w, o.altura, o.fundo, { sombra: 6, espessura: 3 });
-  escrever(ctx, txt, cx + o.espaco / 2, y + (o.altura - parseInt(o.font, 10) * 1.15) / 2 + 2, {
+  bloco(ctx, x, y, w, o.altura, o.fundo, { raio: o.altura / 2 });
+  escrever(ctx, txt, cx + o.espaco / 2, y + (o.altura - Number(o.font.match(/(\d+)px/)?.[1] ?? 24) * 1.15) / 2 + 2, {
     font: o.font,
     cor: o.cor,
     align: "center",

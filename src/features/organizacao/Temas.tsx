@@ -1,9 +1,10 @@
 "use client";
 import React from "react";
-import { C, FONT_ALFA, TEXTO, bordaFina } from "@/lib/theme";
+import { Icon } from "@/components/icons";
+import { C, FOCO, borda } from "@/lib/theme";
 import type { Grupo } from "@/lib/api/organizacao";
 import { TEMAS, type Tema } from "./catalogo";
-import { BotaoEscuro, Moldura, Secao, SeloIcone, cartao, dataCurta, rotuloPequeno } from "./Moldura";
+import { BotaoCartao, LinhaProxima, Moldura, Secao, SeloIcone } from "./Moldura";
 import { useOrganizacao } from "./useOrganizacao";
 
 /**
@@ -18,57 +19,47 @@ import { useOrganizacao } from "./useOrganizacao";
 const PORTAS = [
   { chave: "estudo", nome: "Estudo", texto: "Entende o problema e produz conteúdo: diagnóstico, dados, proposta, pauta para os porta-vozes." },
   { chave: "profissionais", nome: "Profissionais", texto: "Quem trabalha na área. Dá credibilidade técnica, faz encontros com pauta definida e traz colegas." },
-  { chave: "movimento", nome: "Movimento", texto: "A ação pública do tema: campanhas, eventos abertos, mutirões — junto com os núcleos." },
+  { chave: "movimento", nome: "Movimento", texto: "A ação pública do tema: campanhas, eventos abertos, mutirões, junto com os núcleos." },
 ] as const;
 
 function CartaoTema({ t, g }: { t: Tema; g?: Grupo }) {
   const portas = g?.portas ?? { estudo: t.estudo, profissionais: t.profissionais, movimento: t.movimento };
   return (
-    <article id={t.chave} style={{ ...cartao, scrollMarginTop: 18, ...(g ? {} : { boxShadow: "none", border: bordaFina(C.ink) }) }}>
-      <header style={{ display: "flex", alignItems: "center", gap: 12 }}>
+    <article id={t.chave} className="s-cartao" style={{ scrollMarginTop: 88 }}>
+      <header className="o-cabeca">
         <SeloIcone nome={t.icone} />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <h3 style={{ fontFamily: FONT_ALFA, fontSize: 20, lineHeight: 1.15, margin: 0 }}>{t.nome}</h3>
-          <p style={{ margin: "2px 0 0", ...TEXTO.nota, opacity: 0.8 }}>
-            {g ? `Articulação publicada · ${g.ritmo.toLowerCase()}` : "Ainda sem grupo — estamos mapeando interessados"}
-          </p>
-        </div>
+        <h3 style={{ flex: 1, minWidth: 0 }}>{t.nome}</h3>
       </header>
-      {g?.finalidade && <p style={{ margin: 0, ...TEXTO.corpo }}>{g.finalidade}</p>}
-      <dl style={{ margin: 0, display: "grid", gap: 8 }}>
-        {PORTAS.map((p) => (
-          <div key={p.chave}>
-            <dt style={rotuloPequeno}>Porta {p.nome.toLowerCase()}</dt>
-            <dd style={{ margin: 0, ...TEXTO.corpo }}>{portas[p.chave]}</dd>
-          </div>
-        ))}
-        {g?.proxima && (
-          <div>
-            <dt style={rotuloPequeno}>Próxima atividade</dt>
-            <dd style={{ margin: 0, ...TEXTO.corpo }}>
-              <strong>{dataCurta(g.proxima.data)}</strong>
-              {g.proxima.texto ? ` — ${g.proxima.texto}` : ""}
-              {g.proxima.atividade && (
-                <>
-                  {" · "}
-                  <a href={`/programacao#a-${g.proxima.atividade}`} style={{ color: "inherit", fontWeight: 600 }}>
-                    ver na agenda
-                  </a>
-                </>
-              )}
-            </dd>
-          </div>
+      <p>
+        {g ? (
+          <span className="s-etiqueta s-etiqueta-ok">Grupo aberto · {g.ritmo.toLowerCase()}</span>
+        ) : (
+          <span className="s-etiqueta">Mapeando interessados</span>
         )}
-        {g && (g.nucleos.length > 0 || g.portaVoz) && (
-          <div>
-            <dt style={rotuloPequeno}>Junto com</dt>
-            <dd style={{ margin: 0, ...TEXTO.corpo }}>
-              {[g.portaVoz && `${g.portaVoz} (porta-voz)`, ...g.nucleos.map((n) => `núcleo ${n}`)].filter(Boolean).join(" · ")}
-            </dd>
-          </div>
-        )}
-      </dl>
-      <BotaoEscuro href={g ? `/queroajudar?unidade=${g.id}` : `/queroajudar?tema=${t.chave}`}>Tenho interesse neste tema</BotaoEscuro>
+      </p>
+      <p className="o-info">{g?.finalidade || portas.estudo}</p>
+      <details className="t-mais">
+        <summary>
+          Por onde entrar
+          <span aria-hidden="true"><Icon name="chevronRight" size={18} /></span>
+        </summary>
+        <dl>
+          {PORTAS.map((p) => (
+            <div key={p.chave}>
+              <dt>{p.nome}</dt>
+              <dd>{portas[p.chave]}</dd>
+            </div>
+          ))}
+        </dl>
+      </details>
+      {g?.proxima && <LinhaProxima data={g.proxima.data} texto={g.proxima.texto} atividade={g.proxima.atividade} />}
+      {g && (g.nucleos.length > 0 || g.portaVoz) && (
+        <p className="o-info">
+          <strong>Junto com: </strong>
+          {[g.portaVoz && `${g.portaVoz} (porta-voz)`, ...g.nucleos.map((n) => `núcleo ${n}`)].filter(Boolean).join(" · ")}
+        </p>
+      )}
+      <BotaoCartao href={g ? `/queroajudar?unidade=${g.id}` : `/queroajudar?tema=${t.chave}`}>Tenho interesse neste tema</BotaoCartao>
     </article>
   );
 }
@@ -84,11 +75,10 @@ export default function Temas() {
     <Moldura
       trilha="Grupos temáticos"
       icone="book"
-      kicker="Grupos temáticos"
       titulo="Um tema, um grupo"
       acoes={[{ texto: "Registrar meus interesses", href: "/queroajudar?frente=temas" }, { texto: "Conhecer o plano", href: "/plano" }]}
       intro={
-        <p style={{ margin: 0 }}>
+        <p>
           Estamos reunindo interessados para construir grupos de segurança, educação, saúde, economia e outros temas. O plano prevê um grupo por assunto, com três
           portas. Médico entra no de Saúde pela porta dos profissionais; quem quer organizar uma
           corrida no bairro entra pela do movimento. Ninguém precisa de um grupo à parte para a
@@ -97,15 +87,15 @@ export default function Temas() {
       }
     >
       <Secao titulo="As três portas">
-        <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 220px), 1fr))" }}>
+        <div className="s-grade s-grade-3">
           {PORTAS.map((p) => (
-            <div key={p.chave} style={{ ...cartao, boxShadow: "none", border: bordaFina(C.ink) }}>
-              <h3 style={{ fontFamily: FONT_ALFA, fontSize: 18, margin: 0 }}>{p.nome}</h3>
-              <p style={{ margin: 0, ...TEXTO.corpo }}>{p.texto}</p>
+            <div key={p.chave} className="o-coluna">
+              <h3>{p.nome}</h3>
+              <p>{p.texto}</p>
             </div>
           ))}
         </div>
-        <p style={{ ...TEXTO.nota, margin: "12px 0 0" }}>
+        <p className="o-nota" style={{ maxWidth: "62ch" }}>
           Exemplo: o grupo de Saúde e esporte estuda o acesso às UPAs de um bairro, reúne médicos,
           enfermeiros e educadores físicos e organiza uma corrida comunitária com orientação de saúde.
           Um grupo só, com um responsável.
@@ -120,12 +110,24 @@ export default function Temas() {
             : "Declare seus interesses mesmo que o grupo ainda não exista. A coordenação usará os cadastros para planejar por onde começar."
         }
       >
-        <div style={{ display: "grid", gap: 16, gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 340px), 1fr))" }}>
+        <div className="s-grade s-grade-3">
           {ordenados.map((t) => (
             <CartaoTema key={t.chave} t={t} g={porTema.get(t.chave)} />
           ))}
         </div>
       </Secao>
+      <style>{`
+        .t-mais { border-top: ${borda()}; }
+        .t-mais summary { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 46px; font-size: 16px; font-weight: 700; cursor: pointer; list-style: none; }
+        .t-mais summary::-webkit-details-marker { display: none; }
+        .t-mais summary:focus-visible { outline: ${FOCO}; outline-offset: 2px; }
+        .t-mais summary span { display: grid; transition: transform .15s ease; }
+        .t-mais[open] summary span { transform: rotate(90deg); }
+        .t-mais dl { margin: 2px 0 6px; display: grid; gap: 8px; font-size: 16px; line-height: 1.45; }
+        .t-mais dt { font-weight: 700; }
+        .t-mais dd { margin: 0; color: ${C.suave}; }
+        @media (prefers-reduced-motion: reduce) { .t-mais summary span { transition: none; } }
+      `}</style>
     </Moldura>
   );
 }

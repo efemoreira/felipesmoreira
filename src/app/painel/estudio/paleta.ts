@@ -8,10 +8,12 @@ import type { ChaveFonte } from "./tipos";
 export const CORES = {
   ouro: C.gold,
   ouroEscuro: C.goldDim,
-  noite: C.night,
+  /* A noite, o creme e o papel do cordel ficaram no Estúdio: o site ficou claro,
+     mas uma arte salva não pode mudar de cor sozinha. */
+  noite: "#14110C",
   tinta: C.ink,
-  creme: C.cream,
-  papel: C.paper,
+  creme: "#F6F5EF",
+  papel: "#F3ECDA",
   branco: "#FFFFFF",
   preto: "#000000",
   carvao: "#1E1B16",

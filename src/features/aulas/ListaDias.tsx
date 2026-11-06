@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { C, FONT_ALFA, FONT_ELITE, bordaFina } from "@/lib/theme";
+import { C, FONT_ALFA, RAIO } from "@/lib/theme";
 import { Aula } from "./Aula";
 import type { Dia } from "./tipos";
 
@@ -43,14 +43,12 @@ export const ListaDias: React.FC<Props> = ({
             <p
               style={{
                 display: "inline-block",
-                fontFamily: FONT_ELITE,
-                fontSize: 11,
-                letterSpacing: 3,
-                textTransform: "uppercase",
-                color: completo ? C.ink : C.gold,
-                background: completo ? C.gold : "transparent",
-                border: bordaFina(C.gold),
-                padding: "3px 10px",
+                fontWeight: 600,
+                fontSize: 14.5,
+                color: C.ink,
+                background: completo ? C.gold : C.fundo,
+                borderRadius: RAIO.pilula,
+                padding: "3px 12px",
                 margin: "0 0 10px",
               }}
             >
@@ -59,15 +57,16 @@ export const ListaDias: React.FC<Props> = ({
             <h2
               style={{
                 fontFamily: FONT_ALFA,
-                fontSize: "clamp(20px, 4.5vw, 27px)",
-                lineHeight: 1.25,
+                fontWeight: 400,
+                fontSize: "clamp(26px, 4.5vw, 32px)",
+                lineHeight: 1.14,
                 margin: "0 0 8px",
-                color: C.cream,
+                color: C.ink,
               }}
             >
               {dia.titulo}
             </h2>
-            <p style={{ margin: 0, color: "#b9b3a5", lineHeight: 1.7, maxWidth: "60ch" }}>
+            <p style={{ margin: 0, color: C.suave, lineHeight: 1.7, maxWidth: "60ch" }}>
               {dia.resumo}
             </p>
           </header>

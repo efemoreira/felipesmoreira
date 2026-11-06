@@ -1,7 +1,7 @@
 import React from "react";
 import { PaginaDoSite } from "@/components/site/PaginaDoSite";
 import { AberturaPagina } from "@/components/site/AberturaPagina";
-import { BORDA, C, FONT_ALFA, FONT_BITTER, sombra, HATCH } from "@/lib/theme";
+import { C, LARGURA, borda } from "@/lib/theme";
 import { WHATSAPP_COORDENACAO, TELEFONE_COORDENACAO } from "@/lib/contato";
 
 export interface Secao {
@@ -12,9 +12,8 @@ export interface Secao {
 
 
 /**
- * Moldura das páginas legais (privacidade e termos), no mesmo cordel do site.
- * Antes elas eram as duas únicas páginas em Tailwind branco — destoavam de tudo
- * e falavam de um aplicativo de WhatsApp que não existe.
+ * Moldura das páginas legais (privacidade e termos): uma coluna de leitura, sem
+ * caixa em volta de cada seção. Texto longo se lê melhor sem moldura.
  */
 const PaginaLegal: React.FC<{
   titulo: string;
@@ -71,42 +70,17 @@ const PaginaLegal: React.FC<{
 );
 
 const css = `
-  .lg-fundo {
-    background: ${HATCH}, ${C.paper};
-    color: ${C.ink};
-    font-family: ${FONT_BITTER};
-    color-scheme: light;
-  }
-  .lg-main { max-width: 720px; margin: 0 auto; padding: 32px 16px 64px; }
-
-  .lg-secao {
-    background: ${C.cream}; border: ${BORDA}px solid ${C.ink};
-    box-shadow: ${sombra()};
-    padding: 16px 17px; margin-bottom: 14px;
-  }
-  .lg-secao-titulo {
-    font-family: ${FONT_ALFA}; font-size: 19px; line-height: 1.25; margin: 0 0 10px;
-  }
+  .lg-fundo { background: ${C.paper}; color: ${C.ink}; }
+  .lg-main { max-width: ${LARGURA.conteudo + 40}px; margin: 0 auto; padding: 24px 20px clamp(48px, 7vw, 80px); }
+  .lg-secao { max-width: ${LARGURA.texto}; margin-bottom: 32px; }
+  .lg-secao-titulo { margin: 0 0 8px; font-size: 21px; line-height: 1.3; font-weight: 800; letter-spacing: -.01em; }
   .lg-secao-titulo span { color: ${C.goldDim}; }
-  .lg-secao p { font-size: 15px; line-height: 1.65; margin: 0 0 10px; }
+  .lg-secao p { font-size: 17px; line-height: 1.65; margin: 0 0 10px; color: ${C.suave}; }
   .lg-secao p:last-child, .lg-secao ul:last-child { margin-bottom: 0; }
-  .lg-secao ul {
-    margin: 0 0 10px; padding-left: 20px;
-    display: flex; flex-direction: column; gap: 7px;
-    font-size: 15px; line-height: 1.6;
-  }
+  .lg-secao ul { margin: 0 0 10px; padding-left: 22px; list-style: disc; display: flex; flex-direction: column; gap: 6px; font-size: 17px; line-height: 1.6; color: ${C.suave}; }
   .lg-secao a, .lg-rodape a { color: ${C.ink}; font-weight: 600; }
-
-  .lg-rodape {
-    margin-top: 26px; padding-top: 16px;
-    border-top: ${BORDA}px solid ${C.ink};
-    font-size: 14.5px; line-height: 1.6;
-  }
+  .lg-rodape { max-width: ${LARGURA.texto}; margin-top: 32px; padding-top: 16px; border-top: ${borda()}; font-size: 16px; line-height: 1.6; color: ${C.suave}; }
   .lg-rodape p { margin: 0; }
-
-  @media (max-width: 620px) {
-    .lg-main { padding: 16px 14px 56px; }
-  }
 `;
 
 export default PaginaLegal;

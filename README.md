@@ -28,7 +28,7 @@ npm run lint
 
 - Não crie `app/api` para lógica de produto; o backend dinâmico está no painel PHP.
 - `src/app/<rota>/page.tsx` deve ser fino: metadata + delegação para a feature.
-- Cor, fonte, moldura e escala de texto saem de `src/lib/theme.ts`.
+- Cor, fonte, linha e escala de texto saem de `src/lib/theme.ts`.
 - Toda chamada do Next para o painel passa por `@/lib/api/client.ts` (`apiFetch`).
 - Em tela de trabalho para celular, priorize scroll vertical e desconfie de tabela.
 

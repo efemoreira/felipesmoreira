@@ -2,7 +2,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Icon } from "@/components/icons";
-import { C, FONT_ALFA, FONT_BITTER, FONT_ELITE, borda, sombra, bordaFina } from "@/lib/theme";
+import { C, FONT_ALFA, FONT_TEXTO, RAIO, borda } from "@/lib/theme";
 import { obterAulas, marcarAula } from "@/lib/api/aulas";
 import { ListaDias } from "./ListaDias";
 import type { Dia, RespostaAulas } from "./tipos";
@@ -152,9 +152,9 @@ export default function AulasClient() {
     <div
       style={{
         minHeight: "100dvh",
-        background: C.night,
-        color: C.cream,
-        fontFamily: FONT_BITTER,
+        background: C.paper,
+        color: C.ink,
+        fontFamily: FONT_TEXTO,
         padding: "36px 18px 90px",
       }}
     >
@@ -167,11 +167,9 @@ export default function AulasClient() {
             gap: 8,
             minHeight: 44,
             textDecoration: "none",
-            color: "#8e877a",
-            fontFamily: FONT_ELITE,
-            fontSize: 12,
-            letterSpacing: 1.4,
-            textTransform: "uppercase",
+            color: C.suave,
+            fontWeight: 600,
+            fontSize: 14.5,
           }}
         >
           <Icon name="arrowLeft" size={16} />
@@ -184,8 +182,9 @@ export default function AulasClient() {
               fontFamily: FONT_ALFA,
               fontSize: "clamp(28px, 7vw, 44px)",
               lineHeight: 1.15,
+              fontWeight: 400,
               margin: "0 0 12px",
-              color: C.gold,
+              color: C.ink,
             }}
           >
             Formação da militância
@@ -196,11 +195,11 @@ export default function AulasClient() {
           <p style={{ margin: "0 0 18px", lineHeight: 1.75, maxWidth: "60ch" }}>
             {estado.convidado ? "Bem-vindo. " : `Olá, ${estado.nome.split(" ")[0]}. `}
             Cada Dia começa com uma{" "}
-            <strong style={{ color: C.gold }}>🚗 Pista Rápida</strong> e segue nas Pistas Lentas.{" "}
+            <strong>🚗 Pista Rápida</strong> e segue nas Pistas Lentas.{" "}
             <a
               href="#como-funciona-a-formacao"
               onClick={() => aoAbrir("como-funciona-a-formacao", true)}
-              style={{ color: C.gold }}
+              style={{ color: C.ink, fontWeight: 600 }}
             >
               A primeira aula explica a diferença
             </a>{" "}
@@ -213,10 +212,9 @@ export default function AulasClient() {
               <p
                 style={{
                   margin: "10px 0 0",
-                  fontFamily: FONT_ELITE,
-                  fontSize: 12,
-                  letterSpacing: 1.3,
-                  color: "#8e877a",
+                  fontWeight: 600,
+                  fontSize: 14.5,
+                  color: C.suave,
                 }}
               >
                 {resumo.feitas} de {resumo.total} aulas · Pistas Rápidas{" "}
@@ -240,7 +238,8 @@ export default function AulasClient() {
           <p
             style={{
               border: borda(C.erroBorda),
-              background: "rgba(194,84,63,.12)",
+              borderRadius: RAIO.m,
+              background: C.erroFundo,
               color: C.erro,
               padding: "12px 14px",
               margin: "0 0 22px",
@@ -278,19 +277,18 @@ export default function AulasClient() {
 const AvisoConvidado: React.FC = () => (
   <section
     style={{
-      border: borda(C.gold),
-      background: "rgba(255,203,5,.08)",
+      border: borda(),
+      borderRadius: RAIO.m,
+      background: C.ouroClaro,
       padding: "16px 16px",
       margin: "0 0 22px",
     }}
   >
     <p
       style={{
-        fontFamily: FONT_ELITE,
-        fontSize: 11.5,
-        letterSpacing: 2,
-        textTransform: "uppercase",
-        color: C.gold2,
+        fontWeight: 600,
+        fontSize: 14.5,
+        color: C.goldDim,
         margin: "0 0 8px",
       }}
     >
@@ -301,7 +299,7 @@ const AvisoConvidado: React.FC = () => (
       antes mesmo de ter acesso. A formação inteira são <strong>6 Dias e 32 aulas</strong>,
       e o resto abre quando a coordenação aprovar sua inscrição.
     </p>
-    <p style={{ margin: 0, fontSize: 14.5, lineHeight: 1.6, opacity: 0.85 }}>
+    <p style={{ margin: 0, fontSize: 14.5, lineHeight: 1.6, color: C.suave }}>
       Como você ainda não tem conta, aqui não dá pra marcar aula concluída — seu
       progresso começa a contar quando você entrar com seu usuário.
     </p>
@@ -315,7 +313,7 @@ const Barra: React.FC<{ feitas: number; total: number }> = ({ feitas, total }) =
     aria-valuemin={0}
     aria-valuemax={total}
     aria-label="Aulas concluídas"
-    style={{ height: 12, border: bordaFina(C.gold), background: "rgba(0,0,0,.35)" }}
+    style={{ height: 10, borderRadius: RAIO.pilula, overflow: "hidden", background: C.linha }}
   >
     <div
       style={{
@@ -336,26 +334,24 @@ const MinhaTrilha: React.FC<{
 }> = ({ aulas, concluidas, aoIr }) => (
   <section
     style={{
-      border: borda(C.gold),
-      background: "rgba(255,203,5,.08)",
+      border: borda(),
+      borderRadius: RAIO.m,
+      background: C.ouroClaro,
       padding: "16px 18px",
       margin: "0 0 40px",
-      boxShadow: sombra("cartao", C.sombraNoite),
     }}
   >
     <p
       style={{
-        fontFamily: FONT_ELITE,
-        fontSize: 11,
-        letterSpacing: 2,
-        textTransform: "uppercase",
-        color: C.gold,
+        fontWeight: 600,
+        fontSize: 14.5,
+        color: C.goldDim,
         margin: "0 0 10px",
       }}
     >
       A sua função
     </p>
-    <p style={{ margin: "0 0 14px", lineHeight: 1.7, color: "#b9b3a5" }}>
+    <p style={{ margin: "0 0 14px", lineHeight: 1.7, color: C.suave }}>
       Estas são as aulas do que você escolheu fazer no movimento. As outras continuam abertas —
       entender a etapa vizinha é o que faz a linha andar sem retrabalho.
     </p>
@@ -372,9 +368,12 @@ const MinhaTrilha: React.FC<{
             minHeight: 44,
             padding: "8px 14px",
             textDecoration: "none",
-            border: bordaFina("rgba(255,203,5,.45)"),
-            color: concluidas.has(a.id) ? C.ok : C.cream,
-            fontSize: 14,
+            border: borda(),
+            borderRadius: RAIO.m,
+            color: concluidas.has(a.id) ? C.ok : C.ink,
+            background: C.paper,
+            fontWeight: 600,
+            fontSize: 14.5,
           }}
         >
           {concluidas.has(a.id) && <span aria-hidden="true">✓</span>}
@@ -420,9 +419,9 @@ const Recado: React.FC<{ fase: "carregando" | "sem-login" | "sem-acesso" | "erro
         minHeight: "100dvh",
         display: "grid",
         placeItems: "center",
-        background: C.night,
-        color: C.cream,
-        fontFamily: FONT_BITTER,
+        background: C.paper,
+        color: C.ink,
+        fontFamily: FONT_TEXTO,
         padding: "40px 20px",
         textAlign: "center",
       }}
@@ -431,15 +430,10 @@ const Recado: React.FC<{ fase: "carregando" | "sem-login" | "sem-acesso" | "erro
         <p
           style={{
             display: "inline-block",
-            fontFamily: FONT_ELITE,
-            letterSpacing: 4,
-            fontSize: 12,
-            textTransform: "uppercase",
-            color: C.ink,
-            background: C.gold,
-            padding: "4px 14px",
-            boxShadow: sombra("rente"),
-            marginBottom: 18,
+            fontWeight: 700,
+            color: C.goldDim,
+            fontSize: 16,
+            marginBottom: 8,
           }}
         >
           Formação
@@ -448,13 +442,14 @@ const Recado: React.FC<{ fase: "carregando" | "sem-login" | "sem-acesso" | "erro
           style={{
             fontFamily: FONT_ALFA,
             fontSize: "clamp(28px, 6vw, 42px)",
+            fontWeight: 400,
             margin: "0 0 14px",
-            color: C.gold,
+            color: C.ink,
           }}
         >
           {textos.titulo}
         </h1>
-        <p style={{ maxWidth: 440, margin: "0 auto 24px", fontSize: 15, lineHeight: 1.7 }}>
+        <p style={{ maxWidth: 440, margin: "0 auto 24px", fontSize: 17, lineHeight: 1.55, color: C.suave }}>
           {textos.corpo}
         </p>
 
@@ -469,12 +464,11 @@ const Recado: React.FC<{ fase: "carregando" | "sem-login" | "sem-acesso" | "erro
                 minHeight: 44,
                 textDecoration: "none",
                 background: C.gold,
-                border: borda(),
-                boxShadow: sombra(),
+                borderRadius: RAIO.m,
                 color: C.ink,
                 padding: "12px 20px",
-                fontFamily: FONT_ALFA,
-                fontSize: 15,
+                fontWeight: 700,
+                fontSize: 16,
               }}
             >
               Entrar no painel
@@ -488,14 +482,14 @@ const Recado: React.FC<{ fase: "carregando" | "sem-login" | "sem-acesso" | "erro
               gap: 10,
               minHeight: 44,
               textDecoration: "none",
-              border: borda("rgba(255,203,5,.4)"),
-              color: C.gold,
+              border: borda(C.linhaForte),
+              borderRadius: RAIO.m,
+              color: C.ink,
               padding: "12px 20px",
-              fontFamily: FONT_ALFA,
-              fontSize: 15,
+              fontWeight: 700,
+              fontSize: 16,
             }}
           >
-            <Icon name="arrowLeft" size={18} />
             Voltar
           </Link>
         </div>

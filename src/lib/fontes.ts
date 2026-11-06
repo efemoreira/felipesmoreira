@@ -39,6 +39,12 @@ export function familia(variavel: string, reserva: string, raiz?: HTMLElement | 
  */
 export const limparCacheDeFontes = () => cache.clear();
 
+/* As fontes das artes em canvas e do Estúdio. Special Elite e Bitter nenhuma
+   página escreve, então o navegador não as baixa sozinho: `document.fonts.ready`
+   só espera o que está em uso, e a arte sairia com a fonte errada sem ninguém
+   notar. */
+const FONTES_DAS_ARTES = ["--font-alfa", "--font-texto", "--font-elite", "--font-bitter"];
+
 /**
  * Espera as fontes carregarem antes de desenhar.
  * Sem isso o primeiro desenho sai com a fonte de fallback e as medidas erram.
@@ -46,6 +52,7 @@ export const limparCacheDeFontes = () => cache.clear();
 export async function fontesProntas(): Promise<void> {
   if (typeof document === "undefined") return;
   try {
+    await Promise.all(FONTES_DAS_ARTES.map((v) => document.fonts.load(`16px ${familia(v, "serif")}`)));
     await document.fonts.ready;
   } catch {
     /* navegador antigo: segue com o que tiver */

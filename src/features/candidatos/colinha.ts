@@ -19,38 +19,34 @@ import type { Candidato } from "@/lib/api/candidatos";
 
 const W = 1080;
 const PAD = 84;
-const MOLDURA = 26;
 
-/** Fundo noite com o brilho quente do cordel, igual ao das outras peças. */
+/** O fundo das artes: o branco do site com a luz do sol vindo do alto. */
 function fundo(ctx: CanvasRenderingContext2D, h: number) {
-  ctx.fillStyle = C.night;
+  ctx.fillStyle = C.paper;
   ctx.fillRect(0, 0, W, h);
 
-  const brilho = ctx.createRadialGradient(W / 2, h * 0.26, 60, W / 2, h * 0.26, W * 1.05);
-  brilho.addColorStop(0, "rgba(255,203,5,.22)");
-  brilho.addColorStop(0.45, "rgba(184,134,11,.08)");
-  brilho.addColorStop(1, "rgba(20,17,12,0)");
+  const brilho = ctx.createRadialGradient(W / 2, 0, 60, W / 2, 0, W * 1.05);
+  brilho.addColorStop(0, "rgba(255,203,5,.34)");
+  brilho.addColorStop(0.55, "rgba(255,203,5,.08)");
+  brilho.addColorStop(1, "rgba(255,203,5,0)");
   ctx.fillStyle = brilho;
   ctx.fillRect(0, 0, W, h);
 
-  ctx.strokeStyle = C.gold;
-  ctx.lineWidth = 6;
-  ctx.strokeRect(MOLDURA, MOLDURA, W - MOLDURA * 2, h - MOLDURA * 2);
-  ctx.strokeStyle = C.ink;
-  ctx.lineWidth = 3;
-  ctx.strokeRect(MOLDURA + 13, MOLDURA + 13, W - (MOLDURA + 13) * 2, h - (MOLDURA + 13) * 2);
+  // a faixa de ouro no pé: a assinatura da peça
+  ctx.fillStyle = C.gold;
+  ctx.fillRect(0, h - 22, W, 22);
 }
 
-function assinar(ctx: CanvasRenderingContext2D, h: number, elite: string) {
+function assinar(ctx: CanvasRenderingContext2D, h: number, texto: string) {
   escrever(ctx, "felipesmoreira.com/candidatos", W / 2, h - PAD - 80, {
-    font: `28px ${elite}`,
-    cor: C.cream,
+    font: `600 28px ${texto}`,
+    cor: C.ink,
     align: "center",
     espaco: 3,
   });
   escrever(ctx, "MISSÃO CEARÁ", W / 2, h - PAD - 36, {
-    font: `24px ${elite}`,
-    cor: C.gold2,
+    font: `800 24px ${texto}`,
+    cor: C.goldDim,
     align: "center",
     espaco: 7,
   });
@@ -120,8 +116,7 @@ export async function gerarFicha(c: Candidato): Promise<HTMLCanvasElement> {
 
   const H = 1920;
   const ALFA = familia("--font-alfa", "serif");
-  const ELITE = familia("--font-elite", "monospace");
-  const BITTER = familia("--font-bitter", "serif");
+  const TEXTO = familia("--font-texto", "sans-serif");
 
   const canvas = document.createElement("canvas");
   canvas.width = W;
@@ -155,7 +150,7 @@ export async function gerarFicha(c: Candidato): Promise<HTMLCanvasElement> {
 
   if (c.cargo) {
     pilula(ctx, c.cargo.toUpperCase(), centro, y, {
-      font: `26px ${ELITE}`,
+      font: `700 26px ${TEXTO}`,
       fundo: C.gold,
       cor: C.ink,
       espaco: 6,
@@ -169,20 +164,20 @@ export async function gerarFicha(c: Candidato): Promise<HTMLCanvasElement> {
   y += corpo * 0.9 + 48;
 
   for (const linha of linhasNome) {
-    escrever(ctx, linha, centro, y, { font: `58px ${ALFA}`, cor: C.cream, align: "center" });
+    escrever(ctx, linha, centro, y, { font: `58px ${ALFA}`, cor: C.ink, align: "center" });
     y += 74;
   }
   y += 40;
 
   if (c.instagram) {
     escrever(ctx, `@${c.instagram}`, centro, y, {
-      font: `34px ${BITTER}`,
-      cor: C.gold2,
+      font: `500 34px ${TEXTO}`,
+      cor: C.goldDim,
       align: "center",
     });
   }
 
-  assinar(ctx, H, ELITE);
+  assinar(ctx, H, TEXTO);
   return canvas;
 }
 
@@ -205,8 +200,7 @@ export async function gerarColinha(
   await fontesProntas();
 
   const ALFA = familia("--font-alfa", "serif");
-  const ELITE = familia("--font-elite", "monospace");
-  const BITTER = familia("--font-bitter", "serif");
+  const TEXTO = familia("--font-texto", "sans-serif");
 
   const lista = candidatos.slice(0, CABEM_POR_ARTE);
   const ALTURA_LINHA = 150;
@@ -223,8 +217,8 @@ export async function gerarColinha(
   const centro = W / 2;
 
   escrever(ctx, "COLINHA", centro, PAD + 40, {
-    font: `28px ${ELITE}`,
-    cor: C.gold2,
+    font: `700 28px ${TEXTO}`,
+    cor: C.goldDim,
     align: "center",
     espaco: 8,
   });
@@ -236,7 +230,7 @@ export async function gerarColinha(
 
   let y = TOPO;
   for (const c of lista) {
-    bloco(ctx, PAD, y, larguraUtil, ALTURA_LINHA - 22, "rgba(255,203,5,.08)", {
+    bloco(ctx, PAD, y, larguraUtil, ALTURA_LINHA - 22, C.ouroClaro, {
       sombra: 0,
       borda: C.gold2,
       espessura: 3,
@@ -249,18 +243,18 @@ export async function gerarColinha(
     const xNome = PAD + 30 + 250;
     const largura = larguraUtil - 250 - 60;
     const [nome] = quebrar(ctx, c.nome, largura, `40px ${ALFA}`, 1);
-    escrever(ctx, nome, xNome, y + 30, { font: `40px ${ALFA}`, cor: C.cream });
+    escrever(ctx, nome, xNome, y + 30, { font: `40px ${ALFA}`, cor: C.ink });
 
     /* O cargo, e não o @: a colinha é lida de cima para baixo como a cédula,
        e é o cargo que diz em que tela da urna aquele número entra. */
     const abaixo = [c.cargo, c.partido].filter(Boolean).join("  ·  ");
     if (abaixo) {
-      escrever(ctx, abaixo, xNome, y + 80, { font: `28px ${BITTER}`, cor: "rgba(246,245,239,.72)" });
+      escrever(ctx, abaixo, xNome, y + 80, { font: `500 28px ${TEXTO}`, cor: C.suave });
     }
     y += ALTURA_LINHA;
   }
 
-  assinar(ctx, H, ELITE);
+  assinar(ctx, H, TEXTO);
   return canvas;
 }
 

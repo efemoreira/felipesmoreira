@@ -41,19 +41,23 @@ Regras:
 
 ## Navegação do site público
 
-- Toda página pública se embrulha em `PaginaDoSite` (`src/components/site/`): barra do topo (`Cabecalho`, com "Participar" sempre visível), abertura padrão (`AberturaPagina`: trilha, selo, título, frase, até duas ações) e rodapé (`Rodape`, o mapa do site). Não desenhe "Voltar" nem cabeçalho próprio.
+- Toda página pública se embrulha em `PaginaDoSite` (`src/components/site/`): barra do topo (`Cabecalho`, com "Participar" sempre visível), abertura padrão (`AberturaPagina`: trilha, título, frase, até duas ações) e rodapé (`Rodape`, o mapa do site). Não desenhe "Voltar" nem cabeçalho próprio.
+- Botão, cartão, seção, grade, etiqueta e lista em linhas são as peças `s-` de `src/components/site/estilos.tsx`; a página só escolhe qual usar. Fim de página é `Convite`, sequência é `Escada`, ilustração é `Sertao`/`Sol`. Não redesenhe peça dentro de feature.
 - Menu e rodapé saem de `src/components/site/navegacao.ts`; o menu do topo tem no máximo 6 itens. Formação e Biblioteca só entram quando tiverem página pública.
 - Ficam fora de propósito: `/resultados`, `/presenca`, `/municao`, `/aulas`, `/convite`, `/plano` e o Estúdio. `testes/contrato/navegacao.test.ts` prende as duas listas e que todo destino existe.
 - Espaço e largura: `ESPACO`, `LARGURA`, `PONTOS` em `@/lib/theme`.
 
 ## Tema e identidade
 
-- Cor, fonte, moldura e escala de texto saem de `@/lib/theme`.
-- Use `C`, `FONT_ALFA`, `FONT_ELITE`, `FONT_BITTER`, `BORDA`/`borda()` e `TEXTO`.
-- Não crie nova paleta local nem escreva `3px solid` à mão. Borda fina é `bordaFina()` (2 px), a hachura é `HATCH`, erro é `C.erro`/`C.erroBorda` sobre a noite e `C.erroFundo`/`C.erroTinta` sobre papel — `testes/contrato/tema.test.ts` barra o `2px solid`, o `const HATCH` e as cores de erro antigas.
-- **A sombra dura sai de `sombra()`**, com `sombraErguida()`/`sombraAfundada()` para hover e clique.
-- **Exceção: `/resultados`** (tela de dados) usa a superfície `PAINEL_DADOS`/`FONT_DADOS`/`fileteDados()` do mesmo `theme.ts` — sem moldura grossa nem sombra. Ver `docs/site-publico.md`.
-- A escala é `SOMBRA` — `rente` (3), `cartao` (5), `alto` (8). Opacidade é uma só (`C.sombra`); quem carrega a altura é o deslocamento. Cor é decisão da peça, como em `borda()` (`C.sombraNoite` sobre fundo escuro, `C.sombraErro` no campo com erro).
+- **O site é claro** (decisão de 11/2026, depois de o Felipe achar o visual escuro "sujo", feio e desorganizado): branco, tinta e o ouro como cor de sol. Sem fundo preto, sem papel bege, sem hachura, sem moldura grossa, sem sombra dura, sem sombra em texto. `testes/contrato/tema.test.ts` barra a volta de cada um.
+- Cor, fonte, linha, canto e escala de texto saem de `@/lib/theme`: `C`, `FONT_ALFA`, `FONT_TEXTO`, `TITULO`, `TEXTO`, `borda()`, `RAIO`, `sombra()`, `FOCO`.
+- **Duas vozes:** `FONT_ALFA` só em título grande (24 px ou mais; a exceção é a marca escrita) e `FONT_TEXTO` (Figtree) em todo o resto. Título de cartão é `FONT_TEXTO` em peso 800. Nada de caixa-alta espaçada em rótulo: rótulo é `.s-rotulo`.
+- **O ouro é fundo, nunca texto sobre branco** (1,5:1). Texto dourado é `C.goldDim`; foco de teclado é `FOCO`, em tinta. Um bloco de ouro cheio por página, que é o `Convite`; o resto é `C.ouroClaro`.
+- **Texto secundário é `C.suave`, nunca `opacity`**: tinta transparente é o que deixa a página com cara de suja. O segundo tom de fundo é `C.fundo`, e só ele. Erro é `C.erroFundo`/`C.erroTinta`, ok é `C.okFundo`/`C.ok`.
+- Não crie nova paleta local nem escreva `2px solid` à mão. Linha é `borda()` (1 px); `bordaFina()` (2 px) é só para o que precisa marcar.
+- Cartão em repouso não tem sombra: `sombra()` responde ao ponteiro e levanta o que flutua. A escala é `SOMBRA` (`rente`, `cartao`, `alto`), com uma tinta só (`C.sombra`).
+- `/resultados` usa a superfície `PAINEL_DADOS`/`FONT_DADOS`/`fileteDados()` do mesmo `theme.ts`. Ver `docs/site-publico.md`.
+- As artes em canvas (`poster.ts`, `colinha.ts`, `kit/cartao.ts`) seguem o mesmo visual claro, com os traços de `src/lib/cordelCanvas.ts`. Special Elite e Bitter só existem para o Estúdio. O `public/painel/painel.css` ainda tem a linguagem antiga.
 
 ## Contrato Next ↔ PHP
 
@@ -133,6 +137,7 @@ Regras:
 - Candidato e lista são perguntas diferentes.
 - `CARGOS` em `dominio.php` é a fonte dos cargos e dos dígitos do número.
 - Sem número válido não publica. O formulário publica ao salvar (caixa marcada); a tela lista quem está em rascunho.
+- Depois da eleição (`faseEm() === "depois"`) `/candidatos` vira registro: mostra quem disputou, sem colinha nem "Pôr na colinha".
 - A colinha de `/candidatos` é por cargo, na ordem `ORDEM_COLINHA` (`src/features/candidatos/cargos.ts`): Presidente, Governador, Senado (2 vagas), Dep. Federal, Dep. Estadual — só o que tem alguém no ar. Presidente e Governador entram fixos; nos outros o eleitor escolhe. Imprime em A4 (`ColinhaImpressa.tsx`).
 - Vice e suplente usam os dígitos do titular, aparecem no site embaixo dele (`cargo_titular()` + mesmo número, calculado no `api/candidatos.php`) e **nunca** entram na colinha.
 - As listas do painel alimentam só o bloco da home (`naHome`); a ordem da lista é a ordem desse bloco.

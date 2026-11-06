@@ -32,18 +32,20 @@ const TEXTO_GRANDE = 3;
 
 describe("contraste: texto comum ≥ 4,5:1", () => {
   const pares: [string, string, string][] = [
-    ["tinta sobre papel", C.ink, C.paper],
-    ["tinta sobre creme", C.ink, C.cream],
-    ["tinta sobre ouro (botões)", C.ink, C.gold],
-    ["creme sobre noite (aulas, presença, candidatos)", C.cream, C.night],
-    ["ouro sobre noite (títulos)", C.gold, C.night],
-    ["ouro claro sobre noite (kickers)", C.gold2, C.night],
-    ["ouro queimado sobre papel (títulos das legais)", C.goldDim, C.paper],
-    ["ouro queimado sobre creme (o 'pessoas' do plano)", C.goldDim, C.cream],
-    ["erro sobre noite", C.erro, C.night],
-    ["tinta de erro sobre fundo de erro (inscrição)", C.erroTinta, C.erroFundo],
-    ["tinta de erro sobre papel", C.erroTinta, C.paper],
-    ["ok sobre noite", C.ok, C.night],
+    ["tinta sobre o branco da página", C.ink, C.paper],
+    ["tinta sobre o segundo tom (seções e rodapé)", C.ink, C.fundo],
+    ["tinta sobre ouro (botões e o convite final)", C.ink, C.gold],
+    ["tinta sobre ouro claro (etiquetas, cartão marcado)", C.ink, C.ouroClaro],
+    ["branco sobre tinta (botão do convite)", C.paper, C.ink],
+    ["texto suave sobre o branco", C.suave, C.paper],
+    ["texto suave sobre o segundo tom (rodapé)", C.suave, C.fundo],
+    ["texto suave sobre ouro claro (avisos)", C.suave, C.ouroClaro],
+    ["ouro queimado sobre o branco (rótulos)", C.goldDim, C.paper],
+    ["ouro queimado sobre o segundo tom", C.goldDim, C.fundo],
+    ["ouro queimado sobre ouro claro", C.goldDim, C.ouroClaro],
+    ["tinta de erro sobre fundo de erro", C.erroTinta, C.erroFundo],
+    ["tinta de erro sobre o branco", C.erroTinta, C.paper],
+    ["ok sobre fundo de ok", C.ok, C.okFundo],
     ["dados: tinta sobre o fundo", P.tinta, P.fundo],
     ["dados: tinta suave sobre o fundo", P.tintaSuave, P.fundo],
     ["dados: tinta suave sobre o realce do Missão", P.tintaSuave, P.realce],
@@ -60,10 +62,10 @@ describe("contraste: texto comum ≥ 4,5:1", () => {
 
 describe("contraste: bordas e texto grande ≥ 3:1", () => {
   const pares: [string, string, string][] = [
-    ["borda de erro sobre papel (inscrição)", C.erroBorda, C.paper],
-    ["borda de ok sobre noite (checklist das aulas)", C.okBorda, C.night],
-    ["borda de erro sobre noite (presença)", C.erroBorda, C.night],
-    ["ouro queimado sobre ouro (sombra dos cartões)", C.goldDim, C.gold],
+    ["borda de erro sobre o branco (formulários)", C.erroBorda, C.paper],
+    ["borda de ok sobre o branco (checklist das aulas)", C.okBorda, C.paper],
+    ["contorno de campo sobre o branco", C.linhaForte, C.paper],
+    ["contorno de campo sobre o segundo tom", C.linhaForte, C.fundo],
     ["dados: contorno de controle sobre a superfície", P.linhaForte, P.superficie],
   ];
   for (const [nome, a, b] of pares) {
@@ -72,4 +74,13 @@ describe("contraste: bordas e texto grande ≥ 3:1", () => {
       assert.ok(r >= TEXTO_GRANDE, `${nome}: ${r.toFixed(2)}:1, abaixo de ${TEXTO_GRANDE}:1`);
     });
   }
+});
+
+describe("contraste: o ouro é fundo, nunca texto sobre o branco", () => {
+  test("ouro sobre branco não dá nem texto grande", () => {
+    /* É por isso que `goldDim` existe, e por isso o foco é em tinta: o ouro puro
+       some sobre a página. Se um dia a marca mudar de cor, este teste avisa que
+       a regra pode ser revista. */
+    assert.ok(razao(C.gold, C.paper) < TEXTO_GRANDE);
+  });
 });

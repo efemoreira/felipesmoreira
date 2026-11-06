@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { borda, sombra } from "@/lib/theme";
+import { RAIO, borda } from "@/lib/theme";
 import type { FonteVideo } from "./tipos";
 
 /**
@@ -17,7 +17,7 @@ export const Player: React.FC<{ video: FonteVideo; titulo: string }> = ({ video,
       aspectRatio: "16 / 9",
       background: "#000",
       border: borda(),
-      boxShadow: sombra(),
+      borderRadius: RAIO.m,
       margin: "0 0 22px",
     }}
   >

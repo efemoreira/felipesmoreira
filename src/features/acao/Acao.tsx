@@ -1,6 +1,6 @@
 "use client";
 import React, { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { C, FONT_ALFA, FONT_BITTER, FONT_ELITE, borda, bordaFina, sombra } from "@/lib/theme";
+import { C, FOCO, FONT_ALFA, FONT_TEXTO, TITULO, borda, sombra } from "@/lib/theme";
 import { ApiError } from "@/lib/api/client";
 import { importarAcao, marcarTarefaAcao, obterAcao, verificarAcessoAcao, type AcervoAcao, type DocumentoAcao } from "@/lib/api/acao";
 import Documento from "./Documento";
@@ -9,11 +9,12 @@ import styles from "./acao.module.css";
 
 const LOGIN = "/painel/?volta=%2Fpainel%2Facao.php";
 const tema = {
-  "--acao-ink": C.ink, "--acao-paper": C.paper, "--acao-cream": C.cream,
-  "--acao-gold": C.gold, "--acao-gold-dim": C.goldDim,
-  "--acao-error-bg": C.erroFundo, "--acao-error": C.erroTinta,
-  "--acao-body": FONT_BITTER, "--acao-title": FONT_ALFA, "--acao-label": FONT_ELITE,
-  "--acao-border": bordaFina(), "--acao-frame": borda(), "--acao-shadow": sombra(),
+  "--acao-ink": C.ink, "--acao-paper": C.paper, "--acao-suave": C.suave, "--acao-fundo": C.fundo,
+  "--acao-gold": C.gold, "--acao-gold2": C.gold2, "--acao-gold-dim": C.goldDim, "--acao-ouro-claro": C.ouroClaro,
+  "--acao-error-bg": C.erroFundo, "--acao-error": C.erroTinta, "--acao-ok": C.ok, "--acao-ok-fundo": C.okFundo,
+  "--acao-body": FONT_TEXTO, "--acao-title": FONT_ALFA, "--acao-label": FONT_TEXTO, "--acao-titulo-pagina": TITULO.pagina,
+  "--acao-frame": borda(), "--acao-linha-forte": borda(C.linhaForte), "--acao-linha-cor": C.linhaForte,
+  "--acao-shadow": sombra(), "--acao-foco": FOCO,
 } as CSSProperties;
 
 function mensagem(erro: unknown): string {
@@ -150,7 +151,7 @@ export default function Acao() {
 
   return <main className={styles.pagina} style={tema}>
     <header className={styles.cabecalho}>
-      <a className={styles.marca} href="/acao" aria-label="Central de ação">A<span>ÇÃO</span><span className={styles.privado}>PRIVADO</span></a>
+      <a className={styles.marca} href="/acao" aria-label="Central de ação">A<span>ÇÃO</span><span className={styles.privado}>Privado</span></a>
       <nav aria-label="Páginas de trabalho" className={styles.nav}>
         <a href="/plano">Planos</a><a href="/resultados">Resultados</a><a href="/acao" aria-current="page">Ação</a>
       </nav>
@@ -158,14 +159,14 @@ export default function Acao() {
     </header>
 
     {estado !== "pronto" || !acervo ? <section className={styles.porta} aria-live="polite">
-      <p className={styles.legenda}>CENTRAL DE TRABALHO</p>
+      <p className={styles.legenda}>Central de trabalho</p>
       <h1>{estado === "negado" ? "Reservado ao dono." : estado === "erro" ? "Não consegui abrir a central." : estado === "entrar" ? "Entre para continuar." : "Abrindo sua central…"}</h1>
       <p>{estado === "negado" ? "A conta conectada não tem acesso a estes documentos." : estado === "erro" ? "Confira a conexão e tente novamente." : "Seus documentos ficam disponíveis depois da verificação da conta."}</p>
       <a className={styles.botaoPrincipal} href={LOGIN}>Entrar no painel</a>
       {estado === "erro" && <button className={styles.botao} type="button" onClick={() => window.location.reload()}>Tentar novamente</button>}
     </section> : <div className={styles.corpo}>
       <div className={styles.abertura}>
-        <div><p className={styles.legenda}>SUA MESA DE TRABALHO</p><h1>Da decisão à ação.</h1><p>Planejamento, organização e materiais para colocar o trabalho em movimento.</p></div>
+        <div><p className={styles.legenda}>Sua mesa de trabalho</p><h1>Da decisão à ação.</h1><p>Planejamento, organização e materiais para colocar o trabalho em movimento.</p></div>
         <div className={styles.atualizacao}><span>Acervo privado</span><strong>{documentos.length} documentos</strong>{acervo.atualizadoEm && <small>Atualizado em {new Date(acervo.atualizadoEm).toLocaleDateString("pt-BR")}</small>}</div>
       </div>
       <div className={styles.ferramentas}>
@@ -188,7 +189,7 @@ export default function Acao() {
           </div>
           {!documentos.length ? <div className={styles.vazio}><h2>Sua central está pronta para receber os planos.</h2><p>Use “Adicionar / atualizar” para escolher seus arquivos Markdown ou o pacote de Ação preparado para esta página.</p></div> : <>
             <div className={styles.fluxo} aria-label="Fluxo de trabalho">{["Preparar a estrutura", "Receber as pessoas", "Encaminhar aos destinos", "Combinar o próximo passo"].map((t, i) => <span key={t}><b>{String(i + 1).padStart(2, "0")}</b>{t}</span>)}</div>
-            <div className={styles.tituloSecao}><div><p className={styles.legenda}>CONTINUAR O TRABALHO</p><h2>Próximas tarefas</h2></div><small>Na ordem dos documentos · marcações salvas na sua conta</small></div>
+            <div className={styles.tituloSecao}><div><p className={styles.legenda}>Continuar o trabalho</p><h2>Próximas tarefas</h2></div><small>Na ordem dos documentos · marcações salvas na sua conta</small></div>
             <div className={styles.tarefas}>
               {proximas.length ? proximas.map((t) => <div key={t.id} className={styles.tarefa}>
                 <label className={styles.controleCheck}><input type="checkbox" aria-label={`Concluir: ${t.texto.replace(/[*`]/g, "")}`} checked={false} disabled={salvando.has(t.id)} onChange={() => void alternar(t.documento.id, t.id, true)} /></label>
@@ -197,7 +198,7 @@ export default function Acao() {
             </div>
             <section id="tarefas-concluidas" className={styles.secaoConcluidas} aria-labelledby="titulo-concluidas">
               <div className={styles.tituloSecao}>
-                <div><p className={styles.legenda}>TRABALHO CONCLUÍDO</p><h2 id="titulo-concluidas"><span className={styles.checkConcluida} aria-hidden="true">✓</span> Concluídas <span className={styles.totalConcluidas}>({concluidas})</span></h2></div>
+                <div><p className={styles.legenda}>Trabalho concluído</p><h2 id="titulo-concluidas"><span className={styles.checkConcluida} aria-hidden="true">✓</span> Concluídas <span className={styles.totalConcluidas}>({concluidas})</span></h2></div>
                 <small>Os itens permanecem visíveis. Desmarque a caixa para voltar às pendentes.</small>
               </div>
               <div className={styles.tarefas}>
@@ -209,7 +210,7 @@ export default function Acao() {
               {!concluidasVisiveis.length && <p className={styles.nota}>{concluidas ? "Nenhum item concluído corresponde à busca." : "Os itens que você concluir aparecerão aqui com um ✓."}</p>}
               {concluidasVisiveis.length > limiteConcluidas && <button className={styles.botao} type="button" onClick={() => setLimiteConcluidas((l) => l + 12)}>Mostrar mais concluídas</button>}
             </section>
-            <div className={styles.tituloSecao}><div><p className={styles.legenda}>CONSULTAR E EXECUTAR</p><h2>Seus documentos</h2></div></div>
+            <div className={styles.tituloSecao}><div><p className={styles.legenda}>Consultar e executar</p><h2>Seus documentos</h2></div></div>
             <div className={styles.cartoes}>{visiveis.map((d) => <CartaoDocumento key={d.id} documento={d} progresso={progresso} abrir={() => abrirDocumento(d.id)} />)}</div>
             {!visiveis.length && <p className={styles.vazio}>Nenhum documento corresponde à busca.</p>}
           </>}
@@ -232,7 +233,7 @@ export default function Acao() {
         </div>}
 
         {aba === "estrutura" && <>
-          <div className={styles.tituloSecao}><div><p className={styles.legenda}>DIRETÓRIO DE IMPLANTAÇÃO</p><h2>Uma rota para cada interessado.</h2></div><label className={styles.filtro}>Mostrar<select value={tipo} onChange={(e) => { setTipo(e.target.value); setLimite(24); }}><option value="">Todos os destinos</option>{tipos.map((t) => <option key={t} value={t}>{tituloTipo(t)}</option>)}</select></label></div>
+          <div className={styles.tituloSecao}><div><p className={styles.legenda}>Diretório de implantação</p><h2>Uma rota para cada interessado.</h2></div><label className={styles.filtro}>Mostrar<select value={tipo} onChange={(e) => { setTipo(e.target.value); setLimite(24); }}><option value="">Todos os destinos</option>{tipos.map((t) => <option key={t} value={t}>{tituloTipo(t)}</option>)}</select></label></div>
           <p className={styles.nota}>Este diretório acompanha a preparação. Grupos, permissões e convites precisam ser conferidos para deixar a recepção pronta.</p>
           <p className={styles.contagem}>{destinosVisiveis.length} destinos encontrados</p>
           <div className={styles.destinos}>{destinosVisiveis.slice(0, limite).map((d) => <article key={d.codigo} className={styles.destino}>

@@ -26,28 +26,32 @@ export function NaVozDaLiga() {
   if (com.length === 0) return null;
 
   return (
-    <section aria-labelledby="h-voz" className="h-secao">
-      <h2 id="h-voz" className="h-secao-titulo">Na voz da Liga</h2>
-      <p className="h-secao-sub">O que os porta-vozes da Missão estão dizendo agora.</p>
-      <div className="h-mais">
-        {com.map((p) => (
-          <a key={p.id} href={p.destaque} target="_blank" rel="noopener noreferrer" className="h-tile">
-            <span className="h-tile-icone" aria-hidden="true">
-              <Icon name="play" size={20} />
-            </span>
-            <span className="h-tile-texto">
-              <strong>{p.nome}</strong>
-              <span>{temaPorChave(p.tema)?.nome ?? "Porta-voz"}{p.cidade ? ` · ${p.cidade}` : ""}</span>
-            </span>
-          </a>
-        ))}
+    <section aria-labelledby="h-voz" className="s-secao">
+      <div className="s-largura">
+        <div className="s-cabeca">
+          <h2 id="h-voz" className="s-titulo">Na voz da Liga</h2>
+          <p className="s-sub">O que os porta-vozes da Missão estão dizendo agora.</p>
+        </div>
+        <div className={`s-grade s-grade-${com.length >= 3 ? 3 : 2}`}>
+          {com.map((p) => (
+            <a key={p.id} href={p.destaque} target="_blank" rel="noopener noreferrer" className="s-cartao h-tile">
+              <span className="s-selo" aria-hidden="true">
+                <Icon name="play" size={20} />
+              </span>
+              <span className="h-tile-texto">
+                <strong>{p.nome}</strong>
+                <span>{temaPorChave(p.tema)?.nome ?? "Porta-voz"}{p.cidade ? ` · ${p.cidade}` : ""}</span>
+              </span>
+            </a>
+          ))}
+        </div>
+        <p style={{ margin: "16px 0 0" }}>
+          <Link href="/portavozes" prefetch={false} className="s-link">
+            Conhecer a Liga
+            <Icon name="chevronRight" size={18} />
+          </Link>
+        </p>
       </div>
-      <p className="h-nota">
-        <Link href="/portavozes" prefetch={false} className="h-link-ouro">
-          Conhecer a Liga
-          <Icon name="chevronRight" size={16} />
-        </Link>
-      </p>
     </section>
   );
 }

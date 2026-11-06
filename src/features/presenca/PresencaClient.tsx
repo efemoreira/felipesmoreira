@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { C, FONT_ELITE, borda, TEXTO } from "@/lib/theme";
+import { C, RAIO, TEXTO } from "@/lib/theme";
 import { obterEncontro, enviarPresenca, procurarPessoa, confirmarPessoa } from "@/lib/api/presenca";
 import {
   mascararTelefone,
@@ -495,32 +495,21 @@ export default function PresencaClient() {
 
           <section
             style={{
-              border: borda(C.gold),
-              background: "rgba(255,203,5,.08)",
+              background: C.fundo,
+              borderRadius: RAIO.m,
               padding: "14px 16px",
               margin: "6px 0 20px",
             }}
           >
-            <p
-              style={{
-                fontFamily: FONT_ELITE,
-                fontSize: 11,
-                letterSpacing: 2,
-                textTransform: "uppercase",
-                color: C.gold,
-                margin: "0 0 10px",
-              }}
-            >
-              Uso dos seus dados
-            </p>
-            <p style={{ margin: "0 0 10px", fontSize: 14.5, lineHeight: 1.65 }}>
+            <p style={{ fontSize: 16, fontWeight: 800, margin: "0 0 6px" }}>Uso dos seus dados</p>
+            <p style={{ margin: "0 0 10px", fontSize: 15.5, lineHeight: 1.55, color: C.suave }}>
               Guardamos seu nome, WhatsApp, bairro e cidade só para falar com você sobre o
               movimento. <strong>Não vendemos nem repassamos</strong> para ninguém de
               fora, e você pode pedir para apagar quando quiser.
             </p>
-            <p style={{ margin: "0 0 14px", fontSize: 13.5, color: "#b9b3a5" }}>
+            <p style={{ margin: "0 0 14px", fontSize: 15, color: C.suave }}>
               Detalhes na{" "}
-              <Link href="/privacy" target="_blank" style={{ color: C.gold }}>
+              <Link href="/privacy" target="_blank" style={{ color: C.ink, fontWeight: 700 }}>
                 Política de Privacidade
               </Link>
               .
@@ -538,7 +527,7 @@ export default function PresencaClient() {
                   setConsentimento(e.target.checked);
                   if (e.target.checked) setErro(null);
                 }}
-                style={{ width: 22, height: 22, flex: "0 0 auto", marginTop: 2, accentColor: C.gold }}
+                style={{ width: 24, height: 24, flex: "0 0 auto", marginTop: 1, accentColor: C.ink }}
               />
               <span style={{ ...TEXTO.nota }}>
                 Concordo que a Missão Ceará use meus dados para falar comigo.

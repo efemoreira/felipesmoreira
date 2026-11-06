@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { Icon } from "@/components/icons";
-import { C, FONT_ALFA, FONT_ELITE, borda, sombra } from "@/lib/theme";
+import { C, FONT_ALFA, FONT_TEXTO, borda, sombra } from "@/lib/theme";
 import { obterChapa, pessoasDa, type Candidato } from "@/lib/api/candidatos";
 
 /**
@@ -53,7 +53,7 @@ export const SigaCandidatos: React.FC = () => {
       <p
         id="siga-titulo"
         style={{
-          fontFamily: FONT_ELITE,
+          fontFamily: FONT_TEXTO,
           fontSize: 12,
           letterSpacing: 2.4,
           textTransform: "uppercase",
@@ -82,7 +82,7 @@ export const SigaCandidatos: React.FC = () => {
               {c.numero}
             </span>
             <span style={{ flex: 1, minWidth: 0 }}>
-              <strong style={{ display: "block", fontFamily: FONT_ALFA, fontSize: 16 }}>
+              <strong style={{ display: "block", fontFamily: FONT_TEXTO, fontWeight: 800, fontSize: 16 }}>
                 {c.nome}
               </strong>
               {c.cargo && (
@@ -121,7 +121,7 @@ export const SigaCandidatos: React.FC = () => {
           alignItems: "center",
           gap: 7,
           minHeight: 44,
-          fontFamily: FONT_ELITE,
+          fontFamily: FONT_TEXTO,
           fontSize: 12,
           letterSpacing: 1.6,
           textTransform: "uppercase",

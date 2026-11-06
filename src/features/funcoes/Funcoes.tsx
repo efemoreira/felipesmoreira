@@ -1,9 +1,10 @@
 import React from "react";
 import Link from "next/link";
 import { Icon, type IconName } from "@/components/icons";
-import { BORDA, C, FONT_ALFA, FONT_ELITE, borda, TEXTO, sombra, bordaFina, PONTOS } from "@/lib/theme";
+import { C, FOCO, borda } from "@/lib/theme";
 import { PaginaDoSite } from "@/components/site/PaginaDoSite";
 import { AberturaPagina } from "@/components/site/AberturaPagina";
+import { Convite } from "@/components/site/Convite";
 import CATALOGO from "@/data/funcoes.json";
 import type { CatalogoFuncoes, Funcao, GrupoFuncao } from "@/features/inscricao/tipos";
 
@@ -14,6 +15,10 @@ import type { CatalogoFuncoes, Funcao, GrupoFuncao } from "@/features/inscricao/
  * diferença é que aqui ele é indexável e dá pra mandar por link: "olha, tem uma
  * função que é a sua cara" com âncora direta.
  *
+ * A pergunta de quem chega é "qual é a minha?". Por isso a ficha mostra o nome e
+ * o que é, e guarda o tempo, a entrega, o passo a passo e o convite na gaveta; e
+ * o índice leva direto ao grupo. Era uma página de 17 mil pixels no celular.
+ *
  * Cada ficha leva para `/queroajudar?funcao=<id>`, que abre o formulário com
  * ela já marcada. Quem leu a descrição inteira e decidiu não deve ter que
  * procurar de novo numa lista de doze.
@@ -21,125 +26,41 @@ import type { CatalogoFuncoes, Funcao, GrupoFuncao } from "@/features/inscricao/
 const catalogo = CATALOGO as CatalogoFuncoes;
 
 const ORDEM = Object.keys(catalogo.grupos) as GrupoFuncao[];
-
-
-const rotulo: React.CSSProperties = {
-  fontFamily: FONT_ELITE,
-  fontSize: 11.5,
-  letterSpacing: 2.2,
-  textTransform: "uppercase",
-  opacity: 0.65,
-  margin: "0 0 8px",
-};
+const GRUPOS = ORDEM.filter((g) => catalogo.funcoes.some((f) => f.grupo === g));
 
 const Ficha: React.FC<{ f: Funcao }> = ({ f }) => (
-  <article
-    id={f.id}
-    style={{
-      background: C.cream,
-      border: borda(),
-      boxShadow: sombra("alto"),
-      padding: "20px 18px",
-      display: "flex",
-      flexDirection: "column",
-      gap: 14,
-      scrollMarginTop: 18,
-    }}
-  >
-    <header style={{ display: "flex", alignItems: "center", gap: 12 }}>
-      <span
-        aria-hidden="true"
-        style={{
-          flex: "0 0 auto",
-          width: 44,
-          height: 44,
-          display: "grid",
-          placeItems: "center",
-          background: C.gold,
-          border: borda(),
-          color: C.ink,
-        }}
-      >
+  <article id={f.id} className="s-cartao fn-ficha">
+    <header className="fn-cabeca">
+      <span aria-hidden="true" className="s-selo">
         <Icon name={f.icone as IconName} size={22} />
       </span>
-      <h3
-        style={{
-          fontFamily: FONT_ALFA,
-          fontSize: "clamp(20px, 5vw, 26px)",
-          lineHeight: 1.1,
-          margin: 0,
-          flex: 1,
-          minWidth: 0,
-        }}
-      >
-        {f.nome}
-      </h3>
+      <h3>{f.nome}</h3>
     </header>
 
-    <p style={{ margin: 0, fontSize: 16.5, lineHeight: 1.55 }}>{f.resumo}</p>
+    <p className="fn-resumo">{f.resumo}</p>
 
-    <dl style={{ margin: 0, display: "flex", flexDirection: "column", gap: 11 }}>
-      <div>
-        <dt style={rotulo}>O que você entrega</dt>
-        <dd style={{ margin: 0, ...TEXTO.corpo }}>{f.entrega}</dd>
-      </div>
-      <div>
-        <dt style={rotulo}>Quanto tempo pede</dt>
-        <dd style={{ margin: 0, ...TEXTO.corpo }}>{f.ritmo}</dd>
-      </div>
-    </dl>
-
-    <details style={{ borderTop: bordaFina("rgba(24,18,3,.18)"), paddingTop: 12 }}>
-      <summary
-        style={{
-          cursor: "pointer",
-          listStyle: "none",
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 8,
-          minHeight: 44,
-          fontFamily: FONT_ELITE,
-          fontSize: 12.5,
-          letterSpacing: 1.3,
-          textTransform: "uppercase",
-        }}
-      >
-        <Icon name="search" size={15} />
-        Como se faz, passo a passo
+    <details className="fn-mais">
+      <summary>
+        Como é na prática
+        <span className="fn-seta" aria-hidden="true"><Icon name="chevronRight" size={18} /></span>
       </summary>
+      <h4>Quanto tempo pede</h4>
+      <p>{f.ritmo}</p>
+      <h4>O que você entrega</h4>
+      <p>{f.entrega}</p>
+      <h4>Passo a passo</h4>
       {/* O preflight do Tailwind (globals.css) zera o marcador de toda lista do
             site. Aqui o número é informação — é um passo a passo, e sem ele a
             ordem some. Onde o marcador não diz nada, deixe o padrão. */}
-      <ol style={{ margin: "10px 0 0", paddingLeft: 20, listStyle: "decimal", display: "flex", flexDirection: "column", gap: 7 }}>
+      <ol>
         {f.detalhe.map((d) => (
-          <li key={d} style={{ ...TEXTO.corpo }}>
-            {d}
-          </li>
+          <li key={d}>{d}</li>
         ))}
       </ol>
+      <Link href={`/queroajudar?funcao=${f.id}`} prefetch={false} className="s-btn s-btn-ouro s-btn-peq s-btn-bloco">
+        Conversar sobre esta função
+      </Link>
     </details>
-
-    <Link
-      href={`/queroajudar?funcao=${f.id}`}
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 8,
-        minHeight: 48,
-        padding: "11px 18px",
-        background: C.ink,
-        color: C.gold,
-        border: borda(),
-        boxShadow: sombra(),
-        fontFamily: FONT_ALFA,
-        fontSize: 15,
-        textDecoration: "none",
-      }}
-    >
-      <Icon name="flag" size={17} />
-      Conversar sobre esta função
-    </Link>
   </article>
 );
 
@@ -163,82 +84,57 @@ export default function Funcoes() {
         />
       }
     >
-      <div>
-        {ORDEM.map((g) => {
-          const doGrupo = catalogo.funcoes.filter((f) => f.grupo === g);
-          if (doGrupo.length === 0) return null;
-          const info = catalogo.grupos[g];
-          return (
-            <section key={g} style={{ marginBottom: 36 }}>
-              <header style={{ borderBottom: borda(), paddingBottom: 10, marginBottom: 18 }}>
-                <h2
-                  style={{
-                    fontFamily: FONT_ALFA,
-                    fontSize: "clamp(22px, 5.5vw, 30px)",
-                    lineHeight: 1.1,
-                    margin: "0 0 6px",
-                  }}
-                >
-                  {info.nome}
-                </h2>
-                <p style={{ margin: 0, ...TEXTO.corpo, opacity: 0.85 }}>
-                  {info.resumo}
-                </p>
-              </header>
-              <div className="fn-grade">
-                {doGrupo.map((f) => (
-                  <Ficha key={f.id} f={f} />
-                ))}
-              </div>
-            </section>
-          );
-        })}
+      <nav aria-label="Grupos de funções" className="fn-indice">
+        {GRUPOS.map((g) => (
+          <a key={g} href={`#grupo-${g}`} className="s-etiqueta">
+            {catalogo.grupos[g].nome}
+          </a>
+        ))}
+      </nav>
 
-        <section
-          style={{
-            background: C.gold,
-            border: borda(),
-            boxShadow: sombra("alto"),
-            padding: "22px 20px",
-            textAlign: "center",
-          }}
-        >
-          <h2 style={{ fontFamily: FONT_ALFA, fontSize: 22, lineHeight: 1.15, margin: "0 0 10px" }}>
-            Ainda em dúvida?
-          </h2>
-          <p style={{ margin: "0 0 18px", ...TEXTO.corpoSolto }}>
-            Escolha “Onde precisar”. A coordenação conversa com você e te encaixa — é conversa, não
-            formulário.
-          </p>
-          <Link
-            href="/queroajudar"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 9,
-              minHeight: 48,
-              padding: "12px 22px",
-              background: C.ink,
-              color: C.gold,
-              border: borda(),
-              boxShadow: sombra(),
-              fontFamily: FONT_ALFA,
-              fontSize: 16,
-              textDecoration: "none",
-            }}
-          >
-            <Icon name="heartHandshake" size={19} />
-            Quero ajudar
-          </Link>
-        </section>
-      </div>
+      {GRUPOS.map((g) => {
+        const info = catalogo.grupos[g];
+        return (
+          <section key={g} id={`grupo-${g}`} className="fn-grupo">
+            <header className="s-cabeca">
+              <h2 className="s-titulo">{info.nome}</h2>
+              <p className="s-sub">{info.resumo}</p>
+            </header>
+            <div className="s-grade s-grade-3">
+              {catalogo.funcoes.filter((f) => f.grupo === g).map((f) => (
+                <Ficha key={f.id} f={f} />
+              ))}
+            </div>
+          </section>
+        );
+      })}
+
+      <Convite
+        titulo="Ainda em dúvida?"
+        texto="Escolha “Onde precisar”. A coordenação conversa com você e te encaixa: é conversa, não formulário."
+        acao="Quero ajudar"
+      />
 
       <style>{`
-        .fn-grade { display: grid; grid-template-columns: 1fr; gap: 18px; align-items: start; }
-        @media (min-width: ${PONTOS.computador}px) { .fn-grade { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-        summary::-webkit-details-marker { display: none; }
-        a:focus-visible, summary:focus-visible { outline: ${BORDA}px solid ${C.ink}; outline-offset: 3px; }
+        .fn-indice { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: clamp(32px, 5vw, 48px); }
+        .fn-indice a { min-height: 44px; padding: 8px 16px; font-size: 15.5px; text-decoration: none; transition: background-color .15s ease; }
+        .fn-indice a:hover { background: ${C.gold}; }
+        .fn-indice a:focus-visible, .fn-mais summary:focus-visible { outline: ${FOCO}; outline-offset: 2px; }
+        .fn-grupo { margin-bottom: clamp(48px, 7vw, 72px); scroll-margin-top: 88px; }
+        .fn-ficha { scroll-margin-top: 88px; }
+        .fn-cabeca { display: flex; align-items: center; gap: 12px; }
+        .fn-cabeca h3 { flex: 1; min-width: 0; }
+        .fn-resumo { font-size: 16.5px; line-height: 1.5; color: ${C.ink}; }
+        .fn-mais { margin-top: auto; border-top: ${borda()}; padding-top: 2px; }
+        .fn-mais summary { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 46px; font-size: 16px; font-weight: 700; cursor: pointer; list-style: none; }
+        .fn-mais summary::-webkit-details-marker { display: none; }
+        .fn-seta { display: grid; transition: transform .15s ease; }
+        .fn-mais[open] .fn-seta { transform: rotate(90deg); }
+        .fn-mais h4 { margin: 10px 0 2px; font-size: 15.5px; font-weight: 800; }
+        .fn-mais p, .fn-mais li { font-size: 16px; line-height: 1.5; color: ${C.suave}; }
+        .fn-mais .s-btn { margin-bottom: 12px; }
+        .fn-mais ol { margin: 0 0 14px; padding-left: 22px; list-style: decimal; display: flex; flex-direction: column; gap: 6px; }
+        @media (prefers-reduced-motion: reduce) { .fn-seta, .fn-indice a { transition: none; } }
       `}</style>
     </PaginaDoSite>
   );

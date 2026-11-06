@@ -33,16 +33,34 @@ Regras:
 
 ## Tema e tokens
 
-- Fonte única: `src/lib/theme.ts`. (Duas exceções conhecidas e a corrigir:
-  `programacao/ProgramacaoClient.tsx` e `CompartilharClient.tsx` redefinem as
-  fontes, e `programacao/tipos.ts` reexporta o tema. Não copie o padrão.)
-- O cartão OG (`src/lib/ogCard.tsx`) usa as mesmas fontes, lidas de
-  `src/lib/fontes/*.ttf` no build — o Satori não lê woff2.
-- Use `C`, `FONT_ALFA`, `FONT_ELITE`, `FONT_BITTER`, `BORDA`/`borda()` e `TEXTO`.
-- Não escreva `3px solid` à mão.
-- A sombra dura sai de `sombra()` / `sombraErguida()` / `sombraAfundada()`.
-- Três degraus, e só três: `rente` (3), `cartao` (5), `alto` (8). A opacidade é
-  fixa; o que muda com a altura é o deslocamento.
+- Fonte única: `src/lib/theme.ts`.
+- O cartão OG (`src/lib/ogCard.tsx`) usa as fontes lidas de `src/lib/fontes/*.ttf`
+  no build — o Satori não lê woff2.
+- **O site é claro desde 11/2026.** Branco (`C.paper`), tinta (`C.ink`), texto
+  secundário `C.suave`, segundo tom `C.fundo`, ouro como destaque e `C.ouroClaro`
+  para etiqueta e realce. As regras e o porquê estão no comentário de abertura
+  do `theme.ts` e no `CLAUDE.md`.
+- Duas vozes: `FONT_ALFA` em título de 24 px ou mais, com a escala `TITULO`;
+  `FONT_TEXTO` (Figtree) no resto, com a escala `TEXTO`.
+- Linha é `borda()`, canto é `RAIO`, foco é `FOCO`. Cartão em repouso não tem
+  sombra; `sombra()` / `sombraErguida()` / `sombraAfundada()` respondem ao ponteiro.
+
+### As peças comuns
+
+- `src/components/site/estilos.tsx`: as classes `s-` (`s-btn` com `s-btn-ouro`,
+  `s-btn-linha`, `s-btn-tinta`, `s-btn-peq`, `s-btn-bloco`; `s-cartao`, `s-grade`
+  com `s-grade-2/3/4`, `s-secao`, `s-cabeca`, `s-rotulo`, `s-titulo`, `s-sub`,
+  `s-selo`, `s-etiqueta`, `s-linhas`, `s-campo`, `s-link`). Entram uma vez por
+  página, por `PaginaDoSite`.
+- `Convite.tsx`: o bloco de ouro que fecha a página.
+- `Escada.tsx`: passos em sequência, deitados no computador e em pé no celular.
+- `Sol.tsx`: os doze raios com um miolo (o emblema na home, o ícone ou o retrato
+  nas aberturas).
+- `Sertao.tsx`: a ilustração, com as serras, os mandacarus, as carnaúbas e a
+  jangada da cena antiga, agora de dia e no pé da abertura. `public/cordel-bg.html`
+  segue no ar por compatibilidade, mas nenhuma página o carrega.
+- `features/organizacao/Moldura.tsx`: `Secao` (com `lado`, título à esquerda no
+  computador), `BotaoCartao`, `SeloIcone`, `LinhaProxima`, `Reconhecimento`.
 
 ## Frentes públicas principais
 
@@ -66,7 +84,7 @@ Regras:
 - `/resultados` é estudo interno do 1º turno (votos, cadeiras, quociente, legenda, conversão do Renan, cadeiras, candidatos e adversários — por Brasil, região, estado, município e bairro), sem indexação e fora do sitemap, como a Munição.
 - Os dados são JSON estático em `public/resultados-2026/` (`resumo.json`, `uf/<uf>.json`, `mapa/<uf>.json`), gerados fora deste repositório pelo projeto de análise do TSE: `python -m src.cli export-site --dest <este repositório>/public/resultados-2026`. Não edite esses arquivos à mão; gere de novo.
 - **A entrada é o Explorador** (`src/features/resultados/explorador/`): uma tela só, com o mapa na frente, que desce Brasil → região → estado → cidade → bairro (clique ou toque na área; no celular o primeiro toque mostra os números e o botão "Abrir"). Em cima, o que pintar, agrupado por pergunta (onde o Missão é forte, onde falta converter, o terreno) e "% (cor)" ou "votos (círculo)". Ao lado, a ficha do lugar (o número pintado contra o nível de cima, os três números do Missão, a divisão dos votos, os maiores lá dentro). Embaixo, a tabela dos lugares de dentro (enxuta, com "Mais colunas" e CSV) e as gavetas com tudo o que as antigas abas Brasil, Região, Estado, Município e Bairros mostravam. Endereço: `#explorar/<região>/<uf>/<município TSE>/<bairro>?p=<indicador>&v=votos`; os links antigos (`#estado/sp`, `#bairros/ce/13897/ALDEOTA`) abrem o mesmo lugar. A região é soma dos estados (`regioes.ts`), com o código por extenso (`sudeste`, não `se`, que é Sergipe). `testes/contrato/explorador.test.ts` prende o endereço, as faixas, a cobertura do mapa e que nenhum "Sobre este dado" ou coluna antiga sumiu.
-- **Visual de dados:** `/resultados` não usa o cordel. Usa a superfície `PAINEL_DADOS`, `FONT_DADOS` (fonte do sistema), `fileteDados()` e `RAIO_DADOS` de `src/lib/theme.ts`: fundo claro, filete de 1 px, sem sombra, algarismos tabulares e o ouro só no que é do Missão. Os pares de contraste estão em `contraste.test.ts`. Mapas pintam por faixas de quantil com o corte escrito na legenda. `pct(x, 2)` só mostra duas casas abaixo de 1%.
+- **Visual de dados:** `/resultados` usa a superfície `PAINEL_DADOS`, `FONT_DADOS` (fonte do sistema), `fileteDados()` e `RAIO_DADOS` de `src/lib/theme.ts`: fundo claro, filete de 1 px, sem sombra, algarismos tabulares e o ouro só no que é do Missão. Os pares de contraste estão em `contraste.test.ts`. Mapas pintam por faixas de quantil com o corte escrito na legenda. `pct(x, 2)` só mostra duas casas abaixo de 1%.
 - Gráficos e mapas são HTML/SVG próprios (sem biblioteca); as cores de dado saem de `DADO` em `src/lib/theme.ts`.
 - A UI mora em `src/features/resultados/`; a rota é `src/app/resultados/page.tsx`.
 - **Bairros e adversários** saem dos Dados Abertos do TSE (votação por seção + cadastro dos locais de votação, 2022/2024/2026) cruzados com a malha de bairros e distritos do IBGE (Censo 2022). No projeto de análise: `python -m src.cli bairros --baixar --apagar-zip` (baixa UF por UF e apaga o zip da seção depois de processar; disco curto) e `export-site`. A conferência (`data/reports/conferencia_secoes.csv`) compara a soma das seções com o total oficial; `bairros` falha acima de 0,5% numa UF.
@@ -85,7 +103,7 @@ Regras:
 
 ### Navegação comum (10/2026)
 
-- `src/components/site/`: `Cabecalho` (barra sticky; no celular, "Menu" abre uma gaveta `<details>` que funciona sem JS; na home começa transparente sobre a cena e fica sólida quando `#abertura` sai da tela), `AberturaPagina` (faixa de tinta com a hachura em ouro), `Rodape` (quatro colunas, redes, Área do militante) e `PaginaDoSite` (`fundo`: `papel` padrão, `cena` na home, `livre` para páginas com fundo próprio, como programação, heróis, inscrição e candidatos).
+- `src/components/site/`: `Cabecalho` (barra sticky branca; no celular, o botão de menu abre uma gaveta `<details>` que funciona sem JS), `AberturaPagina` (trilha, rótulo opcional, título, frase e até duas ações, com o `Sol` à direita no computador; `retrato` troca o ícone por uma foto e aparece também no celular), `Rodape` (quatro colunas, redes, Área do militante) e `PaginaDoSite` (`fundo`: `papel` padrão, ou `livre` para a página que cuida das próprias seções, como home, programação, heróis e inscrição).
 - Barra e rodapé somem na impressão (a colinha de `/candidatos` imprime em A4).
 - Para conferir o celular no Chrome headless, use um iframe de 375 px: o headless não desce de 500 px de largura e só recorta a foto.
 
@@ -110,6 +128,7 @@ Regras:
 
 ### Programação
 
+- A cor do encontro (`cor`, no painel) só vale para o pôster; na página a lista é uma só, com a data em destaque.
 - A agenda pública é derivada dos encontros do painel.
 - Toda conta de tempo sai de `inicio`, nunca de `data`.
 - `estadoDe()` (TS) e `estado_do_evento()` (PHP) têm de concordar.

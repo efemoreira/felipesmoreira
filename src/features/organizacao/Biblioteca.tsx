@@ -2,11 +2,11 @@
 import React from "react";
 import Link from "next/link";
 import { Icon } from "@/components/icons";
-import { C, FONT_ALFA, TEXTO, bordaFina } from "@/lib/theme";
+import { C, RAIO, TITULO, FONT_ALFA } from "@/lib/theme";
 import { sinal } from "@/lib/api/sinal";
 import type { Material } from "@/lib/api/organizacao";
 import { temaPorChave } from "./catalogo";
-import { Moldura, Secao, cartao, rotuloPequeno } from "./Moldura";
+import { Moldura, Secao } from "./Moldura";
 import { useOrganizacao } from "./useOrganizacao";
 
 /**
@@ -21,21 +21,15 @@ import { useOrganizacao } from "./useOrganizacao";
 function CartaoMaterial({ m }: { m: Material }) {
   const tema = temaPorChave(m.tema);
   return (
-    <article style={cartao}>
-      <p style={{ ...rotuloPequeno, margin: 0 }}>{m.tipoNome}{tema ? ` · ${tema.nome}` : ""}</p>
-      <h3 style={{ fontFamily: FONT_ALFA, fontSize: 19, lineHeight: 1.2, margin: 0 }}>{m.titulo}</h3>
-      {m.resumo && <p style={{ margin: 0, ...TEXTO.corpo }}>{m.resumo}</p>}
-      <a
-        href={m.link}
-        target="_blank"
-        rel="noopener noreferrer"
-        onClick={() => sinal("abriu-material")}
-        style={{ display: "inline-flex", alignItems: "center", gap: 8, minHeight: 44, fontFamily: FONT_ALFA, fontSize: 15, color: C.ink }}
-      >
+    <a href={m.link} target="_blank" rel="noopener noreferrer" onClick={() => sinal("abriu-material")} className="s-cartao">
+      <span className="o-sub" style={{ margin: 0 }}>{m.tipoNome}{tema ? ` · ${tema.nome}` : ""}</span>
+      <span className="s-cartao-titulo">{m.titulo}</span>
+      {m.resumo && <span className="o-info">{m.resumo}</span>}
+      <span className="o-rodape" style={{ display: "inline-flex", alignItems: "center", gap: 6, fontWeight: 700 }}>
         <Icon name={m.tipo === "gravacao" ? "play" : "book"} size={18} />
         {m.tipo === "gravacao" ? "Assistir" : "Abrir"}
-      </a>
-    </article>
+      </span>
+    </a>
   );
 }
 
@@ -48,51 +42,50 @@ export default function Biblioteca() {
   return (
     <Moldura
       trilha="Biblioteca"
-      kicker="Biblioteca"
       titulo="Para estudar e levar ao núcleo"
       icone="book"
       intro={
-        <p style={{ margin: 0 }}>
+        <p>
           O que a militância lê, estuda e produz: o Livro Amarelo do Missão, os cadernos e os
           diagnósticos dos grupos temáticos e as gravações das formações.
         </p>
       }
     >
-      <Secao titulo="Arquivo Iceberg" sub="Uma linha do tempo dos Icebergs de Arthur do Val, dos documentários do MBL e da formação do Missão, com verbetes interligados e fontes para consultar.">
-        <article style={cartao}>
-          <p style={{ ...rotuloPequeno, margin: 0 }}>História · Pessoas · Documentos</p>
-          <h3 style={{ fontFamily: FONT_ALFA, fontSize: 22, lineHeight: 1.3, margin: 0 }}>Quatro vídeos, uma história para explorar</h3>
-          <p style={{ margin: 0, ...TEXTO.corpo }}>Consulte os acontecimentos, conheça os personagens e navegue por imagens com legendas, créditos e links para as fontes originais.</p>
-          <Link href="/iceberg" prefetch={false} style={{ display: "inline-flex", alignItems: "center", gap: 8, minHeight: 44, fontFamily: FONT_ALFA, fontSize: 16, color: C.ink }}><Icon name="book" size={18} />Explorar o Arquivo Iceberg</Link>
-        </article>
-      </Secao>
-      {estado.fase === "carregando" && <p style={{ ...TEXTO.corpo }}>Carregando a Biblioteca…</p>}
-      {estado.fase === "erro" && <p style={{ ...TEXTO.corpo }}>Não consegui carregar a Biblioteca agora. Tente de novo em instantes.</p>}
-      {estado.fase === "pronto" && materiais.length === 0 && (
-        <p style={{ ...TEXTO.corpo }}>Os primeiros materiais estão sendo organizados. Volte em breve.</p>
-      )}
+      <section aria-labelledby="b-iceberg" style={{ display: "grid", gap: 14, padding: "clamp(24px, 4vw, 36px)", marginBottom: "clamp(40px, 6vw, 64px)", background: C.ouroClaro, borderRadius: RAIO.xg }}>
+        <p className="s-rotulo" style={{ margin: 0 }}>História, pessoas e documentos</p>
+        <h2 id="b-iceberg" style={{ margin: 0, fontFamily: FONT_ALFA, fontWeight: 400, fontSize: TITULO.secao, lineHeight: 1.12 }}>Arquivo Iceberg</h2>
+        <p style={{ margin: 0, maxWidth: "60ch", fontSize: 18, lineHeight: 1.55 }}>
+          Uma linha do tempo dos Icebergs de Arthur do Val, dos documentários do MBL e da formação do Missão, com imagens, verbetes interligados e fontes para consultar.
+        </p>
+        <div className="s-acoes" style={{ marginTop: 6 }}>
+          <Link href="/iceberg" prefetch={false} className="s-btn s-btn-tinta">
+            Explorar o arquivo
+            <Icon name="chevronRight" size={18} />
+          </Link>
+        </div>
+      </section>
+
+      {estado.fase === "carregando" && <p className="s-corpo">Carregando a Biblioteca…</p>}
+      {estado.fase === "erro" && <p className="s-corpo">Não consegui carregar a Biblioteca agora. Tente de novo em instantes.</p>}
+      {estado.fase === "pronto" && materiais.length === 0 && <p className="s-corpo">Os primeiros materiais estão sendo organizados. Volte em breve.</p>}
 
       {livro.length > 0 && (
         <Secao
           titulo="Círculo do Livro Amarelo"
           sub="Leitura guiada do programa nacional do Missão, um capítulo por encontro, ligando cada proposta à realidade do Ceará."
         >
-          <div style={{ display: "grid", gap: 16, gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 300px), 1fr))" }}>
-            {livro.map((m) => <CartaoMaterial key={m.id} m={m} />)}
-          </div>
+          <div className="s-grade s-grade-3">{livro.map((m) => <CartaoMaterial key={m.id} m={m} />)}</div>
         </Secao>
       )}
 
       {resto.length > 0 && (
         <Secao titulo="Cadernos, diagnósticos e gravações">
-          <div style={{ display: "grid", gap: 16, gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 300px), 1fr))" }}>
-            {resto.map((m) => <CartaoMaterial key={m.id} m={m} />)}
-          </div>
+          <div className="s-grade s-grade-3">{resto.map((m) => <CartaoMaterial key={m.id} m={m} />)}</div>
         </Secao>
       )}
 
-      <p style={{ ...TEXTO.nota, borderTop: bordaFina(C.ink), paddingTop: 12 }}>
-        Quer estudar junto? Os grupos temáticos têm a porta Estudo — é de lá que saem os diagnósticos.
+      <p className="o-nota" style={{ marginBottom: 32 }}>
+        Quer estudar junto? Os grupos temáticos têm a porta Estudo: é de lá que saem os diagnósticos.
       </p>
     </Moldura>
   );

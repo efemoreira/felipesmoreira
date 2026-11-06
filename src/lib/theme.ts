@@ -1,162 +1,170 @@
 /**
- * Design tokens do site — paleta do cordel e fontes auto-hospedadas.
- * Única fonte da verdade: antes desta consolidação, cada página redefinia
- * `C` e as variáveis de fonte à mão. Qualquer cor/fonte nova entra aqui.
+ * Design tokens do site — a fonte única de cor, fonte, medida e sombra.
+ * Qualquer cor, fonte ou medida nova entra aqui, e não na página.
+ *
+ * A IDENTIDADE É CLARA (11/2026). O site saiu da noite do cordel: fundo preto,
+ * papel bege com hachura, moldura de 3 px e sombra dura juntos faziam tudo
+ * parecer escuro e sujo, e como tudo gritava, nada se destacava. O que fica da
+ * marca é o que ela tem de mais forte, em dose certa:
+ *
+ *  - **branco e tinta** carregam a leitura;
+ *  - **o ouro é cor de sol**: um destaque por vista, nunca texto sobre branco
+ *    (dá 1,5:1) e nunca sujo por transparência;
+ *  - **as onças e a Alfa Slab** ficam para o que é grande;
+ *  - **quem separa os blocos é o espaço**, e a linha fina só ajuda.
+ *
+ * Os tons de linha e de texto secundário são os da superfície de dados
+ * (`PAINEL_DADOS`, /resultados), de propósito: o site e o estudo agora são o
+ * mesmo produto.
  */
 
 export const C = {
+  /* a tinta: todo texto principal */
   ink: "#181203",
-  cream: "#F6F5EF",
-  paper: "#F3ECDA",
+  /* a tinta acesa pelo ponteiro, no botão escuro */
+  tintaAcesa: "#3A3226",
+  /* texto secundário. Substitui `opacity` em texto: tinta transparente é o que
+     deixa a página com cara de suja; cinza de verdade continua nítido. 6,5:1
+     sobre o branco, medido em `contraste.test.ts`. */
+  suave: "#5F5E59",
+
+  /* as superfícies: a página é branca, e `fundo` é o único segundo tom */
+  paper: "#FFFFFF",
+  cream: "#FFFFFF",
+  fundo: "#F6F6F3",
+
+  /* as linhas: `linha` separa, `linhaForte` contorna controle (≥ 3:1) */
+  linha: "#E2E1DC",
+  linhaForte: "#8E8C85",
+
+  /* o ouro da marca e seus dois apoios */
   gold: "#FFCB05",
   gold2: "#FFDE5A",
-  /* Ouro queimado — o único ouro que vira TEXTO sobre papel ou creme (título
-     das seções legais, o "pessoas" do plano). #B8860B dava 2,76:1 sobre o
-     papel; este dá 4,85:1 no papel e 5,23:1 no creme — AA em qualquer
-     tamanho, e continua sendo ouro. `testes/contrato/contraste.test.ts`
-     mede. */
+  /* fundo de etiqueta e de realce: o ouro bem diluído em branco */
+  ouroClaro: "#FFF6D1",
+  /* o único ouro que vira TEXTO sobre fundo claro: 5,7:1 no branco */
   goldDim: "#856006",
-  night: "#14110C",
 
-  /* a tinta da sombra dura — ver SOMBRA, abaixo */
-  sombra: "rgba(24,18,3,.3)",
-  /* a mesma sombra quando a peça está sobre fundo escuro (mesmo tom do
-     `--sombra` do tema escuro do painel) */
-  sombraNoite: "rgba(0,0,0,.45)",
+  /* a sombra é luz macia, não decalque — ver SOMBRA */
+  sombra: "rgba(24,18,3,.1)",
 
-  /* estados — mesmos tons do painel.css, para os dois lados combinarem
-     (blocos de "Nunca" e de checklist na formação) */
-  erro: "#F4A79D",
+  /* o vermelho do "ao vivo", e só dele */
+  aoVivo: "#B3261E",
+
+  /* estados */
+  erro: "#8C2F22",
   erroBorda: "#C2543F",
-  sombraErro: "rgba(140,47,34,.3)",
-  /* erro SOBRE FUNDO CLARO (o formulário de inscrição, sobre papel): o par de
-     cima é para texto sobre a noite — salmão claro em tinta escura. Sobre
-     papel, salmão claro não se lê; aqui é fundo pálido e tinta vermelha,
-     6,75:1. Eram três paletas de erro no site; são estas duas, por contexto. */
   erroFundo: "#FBE3E0",
   erroTinta: "#8C2F22",
-  ok: "#A7DBA0",
+  sombraErro: "rgba(140,47,34,.16)",
+  ok: "#1F6B2B",
   okBorda: "#4E9B45",
+  okFundo: "#E4F4E1",
 };
 
 /**
- * A ESPESSURA DA MOLDURA DO CORDEL.
- *
- * O `3` é identidade, não estilo: canto reto, borda grossa e sombra dura são o
- * que faz o site e o painel parecerem o mesmo produto — e é por isso que o
- * painel guarda o dele num token do `:root` do `painel.css`. Aqui ele estava
- * escrito à mão em 58 lugares, em 17 arquivos, com nove cores diferentes ao
- * lado: engrossar a moldura era uma tarde de procurar e substituir, e bastava
- * escapar um para o cartão ficar mais fino que os vizinhos.
- *
- * O que varia é a COR, e é por isso que o token é uma função — a cor é decisão
- * de cada peça (tinta no normal, ouro no que está aceso, vermelho no erro), a
- * espessura não é decisão de ninguém.
+ * A LINHA. Um pixel, na cor `linha`: o que separa sem pesar. Antes a moldura
+ * era de 3 px, em 90 lugares, ao redor de tudo; e quando tudo tem moldura,
+ * nada se destaca. A cor continua sendo decisão da peça.
  */
-export const BORDA = 3;
+export const BORDA = 1;
 
-/** A moldura do cordel na cor pedida. `borda()` sozinho dá a de tinta. */
-export const borda = (cor: string = C.ink) => `${BORDA}px solid ${cor}`;
+/** A linha do site na cor pedida. `borda()` sozinho dá a linha clara. */
+export const borda = (cor: string = C.linha) => `${BORDA}px solid ${cor}`;
 
-/**
- * A ESCALA DA SOMBRA DURA.
- *
- * A sombra sem borrão é o segundo traço da identidade, depois da moldura: é ela
- * que faz a peça parecer papel levantado do papel. Ela estava escrita à mão em
- * 17 combinações de deslocamento e opacidade (`3px/.22`, `3px/.28`, `3px/.3`,
- * `3px/.35`, `3px/.5`, `4px/.28`, `5px/.4`, `9px/.55`…) espalhadas por 30
- * arquivos, e isso não era repetição: era deriva. Um cartão com `3px/.35` ao
- * lado de um com `4px/.28` não conta ao olho dois níveis de altura — conta que
- * duas pessoas escreveram o mesmo cartão em dias diferentes.
- *
- * **A opacidade é uma só, e quem carrega a altura é o deslocamento.** Sombra
- * dura não tem borrão: ela é um decalque da peça, deslocado. Tinta é uma só —
- * na impressão de verdade um registro fora do lugar não fica mais claro porque
- * saiu mais longe, fica mais visível porque mostra mais tinta. Fazer a opacidade
- * variar junto brigava com isso: as peças pequenas estavam mais escuras (`.35`)
- * que as grandes (`.3`), então o que era para estar rente à página pesava mais
- * que o que era para estar levantado dela. É também o que o painel já faz —
- * `--sombra` é fixo lá, e só o deslocamento muda.
- *
- * **São três degraus, e não oito.** `3 · 5 · 8` — cada um vale ~1,6 do
- * anterior, que é o mínimo para o olho ler "outro nível" sem medir. Havia oito
- * deslocamentos em uso (3,4,5,6,7,8,9,10) e nenhum se distinguia do vizinho.
- * O primeiro degrau é 3 de propósito: é a espessura da moldura (`BORDA`), então
- * a peça rente à página lê como se a borda tivesse engrossado de um lado.
- *
- * O que varia é a COR, como em `borda()` — tinta no papel, preto no escuro,
- * ouro no campo aceso, vermelho no erro. A altura não é decisão de cor.
- */
-export const SOMBRA = {
-  /** Rente à página: etiqueta, pílula, campo, chip, cartãozinho de dentro. */
-  rente: 3,
-  /** O cartão de conteúdo, o botão, a peça que se lê como um objeto. */
-  cartao: 5,
-  /** O que chama: chamada principal, cartão clicável em destaque, modal. */
-  alto: 8,
-} as const;
-
-export type Degrau = keyof typeof SOMBRA;
-
-/** A sombra dura no degrau pedido. `sombra()` sozinho dá o cartão em tinta. */
-export const sombra = (degrau: Degrau = "cartao", cor: string = C.sombra) =>
-  `${SOMBRA[degrau]}px ${SOMBRA[degrau]}px 0 ${cor}`;
-
-/**
- * O mesmo degrau com a peça erguida pelo ponteiro.
- * Anda junto com `transform: translate(-2px,-2px)`: a peça sobe 2 e a sombra
- * cresce 2, então a quina de baixo da sombra fica parada e o que se vê é a peça
- * descolando do papel — e não o par inteiro escorregando.
- */
-export const sombraErguida = (degrau: Degrau = "cartao", cor: string = C.sombra) =>
-  `${SOMBRA[degrau] + 2}px ${SOMBRA[degrau] + 2}px 0 ${cor}`;
-
-/**
- * O mesmo degrau com a peça afundada pelo clique.
- * Anda junto com `transform: translate(2px,2px)` — o inverso exato do de cima.
- */
-export const sombraAfundada = (degrau: Degrau = "cartao", cor: string = C.sombra) =>
-  `${SOMBRA[degrau] - 2}px ${SOMBRA[degrau] - 2}px 0 ${cor}`;
-
-/**
- * A escala de texto corrido.
- *
- * `fontSize: 15.5` com `lineHeight: 1.55` aparecia em oito arquivos, e o 1.6 em
- * onze — os dois querendo dizer "texto de leitura", com dois valores. Espalhe
- * com `...TEXTO.corpo`, e acrescente margem por cima quando a peça pedir.
- */
-export const TEXTO = {
-  /** Texto de leitura: parágrafo, item de lista, descrição de ficha. */
-  corpo: { fontSize: 15.5, lineHeight: 1.55 },
-  /** O mesmo corpo com respiro maior, para bloco longo de leitura. */
-  corpoSolto: { fontSize: 15.5, lineHeight: 1.6 },
-  /** Nota de rodapé, legenda, dica ao lado de um campo. */
-  nota: { fontSize: 14.5, lineHeight: 1.55 },
-} as const;
-
-/* Variáveis definidas em src/app/layout.tsx via next/font */
-export const FONT_ALFA = "var(--font-alfa), serif";
-export const FONT_ELITE = "var(--font-elite), monospace";
-export const FONT_BITTER = "var(--font-bitter), serif";
-
-/**
- * A BORDA FINA — 2 px, a linha de dentro, de divisão, de campo. `BORDA` (3 px)
- * é a moldura da peça; esta é o traço. Escrita à mão em 52 lugares até
- * 12/09; agora é token, e `testes/contrato/tema.test.ts` barra o retorno.
- */
+/** Dois pixels: só para o que precisa marcar, como o contorno de um campo em foco. */
 export const BORDA_FINA = 2;
-export function bordaFina(cor: string = C.ink): string {
+export function bordaFina(cor: string = C.linha): string {
   return `${BORDA_FINA}px solid ${cor}`;
 }
 
 /**
- * A HACHURA DO CORDEL — a textura de xilogravura por trás do papel. Era
- * copiada, idêntica, em sete features; é a peça mais identitária do site e
- * mora aqui.
+ * OS CANTOS. Um degrau por tamanho de peça, para o cartão e o botão de dentro
+ * dele conversarem. `RAIO_DADOS` (/resultados) é o `p`.
  */
-export const HATCH =
-  "repeating-linear-gradient(88deg, rgba(24,18,3,.045) 0 2px, transparent 2px 15px)," +
-  "repeating-linear-gradient(-91deg, rgba(24,18,3,.03) 0 2px, transparent 2px 21px)";
+export const RAIO = {
+  /** campo, botão pequeno, etiqueta quadrada */
+  p: 8,
+  /** botão, selo de ícone */
+  m: 12,
+  /** cartão */
+  g: 16,
+  /** bloco de destaque */
+  xg: 24,
+  /** etiqueta redonda */
+  pilula: 999,
+} as const;
+
+/**
+ * A ESCALA DA SOMBRA — luz, e não decalque.
+ *
+ * Em repouso o cartão não tem sombra: quem o desenha é a linha. A sombra é o
+ * que responde ao ponteiro e o que levanta o que flutua de verdade (gaveta,
+ * modal). Três degraus, uma tinta só (`C.sombra`), e quem carrega a altura é o
+ * deslocamento com o desfoque.
+ */
+export const SOMBRA = {
+  /** Rente à página: campo, chip, botão em repouso. */
+  rente: { y: 1, desfoque: 3 },
+  /** O cartão erguido pelo ponteiro. */
+  cartao: { y: 8, desfoque: 24 },
+  /** O que flutua: modal, gaveta, menu aberto. */
+  alto: { y: 20, desfoque: 48 },
+} as const;
+
+export type Degrau = keyof typeof SOMBRA;
+
+/** A sombra no degrau pedido. `sombra()` sozinho dá a do cartão. */
+export const sombra = (degrau: Degrau = "cartao", cor: string = C.sombra) =>
+  `0 ${SOMBRA[degrau].y}px ${SOMBRA[degrau].desfoque}px ${cor}`;
+
+/** O degrau com a peça erguida: anda com `transform: translateY(-2px)`. */
+export const sombraErguida = (degrau: Degrau = "cartao", cor: string = C.sombra) =>
+  `0 ${SOMBRA[degrau].y + 4}px ${SOMBRA[degrau].desfoque + 8}px ${cor}`;
+
+/** O degrau com a peça apertada: anda com `transform: translateY(0)`. */
+export const sombraAfundada = (degrau: Degrau = "cartao", cor: string = C.sombra) =>
+  `0 ${Math.max(SOMBRA[degrau].y - 2, 0)}px ${Math.max(SOMBRA[degrau].desfoque - 8, 2)}px ${cor}`;
+
+/** O anel de foco do teclado. Em tinta: o ouro some sobre o branco. */
+export const FOCO = `3px solid ${C.ink}`;
+
+/**
+ * AS DUAS VOZES. Eram três famílias competindo em toda linha: a Alfa Slab
+ * ultrapesada até em título de 15 px, a máquina de escrever em rótulo de 11 px
+ * e a Bitter no corpo. Agora a Alfa Slab fala em título grande (28 px ou mais,
+ * nunca menos: abaixo disso ela vira um borrão) e a Figtree fala todo o resto.
+ *
+ * Special Elite e Bitter continuam carregadas só para o Estúdio, que as oferece
+ * como opção de texto e não lê estes tokens.
+ */
+export const FONT_ALFA = "var(--font-alfa), Georgia, serif";
+export const FONT_TEXTO = "var(--font-texto), system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif";
+
+/** A escala dos títulos. Só a Alfa Slab usa `exibicao`, `pagina` e `secao`. */
+export const TITULO = {
+  /** O título da home. */
+  exibicao: "clamp(44px, 7.6vw, 84px)",
+  /** O título de toda página interna. */
+  pagina: "clamp(36px, 5.6vw, 58px)",
+  /** O título de seção. */
+  secao: "clamp(28px, 3.8vw, 38px)",
+  /** Título de cartão grande, ainda na Alfa Slab. */
+  bloco: "clamp(24px, 2.8vw, 28px)",
+} as const;
+
+/**
+ * A escala de texto corrido. Espalhe com `...TEXTO.corpo`, e acrescente margem
+ * por cima quando a peça pedir.
+ */
+export const TEXTO = {
+  /** Texto de leitura: parágrafo, item de lista, descrição de ficha. */
+  corpo: { fontSize: 17, lineHeight: 1.6 },
+  /** O mesmo corpo com respiro maior, para bloco longo de leitura. */
+  corpoSolto: { fontSize: 17, lineHeight: 1.7 },
+  /** Nota de rodapé, legenda, dica ao lado de um campo. */
+  nota: { fontSize: 15, lineHeight: 1.5 },
+} as const;
 
 /**
  * AS CORES DE DADO — os gráficos de /resultados.
@@ -192,12 +200,11 @@ export const DADO = {
 /**
  * A SUPERFÍCIE DE DADOS — /resultados.
  *
- * O cordel (papel, Alfa Slab, moldura de 3 px, sombra dura) é a voz do site;
- * numa tela de mapa, tabela e percentual ele briga com o dado. Aqui a moldura
- * vira filete de 1 px, a sombra some, o número sai numa fonte sem serifa com
- * algarismos alinhados e quem separa os blocos é o espaço. O ouro do Missão
- * (`DADO.missao`) continua sendo o único destaque. `contraste.test.ts` mede os
- * pares de texto.
+ * O filete de 1 px, sem sombra, com número em fonte sem serifa e algarismos
+ * alinhados, e o espaço separando os blocos. Foi a tela que deu certo primeiro:
+ * o resto do site adotou estes mesmos tons de linha e de texto. O ouro do
+ * Missão (`DADO.missao`) continua sendo o único destaque. `contraste.test.ts`
+ * mede os pares de texto.
  */
 export const PAINEL_DADOS = {
   fundo: "#F6F6F3",
@@ -215,7 +222,7 @@ export const PAINEL_DADOS = {
 
 /** Fonte do sistema — nada a baixar — com algarismos tabulares no CSS de quem usa. */
 export const FONT_DADOS = "system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
-export const RAIO_DADOS = 8;
+export const RAIO_DADOS = RAIO.p;
 /** O filete da superfície de dados. */
 export const fileteDados = (cor: string = PAINEL_DADOS.linha) => `1px solid ${cor}`;
 
@@ -227,7 +234,7 @@ export const fileteDados = (cor: string = PAINEL_DADOS.linha) => `1px solid ${co
 export const ESPACO = { xs: 4, s: 8, m: 12, l: 16, xl: 24, xxl: 32, sec: 48, gde: 64 } as const;
 
 /** Largura do conteúdo e da coluna de leitura. */
-export const LARGURA = { conteudo: 1080, texto: "68ch" } as const;
+export const LARGURA = { conteudo: 1120, texto: "66ch" } as const;
 
 /** Os dois pontos de quebra: tablet e computador. Usados nos <style> das peças. */
 export const PONTOS = { tablet: 640, computador: 900 } as const;

@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { C, FONT_ALFA, FONT_ELITE, borda, sombra, bordaFina } from "@/lib/theme";
+import { C, RAIO, borda } from "@/lib/theme";
 import type { Bloco } from "./tipos";
 
 /**
@@ -11,14 +11,12 @@ import type { Bloco } from "./tipos";
 
 const MONO = "ui-monospace, SFMono-Regular, Menlo, monospace";
 
-/* rótulo de seção: mesma etiqueta de máquina de escrever do resto do site */
-const Rotulo: React.FC<{ children: React.ReactNode; cor?: string }> = ({ children, cor = C.gold }) => (
+/* o rótulo de uma seção da aula */
+const Rotulo: React.FC<{ children: React.ReactNode; cor?: string }> = ({ children, cor = C.goldDim }) => (
   <p
     style={{
-      fontFamily: FONT_ELITE,
-      fontSize: 11,
-      letterSpacing: 1.6,
-      textTransform: "uppercase",
+      fontWeight: 600,
+      fontSize: 14.5,
       color: cor,
       margin: "0 0 8px",
     }}
@@ -27,26 +25,26 @@ const Rotulo: React.FC<{ children: React.ReactNode; cor?: string }> = ({ childre
   </p>
 );
 
-/* caixa com borda grossa e sombra dura — a moldura padrão do cordel */
+/* a caixa de um bloco: linha fina e canto redondo, como os cartões do site */
 const Caixa: React.FC<{ cor: string; fundo?: string; children: React.ReactNode }> = ({
   cor,
-  fundo = "rgba(0,0,0,.25)",
+  fundo = C.paper,
   children,
 }) => (
   <div
     style={{
       border: borda(cor),
+      borderRadius: RAIO.m,
       background: fundo,
       padding: "14px 16px",
       margin: "0 0 18px",
-      boxShadow: sombra("cartao", C.sombraNoite),
     }}
   >
     {children}
   </div>
 );
 
-const marcador = { color: C.gold, flex: "0 0 auto" } as const;
+const marcador = { color: C.goldDim, flex: "0 0 auto" } as const;
 const itemLinha = { display: "flex", gap: 10, margin: "0 0 8px", lineHeight: 1.6 } as const;
 
 export const Blocos: React.FC<{ blocos: Bloco[] }> = ({ blocos }) => (
@@ -70,7 +68,7 @@ const BlocoUm: React.FC<{ bloco: Bloco }> = ({ bloco }) => {
               <span
                 style={{
                   ...marcador,
-                  fontFamily: FONT_ALFA,
+                  fontWeight: 800,
                   fontSize: 15,
                   minWidth: 26,
                   textAlign: "right",
@@ -104,7 +102,7 @@ const BlocoUm: React.FC<{ bloco: Bloco }> = ({ bloco }) => {
 
     case "checklist":
       return (
-        <Caixa cor="rgba(255,203,5,.28)">
+        <Caixa cor={C.linha}>
           <Rotulo>{bloco.titulo}</Rotulo>
           <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
             {bloco.itens.map((it, i) => (
@@ -121,7 +119,7 @@ const BlocoUm: React.FC<{ bloco: Bloco }> = ({ bloco }) => {
 
     case "nunca":
       return (
-        <Caixa cor={C.erroBorda} fundo="rgba(194,84,63,.12)">
+        <Caixa cor={C.erroBorda} fundo={C.erroFundo}>
           <Rotulo cor={C.erro}>Nunca</Rotulo>
           <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
             {bloco.itens.map((it, i) => (
@@ -138,16 +136,16 @@ const BlocoUm: React.FC<{ bloco: Bloco }> = ({ bloco }) => {
 
     case "modelo":
       return (
-        <Caixa cor="rgba(255,255,255,.18)" fundo="rgba(0,0,0,.4)">
+        <Caixa cor={C.linha} fundo={C.fundo}>
           <Rotulo>{bloco.titulo}</Rotulo>
           {/* pre para o alinhamento do modelo sobreviver; rola sozinho no celular */}
           <pre
             style={{
               margin: 0,
               fontFamily: MONO,
-              fontSize: 13.5,
+              fontSize: 14.5,
               lineHeight: 1.8,
-              color: C.cream,
+              color: C.ink,
               whiteSpace: "pre",
               overflowX: "auto",
             }}
@@ -159,7 +157,7 @@ const BlocoUm: React.FC<{ bloco: Bloco }> = ({ bloco }) => {
 
     case "aviso":
       return (
-        <Caixa cor={C.gold} fundo="rgba(255,203,5,.1)">
+        <Caixa cor={C.gold} fundo={C.ouroClaro}>
           <Rotulo>Atenção</Rotulo>
           <p style={{ margin: 0, lineHeight: 1.7 }}>{bloco.texto}</p>
         </Caixa>
@@ -178,12 +176,10 @@ const BlocoUm: React.FC<{ bloco: Bloco }> = ({ bloco }) => {
                     style={{
                       textAlign: "left",
                       padding: "10px 10px",
-                      borderBottom: bordaFina(C.gold),
-                      fontFamily: FONT_ELITE,
-                      fontSize: 11,
-                      letterSpacing: 1.6,
-                      textTransform: "uppercase",
-                      color: C.gold,
+                      borderBottom: borda(),
+                      fontWeight: 600,
+                      fontSize: 14.5,
+                      color: C.goldDim,
                       whiteSpace: "nowrap",
                     }}
                   >
@@ -200,7 +196,7 @@ const BlocoUm: React.FC<{ bloco: Bloco }> = ({ bloco }) => {
                       key={j}
                       style={{
                         padding: "10px 10px",
-                        borderBottom: bordaFina("rgba(255,203,5,.14)"),
+                        borderBottom: borda(),
                         verticalAlign: "top",
                         lineHeight: 1.6,
                       }}

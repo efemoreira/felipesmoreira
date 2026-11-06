@@ -55,9 +55,17 @@ describe("navegação: todo destino existe", () => {
   });
 });
 
+describe("navegação: a barra do topo", () => {
+  test("a barra não usa backdrop-filter", () => {
+    /* Ele vira o contêiner dos filhos `position: fixed`: a gaveta do celular
+       ficava presa na altura da barra, cortada, e o teste de clique passava. */
+    assert.doesNotMatch(ler("src/components/site/Cabecalho.tsx"), /\.cb \{[^}]*backdrop-filter/);
+  });
+});
+
 describe("navegação: as páginas públicas usam a moldura, e só elas", () => {
   test("a raiz usa a moldura", () => {
-    assert.match(ler("src/features/home/Home.tsx"), /<PaginaDoSite fundo="cena"/);
+    assert.match(ler("src/features/home/Home.tsx"), /<PaginaDoSite fundo="livre"/);
   });
 
   for (const rota of PUBLICAS.filter((r) => r !== "")) {

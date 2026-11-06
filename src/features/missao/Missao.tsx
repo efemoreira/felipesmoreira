@@ -1,20 +1,11 @@
 import React from "react";
 import Link from "next/link";
 import { Icon } from "@/components/icons";
-import { BORDA, C, FONT_ALFA, FONT_ELITE, borda, TEXTO, sombra } from "@/lib/theme";
+import { C, LARGURA, RAIO, borda } from "@/lib/theme";
 import { PaginaDoSite } from "@/components/site/PaginaDoSite";
 import { AberturaPagina } from "@/components/site/AberturaPagina";
+import { Convite } from "@/components/site/Convite";
 import { CHAMADA, CHAPA, capitulos, porQueSeguranca } from "./data";
-
-
-const rotulo: React.CSSProperties = {
-  fontFamily: FONT_ELITE,
-  fontSize: 11.5,
-  letterSpacing: 2.2,
-  textTransform: "uppercase",
-  opacity: 0.65,
-  margin: "0 0 8px",
-};
 
 export default function Missao() {
   return (
@@ -24,250 +15,107 @@ export default function Missao() {
           trilha="Quem coordena"
           kicker="Coordenador de militância"
           titulo="Felipe Moreira"
-          icone="users"
           intro={<p>{CHAMADA}</p>}
           acoes={[{ texto: "Quero participar", href: "/queroajudar" }, { texto: "O plano", href: "/plano", icone: "book" }]}
+          retrato={
+            <picture style={{ display: "block", width: "100%", height: "100%" }}>
+              <source srcSet="/image/me-320.webp" type="image/webp" />
+              <img src="/image/me-320.jpg" alt="Felipe Moreira" width={320} height={320} decoding="async" style={{ display: "block", objectFit: "cover", width: "100%", height: "100%" }} />
+            </picture>
+          }
         />
       }
     >
-      <div style={{ maxWidth: 720, margin: "0 auto" }}>
-        <div
-          style={{
-            width: 124,
-            height: 124,
-            marginBottom: 28,
-            borderRadius: "50%",
-            overflow: "hidden",
-            background: C.cream,
-            boxShadow: `0 0 0 4px ${C.ink}, 0 0 0 8px ${C.gold}, 0 0 0 12px ${C.ink}`,
-          }}
-        >
-          <picture>
-            <source srcSet="/image/me-320.webp" type="image/webp" />
-            <img
-              src="/image/me-320.jpg"
-              alt="Felipe Moreira"
-              width={124}
-              height={124}
-              decoding="async"
-              style={{ objectFit: "cover", width: "100%", height: "100%" }}
-            />
-          </picture>
-        </div>
-
+      <div className="ms-coluna">
         {/* ===== a trajetória ===== */}
-        <section style={{ marginBottom: 40 }}>
-          <p style={rotulo}>Como cheguei aqui</p>
-          <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+        <section className="ms-secao" aria-labelledby="ms-trajetoria">
+          <h2 id="ms-trajetoria" className="s-titulo">Como cheguei aqui</h2>
+          <ol className="ms-linha">
             {capitulos.map((cap) => (
-              <article
-                key={cap.marco}
-                style={{
-                  background: C.cream,
-                  border: borda(),
-                  boxShadow: sombra("alto"),
-                  padding: "20px 18px",
-                }}
-              >
-                <header style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
-                  <span
-                    aria-hidden="true"
-                    style={{
-                      flex: "0 0 auto",
-                      width: 42,
-                      height: 42,
-                      display: "grid",
-                      placeItems: "center",
-                      background: C.gold,
-                      border: borda(),
-                      color: C.ink,
-                    }}
-                  >
-                    <Icon name={cap.icone} size={22} />
-                  </span>
-                  <div style={{ minWidth: 0 }}>
-                    <p
-                      style={{
-                        fontFamily: FONT_ELITE,
-                        fontSize: 11,
-                        letterSpacing: 2,
-                        textTransform: "uppercase",
-                        opacity: 0.65,
-                        margin: "0 0 2px",
-                      }}
-                    >
-                      {cap.marco}
-                    </p>
-                    <h2
-                      style={{
-                        fontFamily: FONT_ALFA,
-                        fontSize: "clamp(18px, 4.6vw, 23px)",
-                        lineHeight: 1.15,
-                        margin: 0,
-                        textWrap: "balance",
-                      }}
-                    >
-                      {cap.titulo}
-                    </h2>
-                  </div>
-                </header>
-                <div style={{ display: "flex", flexDirection: "column", gap: 11 }}>
+              <li key={cap.marco}>
+                <span aria-hidden="true" className="ms-marca">
+                  <Icon name={cap.icone} size={20} />
+                </span>
+                <div className="ms-capitulo">
+                  <p className="s-rotulo">{cap.marco}</p>
+                  <h3>{cap.titulo}</h3>
                   {cap.texto.map((p) => (
-                    <p key={p.slice(0, 28)} style={{ margin: 0, fontSize: 16, lineHeight: 1.62 }}>
-                      {p}
-                    </p>
+                    <p key={p.slice(0, 28)} className="ms-texto">{p}</p>
                   ))}
                 </div>
-              </article>
+              </li>
             ))}
-          </div>
+          </ol>
         </section>
 
         {/* ===== o que eu vi × o que o plano faz ===== */}
-        <section style={{ marginBottom: 36 }}>
-          <p style={rotulo}>Por que segurança é o meu eixo</p>
-          <p style={{ margin: "0 0 18px", fontSize: 16, lineHeight: 1.62, maxWidth: "60ch" }}>
+        <section className="ms-secao" aria-labelledby="ms-eixo">
+          <h2 id="ms-eixo" className="s-titulo">Por que segurança é o meu eixo</h2>
+          <p className="s-sub">
             Biografia sozinha não governa. Cada coisa que eu vi tem uma linha correspondente no
-            plano de governo da chapa — com meta, prazo e de onde vem o dinheiro. É por elas que
+            plano de governo da chapa, com meta, prazo e de onde vem o dinheiro. É por elas que
             dá pra cobrar.
           </p>
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <ul className="s-linhas ms-eixo">
             {porQueSeguranca.map((item) => (
-              <div
-                key={item.oQueVi}
-                style={{
-                  background: C.cream,
-                  border: borda(),
-                  boxShadow: sombra(),
-                  padding: "16px 17px",
-                }}
-              >
-                <p
-                  style={{
-                    margin: "0 0 10px",
-                    fontSize: 16,
-                    lineHeight: 1.5,
-                    fontWeight: 700,
-                    borderLeft: `5px solid ${C.gold}`,
-                    paddingLeft: 12,
-                  }}
-                >
-                  {item.oQueVi}
-                </p>
-                <p style={{ margin: "0 0 10px", ...TEXTO.corpoSolto }}>
-                  {item.oQuePlanoFaz}
-                </p>
-                <Link
-                  href={`/propostas#${item.ancora}`}
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 6,
-                    minHeight: 44,
-                    fontFamily: FONT_ELITE,
-                    fontSize: 12,
-                    letterSpacing: 1.2,
-                    textTransform: "uppercase",
-                    color: C.ink,
-                  }}
-                >
+              <li key={item.oQueVi}>
+                <h3>{item.oQueVi}</h3>
+                <p className="s-corpo">{item.oQuePlanoFaz}</p>
+                <Link href={`/propostas#${item.ancora}`} prefetch={false} className="s-link">
                   Ver no plano
-                  <Icon name="chevronRight" size={15} />
+                  <Icon name="chevronRight" size={18} />
                 </Link>
-              </div>
+              </li>
             ))}
-          </div>
+          </ul>
         </section>
 
         {/* ===== a chapa ===== */}
-        <section
-          style={{
-            background: C.ink,
-            color: C.cream,
-            border: borda(),
-            boxShadow: sombra("alto"),
-            padding: "22px 20px",
-            marginBottom: 34,
-          }}
-        >
-          <h2 style={{ fontFamily: FONT_ALFA, fontSize: 22, lineHeight: 1.15, color: C.gold, margin: "0 0 12px" }}>
-            A chapa
-          </h2>
-          <p style={{ margin: "0 0 14px", fontSize: 16, lineHeight: 1.62 }}>
+        <section className="ms-chapa" aria-labelledby="ms-chapa">
+          <h2 id="ms-chapa">A chapa</h2>
+          <p>
             <strong>{CHAPA.governador}</strong> é o candidato a governador. Eu sou o vice. O plano
-            de governo é o <strong>{CHAPA.plano}</strong>, e vale para os dois — não existe projeto
+            de governo é o <strong>{CHAPA.plano}</strong>, e vale para os dois: não existe projeto
             do titular e projeto do vice.
           </p>
-          <p style={{ margin: "0 0 18px", fontSize: 16, lineHeight: 1.62 }}>
+          <p>
             Uma coisa que confunde muita gente e é bom deixar clara:{" "}
             <strong>vice não tem número de urna próprio</strong>. Quem vota no candidato a
-            governador está votando na chapa inteira — nele e em mim, juntos.
+            governador está votando na chapa inteira: nele e em mim, juntos.
           </p>
-          <Link
-            href="/propostas"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 9,
-              minHeight: 48,
-              padding: "12px 20px",
-              background: C.gold,
-              color: C.ink,
-              border: borda(C.gold),
-              fontFamily: FONT_ALFA,
-              fontSize: 15.5,
-              textDecoration: "none",
-            }}
-          >
-            <Icon name="book" size={19} />
+          <Link href="/propostas" prefetch={false} className="s-btn s-btn-linha s-btn-peq">
             Ler o plano de governo
-          </Link>
-        </section>
-
-        {/* ===== chamada ===== */}
-        <section
-          style={{
-            background: C.gold,
-            border: borda(),
-            boxShadow: sombra("alto"),
-            padding: "22px 20px",
-            textAlign: "center",
-          }}
-        >
-          <h2 style={{ fontFamily: FONT_ALFA, fontSize: 23, lineHeight: 1.15, margin: "0 0 10px" }}>
-            Isso não se faz sozinho
-          </h2>
-          <p style={{ margin: "0 0 18px", ...TEXTO.corpoSolto }}>
-            Tem lugar pra quem tem dez horas por semana e pra quem tem trinta minutos. A
-            coordenação conversa com você e te encaixa.
-          </p>
-          <Link
-            href="/queroajudar"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 9,
-              minHeight: 48,
-              padding: "12px 22px",
-              background: C.ink,
-              color: C.gold,
-              border: borda(),
-              boxShadow: sombra(),
-              fontFamily: FONT_ALFA,
-              fontSize: 16,
-              textDecoration: "none",
-            }}
-          >
-            <Icon name="flag" size={19} />
-            Quero ajudar
           </Link>
         </section>
       </div>
 
+      <Convite
+        titulo="Isso não se faz sozinho"
+        texto="Tem lugar pra quem tem dez horas por semana e pra quem tem trinta minutos. A coordenação conversa com você e te encaixa."
+        acao="Quero ajudar"
+        agenda={false}
+      />
+
       <style>{`
-        a:focus-visible { outline: ${BORDA}px solid ${C.ink}; outline-offset: 3px; }
+        .ms-coluna { max-width: 760px; }
+        .ms-secao { margin-bottom: clamp(48px, 7vw, 72px); }
+        .ms-linha { list-style: none; margin: 28px 0 0; padding: 0; }
+        .ms-linha li { position: relative; display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 16px; padding-bottom: 32px; }
+        .ms-linha li:last-child { padding-bottom: 0; }
+        .ms-linha li:not(:last-child)::before { content: ""; position: absolute; left: 21px; top: 48px; bottom: 4px; width: 2px; background: ${C.linha}; }
+        .ms-marca { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; background: ${C.gold}; color: ${C.ink}; }
+        .ms-capitulo .s-rotulo { margin: 0 0 2px; }
+        .ms-capitulo h3 { margin: 0 0 8px; font-size: 22px; line-height: 1.25; font-weight: 800; letter-spacing: -.01em; text-wrap: balance; }
+        .ms-texto { margin: 0 0 10px; font-size: 17px; line-height: 1.65; color: ${C.suave}; max-width: ${LARGURA.texto}; }
+        .ms-texto:last-child { margin-bottom: 0; }
+        .ms-eixo { margin-top: 24px; }
+        .ms-eixo h3 { margin: 0 0 4px; font-size: 19px; line-height: 1.3; font-weight: 800; }
+        .ms-eixo .s-link { margin-top: 4px; font-size: 16px; }
+        .ms-chapa { margin-bottom: clamp(32px, 5vw, 48px); padding: clamp(22px, 4vw, 32px); background: ${C.fundo}; border: ${borda()}; border-radius: ${RAIO.g}px; }
+        .ms-chapa h2 { margin: 0 0 10px; font-size: 22px; line-height: 1.25; font-weight: 800; }
+        .ms-chapa p { margin: 0 0 12px; font-size: 17px; line-height: 1.6; color: ${C.suave}; }
+        .ms-chapa strong { color: ${C.ink}; }
+        .ms-chapa .s-btn { margin-top: 4px; }
       `}</style>
     </PaginaDoSite>
   );

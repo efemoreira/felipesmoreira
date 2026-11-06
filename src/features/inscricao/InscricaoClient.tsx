@@ -127,7 +127,7 @@ export default function InscricaoClient() {
 
   if (envio === "pronto") return <PaginaDoSite fundo="livre"><Sucesso nome={campos.nome} cidade={campos.cidade} perfil={perfil} /></PaginaDoSite>;
   return <PaginaDoSite fundo="livre"><div className="in-fundo"><div className="in-main">
-    <header className="in-cabecalho"><p className="in-chip">Missão Ceará · em construção</p><h1 className="in-titulo">Vamos construir juntos</h1>
+    <header className="in-cabecalho"><h1 className="in-titulo">Vamos construir juntos</h1>
       <p className="in-linha">Estamos reunindo pessoas para formar núcleos, grupos e atividades no Ceará. Conte onde você está e o que te interessa. Não precisa ter experiência nem escolher uma função agora.</p></header>
     <div className="in-progresso" aria-hidden="true">{PASSOS.map((nome, i) => <span key={nome} className={`in-passo-marca${i < passo ? " ativo" : ""}`}><b>{i + 1}</b><i>{nome}</i></span>)}</div>
     <p className="in-sr" aria-live="polite">Passo {passo} de 3: {PASSOS[passo - 1]}</p>

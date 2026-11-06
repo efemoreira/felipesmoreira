@@ -9,13 +9,21 @@
   --font-mono: var(--font-geist-mono);
 }
 
-/* O chão do site é a noite do cordel, não o branco do template: toda página
-   pinta o próprio fundo, e o que sobrar entre uma e outra (a barra de
-   endereço rolando, o overscroll do iPhone) fica da cor certa. */
+/* O chão do site é branco, e a tinta é a da marca. Quem quer outro fundo pinta
+   o próprio; o que sobrar (a barra de endereço rolando, o overscroll do
+   iPhone) fica da cor certa. */
+html {
+  color-scheme: light;
+  scroll-padding-top: 84px;
+}
+
 body {
-  background: #14110C;
-  color: #F6F5EF;
-  font-family: var(--font-bitter), Georgia, serif;
+  background: #FFFFFF;
+  color: #181203;
+  font-family: var(--font-texto), system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  font-size: 17px;
+  line-height: 1.6;
+  -webkit-text-size-adjust: 100%;
 }
 
 /* Trava global contra rolagem horizontal: `clip` não cria contexto de rolagem,

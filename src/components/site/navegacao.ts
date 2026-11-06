@@ -19,7 +19,7 @@ export const MENU: ItemNav[] = [
   { rotulo: "Núcleos", href: "/nucleos" },
   { rotulo: "Grupos", href: "/temas" },
   { rotulo: "Cultura", href: "/cultura" },
-  { rotulo: "Liga", href: "/portavozes" },
+  { rotulo: "Porta-vozes", href: "/portavozes" },
   { rotulo: "Biblioteca", href: "/biblioteca" },
 ];
 

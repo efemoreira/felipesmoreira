@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import { Icon } from "@/components/icons";
-import { C, FONT_ALFA, FONT_ELITE, borda, sombra, bordaFina } from "@/lib/theme";
+import { C, RAIO, borda } from "@/lib/theme";
 import { Blocos } from "./Blocos";
 import { Player } from "./Player";
 import type { Aula as TipoAula } from "./tipos";
@@ -44,8 +44,9 @@ export const Aula: React.FC<Props> = ({
       open={aberta}
       onToggle={(e) => aoAbrir(aula.id, (e.currentTarget as HTMLDetailsElement).open)}
       style={{
-        border: borda(rapida ? C.gold : "rgba(255,203,5,.24)"),
-        background: rapida ? "rgba(255,203,5,.07)" : "rgba(255,203,5,.03)",
+        border: borda(rapida ? C.goldDim : C.linha),
+        borderRadius: RAIO.m,
+        background: rapida ? C.ouroClaro : C.paper,
         margin: "0 0 12px",
         scrollMarginTop: 20,
       }}
@@ -62,18 +63,18 @@ export const Aula: React.FC<Props> = ({
           listStyle: "none",
         }}
       >
-        <span style={{ flex: "0 0 auto", fontSize: 18, lineHeight: 1 }} aria-hidden="true">
-          {rapida ? "🚗" : concluida ? "✓" : "·"}
+        <span style={{ flex: "0 0 auto", width: 24, textAlign: "center", fontSize: 18, lineHeight: 1 }} aria-hidden="true">
+          {rapida ? "🚗" : concluida ? "✓" : ""}
         </span>
 
         <span style={{ flex: "1 1 auto", minWidth: 0 }}>
           <strong
             style={{
               display: "block",
-              fontFamily: FONT_ALFA,
-              fontSize: rapida ? 17 : 15.5,
-              lineHeight: 1.35,
-              color: rapida ? C.gold : C.cream,
+              fontWeight: 800,
+              fontSize: 18,
+              lineHeight: 1.3,
+              color: C.ink,
             }}
           >
             {aula.titulo}
@@ -82,11 +83,9 @@ export const Aula: React.FC<Props> = ({
             style={{
               display: "block",
               marginTop: 3,
-              fontFamily: FONT_ELITE,
-              fontSize: 11,
-              letterSpacing: 1.4,
-              textTransform: "uppercase",
-              color: "#8e877a",
+              fontWeight: 600,
+              fontSize: 14.5,
+              color: C.suave,
             }}
           >
             {rapida ? "Pista Rápida" : "Pista Lenta"} · {aula.minutos} min
@@ -99,13 +98,12 @@ export const Aula: React.FC<Props> = ({
           <span
             style={{
               flex: "0 0 auto",
-              fontFamily: FONT_ELITE,
-              fontSize: 10,
-              letterSpacing: 1.3,
-              textTransform: "uppercase",
+              fontWeight: 600,
+              fontSize: 14.5,
               color: C.ok,
-              border: bordaFina(C.okBorda),
-              padding: "3px 7px",
+              background: C.okFundo,
+              borderRadius: RAIO.pilula,
+              padding: "3px 10px",
             }}
           >
             Feita
@@ -114,7 +112,7 @@ export const Aula: React.FC<Props> = ({
       </summary>
 
       <div style={{ padding: "4px 16px 20px" }}>
-        <p style={{ margin: "0 0 20px", color: "#b9b3a5", lineHeight: 1.7 }}>{aula.resumo}</p>
+        <p style={{ margin: "0 0 20px", color: C.suave, lineHeight: 1.55 }}>{aula.resumo}</p>
 
         {aula.video && <Player video={aula.video} titulo={aula.titulo} />}
 
@@ -133,13 +131,13 @@ export const Aula: React.FC<Props> = ({
               minHeight: 44,
               padding: "10px 18px",
               cursor: gravando ? "wait" : "pointer",
-              fontFamily: FONT_ALFA,
-              fontSize: 14,
+              fontWeight: 800,
+              fontSize: 14.5,
               border: borda(),
-              boxShadow: sombra(),
+              borderRadius: RAIO.m,
               background: concluida ? "transparent" : C.gold,
-              color: concluida ? C.cream : C.ink,
-              borderColor: concluida ? "rgba(255,203,5,.4)" : C.ink,
+              color: C.ink,
+              borderColor: concluida ? C.linhaForte : C.gold,
               opacity: gravando ? 0.6 : 1,
             }}
           >
@@ -157,10 +155,11 @@ export const Aula: React.FC<Props> = ({
                 minHeight: 44,
                 padding: "10px 18px",
                 textDecoration: "none",
-                fontFamily: FONT_ALFA,
-                fontSize: 14,
-                color: C.gold,
-                border: borda("rgba(255,203,5,.4)"),
+                fontWeight: 800,
+                fontSize: 14.5,
+                color: C.ink,
+                border: borda(C.linhaForte),
+                borderRadius: RAIO.m,
               }}
             >
               Fazer isto agora

@@ -2,8 +2,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { PaginaDoSite } from "@/components/site/PaginaDoSite";
+import { AberturaPagina } from "@/components/site/AberturaPagina";
 import { Icon } from "@/components/icons";
-import { BORDA, C, FONT_ALFA, FONT_ELITE, FONT_BITTER, sombra } from "@/lib/theme";
+import { C, FOCO, FONT_ALFA, LARGURA, PONTOS, RAIO, TITULO, borda } from "@/lib/theme";
 import { canvasParaBlob } from "@/lib/cordelCanvas";
 import { entregarArte } from "@/lib/compartilhar";
 import { faseEm, type Fase } from "@/lib/eleicao";
@@ -47,6 +48,10 @@ import { gerarColinha, gerarFicha, nomeArquivoColinha, nomeArquivoFicha } from "
  * **A trava do calendário eleitoral mora aqui, no botão.** Compartilhar arte com
  * número é propaganda; no dia da votação publicar propaganda nova na internet é
  * proibido. Imprimir e consultar continuam abertos — não é publicar.
+ *
+ * **Depois da eleição a página vira registro**: quem disputou, com número e
+ * redes, sem colinha nem "pôr na colinha" — pedir que alguém monte a cola de uma
+ * votação que já passou só confunde.
  */
 
 /** Onde a escolha do eleitor fica guardada entre uma visita e outra. Só conveniência. */
@@ -110,6 +115,7 @@ export default function CandidatosClient() {
   }, [carregar]);
 
   const podeCompartilhar = fase === "campanha" || fase === "reta-final";
+  const acabou = fase === "depois";
 
   const { secoes, outros } = useMemo(() => porCargo(candidatos), [candidatos]);
   const linhas = useMemo(() => montarColinha(secoes, escolhas), [secoes, escolhas]);
@@ -182,19 +188,29 @@ export default function CandidatosClient() {
   const semNinguem = !carregando && !falhou && !temAlguem;
 
   return (
-    <PaginaDoSite fundo="livre">
+    <PaginaDoSite
+      fundo="livre"
+      abertura={
+        <AberturaPagina
+          trilha="Candidatos de 2026"
+          kicker={acabou ? "Eleição 2026" : "Em que número votar"}
+          titulo={acabou ? "Quem disputou pela Missão" : "Nossos candidatos"}
+          intro={
+            acabou ? (
+              <p>A eleição passou. A lista fica no ar como registro de quem disputou no Ceará.</p>
+            ) : (
+              <p>
+                O número é o que você digita na urna. Presidente e governador já estão na sua
+                colinha; nos outros cargos, <strong>escolha quem você leva</strong>, e imprima
+                ou salve no celular.
+              </p>
+            )
+          }
+        />
+      }
+    >
     <div className="cd-fundo">
-      <div className="cd-main">
-
-        <header style={{ margin: "16px 0 30px" }}>
-          <p className="cd-kicker">Em que número votar</p>
-          <h1 className="cd-titulo">Nossos candidatos</h1>
-          <p className="cd-chamada">
-            O número é o que você digita na urna. Presidente e governador já estão na sua
-            colinha; nos outros cargos, <strong>escolha quem você leva</strong> — e imprima
-            ou salve no celular.
-          </p>
-        </header>
+      <div className="s-largura cd-main">
 
         {/* A chapa do build só aparece quando a lista não veio: é o que a página
             não pode deixar de dizer, com ou sem rede. */}
@@ -215,7 +231,7 @@ export default function CandidatosClient() {
         {!carregando && falhou && (
           <p className="cd-aviso" role="alert">
             Não consegui carregar a lista dos candidatos agora.{" "}
-            <button type="button" className="cd-btn" onClick={carregar}>
+            <button type="button" className="s-btn s-btn-linha s-btn-peq" onClick={carregar}>
               Tentar de novo
             </button>
           </p>
@@ -230,10 +246,10 @@ export default function CandidatosClient() {
             {/* Quem abriu a página do número está a um toque de virar militante:
                 o convite é o mesmo que fecha todas as outras rotas. */}
             <div className="cd-convite">
-              <Link href="/queroajudar" className="cd-btn">
+              <Link href="/queroajudar" prefetch={false} className="s-btn s-btn-ouro s-btn-peq">
                 Quero ajudar
               </Link>
-              <Link href="/propostas" className="cd-elo">
+              <Link href="/propostas" prefetch={false} className="s-link">
                 Ler o plano de governo
               </Link>
             </div>
@@ -244,6 +260,7 @@ export default function CandidatosClient() {
           <SecaoCargo
             key={s.chave}
             s={s}
+            registro={acabou}
             naColinha={naColinha}
             aoAlternar={alternar}
             podeCompartilhar={podeCompartilhar}
@@ -271,7 +288,7 @@ export default function CandidatosClient() {
           </section>
         )}
 
-        {linhas.length > 0 && (
+        {linhas.length > 0 && !acabou && (
           <section className="cd-secao cd-colinha" aria-labelledby="cd-colinha-titulo">
             <div className="cd-secao-topo">
               <h2 id="cd-colinha-titulo" className="cd-secao-titulo">Sua colinha</h2>
@@ -293,13 +310,13 @@ export default function CandidatosClient() {
                   1 só
                 </label>
               </fieldset>
-              <button type="button" className="cd-btn" onClick={() => window.print()}>
+              <button type="button" className="s-btn s-btn-ouro s-btn-peq" onClick={() => window.print()}>
                 Imprimir
               </button>
               {podeCompartilhar && (
                 <button
                   type="button"
-                  className="cd-btn"
+                  className="s-btn s-btn-linha s-btn-peq"
                   onClick={compartilharColinha}
                   disabled={gerando === "colinha" || naColinha.size === 0}
                 >
@@ -320,11 +337,6 @@ export default function CandidatosClient() {
             propaganda nova na internet no dia da eleição é proibido.
           </p>
         )}
-        {fase === "depois" && temAlguem && (
-          <p className="cd-trava">
-            A eleição passou. A lista fica no ar como registro de quem disputou.
-          </p>
-        )}
       </div>
       <style>{css}</style>
     </div>
@@ -337,16 +349,18 @@ export default function CandidatosClient() {
 /** Uma seção de cargo: os titulares, cada um com os vices embaixo. */
 const SecaoCargo: React.FC<{
   s: Secao;
+  /** a eleição passou: sem colinha, só quem disputou */
+  registro: boolean;
   naColinha: Set<string>;
   aoAlternar: (chave: CargoColinha, id: string) => void;
   podeCompartilhar: boolean;
   gerando: string | null;
   aoCompartilhar: (c: Candidato) => void;
-}> = ({ s, naColinha, aoAlternar, podeCompartilhar, gerando, aoCompartilhar }) => {
+}> = ({ s, registro, naColinha, aoAlternar, podeCompartilhar, gerando, aoCompartilhar }) => {
   const vagas = VAGAS[s.chave];
   const direto = entraDireto(s);
   const temTitular = titularesDe(s).length > 0;
-  const nota = !temTitular
+  const nota = registro || !temTitular
     ? null
     : direto
       ? "Já na sua colinha."
@@ -355,10 +369,10 @@ const SecaoCargo: React.FC<{
         : "Escolha 1 para a sua colinha.";
 
   return (
-    <section className="cd-secao">
+    <section className={`cd-secao${s.entradas.length === 1 ? " cd-secao-solo" : ""}`}>
       <h2 className="cd-secao-titulo">
         {TITULO_SECAO[s.chave]}
-        {vagas > 1 && <span className="cd-vagas"> · {vagas} vagas</span>}
+        {vagas > 1 && !registro && <span className="cd-vagas"> · {vagas} vagas</span>}
       </h2>
       {nota && <p className="cd-nota">{nota}</p>}
       <div className="cd-grade">
@@ -371,14 +385,14 @@ const SecaoCargo: React.FC<{
                 gerando={gerando === e.titular.id}
                 aoCompartilhar={() => aoCompartilhar(e.titular!)}
                 escolha={
-                  direto
+                  direto || registro
                     ? undefined
                     : {
                         marcado: naColinha.has(e.titular.id),
                         aoMarcar: () => aoAlternar(s.chave, e.titular!.id),
                       }
                 }
-                naColinha={direto && naColinha.has(e.titular.id)}
+                naColinha={!registro && direto && naColinha.has(e.titular.id)}
               />
             )}
             {e.vices.map((v) => (
@@ -396,8 +410,8 @@ const VerRedes: React.FC<{ c: Candidato }> = ({ c }) => {
   const href = linkDasRedes(c);
   if (!href) return null;
   return (
-    <a className="cd-btn cd-btn-redes" href={href} target="_blank" rel="noopener noreferrer">
-      <Icon name={c.linkRedes ? "world" : "instagram"} size={16} />
+    <a className="s-btn s-btn-linha s-btn-peq" href={href} target="_blank" rel="noopener noreferrer">
+      <Icon name={c.linkRedes ? "world" : "instagram"} size={18} />
       <span>Conheça mais</span>
     </a>
   );
@@ -427,7 +441,7 @@ const Ficha: React.FC<{
   naColinha?: boolean;
 }> = ({ c, podeCompartilhar, gerando, aoCompartilhar, escolha, naColinha }) => (
   <article className={`cd-ficha${escolha?.marcado || naColinha ? " cd-ficha-ouro" : ""}`}>
-    <Foto c={c} tamanho={56} />
+    <Foto c={c} tamanho={60} />
     <span className="cd-numero">{c.numero}</span>
     <div className="cd-quem">
       <h3 className="cd-nome">{c.nome}</h3>
@@ -438,17 +452,18 @@ const Ficha: React.FC<{
       {escolha && (
         <button
           type="button"
-          className={`cd-btn cd-btn-escolha${escolha.marcado ? " cd-marcado" : ""}`}
+          className={`s-btn s-btn-peq ${escolha.marcado ? "s-btn-ouro" : "s-btn-linha"}`}
           aria-pressed={escolha.marcado}
           onClick={escolha.aoMarcar}
         >
-          {escolha.marcado ? "Na colinha ✓" : "Pôr na colinha"}
+          {escolha.marcado && <Icon name="check" size={18} />}
+          {escolha.marcado ? "Na colinha" : "Pôr na colinha"}
         </button>
       )}
       <VerRedes c={c} />
       {podeCompartilhar && (
-        <button type="button" className="cd-btn cd-btn-leve" onClick={aoCompartilhar} disabled={gerando}>
-          <Icon name="whatsapp" size={16} />
+        <button type="button" className="s-btn s-btn-linha s-btn-peq" onClick={aoCompartilhar} disabled={gerando}>
+          <Icon name="whatsapp" size={18} />
           <span>{gerando ? "…" : "Compartilhar"}</span>
         </button>
       )}
@@ -489,141 +504,73 @@ const Vice: React.FC<{ c: Candidato }> = ({ c }) => {
 /* ===================== estilos ===================== */
 
 const css = `
-  .cd-fundo { min-height: 100dvh; background: ${C.night}; color: ${C.cream}; font-family: ${FONT_BITTER}; }
-  .cd-main { max-width: 780px; margin: 0 auto; padding: 30px 20px 80px; }; font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
-    color: ${C.gold}; text-decoration: none;
-  }
-  .cd-kicker {
-    font-family: ${FONT_ELITE}; font-size: 12px; letter-spacing: 3px; text-transform: uppercase;
-    color: ${C.gold2}; margin: 0 0 10px;
-  }
-  .cd-titulo {
-    font-family: ${FONT_ALFA}; font-size: clamp(30px, 8vw, 46px); line-height: 1.04;
-    margin: 0 0 14px; text-shadow: 3px 3px 0 ${C.ink}; text-wrap: balance;
-  }
-  .cd-chamada { font-size: 16.5px; line-height: 1.6; margin: 0; max-width: 58ch; opacity: .92; }
+  .cd-fundo { background: ${C.paper}; color: ${C.ink}; }
+  .cd-main { padding-block: 20px clamp(48px, 7vw, 80px); }
 
-  .cd-chapa {
-    display: flex; align-items: center; gap: 18px; margin: 0 0 30px; padding: 16px 18px;
-    background: ${C.gold}; color: ${C.ink};
-    border: ${BORDA}px solid ${C.ink}; box-shadow: ${sombra("cartao", C.sombraNoite)};
-  }
-  .cd-chapa-numero {
-    font-family: ${FONT_ALFA}; font-size: clamp(56px, 16vw, 84px); line-height: 1; margin: 0;
-    text-shadow: 3px 3px 0 rgba(24,18,3,.25);
-  }
-  .cd-chapa-cargo {
-    font-family: ${FONT_ELITE}; font-size: 11px; letter-spacing: 2.4px; text-transform: uppercase;
-    margin: 0; opacity: .8;
-  }
-  .cd-chapa-nome { font-family: ${FONT_ALFA}; font-size: 17px; line-height: 1.2; margin: 0 0 8px; }
+  .cd-chapa { display: flex; align-items: center; gap: 22px; margin: 0 0 28px; padding: 18px 22px; background: ${C.gold}; color: ${C.ink}; border-radius: ${RAIO.g}px; }
+  .cd-chapa-numero { font-family: ${FONT_ALFA}; font-size: clamp(56px, 12vw, 80px); line-height: 1; margin: 0; }
+  .cd-chapa-cargo { margin: 0; font-size: 15px; }
+  .cd-chapa-nome { margin: 0 0 8px; font-size: 19px; line-height: 1.25; font-weight: 800; }
   .cd-chapa-nome:last-child { margin-bottom: 0; }
 
-  .cd-secao { margin: 0 0 34px; }
-  .cd-secao-topo { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-  .cd-secao-titulo {
-    font-family: ${FONT_ELITE}; font-size: 13px; letter-spacing: 2.4px; text-transform: uppercase;
-    color: ${C.gold2}; margin: 0 0 14px;
-  }
-  .cd-nota { font-size: 13.5px; opacity: .7; margin: -6px 0 12px; }
+  .cd-secao { margin: 0 0 clamp(32px, 5vw, 48px); }
+  .cd-secao-titulo { margin: 0 0 14px; font-family: ${FONT_ALFA}; font-weight: 400; font-size: ${TITULO.bloco}; line-height: 1.14; color: ${C.ink}; }
+  .cd-vagas { font-family: inherit; color: ${C.suave}; }
+  .cd-nota { max-width: ${LARGURA.texto}; margin: -6px 0 14px; font-size: 16px; line-height: 1.5; color: ${C.suave}; }
+  .cd-grade { display: grid; gap: 14px; }
+  .cd-entrada { display: grid; gap: 8px; align-content: start; min-width: 0; }
 
-  .cd-grade { display: grid; gap: 12px; }
-
-  .cd-foto {
-    width: 56px; height: 56px; object-fit: cover; flex: 0 0 auto;
-    border: ${BORDA}px solid ${C.ink}; background: rgba(246,245,239,.08);
-  }
-  .cd-foto-vazia {
-    display: inline-flex; align-items: center; justify-content: center;
-    font-family: ${FONT_ALFA}; font-size: 22px; color: ${C.gold2};
-  }
+  .cd-foto { width: 60px; height: 60px; object-fit: cover; flex: 0 0 auto; border-radius: 50%; background: ${C.fundo}; }
+  .cd-foto-vazia { display: inline-flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 800; color: ${C.suave}; }
   .cd-ficha {
-    display: grid; grid-template-columns: auto auto 1fr auto; align-items: center; gap: 14px;
-    padding: 16px 18px; background: rgba(246,245,239,.05);
-    border: ${BORDA}px solid rgba(255,203,5,.28);
+    display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "foto quem numero" "acoes acoes acoes";
+    align-items: center; gap: 12px 14px; padding: 16px; background: ${C.paper}; border: ${borda()}; border-radius: ${RAIO.g}px;
   }
-  .cd-ficha-ouro { border-color: ${C.gold}; background: rgba(255,203,5,.08); }
-  .cd-numero {
-    font-family: ${FONT_ALFA}; font-size: clamp(30px, 8vw, 40px); line-height: 1;
-    color: ${C.gold}; min-width: 2ch;
-  }
-  .cd-quem { min-width: 0; }
-  .cd-nome { font-family: ${FONT_ALFA}; font-size: 19px; line-height: 1.2; margin: 0 0 4px; }
-  .cd-cargo { font-size: 13.5px; margin: 0; opacity: .75; }
-  .cd-selo {
-    display: inline-block; margin: 6px 0 0; font-family: ${FONT_ELITE}; font-size: 11px;
-    letter-spacing: 1.6px; text-transform: uppercase; color: ${C.gold};
-  }
-  .cd-vagas { opacity: .75; }
-
-  .cd-entrada { display: grid; gap: 6px; }
-  .cd-acoes { display: flex; flex-direction: column; gap: 8px; align-items: stretch; }
+  .cd-ficha > .cd-foto { grid-area: foto; }
+  .cd-ficha-ouro { background: ${C.ouroClaro}; border-color: ${C.goldDim}; }
+  .cd-numero { grid-area: numero; min-width: 2ch; font-family: ${FONT_ALFA}; font-size: clamp(30px, 4vw, 38px); line-height: 1; text-align: right; color: ${C.ink}; }
+  .cd-quem { grid-area: quem; min-width: 0; }
+  .cd-nome { margin: 0 0 2px; font-size: 19px; line-height: 1.25; font-weight: 800; letter-spacing: -.01em; overflow-wrap: anywhere; }
+  .cd-cargo { margin: 0; font-size: 15.5px; line-height: 1.35; color: ${C.suave}; }
+  .cd-selo { margin: 4px 0 0; font-size: 15px; font-weight: 700; color: ${C.goldDim}; }
+  .cd-acoes { grid-area: acoes; display: flex; flex-wrap: wrap; gap: 8px; }
+  .cd-acoes:empty { display: none; }
+  .cd-acoes .s-btn { flex: 1 1 140px; }
 
   /* Vice e suplente: menor, embaixo do titular, o cartão inteiro é o link. */
-  .cd-vice {
-    display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px;
-    margin-left: 26px; padding: 10px 14px; min-height: 44px;
-    background: rgba(246,245,239,.03); border: ${BORDA}px solid rgba(255,203,5,.16);
-    color: ${C.cream}; text-decoration: none;
-  }
-  a.cd-vice:hover { border-color: ${C.gold2}; }
-  a.cd-vice:focus-visible { outline: ${BORDA}px solid ${C.gold}; outline-offset: 2px; }
+  .cd-vice { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; margin-left: 20px; padding: 8px 14px; min-height: 44px; background: ${C.fundo}; border-radius: ${RAIO.m}px; color: ${C.ink}; text-decoration: none; }
+  a.cd-vice:hover { background: ${C.ouroClaro}; }
+  a.cd-vice:focus-visible { outline: ${FOCO}; outline-offset: 2px; }
   .cd-vice .cd-foto { width: 40px; height: 40px; }
-  .cd-vice-cargo {
-    font-family: ${FONT_ELITE}; font-size: 11px; letter-spacing: 1.6px; text-transform: uppercase;
-    margin: 0; opacity: .7;
-  }
-  .cd-vice-nome { font-family: ${FONT_ALFA}; font-size: 16px; line-height: 1.2; margin: 2px 0 0; }
-  .cd-vice-redes {
-    display: inline-flex; align-items: center; gap: 4px; font-size: 13.5px; color: ${C.gold2};
-    white-space: nowrap;
-  }
-
-  .cd-btn, .cd-btn-grupo {
-    display: inline-flex; align-items: center; gap: 7px; min-height: 44px; padding: 0 14px;
-    cursor: pointer; font-family: ${FONT_ELITE}; font-size: 11.5px; letter-spacing: 1.4px;
-    text-transform: uppercase; color: ${C.ink}; background: ${C.gold};
-    border: ${BORDA}px solid ${C.ink}; box-shadow: ${sombra("rente", C.ink)};
-  }
-  .cd-btn:disabled, .cd-btn-grupo:disabled { opacity: .6; cursor: wait; }
-  .cd-btn-grupo { margin-bottom: 14px; }
-  .cd-acoes .cd-btn { justify-content: center; text-decoration: none; }
-  .cd-btn-redes, .cd-btn-leve { background: transparent; color: ${C.gold2}; border-color: ${C.gold2}; box-shadow: none; }
-  .cd-btn-escolha { background: transparent; color: ${C.cream}; border-color: ${C.cream}; box-shadow: none; }
-  .cd-btn-escolha.cd-marcado { background: ${C.gold}; color: ${C.ink}; border-color: ${C.ink}; box-shadow: ${sombra("rente", C.ink)}; }
+  .cd-vice .cd-quem { grid-area: auto; }
+  .cd-vice-cargo { margin: 0; font-size: 14.5px; line-height: 1.3; color: ${C.suave}; }
+  .cd-vice-nome { margin: 1px 0 0; font-size: 16.5px; line-height: 1.25; font-weight: 700; }
+  .cd-vice-redes { display: inline-flex; align-items: center; gap: 2px; font-size: 15px; font-weight: 600; white-space: nowrap; }
 
   .cd-colinha-acoes { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 16px; }
-  .cd-copias {
-    display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0; padding: 0; border: 0; min-width: 0;
-  }
-  .cd-copias legend {
-    font-family: ${FONT_ELITE}; font-size: 11px; letter-spacing: 1.6px; text-transform: uppercase;
-    opacity: .75; padding: 0; margin-bottom: 4px;
-  }
+  .cd-copias { display: flex; flex-wrap: wrap; gap: 0 16px; margin: 0; padding: 0; border: 0; min-width: 0; }
+  .cd-copias legend { padding: 0; margin-bottom: 2px; font-size: 15px; font-weight: 700; }
   .cd-copias label { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; font-size: 16px; cursor: pointer; }
-  .cd-copias input { width: 20px; height: 20px; accent-color: ${C.gold}; }
+  .cd-copias input { width: 20px; height: 20px; accent-color: ${C.ink}; }
 
-  .cd-vazio, .cd-aviso, .cd-trava {
-    font-size: 15.5px; line-height: 1.7; margin: 0 0 22px;
-  }
-  .cd-aviso, .cd-trava {
-    border: ${BORDA}px solid ${C.gold}; background: rgba(255,203,5,.08); padding: 14px 16px;
-  }
-  .cd-elo { color: ${C.gold2}; }
+  .cd-vazio, .cd-aviso, .cd-trava { max-width: ${LARGURA.texto}; margin: 0 0 22px; font-size: 17px; line-height: 1.6; color: ${C.suave}; }
+  .cd-aviso, .cd-trava { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; max-width: none; padding: 14px 18px; color: ${C.ink}; background: ${C.ouroClaro}; border-radius: ${RAIO.m}px; }
   .cd-convite { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin: 0 0 30px; }
-  .cd-convite .cd-btn { text-decoration: none; }
 
-  @media (max-width: 560px) {
-    .cd-ficha { grid-template-columns: auto auto 1fr; }
-    .cd-acoes { grid-column: 1 / -1; }
-    .cd-vice { margin-left: 14px; }
+  @media (min-width: ${PONTOS.computador}px) {
+    /* Presidente e governador, um de cada, dividem a linha; quem tem mais gente ocupa a sua. */
+    .cd-main { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 16px; align-items: start; }
+    .cd-main > * { grid-column: 1 / -1; min-width: 0; }
+    .cd-main > .cd-secao-solo { grid-column: auto; }
+    .cd-secao:not(.cd-secao-solo) .cd-grade { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
   }
 
   /* No papel sai só a colinha: o resto da página é tela. */
   @media print {
     html, body { background: #fff !important; }
-    .cd-fundo { background: #fff; color: ${C.ink}; min-height: 0; }
-    .cd-main { max-width: none; padding: 0; }
+    .ab { display: none !important; }
+    .cd-fundo { background: #fff; color: ${C.ink}; }
+    .cd-main { display: block; max-width: none; padding: 0; }
     .cd-main > :not(.cd-colinha) { display: none !important; }
     .cd-colinha > :not(.cd-impressao) { display: none !important; }
   }

@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { C, FONT_ALFA, FONT_BITTER, FONT_ELITE, borda, bordaFina } from "@/lib/theme";
+import { C, FONT_ALFA, FONT_TEXTO, RAIO, borda } from "@/lib/theme";
 import type { LinhaColinha } from "./cargos";
 
 /**
@@ -81,46 +81,32 @@ const css = `
   /* Na tela mostra uma cópia só; as outras existem para o papel. */
   .cd-impressao .ci-papel + .ci-papel { display: none; }
 
-  .ci-papel {
-    background: #fff; color: ${C.ink}; font-family: ${FONT_BITTER};
-    border: ${borda(C.ink)}; padding: 16px 16px 12px; max-width: 520px;
-    break-inside: avoid;
-  }
-  .ci-topo { text-align: center; border-bottom: ${bordaFina(C.ink)}; padding-bottom: 8px; margin-bottom: 6px; }
-  .ci-kicker {
-    font-family: ${FONT_ELITE}; font-size: 11px; letter-spacing: 2.4px; text-transform: uppercase; margin: 0;
-  }
-  .ci-titulo { font-family: ${FONT_ALFA}; font-size: 24px; line-height: 1.1; margin: 2px 0 0; }
+  .ci-papel { background: #fff; color: ${C.ink}; font-family: ${FONT_TEXTO}; border: ${borda()}; border-radius: ${RAIO.g}px; padding: 16px 18px 12px; max-width: 520px; break-inside: avoid; }
+  .ci-topo { text-align: center; border-bottom: ${borda()}; padding-bottom: 8px; margin-bottom: 6px; }
+  .ci-kicker { font-size: 14px; font-weight: 600; color: ${C.goldDim}; margin: 0; }
+  .ci-titulo { font-family: ${FONT_ALFA}; font-size: 28px; line-height: 1.1; margin: 2px 0 0; }
 
   .ci-linhas { list-style: none; margin: 0; padding: 0; }
-  .ci-linha {
-    display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "cargo digitos" "nome digitos";
-    align-items: center; gap: 2px 12px; padding: 9px 0; border-bottom: 1px dashed ${C.ink};
-  }
+  .ci-linha { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "cargo digitos" "nome digitos"; align-items: center; gap: 2px 12px; padding: 9px 0; border-bottom: 1px dashed ${C.linhaForte}; }
   .ci-linha:last-child { border-bottom: 0; }
-  .ci-cargo {
-    grid-area: cargo; font-family: ${FONT_ELITE}; font-size: 11px; letter-spacing: 1.6px; text-transform: uppercase;
-  }
-  .ci-nome { grid-area: nome; font-family: ${FONT_ALFA}; font-size: 16px; line-height: 1.2; overflow-wrap: anywhere; }
-  .ci-branco { font-family: ${FONT_BITTER}; font-style: italic; font-size: 13px; opacity: .6; }
+  .ci-cargo { grid-area: cargo; font-size: 14px; color: ${C.suave}; }
+  .ci-nome { grid-area: nome; font-size: 17px; line-height: 1.25; font-weight: 800; overflow-wrap: anywhere; }
+  .ci-branco { font-style: italic; font-weight: 400; font-size: 14.5px; color: ${C.suave}; }
   .ci-digitos { grid-area: digitos; display: flex; gap: 4px; }
-  .ci-casa {
-    width: 30px; height: 38px; display: inline-flex; align-items: center; justify-content: center;
-    border: ${bordaFina(C.ink)}; font-family: ${FONT_ALFA}; font-size: 22px; line-height: 1;
-  }
-  .ci-rodape { margin-top: 8px; font-size: 10.5px; line-height: 1.4; text-align: center; }
+  .ci-casa { width: 30px; height: 38px; display: inline-flex; align-items: center; justify-content: center; border: ${borda(C.ink)}; border-radius: ${RAIO.p - 2}px; font-size: 22px; font-weight: 800; line-height: 1; }
+  .ci-rodape { margin-top: 8px; font-size: 13px; line-height: 1.4; text-align: center; color: ${C.suave}; }
   .ci-rodape p { margin: 0; }
-  .ci-site { font-family: ${FONT_ELITE}; letter-spacing: 1.4px; margin-top: 4px !important; }
+  .ci-site { font-weight: 600; margin-top: 4px !important; }
 
   @media print {
     @page { size: A4; margin: 10mm; }
     .cd-impressao .ci-papel + .ci-papel { display: block; }
-    .ci-papel { max-width: none; border-width: 2px; }
+    .ci-papel { max-width: none; border-color: ${C.ink}; border-radius: 0; }
     .ci-papel, .ci-casa { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     /* Quatro por folha, o formato de gráfica: recorta nas linhas tracejadas
        e distribui. Uma por folha para quem vai levar só a sua. */
     .cd-impressao-4 { grid-template-columns: 1fr 1fr; gap: 0; }
-    .cd-impressao-4 .ci-papel { border: 1px dashed ${C.ink}; padding: 8mm 7mm 6mm; min-height: 132mm; }
+    .cd-impressao-4 .ci-papel { border: 1px dashed ${C.ink}; border-radius: 0; padding: 8mm 7mm 6mm; min-height: 132mm; }
     .cd-impressao-4 .ci-casa { width: 24px; height: 30px; font-size: 18px; }
     .cd-impressao-4 .ci-nome { font-size: 13px; }
     .cd-impressao-1 .ci-papel { max-width: 120mm; margin: 0 auto; }

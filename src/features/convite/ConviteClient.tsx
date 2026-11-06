@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { C, FONT_ELITE, borda, TEXTO } from "@/lib/theme";
+import { C, TEXTO, borda } from "@/lib/theme";
 import { obterConvite, responderConvite, type Alvo, type Convite } from "@/lib/api/escala";
 import { Casca, Painel, botaoOuro, botaoEscolha, Erro, textoP } from "@/features/presenca/Pecas";
 
@@ -111,7 +111,7 @@ export default function ConviteClient() {
   return (
     <Casca titulo={fase === "respondido" ? "Resposta enviada" : "Seu convite"}>
       <Painel>
-        <p style={{ ...textoP, fontFamily: FONT_ELITE, fontSize: 20, color: C.ink }}>
+        <p style={{ ...textoP, fontWeight: 600, fontSize: 20, color: C.ink }}>
           {c.nome}, você é a <strong>{c.peca}</strong>
         </p>
         <p style={{ ...textoP, marginBottom: 4 }}>
@@ -138,7 +138,7 @@ export default function ConviteClient() {
         )}
 
         {fase === "respondido" ? (
-          <div style={{ border: borda(C.ink), padding: 14, background: C.paper }}>
+          <div style={{ border: borda(), padding: 14, background: C.paper }}>
             <p style={{ ...textoP, margin: 0 }}>
               {resposta === "topou"
                 ? "Você topou. A coordenação já sabe — te vejo lá."

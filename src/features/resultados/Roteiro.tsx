@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { C, FONT_ALFA, FONT_BITTER, FONT_DADOS, FONT_ELITE, PAINEL_DADOS as P, bordaFina } from "@/lib/theme";
+import { C, FONT_DADOS, FONT_TEXTO, PAINEL_DADOS as P, bordaFina } from "@/lib/theme";
 import { n, t, type Linha } from "./dados";
 import { num, pct } from "./formato";
 import { ladoTexto, linkMapa } from "./apoio";
@@ -88,12 +88,12 @@ const css = `
     .rs-roteiro, .rs-roteiro * { visibility: visible; }
     .rs-roteiro {
       display: block; position: absolute; left: 0; top: 0; width: 100%;
-      font-family: ${FONT_BITTER}; color: ${C.ink}; background: #fff;
+      font-family: ${FONT_TEXTO}; color: ${C.ink}; background: #fff;
     }
-    .rs-roteiro h1 { font-family: ${FONT_ALFA}; font-size: 20px; margin: 0 0 4px; }
+    .rs-roteiro h1 { font-family: ${FONT_TEXTO}; font-weight: 800; font-size: 20px; margin: 0 0 4px; }
     .rs-sub { font-size: 10.5px; margin: 0 0 8px; }
     .rs-roteiro table { width: 100%; border-collapse: collapse; font-size: 10.5px; }
-    .rs-roteiro th { font-family: ${FONT_ELITE}; font-weight: 400; text-align: left; border-bottom: ${bordaFina(C.ink)}; padding: 4px; }
+    .rs-roteiro th { font-family: ${FONT_TEXTO}; font-weight: 400; text-align: left; border-bottom: ${bordaFina(C.ink)}; padding: 4px; }
     .rs-roteiro td { border-bottom: 1px solid #bbb; padding: 4px; vertical-align: top; }
     .rs-roteiro tr { break-inside: avoid; }
     .rs-geo { color: #555; }
